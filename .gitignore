@@ -24,3 +24,12 @@ dist-appstore/
 # OS · 에디터
 .DS_Store
 .idea/
+
+# AI 에이전트 스킬 · 플러그인 (로컬 설치, 바이너리 포함 — 각자 재설치)
+.agents/
+.claude/
+.codex/
+.github/agents/
+.github/hooks/
+.github/skills/
+skills-lock.json
