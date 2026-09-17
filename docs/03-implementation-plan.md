@@ -196,6 +196,7 @@
 
 ## 6. 진행 기록
 
+
 | 날짜 | 단계 | 내용 |
 |---|---|---|
 | 2026-09-17 | 0 | 계획서 작성. 모노레포 스캐폴드 생성 (core·api·desktop, supabase 초기화, CI, App Store 설정 분리) |
@@ -208,3 +209,4 @@
 | 2026-09-17 | 1a | 점검 반영: 설계서 v1.3(테이블 권한·물리 DELETE 제한·활성 목표 잠금·`delete_my_account`·RPC 타입 주의, ADR-017). 5단계 지시서에 `split_routine` null 인자 주의 추가 |
 | 2026-09-17 | 1b | `@nodii/core` 날짜·반복 판정/미리보기·하루 목록/월 집계·수정 범위/검증·정렬 키·지난 할 일 가져오기 계획 구현. 테스트 먼저 작성, core 7파일 117검사 통과(문장/함수/라인 100%, 분기 98.37%, 기존 임계값 90% 유지). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 117 + api 4)·`pnpm --filter @nodii/core test:coverage` 및 `TZ=America/Vancouver pnpm --filter @nodii/core test` 통과. 순수 런타임 의존성 `fractional-indexing` 4.0.0 추가. Git에서 제외한 로컬 에이전트 스킬이 lint 대상에 들어가던 기존 설정을 동일 경로 제외로 보완. DB/API/desktop 변경 없음으로 DB 검증은 미실행. ADR-003·004·005 검증 요약은 위 core 항목 참조. 사람 확인: PR/CI 및 ADR 상태 확정 검토, UI 통합은 후속 단계. |
 | 2026-09-17 | 1b | TODO-10·ROUT-01 후속 수정: `todayItems`로 할 일·전개 루틴의 목표별 최대 정렬 키를 반영하고, 반복 종류에 맞지 않는 배열을 거부하도록 검증 강화. 테스트 먼저 추가하여 실패 확인 후 구현, core 127검사 통과(문장/함수/라인 100%, 분기 98.95%). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 127 + api 4)·`pnpm --filter @nodii/core test:coverage` 통과. 새 의존성 없음. DB 변경이 없어 DB 검증은 미실행. 문서의 null/빈 배열 설명 차이는 위 후속 보완에 기록. 사람 확인: PR/CI와 설계서 설명 정정 검토. |
+| 2026-09-17 | 디자인 | 디자인 기준 확정. `DESIGN.md`와 `docs/design/`(토큰·컴포넌트·화면 스펙) 추가, 화면 시안은 Claude 디자인 캔버스(메인 라이트·다크, 로그인, 목표 관리, 루틴 편집·관리·적용 범위, 설정, 업데이트 안내, 스타일 기초). UI 단계(2~5, 7) 지시서와 AGENTS.md에 읽을 문서로 연결. 남은 일: 드래그 중 모습, 첫 로그인 빈 상태, 정보 링크 실제 주소. |

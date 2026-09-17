@@ -9,6 +9,8 @@
 | `docs/02-system-design.md`       | 아키텍처, **DB 스키마 SQL(§4.3, §4.5)**, core 함수 명세(§5), 흐름(§6), 캐시 키(§8), 보안(§9), 테스트(§10) |
 | `docs/03-implementation-plan.md` | 단계별 작업 체크리스트, 설계 보완 사항 G1~G6(§5), 진행 기록(§6)                                           |
 | `docs/codex/`                    | 단계별 작업 지시서 (사람이 한 단계씩 넘겨줌)                                                              |
+| `DESIGN.md`                      | 비주얼 기준 (원칙, 색 역할, 목표 색 계산 규칙, 접근성 기준, 금지 사항)                                    |
+| `docs/design/`                   | 토큰(`tokens.md`), 컴포넌트 스펙(`components.md`), 화면 스펙(`screens.md`)                                |
 
 ---
 
@@ -138,7 +140,14 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - `any` 금지(불가피하면 `unknown` + 좁히기). 공개 함수에는 짧은 한국어 JSDoc으로 **왜**를 적고, 요구사항 ID를 달면 좋습니다(`// ROUT-04`).
 - DB 행(snake_case) ↔ core 타입(camelCase) 변환은 `packages/api`의 매퍼 한 곳에서만 합니다.
 - UI 컴포넌트는 `features/<기능>/` 아래에 두고, 공용 프리미티브만 `components/ui/`에 둡니다.
-- 접근성: 체크박스·버튼에 레이블, 키보드로 조작 가능, 다크 모드 대응(Tailwind `dark:`).
+- 접근성: 체크박스·버튼에 레이블, 키보드로 조작 가능, 다크 모드 대응, 보이는 포커스 링. 기준은 `DESIGN.md` §7.
+
+### 디자인
+
+- **UI 코드를 쓰기 전에 `DESIGN.md`와 `docs/design/`을 읽습니다.** 색·크기·모서리·모션 값은 `docs/design/tokens.md`의 토큰만 씁니다. 필요한 값이 없으면 새로 만들지 말고 보고하세요.
+- 목표 색이 들어가는 자리(이름표, 체크, 미리보기)는 `@nodii/core`의 `goalTint`·`goalInk`·`checkColor`를 거칩니다. 사용자가 HEX를 직접 넣어도 대비가 유지돼야 합니다(GOAL-03).
+- 되돌릴 수 있는 동작에는 5초 실행 취소 토스트를, 되돌릴 수 없는 동작에는 함께 사라지는 개수를 적은 확인 창을 붙입니다.
+- 화면 시안은 Claude 디자인 캔버스에 있지만 **기준은 `DESIGN.md`와 `docs/design/`**입니다. 둘이 다르면 문서를 따르고 차이를 보고하세요.
 - 테스트는 구현 옆에 `*.test.ts(x)`로. `core`는 **테스트 먼저** 작성하고 커버리지 90% 이상.
 
 ---
