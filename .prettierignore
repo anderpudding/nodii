@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+docs/
+supabase/
+**/src-tauri/
+**/dist/
+**/coverage/
+packages/api/src/database.types.ts

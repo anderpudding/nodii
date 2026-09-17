@@ -1,0 +1,26 @@
+# 의존성 · 빌드 결과
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# 환경 변수 (예시 파일만 커밋)
+.env
+.env.local
+.env.*.local
+
+# Tauri / Rust
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/schemas/
+
+# App Store 배포용 비밀 · 생성 파일
+apps/desktop/src-tauri/profiles/*.provisionprofile
+apps/desktop/src-tauri/Entitlements.appstore.plist
+dist-appstore/
+*.pkg
+*.p8
+*.p12
+
+# OS · 에디터
+.DS_Store
+.idea/
