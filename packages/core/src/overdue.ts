@@ -5,7 +5,8 @@ import type { Goal, ISODate, Todo } from './types';
 
 export interface OverdueMoveInput {
   overdue: readonly Todo[];
-  todayTodos: readonly Todo[];
+  /** 오늘 날짜로 전개한 할 일·루틴 목록의 공통 정렬 정보. */
+  todayItems: readonly { goalId: string; sortKey: string }[];
   goals: readonly Goal[];
   today: ISODate;
 }
@@ -18,7 +19,7 @@ export function overdueRange(today: ISODate): { from: ISODate; to: ISODate } {
 /** 원본을 변경하지 않고 목표별 맨 아래에 붙일 RPC 인자만 만든다 (TODO-10). */
 export function planOverdueMove({
   overdue,
-  todayTodos,
+  todayItems,
   goals,
   today,
 }: OverdueMoveInput): { id: string; sort_key: string }[] {
@@ -26,10 +27,7 @@ export function planOverdueMove({
   const lastKeys = new Map(
     goals
       .filter((goal) => goal.archivedAt === null)
-      .map((goal) => [
-        goal.id,
-        lastSortKey(todayTodos.filter((todo) => todo.goalId === goal.id && todo.date === today)),
-      ]),
+      .map((goal) => [goal.id, lastSortKey(todayItems.filter((item) => item.goalId === goal.id))]),
   );
   return overdue
     .filter(

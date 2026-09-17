@@ -84,6 +84,8 @@
 
 1b 검증: ADR-003은 가상 전개·완료/건너뛰기 로그·분할 전후·보관 당일 포함을, ADR-004는 바이트 정렬·100회 연속 사이 삽입·목표별 가져오기 키를, ADR-005는 UTC epoch day·윤년/세기 예외·Vancouver DST·시간대별 날짜를 단위 테스트로 검증했다. I1~I3를 적용했으며, 공개 API는 1b 지시서의 명시적 시각 주입·객체 인자·`startOfWeek` 이름을 따른다. ADR-003·004의 UI 통합 확인은 아래 검증 시점 표대로 5·7단계에 남는다. 설계서 ADR 상태 변경은 제안으로 남긴다.
 
+1b 후속 보완(TODO-10, ROUT-01): 사용자 지시에 따라 `planOverdueMove`의 `todayTodos`를 `todayItems: readonly { goalId: string; sortKey: string }[]`로 교체했다. 호출자는 오늘 날짜로 전개한 할 일과 루틴을 함께 전달하며, 가져오는 할 일은 목표별 전체 항목의 마지막 키 뒤에 붙는다. `validateRoutineRule`은 반복 종류에 맞지 않는 비어 있지 않은 배열을 `weekday_not_allowed`/`monthday_not_allowed`로 거부한다. null·빈 배열은 모두 허용한다. 설계서 §4.5의 "빈 배열이 아니라 null" 설명은 §4.3의 실제 cardinality check와 차이가 있어 정정을 제안한다(설계서 자체는 수정하지 않음).
+
 **완료 기준:** `supabase test db` 통과, core 커버리지 90% 이상. ADR-003·004·005 확정.
 
 ### 2단계 · 인증 + 앱 셸 (~1주)
@@ -205,3 +207,4 @@
 | 2026-09-17 | 1a | NFR-06 권한 보완: 사용자 요청에 따라 기존 init 마이그레이션에서 사용자 테이블 5개의 anon SELECT 권한을 제거하고 `app_config` 읽기는 유지. `has_table_privilege` 5개 검사와 실제 SELECT 권한 오류 검사 추가. `pnpm db:reset`·`pnpm db:test`(127검사)·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 타입 변경 없음, 보안 진단 경고 없음. |
 | 2026-09-17 | 1a | 점검 반영: 설계서 v1.3(테이블 권한·물리 DELETE 제한·활성 목표 잠금·`delete_my_account`·RPC 타입 주의, ADR-017). 5단계 지시서에 `split_routine` null 인자 주의 추가 |
 | 2026-09-17 | 1b | `@nodii/core` 날짜·반복 판정/미리보기·하루 목록/월 집계·수정 범위/검증·정렬 키·지난 할 일 가져오기 계획 구현. 테스트 먼저 작성, core 7파일 117검사 통과(문장/함수/라인 100%, 분기 98.37%, 기존 임계값 90% 유지). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 117 + api 4)·`pnpm --filter @nodii/core test:coverage` 및 `TZ=America/Vancouver pnpm --filter @nodii/core test` 통과. 순수 런타임 의존성 `fractional-indexing` 4.0.0 추가. Git에서 제외한 로컬 에이전트 스킬이 lint 대상에 들어가던 기존 설정을 동일 경로 제외로 보완. DB/API/desktop 변경 없음으로 DB 검증은 미실행. ADR-003·004·005 검증 요약은 위 core 항목 참조. 사람 확인: PR/CI 및 ADR 상태 확정 검토, UI 통합은 후속 단계. |
+| 2026-09-17 | 1b | TODO-10·ROUT-01 후속 수정: `todayItems`로 할 일·전개 루틴의 목표별 최대 정렬 키를 반영하고, 반복 종류에 맞지 않는 배열을 거부하도록 검증 강화. 테스트 먼저 추가하여 실패 확인 후 구현, core 127검사 통과(문장/함수/라인 100%, 분기 98.95%). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 127 + api 4)·`pnpm --filter @nodii/core test:coverage` 통과. 새 의존성 없음. DB 변경이 없어 DB 검증은 미실행. 문서의 null/빈 배열 설명 차이는 위 후속 보완에 기록. 사람 확인: PR/CI와 설계서 설명 정정 검토. |

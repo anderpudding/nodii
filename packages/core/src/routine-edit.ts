@@ -13,8 +13,10 @@ export type RoutineRuleValidation =
         | 'repeat_every_invalid'
         | 'weekday_required'
         | 'weekday_invalid'
+        | 'weekday_not_allowed'
         | 'monthday_required'
         | 'monthday_invalid'
+        | 'monthday_not_allowed'
         | 'start_date_invalid'
         | 'end_date_invalid'
         | 'end_before_start';
@@ -52,6 +54,12 @@ export function validateRoutineRule(input: RoutineRule): RoutineRuleValidation {
     if (!isISODate(input.endDate)) return { ok: false, reason: 'end_date_invalid' };
     if (input.endDate < input.startDate) return { ok: false, reason: 'end_before_start' };
   }
+  // 설계서 §4.5의 split_routine에도 적용되는 §4.3 DB check와 같은 규칙이다.
+  // 반복 종류에 맞는 배열만 값을 가지며, 나머지는 null 또는 빈 배열이어야 한다.
+  if (input.freq !== 'weekly' && input.byWeekday?.length)
+    return { ok: false, reason: 'weekday_not_allowed' };
+  if (input.freq !== 'monthly' && input.byMonthday?.length)
+    return { ok: false, reason: 'monthday_not_allowed' };
   if (input.freq === 'weekly') {
     if (!input.byWeekday?.length) return { ok: false, reason: 'weekday_required' };
     if (input.byWeekday.some((day) => !Number.isInteger(day) || day < 0 || day > 6))
