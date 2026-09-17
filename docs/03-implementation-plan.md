@@ -76,11 +76,13 @@
 1a 구현 보완(설계서 §4.3·§4.5 반영 제안): `set_updated_at`의 `search_path`를 고정하고 테이블 권한을 명시했다. 로컬 기본 권한의 `TRUNCATE`가 RLS를 우회하므로 회수했으며, 물리 DELETE는 `routine_logs`에만 허용한다(계정 삭제의 FK cascade는 유지). `app_config`는 읽기만 허용한다. 두 연결이 서로 다른 마지막 목표를 동시에 보관하면 활성 목표가 0개가 되는 설계 SQL의 경쟁 조건을 재현하여 `ensure_active_goal`에 사용자별 트랜잭션 잠금을 추가했다. 수정 후 한 요청이 거부되고 활성 목표 1개가 남는 것을 독립 연결 두 개로 확인했다. 테이블·컬럼 및 RPC 시그니처는 설계대로 유지한다. → **설계서 v1.3에 반영함** (§4.2, §4.3, §4.5, §9, §10, ADR-017).
 
 **core (테스트 먼저)**
-- [ ] 날짜 유틸: `todayISO(tz)`, `addDays`, `daysBetween`, `weekStartOf`, 월 그리드(42칸) 범위
-- [ ] `occursOn` — 설계서 §5.3 엣지 케이스 전부
-- [ ] `expandRoutines`, `buildDay`, `summarizeMonth`
-- [ ] `ruleChanged`, `needsScopePrompt`, `planOverdueMove`
-- [ ] 정렬 키 헬퍼 (`fractional-indexing` 래핑: 맨 아래, 두 항목 사이)
+- [x] 날짜 유틸: `todayISO(tz, now)`, `addDays`, `daysBetween`, `startOfWeek`, 월 그리드(42칸) 범위·중첩 월 키 (1b 공개 API 명세)
+- [x] `occursOn` — 설계서 §5.3 엣지 케이스 전부, `nextOccurrences` (검색 상한 1,098일)
+- [x] `expandRoutines`, `buildDay`, `summarizeMonth`
+- [x] `ruleChanged`, `needsScopePrompt`, `validateRoutineRule`, `planOverdueMove`
+- [x] 정렬 키 헬퍼 (`fractional-indexing` 래핑: 맨 아래, 두 항목 사이), 제목·HEX 색상 검증
+
+1b 검증: ADR-003은 가상 전개·완료/건너뛰기 로그·분할 전후·보관 당일 포함을, ADR-004는 바이트 정렬·100회 연속 사이 삽입·목표별 가져오기 키를, ADR-005는 UTC epoch day·윤년/세기 예외·Vancouver DST·시간대별 날짜를 단위 테스트로 검증했다. I1~I3를 적용했으며, 공개 API는 1b 지시서의 명시적 시각 주입·객체 인자·`startOfWeek` 이름을 따른다. ADR-003·004의 UI 통합 확인은 아래 검증 시점 표대로 5·7단계에 남는다. 설계서 ADR 상태 변경은 제안으로 남긴다.
 
 **완료 기준:** `supabase test db` 통과, core 커버리지 90% 이상. ADR-003·004·005 확정.
 
@@ -202,3 +204,4 @@
 | 2026-09-17 | 1a | DB 마이그레이션 3개, OTP 개발 seed, pgTAP 7파일·122검사, DB 타입 생성, CI db 잡 활성화(Supabase CLI 2.117.0). `pnpm db:reset`·`pnpm db:test`·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 보안 진단 경고 없음, 독립 연결 2개의 동시 목표 보관 방어 확인. 설계 SQL 보완 내용은 위 1단계 DB 항목에 기록. 사람 확인: Studio 테이블/RLS, 로컬 OTP 수신, 푸시 후 GitHub db 잡. |
 | 2026-09-17 | 1a | NFR-06 권한 보완: 사용자 요청에 따라 기존 init 마이그레이션에서 사용자 테이블 5개의 anon SELECT 권한을 제거하고 `app_config` 읽기는 유지. `has_table_privilege` 5개 검사와 실제 SELECT 권한 오류 검사 추가. `pnpm db:reset`·`pnpm db:test`(127검사)·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 타입 변경 없음, 보안 진단 경고 없음. |
 | 2026-09-17 | 1a | 점검 반영: 설계서 v1.3(테이블 권한·물리 DELETE 제한·활성 목표 잠금·`delete_my_account`·RPC 타입 주의, ADR-017). 5단계 지시서에 `split_routine` null 인자 주의 추가 |
+| 2026-09-17 | 1b | `@nodii/core` 날짜·반복 판정/미리보기·하루 목록/월 집계·수정 범위/검증·정렬 키·지난 할 일 가져오기 계획 구현. 테스트 먼저 작성, core 7파일 117검사 통과(문장/함수/라인 100%, 분기 98.37%, 기존 임계값 90% 유지). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 117 + api 4)·`pnpm --filter @nodii/core test:coverage` 및 `TZ=America/Vancouver pnpm --filter @nodii/core test` 통과. 순수 런타임 의존성 `fractional-indexing` 4.0.0 추가. Git에서 제외한 로컬 에이전트 스킬이 lint 대상에 들어가던 기존 설정을 동일 경로 제외로 보완. DB/API/desktop 변경 없음으로 DB 검증은 미실행. ADR-003·004·005 검증 요약은 위 core 항목 참조. 사람 확인: PR/CI 및 ADR 상태 확정 검토, UI 통합은 후속 단계. |
