@@ -6,6 +6,13 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig([
   globalIgnores([
+    // .gitignore와 동일하게 로컬 설치 에이전트 도구는 제품 코드 검사에서 제외한다.
+    '.agents/',
+    '.claude/',
+    '.codex/',
+    '.github/agents/',
+    '.github/hooks/',
+    '.github/skills/',
     '**/node_modules',
     '**/dist',
     '**/coverage',
