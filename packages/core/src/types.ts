@@ -49,3 +49,14 @@ export interface RoutineLog {
 export type DayItem =
   | { kind: 'todo'; goalId: string; sortKey: string; todo: Todo }
   | { kind: 'routine'; goalId: string; sortKey: string; routine: Routine; log: RoutineLog | null };
+
+export interface DayGoalGroup {
+  goal: Goal;
+  items: DayItem[];
+  canAdd: boolean;
+}
+
+export interface DaySummary {
+  total: number;
+  remaining: number;
+}
