@@ -122,6 +122,7 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - 앱에는 **publishable(anon) 키만** 넣습니다. `service_role` 키는 어디에도 두지 마세요.
 - 모든 테이블 RLS 필수. 새 테이블/RPC를 만들면 RLS 정책(또는 `security invoker`)과 pgTAP 허용 1개 + 거부 1개 테스트를 같이 추가합니다. RPC는 `anon` 실행 권한을 회수합니다.
 - `security definer` 함수는 `set search_path = ''`와 스키마를 명시한 이름(`public.goals`)만 사용하고, 꼭 필요한 곳(가입 트리거, 계정 삭제)에만 씁니다.
+- 테이블 권한은 Supabase 기본 GRANT에 기대지 말고 **명시**합니다(`init` 마이그레이션 참고): `anon`에는 주지 않고, TRUNCATE는 누구에게도 주지 않고, 물리 DELETE는 꼭 필요한 테이블(현재 `routine_logs`)에만. 목표·할 일·루틴의 삭제는 `deleted_at` UPDATE입니다 (설계서 §4.2, ADR-017).
 - 스키마 변경은 **마이그레이션 파일로만** (`supabase migration new <name>`). 이미 커밋된 마이그레이션은 수정하지 말고 새 파일을 추가합니다.
 - Tauri: 새 플러그인·capability·Rust 명령을 추가하지 않는 것이 기본입니다. 추가가 필요하면 이유를 보고하세요. **`plugin-updater`, `shell` 플러그인 금지.** 외부 링크는 `plugin-opener`.
 - 새 외부 호스트에 연결하면 `tauri.conf.json`의 CSP `connect-src`를 갱신해야 합니다. 폰트·스크립트를 CDN에서 불러오지 마세요(번들에 포함).

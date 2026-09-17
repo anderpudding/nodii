@@ -73,7 +73,7 @@
 - [x] pgTAP: 정책별 허용 1개 + 거부 1개, 마지막 활성 목표 보관 거부, `split_routine` 3케이스, `move_todos` 남의 할 일 무시, 가입 시 기본 목표 생성
 - [x] `supabase gen types typescript --local > packages/api/src/database.types.ts`
 
-1a 구현 보완(설계서 §4.3·§4.5 반영 제안): `set_updated_at`의 `search_path`를 고정하고 테이블 권한을 명시했다. 로컬 기본 권한의 `TRUNCATE`가 RLS를 우회하므로 회수했으며, 물리 DELETE는 `routine_logs`에만 허용한다(계정 삭제의 FK cascade는 유지). `app_config`는 읽기만 허용한다. 두 연결이 서로 다른 마지막 목표를 동시에 보관하면 활성 목표가 0개가 되는 설계 SQL의 경쟁 조건을 재현하여 `ensure_active_goal`에 사용자별 트랜잭션 잠금을 추가했다. 수정 후 한 요청이 거부되고 활성 목표 1개가 남는 것을 독립 연결 두 개로 확인했다. 테이블·컬럼 및 RPC 시그니처는 설계대로 유지한다.
+1a 구현 보완(설계서 §4.3·§4.5 반영 제안): `set_updated_at`의 `search_path`를 고정하고 테이블 권한을 명시했다. 로컬 기본 권한의 `TRUNCATE`가 RLS를 우회하므로 회수했으며, 물리 DELETE는 `routine_logs`에만 허용한다(계정 삭제의 FK cascade는 유지). `app_config`는 읽기만 허용한다. 두 연결이 서로 다른 마지막 목표를 동시에 보관하면 활성 목표가 0개가 되는 설계 SQL의 경쟁 조건을 재현하여 `ensure_active_goal`에 사용자별 트랜잭션 잠금을 추가했다. 수정 후 한 요청이 거부되고 활성 목표 1개가 남는 것을 독립 연결 두 개로 확인했다. 테이블·컬럼 및 RPC 시그니처는 설계대로 유지한다. → **설계서 v1.3에 반영함** (§4.2, §4.3, §4.5, §9, §10, ADR-017).
 
 **core (테스트 먼저)**
 - [ ] 날짜 유틸: `todayISO(tz)`, `addDays`, `daysBetween`, `weekStartOf`, 월 그리드(42칸) 범위
@@ -201,3 +201,4 @@
 | 2026-09-17 | 0 | **0단계 완료.** Resend SMTP를 Supabase `nodii`에 연결(발신 `no-reply@mail.nodii.app`), 메일 템플릿 `{{ .Token }}`·OTP 6자리/600초 설정, GitHub Actions CI 통과 확인. 인증 메일 실제 수신은 2단계에서 확인 |
 | 2026-09-17 | 1a | DB 마이그레이션 3개, OTP 개발 seed, pgTAP 7파일·122검사, DB 타입 생성, CI db 잡 활성화(Supabase CLI 2.117.0). `pnpm db:reset`·`pnpm db:test`·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 보안 진단 경고 없음, 독립 연결 2개의 동시 목표 보관 방어 확인. 설계 SQL 보완 내용은 위 1단계 DB 항목에 기록. 사람 확인: Studio 테이블/RLS, 로컬 OTP 수신, 푸시 후 GitHub db 잡. |
 | 2026-09-17 | 1a | NFR-06 권한 보완: 사용자 요청에 따라 기존 init 마이그레이션에서 사용자 테이블 5개의 anon SELECT 권한을 제거하고 `app_config` 읽기는 유지. `has_table_privilege` 5개 검사와 실제 SELECT 권한 오류 검사 추가. `pnpm db:reset`·`pnpm db:test`(127검사)·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 타입 변경 없음, 보안 진단 경고 없음. |
+| 2026-09-17 | 1a | 점검 반영: 설계서 v1.3(테이블 권한·물리 DELETE 제한·활성 목표 잠금·`delete_my_account`·RPC 타입 주의, ADR-017). 5단계 지시서에 `split_routine` null 인자 주의 추가 |
