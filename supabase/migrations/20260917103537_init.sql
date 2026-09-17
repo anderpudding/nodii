@@ -140,9 +140,6 @@ grant select, insert, update on table
   public.profiles, public.goals, public.todos, public.routines, public.routine_logs
   to authenticated;
 grant delete on table public.routine_logs to authenticated;
-grant select on table
-  public.profiles, public.goals, public.todos, public.routines, public.routine_logs
-  to anon;
 
 -- ============ Realtime ============
 alter publication supabase_realtime add table public.goals, public.todos, public.routines, public.routine_logs;

@@ -200,3 +200,4 @@
 | 2026-09-17 | 0 | 도메인 `nodii.app` 구매, Resend 발신 도메인 `mail.nodii.app` Verified. 요구사항 v1.1(Q9 실제 값)·설계서 v1.2 반영. 남은 0단계: SMTP 연결(C3~C5), CI 확인 |
 | 2026-09-17 | 0 | **0단계 완료.** Resend SMTP를 Supabase `nodii`에 연결(발신 `no-reply@mail.nodii.app`), 메일 템플릿 `{{ .Token }}`·OTP 6자리/600초 설정, GitHub Actions CI 통과 확인. 인증 메일 실제 수신은 2단계에서 확인 |
 | 2026-09-17 | 1a | DB 마이그레이션 3개, OTP 개발 seed, pgTAP 7파일·122검사, DB 타입 생성, CI db 잡 활성화(Supabase CLI 2.117.0). `pnpm db:reset`·`pnpm db:test`·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 보안 진단 경고 없음, 독립 연결 2개의 동시 목표 보관 방어 확인. 설계 SQL 보완 내용은 위 1단계 DB 항목에 기록. 사람 확인: Studio 테이블/RLS, 로컬 OTP 수신, 푸시 후 GitHub db 잡. |
+| 2026-09-17 | 1a | NFR-06 권한 보완: 사용자 요청에 따라 기존 init 마이그레이션에서 사용자 테이블 5개의 anon SELECT 권한을 제거하고 `app_config` 읽기는 유지. `has_table_privilege` 5개 검사와 실제 SELECT 권한 오류 검사 추가. `pnpm db:reset`·`pnpm db:test`(127검사)·`pnpm db:types` 및 lint·format:check·typecheck·test(18검사) 통과. 타입 변경 없음, 보안 진단 경고 없음. |

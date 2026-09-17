@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(44);
+select plan(49);
 
 -- 각 파일은 독립 트랜잭션에서 실행되며 seed 데이터에 의존하지 않는다.
 insert into auth.users (id, email) values
@@ -158,15 +158,20 @@ select results_eq(
   $q$select value from public.app_config where key = 'min_macos_app_version'$q$,
   $e$values ('0.1.0'::text)$e$, '비로그인 사용자 최소 버전 읽기');
 
-select is_empty($q$select 1 from public.profiles$q$, 'profiles 비로그인 데이터 조회 차단');
+select ok(not has_table_privilege('anon', 'public.profiles', 'SELECT'), 'anon은 profiles SELECT 권한이 없다');
+select throws_ok($q$select 1 from public.profiles$q$, '42501', 'permission denied for table profiles', 'profiles 비로그인 데이터 조회 차단');
 
-select is_empty($q$select 1 from public.goals$q$, 'goals 비로그인 데이터 조회 차단');
+select ok(not has_table_privilege('anon', 'public.goals', 'SELECT'), 'anon은 goals SELECT 권한이 없다');
+select throws_ok($q$select 1 from public.goals$q$, '42501', 'permission denied for table goals', 'goals 비로그인 데이터 조회 차단');
 
-select is_empty($q$select 1 from public.todos$q$, 'todos 비로그인 데이터 조회 차단');
+select ok(not has_table_privilege('anon', 'public.todos', 'SELECT'), 'anon은 todos SELECT 권한이 없다');
+select throws_ok($q$select 1 from public.todos$q$, '42501', 'permission denied for table todos', 'todos 비로그인 데이터 조회 차단');
 
-select is_empty($q$select 1 from public.routines$q$, 'routines 비로그인 데이터 조회 차단');
+select ok(not has_table_privilege('anon', 'public.routines', 'SELECT'), 'anon은 routines SELECT 권한이 없다');
+select throws_ok($q$select 1 from public.routines$q$, '42501', 'permission denied for table routines', 'routines 비로그인 데이터 조회 차단');
 
-select is_empty($q$select 1 from public.routine_logs$q$, 'routine_logs 비로그인 데이터 조회 차단');
+select ok(not has_table_privilege('anon', 'public.routine_logs', 'SELECT'), 'anon은 routine_logs SELECT 권한이 없다');
+select throws_ok($q$select 1 from public.routine_logs$q$, '42501', 'permission denied for table routine_logs', 'routine_logs 비로그인 데이터 조회 차단');
 
 -- TRUNCATE는 RLS를 거치지 않으므로 테이블 권한 자체가 없어야 한다.
 select ok(not exists (
