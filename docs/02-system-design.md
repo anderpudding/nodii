@@ -1,9 +1,11 @@
 # Nodii 시스템 설계서 (MVP)
 
-> 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.0 · 상태: **확정 (기준선)**
+> 버전 1.2 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1 · 상태: **확정 (기준선)**
 > 확정된 결정: **macOS 전용** · **Tauri v2 + React + TypeScript** · **Supabase(로그인 + 클라우드 DB)** · MVP 기능 = 목표·할 일 / 월간 캘린더 / 루틴 · **이메일 OTP 로그인** · **Mac App Store 출시**
 > v0.2 변경: 루틴 규칙 수정 시 범위 선택과 분할(§6.4), 지난 미완료 할 일 가져오기(§6.6), OTP 확정(§6.5), RPC 함수 2개(§4.5)
 > v0.3 변경: Mac App Store 배포 파이프라인과 샌드박스(§11), 자체 업데이트 제거, 심사용 데모 계정(§6.5), 최소 지원 버전 확인(§6.7, `app_config` 테이블)
+> v1.2 변경: 도메인 `nodii.app`, 인증 메일 Resend + 발신 `no-reply@mail.nodii.app` 확정(§2, §6.5), 심사 계정 주소(§6.5)
+> v1.1 변경: 클라우드 Supabase 프로젝트를 `nodii` 1개로 운영(dev·prod 겸용), 배포 빌드용 `.env.production.local`(§11)
 > v1.0 변경: 번들 ID `com.sungjunlee.Nodii` 확정, App Store Connect 앱 등록 완료, 카테고리 생산성·무료 확정(§11)
 
 ---
@@ -35,7 +37,7 @@ flowchart LR
     PG --> RT
   end
 
-  SMTP["커스텀 SMTP<br/>(예: Resend)"]
+  SMTP["커스텀 SMTP<br/>Resend · mail.nodii.app"]
   Auth -- "인증 코드 메일" --> SMTP
   Store["Mac App Store<br/>설치 · 자동 업데이트 · TestFlight"]
   Store -. "배포" .-> Mac
@@ -71,7 +73,7 @@ flowchart LR
 | 정렬 키 | `fractional-indexing` | 순서를 바꿀 때 행 1개만 수정 (§4.4) |
 | 백엔드 | Supabase (Postgres, Auth, Realtime) | 서버 코드 없이 로그인, DB, 실시간 반영 |
 | 세션 저장 | `@tauri-apps/plugin-store` | supabase-js 저장소 어댑터로 사용 |
-| 인증 메일 | 커스텀 SMTP (예: Resend) | Supabase 기본 메일 서버는 테스트용이라 발송량 제한이 낮음 |
+| 인증 메일 | 커스텀 SMTP: **Resend** (`smtp.resend.com:465`, 발신 `no-reply@mail.nodii.app`) | Supabase 기본 메일 서버는 테스트용이라 발송량 제한이 낮음 |
 | 배포와 업데이트 | Mac App Store + TestFlight | Q7 확정. 스토어 앱은 자체 업데이트 기능을 쓸 수 없으므로 `plugin-updater`는 넣지 않음 |
 | 테스트 | Vitest, Testing Library, pgTAP(RLS) | 단위, 컴포넌트, DB 정책 |
 | 모노레포 | pnpm workspaces | 모바일 앱과 코드 공유 (Turborepo는 필요해지면 도입) |
@@ -575,14 +577,14 @@ flowchart TD
 
 **Supabase 설정 체크리스트**
 - 이메일 템플릿 **Magic Link**(기존 사용자)와 **Confirm signup**(새 사용자) 두 곳 모두에 링크 대신 **`{{ .Token }}`**(6자리 코드)을 넣습니다. 링크만 있으면 사용자가 코드를 받지 못합니다.
-- Auth → SMTP에 커스텀 SMTP를 연결하고, 발신 도메인에 SPF와 DKIM을 설정합니다 (NFR-15, Q9).
+- Auth → SMTP에 커스텀 SMTP를 연결하고, 발신 도메인에 SPF와 DKIM을 설정합니다 (NFR-15, Q9). → 발신 도메인 `mail.nodii.app` Resend 인증 완료, 발신 주소 `no-reply@mail.nodii.app`, 발신자 이름 `Nodii`
 - 재전송 간격 60초(AUTH-07)는 서버 설정과 맞추고, 클라이언트에서도 카운트다운 버튼으로 표시합니다.
 
 **App Store 심사용 데모 계정 (AUTH-08)**
 
 심사자는 인증 메일을 받을 수 없어서 별도 경로가 필요합니다. Supabase는 이메일 OTP용 "고정 테스트 코드"를 공식 지원하지 않고, `auth.users`의 토큰 값을 트리거로 덮어쓰는 커뮤니티 우회법은 Supabase 업데이트 후 깨졌다는 보고가 있어서 쓰지 않습니다.
 
-1. Supabase 대시보드에서 심사 전용 사용자(예: `appreview@nodii.app`)를 **강한 난수 비밀번호**로 만들고, 예시 목표·할 일·루틴을 넣어 둡니다.
+1. Supabase 대시보드에서 심사 전용 사용자 `appreview@nodii.app`를 **강한 난수 비밀번호**로 만들고, 예시 목표·할 일·루틴을 넣어 둡니다.
 2. 앱은 빌드 시 상수 `REVIEW_ACCOUNT_EMAIL`을 가집니다. 입력한 이메일이 이 값과 정확히 같을 때만 비밀번호 입력란을 보여주고 `auth.signInWithPassword`를 호출합니다. 그 외에는 항상 OTP 흐름입니다.
 3. 이메일과 비밀번호는 App Store Connect의 **심사 노트(Sign-in information)**에만 적고, 저장소에는 비밀번호를 커밋하지 않습니다.
 4. 제출할 때마다 로그인이 되는지 확인하고, 심사가 끝나면 필요할 때 비밀번호를 교체합니다.
@@ -695,12 +697,14 @@ App Store는 사용자가 업데이트를 미룰 수 있어서, DB 스키마를 
 
 | 항목 | 내용 |
 |---|---|
-| 환경 | `local`(Supabase CLI + Docker) → `dev`(Supabase 무료 프로젝트) → `prod`(Supabase 무료 프로젝트). 무료 플랜은 활성 프로젝트 2개까지 |
+| 환경 | 개발·테스트는 `local`(Supabase CLI + Docker). 클라우드는 **`nodii` 프로젝트 1개**(us-west-1, ref `hwipekipumrnpriytqbe`)를 배포 스파이크·TestFlight·출시에 함께 씀. 무료 플랜 활성 프로젝트 2개 중 1개를 기존 개인 프로젝트가 쓰고 있어서 dev/prod를 나누지 않음 (v1.1) |
+| 환경 변수 | `pnpm dev`는 `apps/desktop/.env.local`(로컬 Supabase), `vite build`·`pnpm build:appstore`는 `.env.production.local`(클라우드 `nodii`). 둘 다 커밋하지 않음 |
+| 단일 클라우드 프로젝트 주의점 | 스파이크·베타 테스트 계정과 데이터가 출시 DB에 남으므로 **출시 전에 테스트 계정을 정리**. 마이그레이션은 반드시 로컬에서 `supabase db reset` + `supabase test db`를 통과한 뒤 적용 |
 | 마이그레이션 | `supabase/migrations/*.sql`로 관리. `supabase db push`로 적용하고, 대시보드에서 직접 스키마를 수정하지 않음 |
 | 배포 채널 (Q7 확정) | **Mac App Store**. 베타는 TestFlight. 직접 배포(DMG)와 `plugin-updater`는 사용하지 않음 |
-| 웹 페이지 | 개인정보처리방침, 이용약관, 지원 페이지를 정적 사이트로 게시 (예: GitHub Pages + 자체 도메인, Q9). App Store Connect에 입력하는 필수 URL |
+| 웹 페이지 | 개인정보처리방침, 이용약관, 지원 페이지를 정적 사이트로 게시 (GitHub Pages + `nodii.app`, Q9). App Store Connect에 입력하는 필수 URL |
 | Supabase 요금 | 무료 플랜으로 시작. MAU와 DB 용량을 대시보드에서 매월 확인하고, 한도의 80%에 닿으면 Pro 전환 검토 (NFR-11) |
-| 무료 플랜 일시정지 | prod는 실사용자가 있으면 해당 없음. dev 프로젝트는 1주 이상 쉬면 대시보드에서 다시 켜기 |
+| 무료 플랜 일시정지 | 출시 전에는 활동이 적으면 7일 뒤 일시정지될 수 있음 → 대시보드에서 다시 켜기 (`pnpm check-env`가 연결 실패로 알려줌). 출시 후 실사용자가 생기면 해당 없음 |
 | 릴리스 순서 | 마이그레이션(하위 호환) 적용 → `v*` 태그 푸시 → CI가 App Store Connect에 업로드 → TestFlight로 다른 맥에서 확인 → 심사 제출 → 승인 후 출시 → 필요하면 최소 지원 버전 올리기 (§6.7) |
 
 ### 11.1 Apple 쪽 준비물
@@ -804,7 +808,7 @@ Secrets: `APPLE_DISTRIBUTION_CERT_P12`, `APPLE_INSTALLER_CERT_P12`, `APPLE_CERT_
 | ADR-003 | 루틴은 가상 전개 + `routine_logs` | 제안 |
 | ADR-004 | 정렬은 fractional indexing | 제안 |
 | ADR-005 | 할 일 날짜는 `date` 타입 (로컬 달력 날짜) | 제안 |
-| ADR-006 | pnpm 모노레포, `core`·`api` 패키지를 모바일과 공유 | 제안 |
+| ADR-006 | pnpm 모노레포, `core`·`api` 패키지를 모바일과 공유 | **확정** (0단계 스캐폴드·배포 스파이크) |
 | ADR-007 | 로그인은 이메일 OTP, 커스텀 SMTP 사용 | **확정** (Q1) |
 | ADR-008 | 매월 N일 루틴은 그 날짜가 없는 달에 말일로 표시 | **확정** (Q2) |
 | ADR-009 | 루틴 규칙 수정 시 적용 범위를 사용자가 선택: 같은 행 UPDATE / `split_routine` 분할 | **확정** (Q3) |

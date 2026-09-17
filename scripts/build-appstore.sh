@@ -65,6 +65,17 @@ APP="$TAURI_DIR/target/universal-apple-darwin/release/bundle/macos/Nodii.app"
 mkdir -p "$OUT_DIR"
 PKG="$OUT_DIR/Nodii-$BUNDLE_VERSION.pkg"
 
+echo "▶ 파일 권한 정리"
+# .pkg는 root 권한으로 설치되므로, 앱 안 파일이 소유자만 읽을 수 있으면(600/700)
+# 일반 사용자가 서명을 검증하지 못한다 → Transporter ITMS-90255. 모두 읽기 가능하게 맞춘다.
+# (권한 비트는 코드 서명 대상이 아니라서 서명 후에 바꿔도 서명은 유효하다)
+chmod -R u+rwX,go+rX "$APP"
+if [[ -n "$(find "$APP" ! -perm -o+r -print -quit)" ]]; then
+  echo "다른 사용자가 읽을 수 없는 파일이 남아 있습니다:" >&2
+  find "$APP" ! -perm -o+r >&2
+  exit 1
+fi
+
 echo "▶ 서명 확인"
 codesign --verify --deep --strict --verbose=2 "$APP"
 codesign -d --entitlements - "$APP" | grep -q "com.apple.security.app-sandbox" \

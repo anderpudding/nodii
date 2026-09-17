@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
-> 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.0, `02-system-design.md` v1.0
-> 상태: **진행 중.** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
+> 상태: **진행 중 — 0단계 완료 (2026-09-17), 다음은 1단계.** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -42,25 +42,27 @@
 - [x] 공통 tsconfig, ESLint, Prettier, Vitest
 - [x] `supabase/` 초기화 (`config.toml`: OTP 6자리, 재전송 60초)
 - [x] GitHub Actions CI: lint · typecheck · test (빌드·배포는 8단계)
+- [x] 환경 점검 스크립트: `pnpm check-env` (배포 준비물까지 `pnpm check-env --release`)
 - [x] App Store용 설정 분리: `tauri.appstore.conf.json`, `Entitlements.plist`, `Info.plist`, `scripts/build-appstore.sh`
 
 **로컬 환경 (내 맥에서)**
-- [ ] Node 22, pnpm 10, Rust stable, Xcode Command Line Tools
-- [ ] `rustup target add aarch64-apple-darwin x86_64-apple-darwin`
-- [ ] Docker Desktop + Supabase CLI (`brew install supabase/tap/supabase`)
-- [ ] `pnpm install` → `pnpm dev` 로 창이 뜨는지 확인
+- [x] Node 22, pnpm 10, Rust stable, Xcode Command Line Tools
+- [x] `rustup target add aarch64-apple-darwin x86_64-apple-darwin`
+- [x] Docker Desktop + Supabase CLI (`brew install supabase/tap/supabase`)
+- [x] `pnpm install` → `pnpm dev` 로 창이 뜨는지 확인
 
 **배포 스파이크 (손으로 한 번)**
-- [ ] Apple Developer: App ID `com.sungjunlee.Nodii`, Apple Distribution / Mac Installer Distribution 인증서, Mac App Store Connect 프로비저닝 프로파일
-- [ ] 프로파일을 `apps/desktop/src-tauri/profiles/Nodii_MAS.provisionprofile`에 둔다 (git에는 올리지 않음)
-- [ ] Supabase dev 프로젝트 생성, `apps/desktop/.env.local`에 URL과 publishable 키
-- [ ] `scripts/build-appstore.sh` 로 Universal `.app` → `.pkg` 생성 → Transporter 앱으로 업로드
-- [ ] TestFlight로 설치해서 스파이크 화면의 두 항목(네트워크, 저장소)이 모두 성공인지 확인
+- [x] Apple Developer: App ID `com.sungjunlee.Nodii`, Apple Distribution / Mac Installer Distribution 인증서, Mac App Store Connect 프로비저닝 프로파일
+- [x] 프로파일을 `apps/desktop/src-tauri/profiles/Nodii_MAS.provisionprofile`에 둔다 (git에는 올리지 않음)
+- [x] Supabase 클라우드 프로젝트 `nodii` 생성 (us-west-1), `apps/desktop/.env.production.local`에 URL과 publishable 키
+- [x] `scripts/build-appstore.sh` 로 Universal `.app` → `.pkg` 생성 → Transporter 앱으로 업로드
+- [x] TestFlight로 설치해서 스파이크 화면의 두 항목(네트워크, 저장소)이 모두 성공인지 확인
 
 **외부 준비 (기다리는 동안 다른 작업)**
-- [ ] 도메인 구매 (Q9), Resend 가입, DNS에 SPF·DKIM 등록
+- [x] 도메인 `nodii.app` 구매 (Q9), Resend 가입, 발신 도메인 `mail.nodii.app` SPF·DKIM Verified
+- [x] Resend API 키 → Supabase `nodii`에 SMTP 연결 (발신 `no-reply@mail.nodii.app`), 메일 템플릿·OTP 설정 (가이드 C3~C5)
 
-**완료 기준:** TestFlight 설치본에서 창이 뜨고, Supabase 헬스 체크와 plugin-store 쓰기/읽기가 샌드박스 안에서 성공한다.
+**완료 기준:** TestFlight 설치본에서 창이 뜨고, Supabase 헬스 체크와 plugin-store 쓰기/읽기가 샌드박스 안에서 성공한다. → ✅ **통과 (2026-09-17)**. ADR-006(pnpm 모노레포) 확정.
 
 ### 1단계 · DB + `@nodii/core` (~1.5주, 병행 가능)
 
@@ -140,7 +142,7 @@
 ### 8단계 · 출시 준비 + 심사 (~1~2주 + 심사)
 
 - [ ] CI 배포 파이프라인 (설계서 §11.3), GitHub Secrets 등록
-- [ ] prod Supabase 프로젝트, 마이그레이션 적용, 커스텀 SMTP 연결, 이메일 템플릿에 `{{ .Token }}`
+- [ ] 클라우드 `nodii` 프로젝트: 마이그레이션 적용, 커스텀 SMTP 연결, 이메일 템플릿에 `{{ .Token }}`, 스파이크·베타 테스트 계정 정리
 - [ ] 개인정보처리방침 · 이용약관 · 지원 페이지 게시
 - [ ] 심사용 데모 계정 + 예시 데이터
 - [ ] App Store Connect: 스크린샷, 개인정보 라벨, 심사 노트
@@ -155,10 +157,10 @@
 | 항목 | 규칙 |
 |---|---|
 | 브랜치 | `main`은 항상 동작하는 상태. 기능마다 `feat/<단계>-<이름>` 브랜치 → PR → CI 통과 후 병합 |
-| 커밋 | 요구사항 ID를 붙인다. 예: `feat(day-list): 할 일 날짜 옮기기 (TODO-05)` |
-| 스키마 | 마이그레이션 파일로만 변경. local → dev → prod 순서로 적용. 대시보드에서 직접 수정하지 않음 |
+| 커밋 | **메시지는 항상 영어**(Conventional Commits), 요구사항 ID를 붙인다. 예: `feat(day-list): move todo to another date (TODO-05)` |
+| 스키마 | 마이그레이션 파일로만 변경. local에서 검증 → 클라우드 `nodii`에 적용. 대시보드에서 직접 수정하지 않음 |
 | 테스트 | core는 테스트 먼저, DB 규칙은 pgTAP, 화면은 주요 인터랙션만 컴포넌트 테스트 |
-| 비밀 값 | `.env.local`, 프로비저닝 프로파일, 인증서, 심사 계정 비밀번호는 커밋하지 않음 |
+| 비밀 값 | `.env.local`, `.env.production.local`, 프로비저닝 프로파일, 인증서, 심사 계정 비밀번호는 커밋하지 않음 |
 | 문서 | 설계가 바뀌면 `02-system-design.md` 버전을 올리고 ADR 표에 기록 |
 
 ### ADR 검증 시점
@@ -191,3 +193,7 @@
 | 날짜 | 단계 | 내용 |
 |---|---|---|
 | 2026-09-17 | 0 | 계획서 작성. 모노레포 스캐폴드 생성 (core·api·desktop, supabase 초기화, CI, App Store 설정 분리) |
+| 2026-09-17 | 0 | Supabase 클라우드 프로젝트 `nodii` 1개로 결정·생성 (무료 플랜 슬롯 제약, 설계서 v1.1). `.env.production.local` 작성. 환경 점검 스크립트 `pnpm check-env` 추가 |
+| 2026-09-17 | 0 | **배포 스파이크 통과.** Universal 빌드 → `.pkg` 서명 → Transporter 업로드 → TestFlight 내부 테스트 설치. 샌드박스에서 Supabase 네트워크·plugin-store 저장/재실행 유지 모두 성공. 과정에서 고친 것: 스크립트를 `bash`로 실행(실행 권한), 점검 명령 이름 `check-env`(pnpm 내장 `doctor`와 충돌), `.pkg` 전 앱 파일 권한 정리(ITMS-90255). 남은 0단계: 도메인·Resend·SMTP, CI 확인 |
+| 2026-09-17 | 0 | 도메인 `nodii.app` 구매, Resend 발신 도메인 `mail.nodii.app` Verified. 요구사항 v1.1(Q9 실제 값)·설계서 v1.2 반영. 남은 0단계: SMTP 연결(C3~C5), CI 확인 |
+| 2026-09-17 | 0 | **0단계 완료.** Resend SMTP를 Supabase `nodii`에 연결(발신 `no-reply@mail.nodii.app`), 메일 템플릿 `{{ .Token }}`·OTP 6자리/600초 설정, GitHub Actions CI 통과 확인. 인증 메일 실제 수신은 2단계에서 확인 |

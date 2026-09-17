@@ -125,7 +125,7 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - 스키마 변경은 **마이그레이션 파일로만** (`supabase migration new <name>`). 이미 커밋된 마이그레이션은 수정하지 말고 새 파일을 추가합니다.
 - Tauri: 새 플러그인·capability·Rust 명령을 추가하지 않는 것이 기본입니다. 추가가 필요하면 이유를 보고하세요. **`plugin-updater`, `shell` 플러그인 금지.** 외부 링크는 `plugin-opener`.
 - 새 외부 호스트에 연결하면 `tauri.conf.json`의 CSP `connect-src`를 갱신해야 합니다. 폰트·스크립트를 CDN에서 불러오지 마세요(번들에 포함).
-- 비밀 값 커밋 금지: `.env.local`, `*.provisionprofile`, 인증서, 심사 계정 비밀번호. 환경 변수는 `apps/desktop/.env.example`에 키 이름만 추가합니다.
+- 비밀 값 커밋 금지: `.env.local`, `.env.production.local`, `*.provisionprofile`, 인증서, 심사 계정 비밀번호. 환경 변수는 `apps/desktop/.env.example`에 키 이름만 추가합니다.
 - 번들 ID `com.sungjunlee.Nodii`, `Entitlements`, `Info.plist`, `tauri.appstore.conf.json`, `scripts/build-appstore.sh`는 지시가 없으면 건드리지 않습니다.
 - 성능 목표: 조작 반영 100ms 이하, 월 이동 300ms 이하, 설치 파일 15MB 이하. 무거운 UI 라이브러리를 들이지 마세요.
 
@@ -147,9 +147,9 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 1. **시작 전**: 지시서와 관련 문서 절을 읽고, `git status`가 깨끗한지 확인하고, `feat/<단계>-<이름>` 브랜치를 만듭니다.
 2. **범위 준수**: 지시서의 "하지 말 것"과 다음 단계 작업을 미리 하지 않습니다. 관련 없는 리팩터링·포맷 변경을 섞지 않습니다.
 3. **모호하거나 문서끼리 충돌할 때**: 제품 동작을 임의로 정하지 말고, 문서에 가장 가까운 **보수적인 해석**을 택한 뒤 코드 주석과 최종 보고의 "결정이 필요한 사항"에 적습니다.
-4. **커밋**: 작은 단위로, 요구사항 ID 포함. 예: `feat(day-list): 할 일 날짜 옮기기 (TODO-05)`, `test(core): 매월 31일 루틴 말일 표시 (ROUT-04)`.
+4. **커밋**: 작은 단위로, 요구사항 ID 포함. **커밋 메시지는 항상 영어로** 씁니다 (Conventional Commits). 예: `feat(day-list): move todo to another date (TODO-05)`, `test(core): show monthly day-31 routine on last day of month (ROUT-04)`.
 5. **문서 갱신**: 끝낸 항목은 `docs/03-implementation-plan.md` 체크박스를 체크하고 §6 진행 기록에 한 줄 추가합니다. 설계를 바꿔야 했다면 `docs/02-system-design.md`를 직접 고치지 말고 보고에 제안으로 남깁니다.
-6. **건드리지 말 것**: `Claude outputs/` 폴더(이전 작업의 사본, CI 설정 원본은 `.github/workflows/`), `.env.local`, `src-tauri/profiles/`의 실제 파일.
+6. **건드리지 말 것**: `Claude outputs/` 폴더(이전 작업의 사본, CI 설정 원본은 `.github/workflows/`), `.env.local`, `.env.production.local`, `src-tauri/profiles/`의 실제 파일.
 7. **최종 보고 형식** (한국어):
    - 한 일 (요구사항 ID별)
    - 실행한 검증 명령과 결과 (건너뛴 것은 이유와 함께)

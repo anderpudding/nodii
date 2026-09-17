@@ -1,6 +1,7 @@
 # Nodii 요구사항 명세서 (MVP)
 
-> 버전 1.0 · 2026-09-17 · 작성: Sungjun + Claude
+> 버전 1.1 · 2026-09-17 · 작성: Sungjun + Claude
+> v1.1 변경: Q9 도메인·발신 주소 실제 값 확정 (`nodii.app`, `no-reply@mail.nodii.app`)
 > 상태: **확정 (기준선).** Q1~Q11을 모두 결정했습니다. 이후 변경은 버전을 올리고 8장에 기록합니다.
 
 ---
@@ -214,7 +215,7 @@
 | Q6 | 배포 대상 | **공개 배포** (Apple Developer Program 보유) | 1.3, AUTH-06, SET-07, NFR-13~15, 7장 |
 | Q7 | 배포 채널 | **Mac App Store** (직접 배포 DMG는 하지 않음) | 1.3, 2.1, AUTH-08, SET-05, NFR-13, NFR-14, 6장, 7장 |
 | Q8 | 지난 미완료 할 일 가져오기 기간 | **최근 7일** | TODO-10 |
-| Q9 | 도메인과 발신 이메일 주소 | **개발 초기에 확보** (예: `nodii.app`, `no-reply@nodii.app`). 인증 메일 SPF/DKIM, 개인정보처리방침·지원 페이지 URL에 사용. 실제 이름은 구매할 때 확정 | NFR-14, NFR-15 |
+| Q9 | 도메인과 발신 이메일 주소 | **확보 완료 (v1.1).** 도메인 **`nodii.app`** · 발신 도메인 **`mail.nodii.app`**(Resend, SPF·DKIM Verified) · 발신 주소 **`no-reply@mail.nodii.app`**. 인증 메일, 개인정보처리방침·지원 페이지 URL에 사용. | NFR-14, NFR-15 |
 | Q10 | 번들 ID와 App Store 앱 이름 | 번들 ID **`com.sungjunlee.Nodii`** · App Store Connect에 앱 **"Nodii" 등록 완료** | 설계서 §11.1, §11.2 |
 | Q11 | App Store 카테고리와 가격 | 카테고리 **생산성(Productivity)** · 가격 **무료** | 설계서 §11.1, §11.2 |
 
