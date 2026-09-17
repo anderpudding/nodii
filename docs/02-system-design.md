@@ -1,9 +1,10 @@
 # Nodii 시스템 설계서 (MVP)
 
-> 버전 1.2 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1 · 상태: **확정 (기준선)**
+> 버전 1.3 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1 · 상태: **확정 (기준선)**
 > 확정된 결정: **macOS 전용** · **Tauri v2 + React + TypeScript** · **Supabase(로그인 + 클라우드 DB)** · MVP 기능 = 목표·할 일 / 월간 캘린더 / 루틴 · **이메일 OTP 로그인** · **Mac App Store 출시**
 > v0.2 변경: 루틴 규칙 수정 시 범위 선택과 분할(§6.4), 지난 미완료 할 일 가져오기(§6.6), OTP 확정(§6.5), RPC 함수 2개(§4.5)
 > v0.3 변경: Mac App Store 배포 파이프라인과 샌드박스(§11), 자체 업데이트 제거, 심사용 데모 계정(§6.5), 최소 지원 버전 확인(§6.7, `app_config` 테이블)
+> v1.3 변경: 1단계 DB 구현 반영 — 테이블 권한 명시·물리 DELETE는 `routine_logs`만(§4.2, §4.3), `ensure_active_goal` 동시 보관 잠금(§4.5), `delete_my_account` RPC(§4.5), RPC 타입 주의(§4.5), 보안·테스트 표(§9, §10), ADR-017
 > v1.2 변경: 도메인 `nodii.app`, 인증 메일 Resend + 발신 `no-reply@mail.nodii.app` 확정(§2, §6.5), 심사 계정 주소(§6.5)
 > v1.1 변경: 클라우드 Supabase 프로젝트를 `nodii` 1개로 운영(dev·prod 겸용), 배포 빌드용 `.env.production.local`(§11)
 > v1.0 변경: 번들 ID `com.sungjunlee.Nodii` 확정, App Store Connect 앱 등록 완료, 카테고리 생산성·무료 확정(§11)
@@ -187,14 +188,15 @@ erDiagram
 | ID 생성 | 클라이언트에서 `crypto.randomUUID()` | DB 기본값만 사용 | 낙관적 업데이트 때 서버 응답을 기다리지 않고 ID를 확정할 수 있음 (DB 기본값도 함께 둠) |
 | 소유권 무결성 | `(goal_id, user_id)` **복합 FK** | RLS만으로 보호 | 다른 사람의 목표 ID로 할 일을 만드는 공격을 DB 수준에서 차단 |
 | 루틴 규칙 수정 (Q3) | 사용자가 범위를 고름. **과거까지 모두** → 같은 행을 UPDATE / **오늘부터** → `split_routine` RPC로 기존 루틴을 어제 종료하고 새 루틴을 오늘 시작 | 항상 한 방식만 사용 | 두 동작이 모두 기존 스키마로 표현됨. 분할은 행 2개와 로그 이동이 한 트랜잭션에서 일어나야 하므로 RPC로 묶음 |
-| 활성 목표 1개 이상 (Q5) | 클라이언트에서 막고, **DB 트리거로도 강제** | 클라이언트에서만 막기 | 다른 기기나 향후 모바일 앱에서도 규칙이 깨지지 않음 |
+| 활성 목표 1개 이상 (Q5) | 클라이언트에서 막고, **DB 트리거로도 강제**. 트리거는 사용자별 트랜잭션 잠금(`pg_advisory_xact_lock`)을 잡은 뒤 확인 | 클라이언트에서만 막기 / 잠금 없는 트리거 | 다른 기기나 향후 모바일 앱에서도 규칙이 깨지지 않음. 잠금이 없으면 두 기기가 서로 다른 마지막 목표를 동시에 보관할 때 둘 다 통과해 활성 목표가 0개가 됨 (1단계에서 재현) |
+| 테이블 권한 (v1.3) | Supabase 기본 GRANT에 기대지 않고 **명시**: `authenticated`에 SELECT·INSERT·UPDATE, DELETE는 `routine_logs`만. `anon`은 `app_config` SELECT만. TRUNCATE는 누구에게도 없음 | 기본 권한(ALL) + RLS | TRUNCATE는 RLS를 거치지 않음. 목표·할 일·루틴의 물리 DELETE를 막아야 소프트 삭제와 GOAL-07 트리거를 우회할 수 없음. 계정 삭제의 FK cascade는 영향 없음 |
 
-### 4.3 스키마 (초기 마이그레이션 초안)
+### 4.3 스키마 (`supabase/migrations/20260917103537_init.sql` 기준)
 
 ```sql
 -- ============ 공통: updated_at 자동 갱신 ============
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = '' as $$
 begin
   new.updated_at = now();
   return new;
@@ -323,6 +325,18 @@ create policy "own routines" on public.routines for all to authenticated
 create policy "own routine_logs" on public.routine_logs for all to authenticated
   using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
+-- ============ 테이블 권한 (v1.3) ============
+-- Supabase의 자동 테이블 권한 설정과 무관하게 RLS 정책에 필요한 권한을 명시한다.
+-- 기본 ALL 권한의 TRUNCATE는 RLS를 우회하므로 먼저 회수한다.
+-- 목표·할 일·루틴은 소프트 삭제만 허용한다. 계정 삭제의 cascade에는 영향이 없다.
+revoke all on table
+  public.profiles, public.goals, public.todos, public.routines, public.routine_logs
+  from anon, authenticated;
+grant select, insert, update on table
+  public.profiles, public.goals, public.todos, public.routines, public.routine_logs
+  to authenticated;
+grant delete on table public.routine_logs to authenticated;
+
 -- ============ Realtime ============
 alter publication supabase_realtime add table public.goals, public.todos, public.routines, public.routine_logs;
 ```
@@ -342,12 +356,17 @@ returns trigger language plpgsql set search_path = '' as $$
 begin
   if (new.archived_at is not null or new.deleted_at is not null)
      and old.archived_at is null and old.deleted_at is null
-     and not exists (
+  then
+    -- GOAL-07: 서로 다른 기기가 각기 다른 목표를 동시에 보관해도 하나는 남긴다.
+    -- 사용자별 잠금을 얻은 뒤 새 statement snapshot으로 남은 활성 목표를 확인한다.
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(old.user_id::text, 0));
+    if not exists (
        select 1 from public.goals g
         where g.user_id = new.user_id and g.id <> new.id
           and g.archived_at is null and g.deleted_at is null)
-  then
-    raise exception 'at least one active goal is required';
+    then
+      raise exception 'at least one active goal is required';
+    end if;
   end if;
   return new;
 end;
@@ -434,11 +453,31 @@ create table public.app_config (
 alter table public.app_config enable row level security;
 -- 로그인 전에도 읽을 수 있어야 하므로 anon 포함, 쓰기 정책은 두지 않음 (대시보드/마이그레이션으로만 변경)
 create policy "anyone can read config" on public.app_config for select to anon, authenticated using (true);
+revoke all on table public.app_config from anon, authenticated;
+grant select on table public.app_config to anon, authenticated;
 insert into public.app_config (key, value) values ('min_macos_app_version', '0.1.0');
+
+-- ============ 계정 삭제 (AUTH-06, v1.3 추가 · 20260917103539_account.sql) ============
+-- AUTH-06: 인증된 본인 계정만 삭제하고 사용자 데이터는 FK cascade로 정리한다.
+create or replace function public.delete_my_account()
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null then
+    raise exception 'authentication required';
+  end if;
+
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
 ```
 
-- 두 함수 모두 `security invoker`라서 **호출한 사용자의 RLS가 그대로 적용**됩니다. 다른 사람의 루틴이나 할 일은 조회 단계에서 보이지 않아서 수정할 수 없습니다.
+- `split_routine`, `move_todos`는 `security invoker`라서 **호출한 사용자의 RLS가 그대로 적용**됩니다. 다른 사람의 루틴이나 할 일은 조회 단계에서 보이지 않아서 수정할 수 없습니다.
 - 분할 뒤에는 기존 루틴(어제 종료)과 새 루틴(오늘 시작)이 따로 존재합니다. 루틴 목록(ROUT-10)은 종료되지 않은 루틴만 보여주므로 사용자에게는 루틴 하나로 보입니다.
+- `delete_my_account`는 클라이언트가 `auth.users`를 지울 수 없어서 `security definer`로 둡니다. `auth.uid()` 본인 행만 지우고, 나머지 데이터는 `on delete cascade`로 정리됩니다.
+- **타입 주의 (v1.3):** `supabase gen types`는 함수 인자의 null 허용을 표현하지 못해서 `split_routine`의 `p_by_weekday`, `p_by_monthday`가 `number[]`로 생성됩니다. 분할할 때 반복 종류에 맞지 않는 배열 인자(매일은 둘 다, 매주는 `p_by_monthday`, 매월은 `p_by_weekday`)에는 빈 배열이 아니라 `null`을 넘겨야 하므로(§4.3 check 제약), `packages/api`의 래퍼에서 `null as unknown as number[]`처럼 한 곳에서만 변환합니다.
 
 ---
 
@@ -678,7 +717,9 @@ App Store는 사용자가 업데이트를 미룰 수 있어서, DB 스키마를 
 | 앱 권한 남용 | App Sandbox 적용, 권한은 `network.client`(외부 연결)만 요청 |
 | 심사용 데모 계정 악용 | 강한 난수 비밀번호, 심사 노트에만 기재, RLS로 데모 데이터만 접근 가능, 필요 시 교체 |
 | 배포 인증 정보 유출 | 인증서(.p12)와 App Store Connect API 키(.p8)는 GitHub Secrets에만 보관 |
-| RPC 권한 우회 | `security invoker`로 RLS 적용, `anon` 실행 권한 회수 |
+| RPC 권한 우회 | `security invoker`로 RLS 적용, `anon` 실행 권한 회수. `security definer`는 가입 트리거와 `delete_my_account`에만, `search_path = ''` 고정 |
+| RLS를 거치지 않는 경로 | TRUNCATE 권한 회수, `anon`은 사용자 테이블 권한 없음, 목표·할 일·루틴 물리 DELETE 불가 (§4.2 테이블 권한) |
+| 동시 요청으로 규칙 우회 | `ensure_active_goal`의 사용자별 트랜잭션 잠금 (§4.5) |
 
 ---
 
@@ -687,7 +728,7 @@ App Store는 사용자가 업데이트를 미룰 수 있어서, DB 스키마를 
 | 레벨 | 대상 | 도구 | 기준 |
 |---|---|---|---|
 | 단위 | `@nodii/core` (반복 규칙, 집계, 날짜) | Vitest | 커버리지 90% 이상, §5.3 엣지 케이스 전부 |
-| DB | RLS 정책, 제약 조건, 트리거, RPC | pgTAP + `supabase test db` | 정책별로 허용 1개 + 거부 1개. `split_routine`(로그 이동, 과거 없는 루틴 거부, 남의 루틴 거부), `move_todos`(남의 할 일 무시), 마지막 활성 목표 보관 거부 |
+| DB | RLS 정책, 테이블 권한, 제약 조건, 트리거, RPC | pgTAP + `supabase test db` (CI `db` 잡) | 정책별로 허용 1개 + 거부 1개, `anon`·TRUNCATE 권한 없음. `split_routine`(로그 이동, 과거 없는 루틴 거부, 남의 루틴 거부, 실패 시 원상 유지), `move_todos`(남의 할 일 무시), 마지막 활성 목표 보관·삭제 거부, `delete_my_account`. 1단계 기준 7파일 127검사 |
 | 컴포넌트 | DayList, Calendar, RoutineEditor, 적용 범위 다이얼로그, 가져오기 배너 | Testing Library + MSW | 주요 인터랙션 |
 | E2E (수동) | S1~S6 시나리오, 앱 두 개 동기화, TestFlight 설치본에서 샌드박스 동작(네트워크, 세션 저장), 데모 계정 로그인, 최소 버전 안내 | 체크리스트 | 제출마다 |
 
@@ -819,5 +860,6 @@ Secrets: `APPLE_DISTRIBUTION_CERT_P12`, `APPLE_INSTALLER_CERT_P12`, `APPLE_CERT_
 | ADR-014 | `app_config.min_macos_app_version`으로 최소 지원 버전을 강제 | 제안 |
 | ADR-015 | 지난 미완료 할 일 가져오기 기간 7일, 도메인·발신 주소는 개발 초기에 확보 | **확정** (Q8, Q9) |
 | ADR-016 | 번들 ID `com.sungjunlee.Nodii`, App Store 카테고리 생산성, 무료 | **확정** (Q10, Q11) |
+| ADR-017 | 테이블 권한을 명시적으로 부여하고, 물리 DELETE는 `routine_logs`만 허용. 활성 목표 규칙은 사용자별 잠금으로 동시 요청에도 보장 | **확정** (1단계 DB, pgTAP) |
 
 > '제안' 상태인 ADR은 구현 초기에 프로토타입과 테스트로 검증한 뒤 확정합니다. 바꿔야 하면 설계서 버전을 올리고 이 표에 기록합니다.
