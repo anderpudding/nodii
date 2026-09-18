@@ -1,4 +1,5 @@
-import { monthKeyOf, type Profile } from '@nodii/core';
+import { useMemo } from 'react';
+import { buildDay, monthKeyOf, type Profile } from '@nodii/core';
 import { useGoals, useMonthTodos, type NodiiClient } from '@nodii/api';
 import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
@@ -20,10 +21,26 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
   const date = useUIStore((state) => state.selectedDate);
   const goals = useGoals(client);
   const todos = useMonthTodos(client, monthKeyOf(date), profile.weekStart);
-  const dayTodos = todos.data?.filter((todo) => todo.date === date) ?? [];
+  // TODO-09: 헤더와 목록이 같은 전개 결과를 써서 숨겨진 항목을 세지 않는다.
+  const groups = useMemo(
+    () =>
+      buildDay({
+        date,
+        goals: goals.data ?? [],
+        todos: todos.data ?? [],
+        routines: [],
+        logs: [],
+        timeZone: profile.timezone,
+      }),
+    [date, goals.data, todos.data, profile.timezone],
+  );
+  const items = groups.flatMap((group) => group.items);
+  const done = items.filter((item) =>
+    item.kind === 'todo' ? item.todo.isDone : item.log?.status === 'done',
+  ).length;
   return (
     <>
-      <DayHeader total={dayTodos.length} done={dayTodos.filter((todo) => todo.isDone).length} />
+      <DayHeader total={items.length} done={done} />
       {goals.isError || todos.isError ? (
         <div className="day-empty">
           <p role="alert">하루 목록을 불러오지 못했어요.</p>
@@ -40,13 +57,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
       ) : !goals.data || !todos.data ? (
         <DaySkeleton />
       ) : (
-        <DayList
-          key={date}
-          client={client}
-          profile={profile}
-          goals={goals.data}
-          todos={todos.data}
-        />
+        <DayList key={date} client={client} profile={profile} groups={groups} todos={todos.data} />
       )}
     </>
   );

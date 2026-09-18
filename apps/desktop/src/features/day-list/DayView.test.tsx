@@ -40,6 +40,69 @@ function setup(weekStart: 0 | 1 = 0) {
   );
   return { user: userEvent.setup(), cache };
 }
+it.each([false, true])(
+  '헤더와 빈 상태는 삭제된 목표의 할 일을 제외한 표시 목록을 따른다 (숨겨진 항목만: %s)',
+  async (hiddenOnly) => {
+    server.use(
+      // 삭제된 목표는 목표 쿼리에서 제외됐지만 월 캐시에는 그 할 일이 남은 상황이다.
+      http.get(`${baseUrl}/rest/v1/goals`, () =>
+        HttpResponse.json([
+          goalRow,
+          { ...goalRow, id: 'archived', name: '지난 목표', archived_at: '2026-09-29T00:00:00Z' },
+        ]),
+      ),
+      http.get(`${baseUrl}/rest/v1/todos`, () =>
+        HttpResponse.json([
+          { ...todoRow, id: 'hidden-pending', goal_id: 'deleted', title: '숨겨진 미완료' },
+          {
+            ...todoRow,
+            id: 'hidden-done',
+            goal_id: 'deleted',
+            title: '숨겨진 완료',
+            is_done: true,
+          },
+          {
+            ...todoRow,
+            id: 'other-day',
+            title: '다른 날 할 일',
+            date: '2026-09-29',
+            is_done: true,
+          },
+          ...(hiddenOnly
+            ? []
+            : [
+                todoRow,
+                {
+                  ...todoRow,
+                  id: 'archived-done',
+                  goal_id: 'archived',
+                  title: '지난 목표 기록',
+                  is_done: true,
+                },
+              ]),
+        ]),
+      ),
+    );
+    setup();
+    await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+    expect(screen.queryByRole('button', { name: '숨겨진 미완료 완료' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '숨겨진 완료 완료' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '다른 날 할 일 완료' })).toBeNull();
+    const emptyMessage = '이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.';
+    if (hiddenOnly) {
+      expect(screen.getByText('할 일 없음')).toBeTruthy();
+      expect(screen.getByText(emptyMessage)).toBeTruthy();
+      expect(screen.queryAllByRole('button', { name: / 완료$/ })).toHaveLength(0);
+    } else {
+      expect(screen.getByText('오늘, 2개 중 1개 끝냄')).toBeTruthy();
+      expect(screen.getAllByRole('button', { name: / 완료$/ })).toHaveLength(2);
+      expect(
+        screen.getByRole('button', { name: '지난 목표 기록 완료' }).getAttribute('aria-pressed'),
+      ).toBe('true');
+      expect(screen.queryByText(emptyMessage)).toBeNull();
+    }
+  },
+);
 it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc를 지원한다', async () => {
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {

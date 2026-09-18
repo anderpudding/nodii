@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
-import { buildDay, keyBetween, lastSortKey, type Profile } from '@nodii/core';
-import { useCreateTodo, type GoalRecord, type NodiiClient, type TodoRecord } from '@nodii/api';
+import { useRef, useState } from 'react';
+import { keyBetween, lastSortKey, type DayGoalGroup, type Profile } from '@nodii/core';
+import { useCreateTodo, type NodiiClient, type TodoRecord } from '@nodii/api';
 import { useUIStore } from '../../stores/ui';
 import { notifyError } from '../../lib/notify-error';
 import { GoalChip, goalStyle } from '../goals/GoalChip';
@@ -11,26 +11,22 @@ import { TodoRow } from './TodoRow';
 export function DayList({
   client,
   profile,
-  goals,
+  groups,
   todos,
 }: {
   client: NodiiClient;
   profile: Profile;
-  goals: GoalRecord[];
+  groups: DayGoalGroup[];
   todos: TodoRecord[];
 }) {
   const date = useUIStore((state) => state.selectedDate);
   const [adding, setAdding] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const create = useCreateTodo(client, profile.weekStart, { onError: notifyError });
-  const groups = useMemo(
-    () => buildDay({ date, goals, todos, routines: [], logs: [], timeZone: profile.timezone }),
-    [date, goals, todos, profile.timezone],
-  );
-  const dayTodos = todos.filter((todo) => todo.date === date);
+  const hasItems = groups.some((group) => group.items.length > 0);
   return (
     <div ref={root}>
-      {!dayTodos.length && (
+      {!hasItems && (
         <p className="supporting day-empty">
           이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.
         </p>
