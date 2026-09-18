@@ -48,6 +48,7 @@ export function DayList({
                     todo={todos.find((todo) => todo.id === item.todo.id)!}
                     client={client}
                     weekStart={profile.weekStart}
+                    timeZone={profile.timezone}
                   />
                 ) : (
                   <p key={item.routine.id} className="supporting">

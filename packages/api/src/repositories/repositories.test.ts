@@ -141,3 +141,30 @@ it('잘못된 제목·목표 이름·색을 요청 전에 거부하고 조회 �
     code: '42501',
   });
 });
+
+it('날짜 이동은 한 행의 날짜·키만 UPDATE하고 일괄 이동은 move_todos RPC를 쓴다', async () => {
+  const { moveTodo, moveTodos } = await import('./todos');
+  const { client, fetch } = setup(todo);
+  await moveTodo(client, todo.id, '2026-10-01', 'a2');
+  expect(String(fetch.mock.calls[0]![0])).toContain('id=eq.todo-id');
+  expect(JSON.parse(fetch.mock.calls[0]![1].body)).toEqual({ date: '2026-10-01', sort_key: 'a2' });
+  await moveTodos(client, [{ id: todo.id, sort_key: 'a2' }], '2026-10-01');
+  expect(String(fetch.mock.calls[1]![0])).toContain('/rpc/move_todos');
+  expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({
+    p_moves: [{ id: todo.id, sort_key: 'a2' }],
+    p_date: '2026-10-01',
+  });
+});
+it('최근 7일 미완료·삭제 제외 조건을 서버에 전달한다', async () => {
+  const { listOverdue } = await import('./todos');
+  const { client, fetch } = setup([todo]);
+  await listOverdue(client, '2026-10-01');
+  const url = String(fetch.mock.calls[0]![0]);
+  for (const filter of [
+    'is_done=eq.false',
+    'deleted_at=is.null',
+    'date=gte.2026-09-24',
+    'date=lte.2026-09-30',
+  ])
+    expect(url).toContain(filter);
+});

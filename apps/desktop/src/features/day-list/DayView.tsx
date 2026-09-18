@@ -5,6 +5,7 @@ import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
 import { DayHeader } from './DayHeader';
 import { DayList } from './DayList';
+import { OverdueBanner } from './OverdueBanner';
 
 /** 조회 중에도 목록의 자리를 유지해 빈 창을 보여주지 않는다. */
 export function DaySkeleton() {
@@ -57,7 +58,21 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
       ) : !goals.data || !todos.data ? (
         <DaySkeleton />
       ) : (
-        <DayList key={date} client={client} profile={profile} groups={groups} todos={todos.data} />
+        <>
+          <OverdueBanner
+            client={client}
+            weekStart={profile.weekStart}
+            goals={goals.data}
+            todayItems={items}
+          />
+          <DayList
+            key={date}
+            client={client}
+            profile={profile}
+            groups={groups}
+            todos={todos.data}
+          />
+        </>
       )}
     </>
   );
