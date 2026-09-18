@@ -23,6 +23,7 @@ export function TodoMenu({
   todo,
   client,
   weekStart,
+  timeZone,
   pending,
   editing,
   onEdit,
@@ -32,6 +33,7 @@ export function TodoMenu({
   todo: TodoRecord;
   client: NodiiClient;
   weekStart: 0 | 1;
+  timeZone: string;
   pending: boolean;
   editing: boolean;
   onEdit: () => void;
@@ -74,7 +76,7 @@ export function TodoMenu({
         routines: [],
         logs: [],
         date,
-        timeZone: 'UTC',
+        timeZone,
       });
       const sortKey = keyBetween(
         lastSortKey(groups.find((group) => group.goal.id === todo.goalId)?.items ?? []),

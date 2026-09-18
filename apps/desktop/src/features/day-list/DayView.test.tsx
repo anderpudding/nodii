@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { toast } from 'sonner';
 import { mapTodo, queryKeys, type NodiiClient } from '@nodii/api';
+import * as core from '@nodii/core';
 import { Toaster } from 'sonner';
 import { MainLayout } from '../../app/MainLayout';
 import { server } from '../../test/server';
@@ -21,7 +22,7 @@ afterEach(async () => {
   queries.splice(0).forEach((cache) => cache.clear());
   await Promise.all(clients.splice(0).map((client) => client.auth.dispose()));
 });
-function setup(weekStart: 0 | 1 = 0) {
+function setup(weekStart: 0 | 1 = 0, timezone = 'UTC') {
   const client = createTestClient();
   clients.push(client);
   const cache = new QueryClient({
@@ -33,7 +34,7 @@ function setup(weekStart: 0 | 1 = 0) {
       <MainLayout
         client={client}
         session={{ ...sessionResponse, token_type: 'bearer' }}
-        profile={{ id: sessionResponse.user.id, displayName: null, timezone: 'UTC', weekStart }}
+        profile={{ id: sessionResponse.user.id, displayName: null, timezone, weekStart }}
       />
       <Toaster />
     </QueryClientProvider>,
@@ -474,3 +475,70 @@ it('월 탐색과 오늘 복귀 후 하루 목록 이동이 캘린더 월을 따
   await user.click(screen.getByRole('button', { name: '다음 날' }));
   expect(screen.getByRole('heading', { name: '2026년 10월' })).toBeTruthy();
 });
+
+it.each([
+  { timezone: 'America/Vancouver', archivedAt: '2026-10-02T00:30:00Z' },
+  { timezone: 'Asia/Seoul', archivedAt: '2026-09-30T16:30:00Z' },
+])(
+  '보관 목표 날짜 이동은 $timezone 시간대를 전달하고 기존 마지막 항목 뒤에 붙인다',
+  async ({ timezone, archivedAt }) => {
+    const targetDate = '2026-10-01';
+    // 두 보관 시각 모두 프로필에서는 10월 1일이며 UTC에서는 앞뒤 날짜다.
+    expect(core.isoDateInZone(archivedAt, timezone)).toBe(targetDate);
+    expect(core.isoDateInZone(archivedAt, 'UTC')).not.toBe(targetDate);
+    // 계산은 대체하지 않는다. 현재 할 일 전용 경로에서는 시간대 전달도 별도로 관찰한다.
+    const buildDay = vi.spyOn(core, 'buildDay');
+    const archivedGoal = { ...goalRow, archived_at: archivedAt };
+    const targetRows = [
+      {
+        ...todoRow,
+        id: 'last-in-target',
+        title: '기존 마지막 항목',
+        date: targetDate,
+        sort_key: 'a9',
+      },
+      {
+        ...todoRow,
+        id: 'first-in-target',
+        title: '기존 첫 항목',
+        date: targetDate,
+        sort_key: 'a2',
+      },
+      { ...todoRow, id: 'other-goal', goal_id: 'active', date: targetDate, sort_key: 'aZ' },
+      { ...todoRow, id: 'other-date', date: '2026-10-02', sort_key: 'aZ' },
+    ];
+    let moved = { ...todoRow };
+    const patches: Record<string, unknown>[] = [];
+    server.use(
+      http.get(`${baseUrl}/rest/v1/goals`, () =>
+        HttpResponse.json([
+          archivedGoal,
+          { ...goalRow, id: 'active', name: '활성 목표', sort_key: 'a1' },
+        ]),
+      ),
+      http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([moved, ...targetRows])),
+      http.patch(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+        const patch = (await request.json()) as Record<string, unknown>;
+        patches.push(patch);
+        moved = { ...moved, ...patch };
+        return HttpResponse.json(moved);
+      }),
+    );
+    const { user } = setup(1, timezone);
+    await user.click(await screen.findByRole('button', { name: '책 읽기 메뉴' }));
+    await user.click(screen.getByRole('menuitem', { name: /내일로/ }));
+    await waitFor(() => expect(patches).toHaveLength(1));
+    expect(buildDay).toHaveBeenCalledWith(
+      expect.objectContaining({ date: targetDate, timeZone: timezone }),
+    );
+    expect(patches[0]).toEqual({ date: targetDate, sort_key: core.keyBetween('a9', null) });
+    await user.click(screen.getByRole('button', { name: '다음 날' }));
+    const group = await screen.findByRole('region', { name: '할 일' });
+    expect(
+      within(group)
+        .getAllByRole('button', { name: / 완료$/ })
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['기존 첫 항목 완료', '기존 마지막 항목 완료', '책 읽기 완료']);
+    expect(within(group).queryByRole('button', { name: '할 일에 할 일 추가' })).toBeNull();
+  },
+);

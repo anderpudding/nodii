@@ -18,10 +18,12 @@ export function TodoRow({
   todo,
   client,
   weekStart,
+  timeZone,
 }: {
   todo: TodoRecord;
   client: NodiiClient;
   weekStart: 0 | 1;
+  timeZone: string;
 }) {
   const options = { onError: notifyError };
   const toggle = useToggleTodo(client, weekStart, todo.id, options);
@@ -86,6 +88,7 @@ export function TodoRow({
       todo={todo}
       client={client}
       weekStart={weekStart}
+      timeZone={timeZone}
       pending={pending}
       editing={editing}
       onEdit={edit}
