@@ -8,3 +8,4 @@ export * from './sort-key';
 export * from './validation';
 export type * from './types';
 export * from './version';
+export * from './color';

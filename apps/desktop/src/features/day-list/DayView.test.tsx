@@ -1,0 +1,319 @@
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { toast } from 'sonner';
+import { mapTodo, queryKeys, type NodiiClient } from '@nodii/api';
+import { Toaster } from 'sonner';
+import { MainLayout } from '../../app/MainLayout';
+import { server } from '../../test/server';
+import { baseUrl, createTestClient, sessionResponse } from '../../test/auth-fixtures';
+import { goalRow, todoRow } from '../../test/data-fixtures';
+import { useUIStore } from '../../stores/ui';
+
+const clients: NodiiClient[] = [];
+const queries: QueryClient[] = [];
+beforeEach(() => useUIStore.setState({ today: todoRow.date, selectedDate: todoRow.date }));
+afterEach(async () => {
+  toast.dismiss();
+  vi.restoreAllMocks();
+  queries.splice(0).forEach((cache) => cache.clear());
+  await Promise.all(clients.splice(0).map((client) => client.auth.dispose()));
+});
+function setup(weekStart: 0 | 1 = 0) {
+  const client = createTestClient();
+  clients.push(client);
+  const cache = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  queries.push(cache);
+  render(
+    <QueryClientProvider client={cache}>
+      <MainLayout
+        client={client}
+        session={{ ...sessionResponse, token_type: 'bearer' }}
+        profile={{ id: sessionResponse.user.id, displayName: null, timezone: 'UTC', weekStart }}
+      />
+      <Toaster />
+    </QueryClientProvider>,
+  );
+  return { user: userEvent.setup(), cache };
+}
+it.each([false, true])(
+  '헤더와 빈 상태는 삭제된 목표의 할 일을 제외한 표시 목록을 따른다 (숨겨진 항목만: %s)',
+  async (hiddenOnly) => {
+    server.use(
+      // 삭제된 목표는 목표 쿼리에서 제외됐지만 월 캐시에는 그 할 일이 남은 상황이다.
+      http.get(`${baseUrl}/rest/v1/goals`, () =>
+        HttpResponse.json([
+          goalRow,
+          { ...goalRow, id: 'archived', name: '지난 목표', archived_at: '2026-09-29T00:00:00Z' },
+        ]),
+      ),
+      http.get(`${baseUrl}/rest/v1/todos`, () =>
+        HttpResponse.json([
+          { ...todoRow, id: 'hidden-pending', goal_id: 'deleted', title: '숨겨진 미완료' },
+          {
+            ...todoRow,
+            id: 'hidden-done',
+            goal_id: 'deleted',
+            title: '숨겨진 완료',
+            is_done: true,
+          },
+          {
+            ...todoRow,
+            id: 'other-day',
+            title: '다른 날 할 일',
+            date: '2026-09-29',
+            is_done: true,
+          },
+          ...(hiddenOnly
+            ? []
+            : [
+                todoRow,
+                {
+                  ...todoRow,
+                  id: 'archived-done',
+                  goal_id: 'archived',
+                  title: '지난 목표 기록',
+                  is_done: true,
+                },
+              ]),
+        ]),
+      ),
+    );
+    setup();
+    await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+    expect(screen.queryByRole('button', { name: '숨겨진 미완료 완료' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '숨겨진 완료 완료' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '다른 날 할 일 완료' })).toBeNull();
+    const emptyMessage = '이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.';
+    if (hiddenOnly) {
+      expect(screen.getByText('할 일 없음')).toBeTruthy();
+      expect(screen.getByText(emptyMessage)).toBeTruthy();
+      expect(screen.queryAllByRole('button', { name: / 완료$/ })).toHaveLength(0);
+    } else {
+      expect(screen.getByText('오늘, 2개 중 1개 끝냄')).toBeTruthy();
+      expect(screen.getAllByRole('button', { name: / 완료$/ })).toHaveLength(2);
+      expect(
+        screen.getByRole('button', { name: '지난 목표 기록 완료' }).getAttribute('aria-pressed'),
+      ).toBe('true');
+      expect(screen.queryByText(emptyMessage)).toBeNull();
+    }
+  },
+);
+it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc를 지원한다', async () => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const inserts: Record<string, unknown>[] = [];
+  server.use(
+    http.post(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+      const body = (await request.json()) as Record<string, unknown>;
+      inserts.push(body);
+      await gate;
+      return HttpResponse.json({ ...todoRow, ...body, updated_at: '2026-09-30T01:00:00Z' });
+    }),
+  );
+  const { user } = setup();
+  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
+  await user.type(input, '첫 번째');
+  fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+  expect(inserts).toHaveLength(0);
+  await user.keyboard('{Enter}');
+  expect(await screen.findByRole('button', { name: '첫 번째 완료' })).toBeTruthy();
+  expect((input as HTMLInputElement).value).toBe('');
+  await user.type(input, '두 번째{Enter}');
+  expect(await screen.findByRole('button', { name: '두 번째 완료' })).toBeTruthy();
+  await waitFor(() => expect(inserts).toHaveLength(2));
+  expect(String(inserts[0]!.sort_key) < String(inserts[1]!.sort_key)).toBe(true);
+  expect(inserts[0]!.id).toMatch(/^[0-9a-f-]{36}$/);
+  await act(async () => release());
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('textbox')).toBeNull();
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: '할 일에 할 일 추가' }));
+});
+it('체크 실패 시 인접 월 모두 원상복구하고 토스트에서 재시도한다', async () => {
+  server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  server.use(
+    http.patch(`${baseUrl}/rest/v1/todos`, async () => {
+      await gate;
+      return HttpResponse.json({ message: 'failure' }, { status: 403 });
+    }),
+  );
+  const { user, cache } = setup();
+  const checkbox = await screen.findByRole('button', { name: '책 읽기 완료' });
+  cache.setQueryData(queryKeys.todos('2026-10'), [mapTodo(todoRow)]);
+  await user.click(checkbox);
+  await waitFor(() => expect(checkbox.getAttribute('aria-pressed')).toBe('true'));
+  await act(async () => release());
+  await waitFor(() => expect(checkbox.getAttribute('aria-pressed')).toBe('false'));
+  expect(cache.getQueryData(queryKeys.todos('2026-10'))).toEqual([mapTodo(todoRow)]);
+  expect(await screen.findByText('저장하지 못했어요')).toBeTruthy();
+  server.use(
+    http.patch(`${baseUrl}/rest/v1/todos`, () =>
+      HttpResponse.json({
+        ...todoRow,
+        is_done: true,
+        done_at: '2026-09-30T01:00:00Z',
+        updated_at: '2026-09-30T01:00:00Z',
+      }),
+    ),
+  );
+  await user.click(screen.getByRole('button', { name: '다시 시도' }));
+  await waitFor(() => expect(checkbox.getAttribute('aria-pressed')).toBe('true'));
+});
+it('인라인 수정 Esc와 빈 제목은 취소하고 Enter는 저장한다', async () => {
+  const patch = vi.fn(async ({ request }: { request: Request }) =>
+    HttpResponse.json({ ...todoRow, ...((await request.json()) as object) }),
+  );
+  server.use(
+    http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])),
+    http.patch(`${baseUrl}/rest/v1/todos`, patch),
+  );
+  const { user } = setup();
+  await user.dblClick(await screen.findByRole('button', { name: '책 읽기' }));
+  await user.clear(screen.getByLabelText('할 일 제목 수정'));
+  await user.type(screen.getByLabelText('할 일 제목 수정'), '취소할 수정{Escape}');
+  expect(screen.getByRole('button', { name: '책 읽기' })).toBeTruthy();
+  expect(patch).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: '책 읽기' }));
+  await user.keyboard('{Enter}');
+  await user.clear(screen.getByLabelText('할 일 제목 수정'));
+  await user.keyboard('{Enter}');
+  expect(patch).not.toHaveBeenCalled();
+  await user.dblClick(screen.getByRole('button', { name: '책 읽기' }));
+  await user.clear(screen.getByLabelText('할 일 제목 수정'));
+  await user.type(screen.getByLabelText('할 일 제목 수정'), '책 두 권 읽기{Enter}');
+  expect(await screen.findByRole('button', { name: '책 두 권 읽기' })).toBeTruthy();
+  await waitFor(() => expect(patch).toHaveBeenCalledOnce());
+});
+it('마지막 활성 목표의 보관 버튼은 이유와 함께 비활성이다', async () => {
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 관리' });
+  const button = await within(dialog).findByRole('button', { name: '보관' });
+  expect((button as HTMLButtonElement).disabled).toBe(true);
+  expect(button.title).toBe('활성 목표는 하나 이상 있어야 해요');
+  await user.click(within(dialog).getByRole('button', { name: '목표 관리 닫기' }));
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: '목표 관리' }));
+});
+it('날짜 이동은 입력 중에는 무시하고 달 경계에서는 프로필의 42칸 범위로 조회한다', async () => {
+  const ranges: string[] = [];
+  server.use(
+    http.get(`${baseUrl}/rest/v1/todos`, ({ request }) => {
+      ranges.push(request.url);
+      return HttpResponse.json([]);
+    }),
+  );
+  const { user } = setup(1);
+  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  await user.keyboard('{ArrowRight}');
+  expect(useUIStore.getState().selectedDate).toBe('2026-09-30');
+  await user.keyboard('{Escape}{ArrowRight}');
+  expect(useUIStore.getState().selectedDate).toBe('2026-10-01');
+  await waitFor(() =>
+    expect(
+      ranges.some(
+        (url) => url.includes('date=gte.2026-09-28') && url.includes('date=lte.2026-11-08'),
+      ),
+    ).toBe(true),
+  );
+});
+it('삭제 후 실행 취소는 서버 행과 목록을 복원한다', async () => {
+  server.use(
+    http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])),
+    http.patch(`${baseUrl}/rest/v1/todos`, async ({ request }) =>
+      HttpResponse.json({ ...todoRow, ...((await request.json()) as object) }),
+    ),
+  );
+  const { user } = setup();
+  await user.click(await screen.findByRole('button', { name: '책 읽기 메뉴' }));
+  await user.click(screen.getByRole('menuitem', { name: '삭제' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: '책 읽기 완료' })).toBeNull());
+  await user.click(await screen.findByRole('button', { name: '실행 취소' }));
+  expect(await screen.findByRole('button', { name: '책 읽기 완료' })).toBeTruthy();
+});
+it('보관 목표는 항목이 있는 날짜에만 표시하고 추가 버튼은 숨긴다', async () => {
+  server.use(
+    http.get(`${baseUrl}/rest/v1/goals`, () =>
+      HttpResponse.json([
+        goalRow,
+        { ...goalRow, id: 'archived', name: '지난 목표', archived_at: '2026-09-30T00:00:00Z' },
+      ]),
+    ),
+    http.get(`${baseUrl}/rest/v1/todos`, () =>
+      HttpResponse.json([{ ...todoRow, goal_id: 'archived' }]),
+    ),
+  );
+  const { user } = setup();
+  expect(await screen.findByText('지난 목표')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '지난 목표에 할 일 추가' })).toBeNull();
+  await user.click(screen.getByRole('button', { name: '다음 날' }));
+  await waitFor(() => expect(screen.queryByText('지난 목표')).toBeNull());
+});
+it('목표 생성·이름과 프리셋 변경·보관·보관 해제를 화면과 서버에 반영한다', async () => {
+  let created = { ...goalRow, id: 'new-goal', name: '공부' };
+  server.use(
+    http.post(`${baseUrl}/rest/v1/goals`, async ({ request }) => {
+      created = { ...created, ...((await request.json()) as object) };
+      return HttpResponse.json(created);
+    }),
+    http.patch(`${baseUrl}/rest/v1/goals`, async ({ request }) => {
+      created = { ...created, ...((await request.json()) as object) };
+      return HttpResponse.json(created);
+    }),
+  );
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  const dialog = await screen.findByRole('dialog');
+  await user.type(await within(dialog).findByLabelText('새 목표'), '공부');
+  await user.click(within(dialog).getByRole('button', { name: '추가' }));
+  const edit = await within(dialog).findByRole('button', { name: '공부 편집' });
+  await waitFor(() => expect((edit as HTMLButtonElement).disabled).toBe(false));
+  await user.click(edit);
+  const name = within(dialog).getByLabelText('목표 이름');
+  await user.clear(name);
+  await user.type(name, '독서');
+  await user.click(within(dialog).getByRole('button', { name: '퍼플' }));
+  await user.click(within(dialog).getByRole('button', { name: '저장' }));
+  const renamed = await within(dialog).findByRole('button', { name: '독서 편집' });
+  await waitFor(() => expect((renamed as HTMLButtonElement).disabled).toBe(false));
+  expect(created.color).toBe('#A06CD5');
+  expect(created.name).toBe('독서');
+  await user.click(within(renamed.parentElement!).getByRole('button', { name: '보관' }));
+  const restore = await within(dialog).findByRole('button', { name: '보관 해제' });
+  await waitFor(() => expect((restore as HTMLButtonElement).disabled).toBe(false));
+  expect(created.archived_at).toBeTruthy();
+  await user.click(restore);
+  await waitFor(() => expect(created.archived_at).toBeNull());
+  expect(within(dialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
+});
+it('서버의 마지막 활성 목표 오류는 보관을 롤백하고 이유를 안내한다', async () => {
+  server.use(
+    http.get(`${baseUrl}/rest/v1/goals`, () =>
+      HttpResponse.json([goalRow, { ...goalRow, id: 'other', name: '공부', sort_key: 'a1' }]),
+    ),
+    http.patch(`${baseUrl}/rest/v1/goals`, () =>
+      HttpResponse.json(
+        { code: 'P0001', message: 'at least one active goal is required' },
+        { status: 400 },
+      ),
+    ),
+  );
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  const dialog = await screen.findByRole('dialog');
+  const editor = await within(dialog).findByRole('button', { name: '공부 편집' });
+  await user.click(within(editor.parentElement!).getByRole('button', { name: '보관' }));
+  expect(await screen.findByText('활성 목표는 하나 이상 있어야 해요')).toBeTruthy();
+  expect(within(dialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
+  expect(within(dialog).getAllByRole('button', { name: '보관' })).toHaveLength(2);
+});

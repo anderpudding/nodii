@@ -1,15 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import type { NodiiClient, Session } from '@nodii/api';
+import type { Profile } from '@nodii/core';
+import { DayView, DaySkeleton } from '../features/day-list/DayView';
+import { GoalManagerSheet } from '../features/goals/GoalManagerSheet';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { logout } from '../lib/logout';
 import { useUIStore } from '../stores/ui';
 
-/** 2단계 셸: 캘린더·목록 데이터는 이후 단계에서 이 자리에 연결한다. */
-export function MainLayout({ client, session }: { client: NodiiClient; session: Session }) {
+/** 인증된 셸 안에서 하루 목록과 목표 관리 시트를 연결한다. */
+export function MainLayout({
+  client,
+  session,
+  profile,
+  profileError,
+  retryProfile,
+}: {
+  client: NodiiClient;
+  session: Session;
+  profile?: Profile;
+  profileError?: boolean;
+  retryProfile?: () => void;
+}) {
   const selectedDate = useUIStore((state) => state.selectedDate);
-  const today = useUIStore((state) => state.today);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -53,7 +68,7 @@ export function MainLayout({ client, session }: { client: NodiiClient; session: 
           <p className="supporting">캘린더를 준비하고 있어요.</p>
         </section>
         <nav className="management" aria-label="관리">
-          <Button variant="ghost" disabled>
+          <Button variant="ghost" onClick={() => setGoalsOpen(true)}>
             목표 관리
           </Button>
           <Button variant="ghost" disabled>
@@ -104,13 +119,21 @@ export function MainLayout({ client, session }: { client: NodiiClient; session: 
           </div>
         </header>
         <main className="day-content">
-          <h1>{format({ month: 'long', day: 'numeric', weekday: 'long' })}</h1>
-          <p className="supporting">{selectedDate === today ? '오늘' : selectedDate}</p>
-          <div className="day-placeholder">
-            <p className="supporting">하루 목록을 준비하고 있어요.</p>
-          </div>
+          {profile ? (
+            <DayView client={client} profile={profile} />
+          ) : profileError ? (
+            <div>
+              <p role="alert">날짜 설정을 불러오지 못했어요.</p>
+              <Button variant="outline" onClick={retryProfile}>
+                다시 시도
+              </Button>
+            </div>
+          ) : (
+            <DaySkeleton />
+          )}
         </main>
       </div>
+      {goalsOpen && <GoalManagerSheet client={client} onClose={() => setGoalsOpen(false)} />}
     </div>
   );
 }

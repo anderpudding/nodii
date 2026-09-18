@@ -1,2 +1,3 @@
 import { setupServer } from 'msw/node';
-export const server = setupServer();
+import { dataHandlers } from './data-fixtures';
+export const server = setupServer(...dataHandlers);
