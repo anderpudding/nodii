@@ -20,7 +20,7 @@ export function DayHeader({ total = 0, done = 0 }: { total?: number; done?: numb
       if (
         event.target instanceof Element &&
         event.target.closest(
-          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="menu"], [role="dialog"]',
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="menu"], [role="dialog"], [role="grid"]',
         )
       )
         return;

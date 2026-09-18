@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { logout } from '../lib/logout';
-import { useUIStore } from '../stores/ui';
+import { MonthCalendar } from '../features/calendar/MonthCalendar';
 
 /** 인증된 셸 안에서 하루 목록과 목표 관리 시트를 연결한다. */
 export function MainLayout({
@@ -23,7 +23,6 @@ export function MainLayout({
   profileError?: boolean;
   retryProfile?: () => void;
 }) {
-  const selectedDate = useUIStore((state) => state.selectedDate);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -31,9 +30,6 @@ export function MainLayout({
   const settings = useRef<HTMLDivElement>(null);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const logoutButton = useRef<HTMLButtonElement>(null);
-  const date = new Date(`${selectedDate}T00:00:00Z`);
-  const format = (options: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat('ko-KR', { ...options, timeZone: 'UTC' }).format(date);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -63,10 +59,7 @@ export function MainLayout({
     <div className="app-shell">
       <aside className="sidebar" aria-label="캘린더와 관리 메뉴">
         <p className="brand">Nodii</p>
-        <section className="calendar-placeholder" aria-label="캘린더 자리">
-          <h2>{format({ year: 'numeric', month: 'long' })}</h2>
-          <p className="supporting">캘린더를 준비하고 있어요.</p>
-        </section>
+        {profile && <MonthCalendar client={client} profile={profile} />}
         <nav className="management" aria-label="관리">
           <Button variant="ghost" onClick={() => setGoalsOpen(true)}>
             목표 관리

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useIsMutating } from '@tanstack/react-query';
 import { normalizeTitle, TITLE_MAX_LENGTH } from '@nodii/core';
 import {
@@ -11,7 +10,7 @@ import {
   type TodoRecord,
 } from '@nodii/api';
 import { toast } from 'sonner';
-import { Button } from '../../components/ui/button';
+import { TodoMenu } from './TodoMenu';
 import { notifyError } from '../../lib/notify-error';
 
 /** 체크·인라인 편집·우클릭 메뉴가 같은 낙관적 행을 조작한다 (TODO-02~04). */
@@ -34,19 +33,16 @@ export function TodoRow({
     predicate: (mutation) =>
       (mutation.state.variables as { id?: string } | undefined)?.id === todo.id,
   });
-  const pending = updating > 0 || creating > 0;
+  const importing = useIsMutating({ mutationKey: ['write', 'import'] });
+  const restoring = useIsMutating({ mutationKey: todoWriteKey('import-undo') });
+  const pending = updating > 0 || creating > 0 || importing > 0 || restoring > 0;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(todo.title);
-  const [menu, setMenu] = useState<{ left: number; top: number } | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const moreRef = useRef<HTMLButtonElement>(null);
   const titleRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const cancelEdit = useRef(false);
   const wasEditing = useRef(false);
-  const menuId = `todo-menu-${todo.id}`;
   function edit() {
-    setMenu(null);
     setDraft(todo.title);
     setEditing(true);
     cancelEdit.current = false;
@@ -57,10 +53,6 @@ export function TodoRow({
     if (title && title !== todo.title) rename.mutate({ todo, title });
     setEditing(false);
   }
-  function openMenu(x: number, y: number) {
-    if (pending) return;
-    setMenu({ left: Math.max(8, Math.min(x, window.innerWidth - 220 - 8)), top: y });
-  }
   useEffect(() => {
     if (editing) {
       inputRef.current?.focus();
@@ -68,34 +60,8 @@ export function TodoRow({
     } else if (wasEditing.current) titleRef.current?.focus();
     wasEditing.current = editing;
   }, [editing]);
-  useEffect(() => {
-    if (!menu) return;
-    const element = menuRef.current;
-    if (element) {
-      element.style.top = `${Math.max(8, Math.min(menu.top, window.innerHeight - element.getBoundingClientRect().height - 8))}px`;
-      element.querySelector<HTMLButtonElement>('button')?.focus();
-    }
-    const close = (event: Event) => {
-      if (
-        event.type === 'pointerdown' &&
-        event.target instanceof Node &&
-        (menuRef.current?.contains(event.target) || moreRef.current?.contains(event.target))
-      )
-        return;
-      setMenu(null);
-    };
-    document.addEventListener('pointerdown', close);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('pointerdown', close);
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
-    };
-  }, [menu]);
   function deleteTodo() {
-    moreRef.current?.closest('section')?.querySelector<HTMLButtonElement>('.goal-chip')?.focus();
-    setMenu(null);
+    titleRef.current?.closest('section')?.querySelector<HTMLButtonElement>('.goal-chip')?.focus();
     // 즉시 실행 취소를 표시하되 복원 요청은 삭제 응답 뒤에 보내 역전을 막는다.
     const deletion = remove.mutateAsync({ todo });
     const toastId = toast('할 일을 삭제했어요', {
@@ -116,13 +82,14 @@ export function TodoRow({
     });
   }
   return (
-    <div
-      className={`todo-row${todo.isDone ? ' todo-done' : ''}`}
-      onContextMenu={(event) => {
-        if (editing) return;
-        event.preventDefault();
-        openMenu(event.clientX, event.clientY);
-      }}
+    <TodoMenu
+      todo={todo}
+      client={client}
+      weekStart={weekStart}
+      pending={pending}
+      editing={editing}
+      onEdit={edit}
+      onDelete={deleteTodo}
     >
       <button
         type="button"
@@ -179,66 +146,6 @@ export function TodoRow({
           {todo.title}
         </button>
       )}
-      <Button
-        ref={moreRef}
-        variant="ghost"
-        className="todo-more"
-        aria-label={`${todo.title} 메뉴`}
-        aria-haspopup="menu"
-        aria-expanded={!!menu}
-        aria-controls={menuId}
-        disabled={pending}
-        onClick={() => {
-          const rect = moreRef.current!.getBoundingClientRect();
-          if (menu) setMenu(null);
-          else openMenu(rect.right - 220, rect.bottom);
-        }}
-      >
-        ⋯
-      </Button>
-      {menu &&
-        createPortal(
-          <div
-            ref={menuRef}
-            id={menuId}
-            className="todo-menu"
-            style={menu}
-            role="menu"
-            aria-label="할 일 메뉴"
-            onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                event.preventDefault();
-                setMenu(null);
-                moreRef.current?.focus();
-              }
-              if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
-                event.preventDefault();
-                const items = Array.from(
-                  event.currentTarget.querySelectorAll<HTMLButtonElement>('button'),
-                );
-                const index = items.indexOf(document.activeElement as HTMLButtonElement);
-                items[
-                  event.key === 'Home'
-                    ? 0
-                    : event.key === 'End'
-                      ? items.length - 1
-                      : (index + (event.key === 'ArrowUp' ? -1 : 1) + items.length) % items.length
-                ]?.focus();
-              }
-            }}
-          >
-            <Button role="menuitem" variant="ghost" onClick={edit}>
-              수정
-            </Button>
-            <Button role="menuitem" variant="ghost" className="danger-text" onClick={deleteTodo}>
-              삭제
-            </Button>
-          </div>,
-          document.body,
-        )}
-    </div>
+    </TodoMenu>
   );
 }
