@@ -1,0 +1,143 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { createNodiiClient, type NodiiClient } from '../client';
+import { mapGoal, mapTodo } from '../mappers';
+import { archiveGoal, createGoal, listGoals, unarchiveGoal, updateGoal } from './goals';
+import { createTodo, listTodosInRange, softDeleteTodo, updateTodo } from './todos';
+
+const goal = {
+  id: 'goal-id',
+  user_id: 'user-id',
+  name: '공부',
+  color: '#4F7CFF',
+  sort_key: 'a0',
+  archived_at: null,
+  deleted_at: null,
+  created_at: '',
+  updated_at: 'server-time',
+};
+const todo = {
+  id: 'todo-id',
+  user_id: 'user-id',
+  goal_id: goal.id,
+  title: '읽기',
+  date: '2026-09-30',
+  is_done: false,
+  done_at: null,
+  sort_key: 'a0',
+  deleted_at: null,
+  created_at: '',
+  updated_at: 'server-time',
+};
+const clients: NodiiClient[] = [];
+it('응답 상한에 도달하면 다음 페이지까지 읽어 목록을 누락하지 않는다', async () => {
+  const { client, fetch } = setup([]);
+  fetch.mockImplementationOnce(
+    async () =>
+      new Response(
+        JSON.stringify(Array.from({ length: 1000 }, (_, i) => ({ ...todo, id: `todo-${i}` }))),
+      ),
+  );
+  fetch.mockImplementationOnce(async () => new Response(JSON.stringify([{ ...todo, id: 'last' }])));
+  expect(await listTodosInRange(client, todo.date, todo.date)).toHaveLength(1001);
+  expect(String(fetch.mock.calls[1]![0])).toContain('offset=1000');
+});
+function setup(response: unknown) {
+  const fetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify(response)));
+  vi.stubGlobal('fetch', fetch);
+  const client = createNodiiClient({
+    url: 'http://127.0.0.1:54321',
+    publishableKey: 'test-key',
+    storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  });
+  clients.push(client);
+  return { client, fetch };
+}
+afterEach(async () => {
+  await Promise.all(clients.splice(0).map((client) => client.auth.dispose()));
+  vi.unstubAllGlobals();
+});
+it('목표 조회는 삭제 제외·보관 포함이고 서버 시각을 보존한다', async () => {
+  const { client, fetch } = setup([{ ...goal, archived_at: '2026-09-17T00:00:00Z' }]);
+  expect(await listGoals(client)).toEqual([
+    { ...mapGoal(goal), archivedAt: '2026-09-17T00:00:00Z' },
+  ]);
+  const url = String(fetch.mock.calls[0]?.[0]);
+  expect(url).toContain('deleted_at=is.null');
+  expect(url).not.toContain('archived_at=');
+});
+it('목표 생성은 UUID를 전하고 이름·색·키 수정은 한 행만 갱신한다', async () => {
+  const { client, fetch } = setup(goal);
+  await createGoal(client, mapGoal(goal));
+  expect(JSON.parse(fetch.mock.calls[0]![1].body)).toMatchObject({
+    id: goal.id,
+    name: '공부',
+    color: goal.color,
+    sort_key: 'a0',
+  });
+  await updateGoal(client, goal.id, { name: '독서', color: '#F0715A', sortKey: 'a1' });
+  expect(String(fetch.mock.calls[1]![0])).toContain('id=eq.goal-id');
+  expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({
+    name: '독서',
+    color: '#F0715A',
+    sort_key: 'a1',
+  });
+});
+it('보관·해제는 archived_at만 바꾸고 마지막 목표 DB 오류를 매핑한다', async () => {
+  const { client, fetch } = setup(goal);
+  await archiveGoal(client, goal.id, 'archive-time');
+  await unarchiveGoal(client, goal.id);
+  expect(JSON.parse(fetch.mock.calls[0]![1].body)).toEqual({ archived_at: 'archive-time' });
+  expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({ archived_at: null });
+  fetch.mockImplementation(
+    async () =>
+      new Response(
+        JSON.stringify({ code: 'P0001', message: 'at least one active goal is required' }),
+        { status: 400 },
+      ),
+  );
+  await expect(archiveGoal(client, goal.id)).rejects.toEqual({ code: 'last_active_goal' });
+});
+it('할 일 조회는 양 끝 date를 포함하며 삭제 제외 조건을 전달한다', async () => {
+  const { client, fetch } = setup([todo]);
+  expect(await listTodosInRange(client, '2026-08-30', '2026-10-10')).toEqual([mapTodo(todo)]);
+  const url = String(fetch.mock.calls[0]![0]);
+  expect(url).toContain('date=gte.2026-08-30');
+  expect(url).toContain('date=lte.2026-10-10');
+  expect(url).toContain('deleted_at=is.null');
+});
+it('완료와 취소는 is_done·done_at을 하나의 PATCH로 보내고 UUID 생성·소프트 삭제를 지원한다', async () => {
+  const { client, fetch } = setup(todo);
+  await createTodo(client, mapTodo(todo));
+  expect(JSON.parse(fetch.mock.calls[0]![1].body)).toMatchObject({
+    id: todo.id,
+    goal_id: goal.id,
+    date: todo.date,
+  });
+  await updateTodo(client, todo.id, { isDone: true, doneAt: 'done-time' });
+  await updateTodo(client, todo.id, { isDone: false });
+  await softDeleteTodo(client, todo.id, 'delete-time');
+  expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({ is_done: true, done_at: 'done-time' });
+  expect(JSON.parse(fetch.mock.calls[2]![1].body)).toEqual({ is_done: false, done_at: null });
+  expect(JSON.parse(fetch.mock.calls[3]![1].body)).toEqual({ deleted_at: 'delete-time' });
+});
+it('잘못된 제목·목표 이름·색을 요청 전에 거부하고 조회 오류를 전한다', async () => {
+  const { client, fetch } = setup(todo);
+  await expect(createTodo(client, { ...mapTodo(todo), title: ' ' })).rejects.toThrow(
+    'invalid_title',
+  );
+  await expect(updateTodo(client, todo.id, { title: 'x'.repeat(201) })).rejects.toThrow(
+    'invalid_title',
+  );
+  await expect(createGoal(client, { ...mapGoal(goal), name: ' ' })).rejects.toThrow(
+    'invalid_goal_name',
+  );
+  await expect(updateGoal(client, goal.id, { color: 'red' })).rejects.toThrow('invalid_goal_color');
+  expect(fetch).not.toHaveBeenCalled();
+  fetch.mockImplementation(
+    async () => new Response(JSON.stringify({ code: '42501', message: 'denied' }), { status: 403 }),
+  );
+  await expect(listGoals(client)).rejects.toMatchObject({ code: '42501' });
+  await expect(listTodosInRange(client, todo.date, todo.date)).rejects.toMatchObject({
+    code: '42501',
+  });
+});
