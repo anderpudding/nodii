@@ -17,6 +17,8 @@ export interface NodiiClientOptions {
   storage: AuthStorage;
 }
 
+export const AUTH_STORAGE_KEY = 'nodii.auth';
+
 export type NodiiClient = SupabaseClient<Database>;
 
 export function createNodiiClient({
@@ -27,6 +29,7 @@ export function createNodiiClient({
   return createClient<Database>(url, publishableKey, {
     auth: {
       storage,
+      storageKey: AUTH_STORAGE_KEY,
       persistSession: true,
       autoRefreshToken: true,
       // 이메일 OTP만 쓰므로 URL에서 세션을 읽을 일이 없다 (설계서 §6.5)
