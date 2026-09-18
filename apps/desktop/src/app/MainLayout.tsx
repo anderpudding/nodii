@@ -35,7 +35,8 @@ export function MainLayout({ client, session }: { client: NodiiClient; session: 
     if (pending) return;
     setPending(true);
     try {
-      await logout(client, queryClient);
+      const { localOnly } = await logout(client, queryClient);
+      if (localOnly) toast.success('이 기기에서 로그아웃했어요');
     } catch {
       toast.error('로그아웃하지 못했어요. 다시 시도해 주세요.');
     } finally {

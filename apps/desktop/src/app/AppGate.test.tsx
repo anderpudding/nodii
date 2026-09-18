@@ -3,15 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
+import { toast } from 'sonner';
 import { AUTH_STORAGE_KEY, type NodiiClient } from '@nodii/api';
 import { AppGate } from './AppGate';
 import { server } from '../test/server';
 import { baseUrl, createTestClient, sessionResponse } from '../test/auth-fixtures';
 import { logout } from '../lib/logout';
+import { authStorage } from '../lib/supabase';
 
 const clients: NodiiClient[] = [];
 const queries: QueryClient[] = [];
 afterEach(async () => {
+  vi.restoreAllMocks();
   queries.splice(0).forEach((query) => query.clear());
   await Promise.all(clients.splice(0).map((client) => client.auth.dispose()));
 });
@@ -104,17 +107,92 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
   expect(queryClient.getQueryData(['goals'])).toBeUndefined();
   expect((await client.auth.getSession()).data.session).toBeNull();
 });
-it('로그아웃 실패 시 캐시·저장소를 먼저 지우지 않는다', async () => {
-  const clear = vi.fn();
+it.each([
+  [{ status: 429 }, 'rate_limited'],
+  [new Error('Unexpected error'), 'unknown'],
+])(
+  '네트워크 외 로그아웃 오류 %j는 실패로 처리하고 로컬 정리를 하지 않는다',
+  async (error, code) => {
+    const clear = vi.fn();
+    const client = createTestClient();
+    clients.push(client);
+    const queryClient = new QueryClient();
+    queries.push(queryClient);
+    queryClient.setQueryData(['goals'], ['private-data']);
+    vi.spyOn(client.auth, 'signOut').mockRejectedValue(error);
+    await expect(logout(client, queryClient, clear)).rejects.toEqual({ code });
+    expect(queryClient.getQueryData(['goals'])).toEqual(['private-data']);
+    expect(clear).not.toHaveBeenCalled();
+  },
+);
+it.each([false, true])(
+  '로그아웃은 로컬 정리 후 서버 로그아웃 여부를 반환한다 (오프라인: %s)',
+  async (offline) => {
+    const clear = vi.fn();
+    const client = createTestClient();
+    clients.push(client);
+    const queryClient = new QueryClient();
+    queries.push(queryClient);
+    queryClient.setQueryData(['goals'], ['private-data']);
+    const signOut = vi.spyOn(client.auth, 'signOut');
+    if (offline) signOut.mockRejectedValue(new TypeError('Failed to fetch'));
+    else signOut.mockResolvedValue({ error: null });
+
+    await expect(logout(client, queryClient, clear)).resolves.toEqual({ localOnly: offline });
+    expect(queryClient.getQueryData(['goals'])).toBeUndefined();
+    expect(clear).toHaveBeenCalledOnce();
+  },
+);
+it('오프라인 로그아웃은 인증 저장소와 캐시를 비우고 로그인 화면과 로컬 로그아웃 토스트를 표시한다', async () => {
+  await authStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify({ ...sessionResponse, expires_at: Math.floor(Date.now() / 1000) + 3600 }),
+  );
+  await authStorage.setItem(`${AUTH_STORAGE_KEY}-code-verifier`, 'test-verifier');
+  await authStorage.setItem(`${AUTH_STORAGE_KEY}-user`, JSON.stringify(sessionResponse.user));
+  const successToast = vi.spyOn(toast, 'success');
+  const errorToast = vi.spyOn(toast, 'error');
+  server.use(
+    http.get(`${baseUrl}/rest/v1/app_config`, () => HttpResponse.json({ value: '0.1.0' })),
+    http.get(`${baseUrl}/rest/v1/profiles`, () =>
+      HttpResponse.json({
+        id: sessionResponse.user.id,
+        display_name: null,
+        week_start: 0,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    ),
+    http.post(`${baseUrl}/auth/v1/logout`, () => HttpResponse.error()),
+  );
+  const { client, queryClient } = setup(createTestClient(authStorage));
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: '설정' }));
+  queryClient.setQueryData(['goals'], ['private-data']);
+  await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
+
+  expect(await screen.findByLabelText('이메일')).toBeTruthy();
+  await waitFor(() => expect(successToast).toHaveBeenCalledWith('이 기기에서 로그아웃했어요'));
+  expect(errorToast).not.toHaveBeenCalled();
+  expect(queryClient.getQueryData(['goals'])).toBeUndefined();
+  for (const key of [
+    AUTH_STORAGE_KEY,
+    `${AUTH_STORAGE_KEY}-code-verifier`,
+    `${AUTH_STORAGE_KEY}-user`,
+  ]) {
+    expect(await authStorage.getItem(key)).toBeNull();
+  }
+  expect((await client.auth.getSession()).data.session).toBeNull();
+});
+it('오프라인 로그아웃 중 인증 저장소 정리 실패는 성공으로 처리하지 않는다', async () => {
   const client = createTestClient();
   clients.push(client);
   const queryClient = new QueryClient();
   queries.push(queryClient);
-  queryClient.setQueryData(['goals'], ['private-data']);
   vi.spyOn(client.auth, 'signOut').mockRejectedValue(new TypeError('Failed to fetch'));
-  await expect(logout(client, queryClient, clear)).rejects.toEqual({ code: 'network' });
-  expect(queryClient.getQueryData(['goals'])).toEqual(['private-data']);
-  expect(clear).not.toHaveBeenCalled();
+  const storageError = new Error('Storage unavailable');
+  const clear = vi.fn().mockRejectedValue(storageError);
+
+  await expect(logout(client, queryClient, clear)).rejects.toBe(storageError);
 });
 it('인증 구독은 화면 해제 시 정리한다', async () => {
   server.use(
