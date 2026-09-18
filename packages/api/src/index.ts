@@ -13,3 +13,5 @@ export * from './repositories/goals';
 export * from './repositories/todos';
 export * from './hooks/queries';
 export * from './hooks/mutations';
+
+export * from './hooks/move-todos';

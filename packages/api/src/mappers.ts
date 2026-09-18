@@ -12,7 +12,9 @@ export interface TodoRecord extends Todo {
   doneAt: string | null;
 }
 export type GoalChanges = Partial<Pick<Goal, 'name' | 'color' | 'sortKey' | 'archivedAt'>>;
-export type TodoChanges = Partial<Pick<TodoRecord, 'title' | 'isDone' | 'doneAt' | 'deletedAt'>>;
+export type TodoChanges = Partial<
+  Pick<TodoRecord, 'title' | 'isDone' | 'doneAt' | 'deletedAt' | 'date' | 'sortKey'>
+>;
 
 /** DB의 목표 행을 화면과 캐시가 공유하는 타입으로 바꾼다. */
 export function mapGoal(row: Database['public']['Tables']['goals']['Row']): GoalRecord {
@@ -70,6 +72,8 @@ export function todoChangesToRow(
     is_done: changes.isDone,
     done_at: changes.doneAt,
     deleted_at: changes.deletedAt,
+    date: changes.date,
+    sort_key: changes.sortKey,
   };
 }
 /** 할 일 생성에 클라이언트 UUID와 달력 날짜를 그대로 사용한다. */

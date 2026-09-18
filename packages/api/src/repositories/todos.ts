@@ -1,4 +1,4 @@
-import { normalizeTitle, type ISODate, type Todo } from '@nodii/core';
+import { normalizeTitle, overdueRange, type ISODate, type Todo } from '@nodii/core';
 import type { NodiiClient } from '../client';
 import {
   mapTodo,
@@ -14,6 +14,7 @@ export async function listTodosInRange(
   from: ISODate,
   to: ISODate,
   signal?: AbortSignal,
+  onlyIncomplete = false,
 ) {
   const rows: TodoRecord[] = [];
   // 42일에 1000개를 넘겨도 기본 응답 상한 때문에 목록이 잘리지 않아야 한다.
@@ -27,12 +28,37 @@ export async function listTodosInRange(
       .order('sort_key')
       .order('id')
       .range(offset, offset + 999);
+    if (onlyIncomplete) query = query.eq('is_done', false);
     if (signal) query = query.abortSignal(signal);
     const { data, error } = await query;
     if (error) throw error;
     rows.push(...data.map(mapTodo));
     if (data.length < 1000) return rows;
   }
+}
+
+/** 서버에서 최근 7일 미완료만 조회하고 자동 이월하지 않는다 (TODO-10). */
+export function listOverdue(client: NodiiClient, today: ISODate, signal?: AbortSignal) {
+  const { from, to } = overdueRange(today);
+  return listTodosInRange(client, from, to, signal, true);
+}
+
+/** 지정한 한 행의 날짜와 정렬 키만 함께 갱신한다 (TODO-05). */
+export function moveTodo(client: NodiiClient, id: string, date: ISODate, sortKey: string) {
+  return updateTodo(client, id, { date, sortKey });
+}
+
+export interface TodoMove {
+  id: string;
+  sort_key: string;
+}
+/** 한 번의 RPC로 여러 행을 원자적으로 이동한다 (TODO-10). */
+export async function moveTodos(client: NodiiClient, moves: TodoMove[], date: ISODate) {
+  const { error } = await client.rpc('move_todos', {
+    p_moves: moves.map((move) => ({ ...move })),
+    p_date: date,
+  });
+  if (error) throw error;
 }
 /** 할 일의 ID는 호출자가 만들어 낙관적 행과 일치시킨다 (TODO-01). */
 export async function createTodo(client: NodiiClient, todo: Todo) {

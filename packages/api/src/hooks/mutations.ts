@@ -34,8 +34,11 @@ function useRowMutation<V, T extends MutationRow>(
     retry: false,
     mutationFn: request,
     onMutate: (value: V) => beginOptimistic(cache, keys(value), optimistic(value)),
-    onSuccess: (row, value, snapshots) =>
-      commitOptimistic(cache, snapshots ?? [], keys(value), row),
+    onSuccess: (row, value, snapshots) => {
+      commitOptimistic(cache, snapshots ?? [], keys(value), row);
+      if (key[1] === 'todo' || key[1] === 'goal')
+        void cache.invalidateQueries({ queryKey: ['overdue'] });
+    },
     onError: (error, value, snapshots) => {
       rollbackOptimistic(cache, snapshots ?? [], optimistic(value).id);
       options.onError(error, () => mutation.mutate(value));
