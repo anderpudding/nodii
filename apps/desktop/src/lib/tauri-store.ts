@@ -12,7 +12,7 @@ export function getSessionStore(): Promise<Store> {
   return sessionStore;
 }
 
-/** supabase-js `auth.storage`에 넣는 어댑터 (2단계에서 사용) */
+/** AUTH-02: 앱 종료 직전에도 세션이 보존되도록 디스크 저장까지 기다린다. */
 export const tauriAuthStorage: AuthStorage = {
   async getItem(key) {
     const store = await getSessionStore();
@@ -21,9 +21,11 @@ export const tauriAuthStorage: AuthStorage = {
   async setItem(key, value) {
     const store = await getSessionStore();
     await store.set(key, value);
+    await store.save();
   },
   async removeItem(key) {
     const store = await getSessionStore();
     await store.delete(key);
+    await store.save();
   },
 };

@@ -2,6 +2,20 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "메인 창에 허용하는 권한 (필요한 것만)",
-  "windows": ["main"],
-  "permissions": ["core:default", "store:default", "opener:default"]
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "store:default",
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "macappstore://apps.apple.com/app/id*"
+        }
+      ]
+    }
+  ]
 }
