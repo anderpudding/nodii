@@ -90,15 +90,24 @@
 
 ### 2단계 · 인증 + 앱 셸 (~1주)
 
-- [ ] `@nodii/api`: plugin-store 저장소 어댑터를 넣은 Supabase 클라이언트
-- [ ] 로그인 화면: 이메일 → 6자리 코드 (붙여넣기, 60초 재전송 카운트다운, 오류 안내)
-- [ ] 심사 계정 분기: `REVIEW_ACCOUNT_EMAIL`일 때만 비밀번호 입력 (AUTH-08)
-- [ ] 세션 복원, 로그아웃 시 Query 캐시와 persister 삭제
-- [ ] 로그인 직후 `profiles.timezone`을 실제 시간대로 갱신 (§5 보완 사항)
-- [ ] 최소 지원 버전 확인 (§6.7), QueryClient · 레이아웃 뼈대 · 토스트
-- [ ] 로컬 개발은 Supabase 로컬 메일 확인 도구(`localhost:54324`)로 OTP 수신
+- [x] `@nodii/api`: plugin-store 저장소 어댑터를 넣은 Supabase 클라이언트
+- [x] 로그인 화면: 이메일 → 6자리 코드 (붙여넣기, 60초 재전송 카운트다운, 오류 안내)
+- [x] 심사 계정 분기: `REVIEW_ACCOUNT_EMAIL`일 때만 비밀번호 입력 (AUTH-08)
+- [x] 세션 복원, 로그아웃 시 Query 캐시와 인증 저장소 삭제 (persister 삭제는 지시서대로 6단계에서 `logout`에 추가)
+- [x] 로그인 직후 `profiles.timezone`을 실제 시간대로 갱신 (§5 보완 사항)
+- [x] 최소 지원 버전 확인 (§6.7), QueryClient · 레이아웃 뼈대 · 토스트
+- [x] 로컬 개발은 Supabase 로컬 메일 확인 도구(`localhost:54324`)로 OTP 수신
 
 **완료 기준:** 새 이메일로 가입 → 기본 목표 "할 일" 생성 → 앱 재실행 시 로그인 유지 → 로그아웃 시 로그인 화면.
+
+**2단계 검증·보완 (2026-09-17)**
+- AUTH-01/02/03/07/08: OTP·심사 계정 API, 세션 저장/복원, 로그아웃 정리, 한국어 오류, 6칸 붙여넣기·자동 제출·60초 재전송 구현. `plugin-store`는 쓰기/삭제 뒤 `save()`까지 기다림.
+- SET-05·G2: 숫자 단위 버전 비교, 최소 버전 조회 실패/잘못된 값 통과, 3초 요청 제한, 시간대가 다를 때만 UPDATE 및 Query 재시도. `getVersion()`은 Tauri에서만 사용하고 브라우저는 앱 패키지 버전을 사용.
+- 기본 opener 권한은 `macappstore://`를 허용하지 않아 기존 capability에 `macappstore://apps.apple.com/app/id*`만 추가. Rust·플러그인·DB 스키마 변경 없음.
+- 문서 차이: 기존 가입 트리거의 기본 목표 색은 `#4F7CFF`, 새 디자인 토큰은 코랄 `#F0715A`. 기존 마이그레이션은 유지했으며 후속 단계에서 새 마이그레이션으로 맞출지 결정 필요. GoTrue의 `otp_expired`는 틀린 코드에도 올 수 있어 해당 응답은 새 코드 요청 안내로 처리하고, 별도의 invalid 응답은 틀린 코드 문구를 사용.
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` 통과: core 141 + api 28 + desktop 17 = 186검사. core 커버리지 문장/함수/라인 100%, 분기 98.99%. `pnpm build:web` 통과(단일 JS 청크 약 566.5KB 경고, 폰트 2.06MB 번들). DB 스키마 변경이 없어 `db:reset`·`db:test`·`db:types`는 실행하지 않음.
+- 로컬 실제 검증: `stage2-smoke-0917@example.com` 신규 가입 → 메일함 54324의 6자리 코드 붙여넣기 → 메인 → 새로고침 후 세션 유지 → 로그아웃 후 로그인 화면. DB에서 `profiles.timezone = America/Vancouver`, 기본 목표 “할 일” 생성 확인. `otp.html`의 `{{ .Token }}`과 6자리/600초 설정 확인.
+- 사람 확인: Tauri 앱 완전 종료·재실행의 세션 유지와 로그아웃, 실제 App Store ID 설정 후 업데이트 이동, macOS 라이트·다크 확인. 계획서의 persister 정리는 아직 도입하지 않은 6단계 작업임.
 
 ### 3단계 · 목표 + 하루 목록 (S1, S2) (~1.5주)
 
@@ -210,3 +219,5 @@
 | 2026-09-17 | 1b | `@nodii/core` 날짜·반복 판정/미리보기·하루 목록/월 집계·수정 범위/검증·정렬 키·지난 할 일 가져오기 계획 구현. 테스트 먼저 작성, core 7파일 117검사 통과(문장/함수/라인 100%, 분기 98.37%, 기존 임계값 90% 유지). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 117 + api 4)·`pnpm --filter @nodii/core test:coverage` 및 `TZ=America/Vancouver pnpm --filter @nodii/core test` 통과. 순수 런타임 의존성 `fractional-indexing` 4.0.0 추가. Git에서 제외한 로컬 에이전트 스킬이 lint 대상에 들어가던 기존 설정을 동일 경로 제외로 보완. DB/API/desktop 변경 없음으로 DB 검증은 미실행. ADR-003·004·005 검증 요약은 위 core 항목 참조. 사람 확인: PR/CI 및 ADR 상태 확정 검토, UI 통합은 후속 단계. |
 | 2026-09-17 | 1b | TODO-10·ROUT-01 후속 수정: `todayItems`로 할 일·전개 루틴의 목표별 최대 정렬 키를 반영하고, 반복 종류에 맞지 않는 배열을 거부하도록 검증 강화. 테스트 먼저 추가하여 실패 확인 후 구현, core 127검사 통과(문장/함수/라인 100%, 분기 98.95%). `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(core 127 + api 4)·`pnpm --filter @nodii/core test:coverage` 통과. 새 의존성 없음. DB 변경이 없어 DB 검증은 미실행. 문서의 null/빈 배열 설명 차이는 위 후속 보완에 기록. 사람 확인: PR/CI와 설계서 설명 정정 검토. |
 | 2026-09-17 | 디자인 | 디자인 기준 확정. `DESIGN.md`와 `docs/design/`(토큰·컴포넌트·화면 스펙) 추가, 화면 시안은 Claude 디자인 캔버스(메인 라이트·다크, 로그인, 목표 관리, 루틴 편집·관리·적용 범위, 설정, 업데이트 안내, 스타일 기초). UI 단계(2~5, 7) 지시서와 AGENTS.md에 읽을 문서로 연결. 남은 일: 드래그 중 모습, 첫 로그인 빈 상태, 정보 링크 실제 주소. |
+
+| 2026-09-17 | 2 | AUTH-01/02/03/07/08·SET-05 인증 및 앱 셸 구현, G2 시간대 동기화·최소 버전 게이트·시스템 테마·공통 오류 토스트 추가. 필수 검사 4종(186검사)·core 커버리지·웹 빌드 통과. 로컬 실제 OTP 가입/새로고침 세션 유지/로그아웃·기본 목표·시간대 확인. 기존 opener에 App Store URL 범위만 추가. 기본 목표 색 문서 차이, Tauri 재실행·스토어 이동 사람 확인, 6단계 persister 후속 사항은 위 검증·보완 참조. |

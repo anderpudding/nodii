@@ -60,3 +60,11 @@ export interface DaySummary {
   total: number;
   remaining: number;
 }
+
+/** 사용자 설정은 서버 상태로만 보관한다. */
+export interface Profile {
+  id: string;
+  displayName: string | null;
+  timezone: string;
+  weekStart: 0 | 1;
+}
