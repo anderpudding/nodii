@@ -19,13 +19,23 @@ import { Button } from '../components/ui/button';
 function SignedIn({ client, session }: { client: NodiiClient; session: Session }) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // G2의 쓰기는 로그인 진행과 독립적이며 실패하면 Query가 재시도한다.
-  useQuery({
+  const profile = useQuery({
     queryKey: ['profile', session.user.id, timezone],
     queryFn: ({ signal }) => syncProfileTimezone(client, session.user.id, timezone, signal),
     retry: 2,
     staleTime: Infinity,
   });
-  return <MainLayout client={client} session={session} />;
+  return (
+    <MainLayout
+      client={client}
+      session={session}
+      profile={profile.data}
+      profileError={profile.isError}
+      retryProfile={() => {
+        void profile.refetch();
+      }}
+    />
+  );
 }
 
 /** I6: 라우터 없이 버전 검사 → 인증 → 메인 화면 순서로 진입을 제어한다. */

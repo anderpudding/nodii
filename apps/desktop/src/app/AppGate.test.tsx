@@ -101,10 +101,10 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
   await user.paste('123456');
   await user.click(await screen.findByRole('button', { name: '설정' }));
   expect(screen.getByText('user@example.com')).toBeTruthy();
-  queryClient.setQueryData(['goals'], ['private-data']);
+  queryClient.setQueryData(['private-test'], ['private-data']);
   await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
   expect(await screen.findByLabelText('이메일')).toBeTruthy();
-  expect(queryClient.getQueryData(['goals'])).toBeUndefined();
+  expect(queryClient.getQueryData(['private-test'])).toBeUndefined();
   expect((await client.auth.getSession()).data.session).toBeNull();
 });
 it.each([
@@ -118,10 +118,10 @@ it.each([
     clients.push(client);
     const queryClient = new QueryClient();
     queries.push(queryClient);
-    queryClient.setQueryData(['goals'], ['private-data']);
+    queryClient.setQueryData(['private-test'], ['private-data']);
     vi.spyOn(client.auth, 'signOut').mockRejectedValue(error);
     await expect(logout(client, queryClient, clear)).rejects.toEqual({ code });
-    expect(queryClient.getQueryData(['goals'])).toEqual(['private-data']);
+    expect(queryClient.getQueryData(['private-test'])).toEqual(['private-data']);
     expect(clear).not.toHaveBeenCalled();
   },
 );
@@ -133,13 +133,13 @@ it.each([false, true])(
     clients.push(client);
     const queryClient = new QueryClient();
     queries.push(queryClient);
-    queryClient.setQueryData(['goals'], ['private-data']);
+    queryClient.setQueryData(['private-test'], ['private-data']);
     const signOut = vi.spyOn(client.auth, 'signOut');
     if (offline) signOut.mockRejectedValue(new TypeError('Failed to fetch'));
     else signOut.mockResolvedValue({ error: null });
 
     await expect(logout(client, queryClient, clear)).resolves.toEqual({ localOnly: offline });
-    expect(queryClient.getQueryData(['goals'])).toBeUndefined();
+    expect(queryClient.getQueryData(['private-test'])).toBeUndefined();
     expect(clear).toHaveBeenCalledOnce();
   },
 );
@@ -167,13 +167,13 @@ it('오프라인 로그아웃은 인증 저장소와 캐시를 비우고 로그�
   const { client, queryClient } = setup(createTestClient(authStorage));
   const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: '설정' }));
-  queryClient.setQueryData(['goals'], ['private-data']);
+  queryClient.setQueryData(['private-test'], ['private-data']);
   await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
 
   expect(await screen.findByLabelText('이메일')).toBeTruthy();
   await waitFor(() => expect(successToast).toHaveBeenCalledWith('이 기기에서 로그아웃했어요'));
   expect(errorToast).not.toHaveBeenCalled();
-  expect(queryClient.getQueryData(['goals'])).toBeUndefined();
+  expect(queryClient.getQueryData(['private-test'])).toBeUndefined();
   for (const key of [
     AUTH_STORAGE_KEY,
     `${AUTH_STORAGE_KEY}-code-verifier`,

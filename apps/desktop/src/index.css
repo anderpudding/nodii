@@ -356,3 +356,336 @@ h2 {
     animation: none !important;
   }
 }
+
+/* 3단계: DESIGN.md / docs/design의 목표 이름표·하루 목록·시트 토큰. */
+.day-header,
+.day-navigation,
+.goal-sheet-header,
+.goal-manager-summary,
+.goal-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.day-header .supporting {
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.day-empty {
+  margin-top: 26px;
+}
+.goal-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin-top: 26px;
+}
+.goal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 4px 11px 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--goal-tint-light);
+  color: var(--goal-ink-light);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+  overflow-wrap: anywhere;
+}
+.dark .goal-chip {
+  background: var(--goal-tint-dark);
+  color: var(--goal-ink-dark);
+}
+button.goal-chip,
+.goal-expand,
+.color-option {
+  cursor: pointer;
+}
+button.goal-chip:hover {
+  text-decoration: underline;
+}
+button.goal-chip:disabled {
+  background: var(--color-box);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+.goal-chip-archived {
+  opacity: 0.55;
+}
+.todo-rows {
+  margin-top: 8px;
+}
+.todo-row,
+.add-todo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 4px 0;
+}
+.todo-check,
+.empty-check {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--color-field);
+  background: var(--color-box);
+}
+.todo-check {
+  padding: 0;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease-out,
+    background-color 0.15s ease-out;
+}
+.todo-check:active {
+  transform: scale(0.86);
+}
+.todo-check[aria-pressed='true'] {
+  background: var(--goal-color);
+  border-color: var(--goal-color);
+  color: var(--goal-check);
+}
+.todo-check svg,
+.color-option svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.todo-check svg {
+  animation: check-appear 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.35);
+}
+@keyframes check-appear {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.todo-check:disabled,
+.todo-title:disabled {
+  cursor: wait;
+}
+.todo-title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  padding: 4px 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.todo-done .todo-title {
+  color: var(--color-muted);
+  text-decoration: line-through 1px var(--color-line-2);
+}
+.todo-more {
+  opacity: 0;
+}
+.todo-row:hover .todo-more,
+.todo-row:focus-within .todo-more {
+  opacity: 1;
+}
+.todo-edit,
+.add-todo input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: var(--color-side);
+  color: var(--color-ink);
+  font-size: 15px;
+  padding: 4px;
+  caret-color: var(--goal-color);
+  border-radius: 9px;
+}
+.add-todo {
+  flex-wrap: wrap;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--color-side);
+}
+.empty-check {
+  border-color: var(--color-line-2);
+}
+.input-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.add-todo [aria-invalid='true'] + .input-hint {
+  color: var(--color-danger);
+}
+.todo-menu {
+  position: fixed;
+  z-index: 1;
+  width: 220px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow:
+    0 14px 36px rgba(22, 24, 29, 0.16),
+    0 0 0 1px var(--color-line);
+  animation: menu-appear 0.14s ease-out;
+}
+.dark .todo-menu {
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.todo-menu .button {
+  width: 100%;
+  justify-content: flex-start;
+}
+.danger-text {
+  color: var(--color-danger);
+}
+@keyframes menu-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.day-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin-top: 26px;
+}
+.day-skeleton div {
+  height: 44px;
+  border-radius: 10px;
+  background: var(--color-box);
+}
+.goal-sheet {
+  position: fixed;
+  inset: 26px 26px auto;
+  margin: 0 auto;
+  width: calc(100% - 48px);
+  max-width: 880px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 0;
+  border-radius: 14px;
+  padding: 26px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0 24px 64px rgba(22, 24, 29, 0.22);
+}
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: rgba(22, 24, 29, 0.32);
+}
+.dark .goal-sheet {
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.dark .sheet-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+.goal-sheet-header {
+  margin-bottom: 26px;
+}
+.goal-manager-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.goal-expand {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 999px;
+}
+.goal-expand:disabled {
+  cursor: wait;
+}
+.goal-edit-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--color-side);
+}
+.goal-edit-form label,
+.new-goal-form label,
+.goal-palette legend {
+  font-size: 12px;
+  font-weight: 600;
+}
+.goal-edit-form .input,
+.new-goal-form .input {
+  height: 40px;
+}
+.goal-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.goal-palette legend {
+  margin-bottom: 8px;
+}
+.color-option {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--goal-color);
+  color: var(--goal-check);
+}
+.color-option[aria-pressed='true'] {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.color-option:hover {
+  box-shadow: 0 0 0 1px var(--color-field);
+}
+.goal-edit-actions {
+  align-self: flex-end;
+}
+.new-goal-form {
+  margin-top: 26px;
+}
+.new-goal-form > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.archived-goals {
+  margin-top: 26px;
+}
+.archived-goals h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}

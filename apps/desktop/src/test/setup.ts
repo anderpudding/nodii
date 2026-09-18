@@ -30,3 +30,6 @@ vi.stubGlobal(
   },
 );
 if (!document.elementFromPoint) document.elementFromPoint = () => null;
+// Sonner의 드래그 제스처 API는 jsdom에 없어 빈 구현으로 대체한다.
+HTMLElement.prototype.setPointerCapture = () => {};
+HTMLElement.prototype.releasePointerCapture = () => {};
