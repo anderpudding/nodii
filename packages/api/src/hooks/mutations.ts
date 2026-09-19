@@ -8,6 +8,7 @@ import {
   commitOptimistic,
   rollbackOptimistic,
 } from '../optimistic';
+import { assertOnline } from '../connectivity';
 import { queryKeys } from '../query-keys';
 import { archiveGoal, createGoal, unarchiveGoal, updateGoal } from '../repositories/goals';
 import { createTodo, softDeleteTodo, updateTodo } from '../repositories/todos';
@@ -32,8 +33,14 @@ export function useRowMutation<V, T extends MutationRow>(
     // 오프라인 큐를 만들지 않고 즉시 실패·롤백한다 (MVP: 오프라인 쓰기 제외).
     networkMode: 'always',
     retry: false,
-    mutationFn: request,
-    onMutate: (value: V) => beginOptimistic(cache, keys(value), optimistic(value)),
+    mutationFn: (value: V) => {
+      assertOnline();
+      return request(value);
+    },
+    onMutate: (value: V) => {
+      assertOnline();
+      return beginOptimistic(cache, keys(value), optimistic(value));
+    },
     onSuccess: (row, value, snapshots) => {
       commitOptimistic(cache, snapshots ?? [], keys(value), row);
       if (key[1] === 'todo' || key[1] === 'goal')

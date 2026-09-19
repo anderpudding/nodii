@@ -18,3 +18,5 @@ export * from './hooks/move-todos';
 export * from './hooks/routines';
 export * from './repositories/routines';
 export * from './repositories/routine-logs';
+export * from './realtime';
+export * from './connectivity';

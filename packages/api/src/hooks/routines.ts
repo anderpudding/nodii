@@ -1,5 +1,6 @@
 import { addDays, monthGridRange, type Routine, type RoutineLogStatus } from '@nodii/core';
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { assertOnline } from '../connectivity';
 import type { NodiiClient } from '../client';
 import type { RoutineLogRecord, RoutineRecord } from '../mappers';
 import { commitOptimistic } from '../optimistic';
@@ -86,11 +87,14 @@ export function useSetRoutineLog(
     mutationKey: routineLogWriteKey(routineId, date),
     networkMode: 'always',
     retry: false,
-    mutationFn: async (value: SetRoutineLog) =>
-      value.status === null
+    mutationFn: async (value: SetRoutineLog) => {
+      assertOnline();
+      return value.status === null
         ? (await deleteLog(client, value.routineId, value.date), undefined)
-        : upsertLog(client, value.routineId, value.date, value.status),
+        : upsertLog(client, value.routineId, value.date, value.status);
+    },
     onMutate: async (value) => {
+      assertOnline();
       const snapshots = await snapshotLogs(cache, cachedLogKeys(cache, value.date, weekStart));
       const row =
         value.status === null ? undefined : { ...value, status: value.status, updatedAt: '' };
@@ -158,10 +162,13 @@ export function useSplitRoutine(client: NodiiClient, newId: string, options: Mut
     mutationKey: routineWriteKey,
     networkMode: 'always',
     retry: false,
-    mutationFn: (value: SplitRoutineInput) =>
-      splitRoutine(client, value.before, value.after, value.today, newId),
-    onMutate: (value) =>
-      beginRoutineSplit(
+    mutationFn: (value: SplitRoutineInput) => {
+      assertOnline();
+      return splitRoutine(client, value.before, value.after, value.today, newId);
+    },
+    onMutate: (value) => {
+      assertOnline();
+      return beginRoutineSplit(
         cache,
         value.before,
         {
@@ -173,7 +180,8 @@ export function useSplitRoutine(client: NodiiClient, newId: string, options: Mut
           deletedAt: null,
         },
         value.today,
-      ),
+      );
+    },
     onSuccess: (result, value, snapshot) => {
       const snapshots = snapshot?.routines ?? [];
       if (!snapshots.some((s) => snapshotAlive(cache, s))) return;
