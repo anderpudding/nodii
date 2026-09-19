@@ -5,15 +5,15 @@ import type { ChannelStatus } from '@nodii/api';
 let browserOnline = typeof navigator === 'undefined' || navigator.onLine;
 let channelOnline: boolean | undefined;
 let requestFailed = false;
+const channelListeners = new Set<() => void>();
 function update() {
-  onlineManager.setOnline(browserOnline && channelOnline !== false && !requestFailed);
+  onlineManager.setOnline(browserOnline && !requestFailed);
 }
 
-/** HTTP와 WebSocket의 실제 연결 결과도 반영해 navigator의 거짓 양성을 보정한다. */
+/** SYNC-03: 채널 상태는 배지에만 반영해 HTTP 쓰기를 막지 않는다. */
 export function reportChannelStatus(status?: ChannelStatus): void {
   channelOnline = status === undefined ? undefined : status === 'SUBSCRIBED';
-  if (channelOnline) requestFailed = false;
-  update();
+  channelListeners.forEach((listener) => listener());
 }
 
 /** Supabase의 fetch 오류가 SDK 내부에서 결과 객체로 바뀌기 전에 연결 단절을 감지한다. */
@@ -55,7 +55,24 @@ export function startConnectivity(): () => void {
 }
 const subscribe = (listener: () => void) => onlineManager.subscribe(listener);
 const snapshot = () => onlineManager.isOnline();
-/** UI와 쓰기 가드가 같은 온라인 판정을 사용한다. */
+/** SYNC-04: 쓰기 UI와 가드는 브라우저 연결 및 HTTP 실패 여부만 사용한다. */
 export function useConnectivity(): boolean {
   return useSyncExternalStore(subscribe, snapshot, snapshot);
+}
+
+type ConnectionStatus = 'online' | 'offline' | 'sync-disconnected';
+const subscribeStatus = (listener: () => void) => {
+  channelListeners.add(listener);
+  const unsubscribe = onlineManager.subscribe(listener);
+  return () => {
+    channelListeners.delete(listener);
+    unsubscribe();
+  };
+};
+const statusSnapshot = (): ConnectionStatus =>
+  !onlineManager.isOnline() ? 'offline' : channelOnline === false ? 'sync-disconnected' : 'online';
+
+/** SYNC-03/04: 배지는 쓰기 불가와 실시간 연결 단절을 구분한다. */
+export function useConnectionStatus(): ConnectionStatus {
+  return useSyncExternalStore(subscribeStatus, statusSnapshot, statusSnapshot);
 }

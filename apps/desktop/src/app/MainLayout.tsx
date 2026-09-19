@@ -11,7 +11,7 @@ import { MonthCalendar } from '../features/calendar/MonthCalendar';
 import { RoutineListSheet } from '../features/routines/RoutineListSheet';
 import { useUserSync } from '../lib/use-user-sync';
 import { useTodayClock } from '../lib/today';
-import { useConnectivity } from '../lib/connectivity';
+import { useConnectionStatus } from '../lib/connectivity';
 
 /** 인증된 셸 안에서 하루 목록과 목표 관리 시트를 연결한다. */
 export function MainLayout({
@@ -29,7 +29,13 @@ export function MainLayout({
 }) {
   useUserSync(client, session.user.id, profile?.weekStart ?? 0);
   useTodayClock();
-  const online = useConnectivity();
+  const connectionStatus = useConnectionStatus();
+  const connectionMessage =
+    connectionStatus === 'offline'
+      ? '오프라인이라 보기만 할 수 있어요'
+      : connectionStatus === 'sync-disconnected'
+        ? '동기화가 잠시 끊겼어요'
+        : null;
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -80,9 +86,9 @@ export function MainLayout({
       <div className="day-panel">
         <header className="app-toolbar">
           <div aria-label="연결 상태" role="status">
-            {!online && (
-              <span className="offline-status" title="오프라인이라 보기만 할 수 있어요">
-                오프라인이라 보기만 할 수 있어요
+            {connectionMessage && (
+              <span className="offline-status" title={connectionMessage}>
+                {connectionMessage}
               </span>
             )}
           </div>

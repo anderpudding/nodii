@@ -49,7 +49,7 @@ it('같은 구독에서 최신 weekStart를 적용하고 재연결 때 모든 �
   act(() => {
     handlers.onStatus?.('CHANNEL_ERROR');
   });
-  expect(onlineManager.isOnline()).toBe(false);
+  expect(onlineManager.isOnline()).toBe(true);
   act(() => {
     handlers.onStatus?.('SUBSCRIBED');
     handlers.onReconnect?.();
