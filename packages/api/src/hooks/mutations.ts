@@ -19,7 +19,7 @@ interface MutationRow {
   id: string;
   deletedAt: string | null;
 }
-function useRowMutation<V, T extends MutationRow>(
+export function useRowMutation<V, T extends MutationRow>(
   options: MutationOptions,
   key: QueryKey,
   keys: (value: V) => QueryKey[],

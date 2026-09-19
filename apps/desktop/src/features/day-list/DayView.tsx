@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import { buildDay, monthKeyOf, type Profile } from '@nodii/core';
-import { useGoals, useMonthTodos, type NodiiClient } from '@nodii/api';
+import {
+  useGoals,
+  useMonthTodos,
+  useRoutines,
+  useMonthRoutineLogs,
+  type NodiiClient,
+} from '@nodii/api';
 import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
 import { DayHeader } from './DayHeader';
@@ -22,6 +28,8 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
   const date = useUIStore((state) => state.selectedDate);
   const goals = useGoals(client);
   const todos = useMonthTodos(client, monthKeyOf(date), profile.weekStart);
+  const routines = useRoutines(client);
+  const logs = useMonthRoutineLogs(client, monthKeyOf(date), profile.weekStart);
   // TODO-09: 헤더와 목록이 같은 전개 결과를 써서 숨겨진 항목을 세지 않는다.
   const groups = useMemo(
     () =>
@@ -29,11 +37,11 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
         date,
         goals: goals.data ?? [],
         todos: todos.data ?? [],
-        routines: [],
-        logs: [],
+        routines: routines.data ?? [],
+        logs: logs.data ?? [],
         timeZone: profile.timezone,
       }),
-    [date, goals.data, todos.data, profile.timezone],
+    [date, goals.data, todos.data, routines.data, logs.data, profile.timezone],
   );
   const items = groups.flatMap((group) => group.items);
   const done = items.filter((item) =>
@@ -59,6 +67,22 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
         <DaySkeleton />
       ) : (
         <>
+          {(routines.isError || logs.isError) && (
+            <div className="day-empty">
+              <p role="alert" className="supporting">
+                루틴 기록을 불러오지 못했어요.
+              </p>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  void routines.refetch();
+                  void logs.refetch();
+                }}
+              >
+                다시 시도
+              </Button>
+            </div>
+          )}
           <OverdueBanner
             client={client}
             weekStart={profile.weekStart}
@@ -71,6 +95,8 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
             profile={profile}
             groups={groups}
             todos={todos.data}
+            routines={routines.data ?? []}
+            routinesReady={!!routines.data && !!logs.data && !routines.isError && !logs.isError}
           />
         </>
       )}

@@ -28,4 +28,6 @@ export const todoRow = {
 export const dataHandlers = [
   http.get(`${baseUrl}/rest/v1/goals`, () => HttpResponse.json([goalRow])),
   http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([])),
+  http.get(`${baseUrl}/rest/v1/routines`, () => HttpResponse.json([])),
+  http.get(`${baseUrl}/rest/v1/routine_logs`, () => HttpResponse.json([])),
 ];

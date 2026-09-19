@@ -1,11 +1,15 @@
 import { useRef, useState } from 'react';
 import { keyBetween, lastSortKey, type DayGoalGroup, type Profile } from '@nodii/core';
-import { useCreateTodo, type NodiiClient, type TodoRecord } from '@nodii/api';
+import { useCreateTodo, type NodiiClient, type TodoRecord, type RoutineRecord } from '@nodii/api';
 import { useUIStore } from '../../stores/ui';
 import { notifyError } from '../../lib/notify-error';
 import { GoalChip, goalStyle } from '../goals/GoalChip';
 import { AddTodoInput } from './AddTodoInput';
 import { TodoRow } from './TodoRow';
+import { RoutineRow } from '../routines/RoutineRow';
+import { RoutineEditor } from '../routines/RoutineEditor';
+import { RoutineStopDialog } from '../routines/RoutineStopDialog';
+import { Button } from '../../components/ui/button';
 
 /** 캐시를 복사하지 않고 core 계산 결과로 목표별 하루를 그린다 (TODO-09). */
 export function DayList({
@@ -13,14 +17,22 @@ export function DayList({
   profile,
   groups,
   todos,
+  routines,
+  routinesReady,
 }: {
   client: NodiiClient;
   profile: Profile;
   groups: DayGoalGroup[];
   todos: TodoRecord[];
+  routines: RoutineRecord[];
+  routinesReady: boolean;
 }) {
   const date = useUIStore((state) => state.selectedDate);
   const [adding, setAdding] = useState<string | null>(null);
+  const [editor, setEditor] = useState<{ routine?: RoutineRecord; goalId?: string } | null>(null);
+  const [stopping, setStopping] = useState<{ routine: RoutineRecord; deleting: boolean } | null>(
+    null,
+  );
   const root = useRef<HTMLDivElement>(null);
   const create = useCreateTodo(client, profile.weekStart, { onError: notifyError });
   const hasItems = groups.some((group) => group.items.length > 0);
@@ -39,7 +51,19 @@ export function DayList({
             style={goalStyle(goal.color)}
             aria-label={goal.name}
           >
-            <GoalChip goal={goal} onAdd={canAdd ? () => setAdding(goal.id) : undefined} />
+            <div className="routine-group-heading">
+              <GoalChip goal={goal} onAdd={canAdd ? () => setAdding(goal.id) : undefined} />
+              {canAdd && (
+                <Button
+                  variant="ghost"
+                  disabled={!routinesReady}
+                  onClick={() => setEditor({ goalId: goal.id })}
+                  aria-label={`${goal.name}에 루틴 추가`}
+                >
+                  루틴 추가
+                </Button>
+              )}
+            </div>
             <div className="todo-rows">
               {items.map((item) =>
                 item.kind === 'todo' ? (
@@ -51,9 +75,24 @@ export function DayList({
                     timeZone={profile.timezone}
                   />
                 ) : (
-                  <p key={item.routine.id} className="supporting">
-                    {item.routine.title}
-                  </p>
+                  <RoutineRow
+                    key={`${item.routine.id}:${date}`}
+                    routine={routines.find((r) => r.id === item.routine.id)!}
+                    log={item.log}
+                    date={date}
+                    client={client}
+                    weekStart={profile.weekStart}
+                    disabled={!routinesReady}
+                    onEdit={() =>
+                      setEditor({ routine: routines.find((r) => r.id === item.routine.id)! })
+                    }
+                    onStop={(deleting) =>
+                      setStopping({
+                        routine: routines.find((r) => r.id === item.routine.id)!,
+                        deleting,
+                      })
+                    }
+                  />
                 ),
               )}
               {canAdd && adding === goal.id && (
@@ -82,6 +121,17 @@ export function DayList({
           </section>
         ))}
       </div>
+      {editor && (
+        <RoutineEditor
+          client={client}
+          profile={profile}
+          {...editor}
+          onClose={() => setEditor(null)}
+        />
+      )}
+      {stopping && (
+        <RoutineStopDialog client={client} {...stopping} onClose={() => setStopping(null)} />
+      )}
     </div>
   );
 }

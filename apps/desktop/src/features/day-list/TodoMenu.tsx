@@ -5,6 +5,8 @@ import * as Popover from '@radix-ui/react-popover';
 import { addDays, buildDay, keyBetween, lastSortKey, monthKeyOf } from '@nodii/core';
 import {
   monthTodosOptions,
+  monthRoutineLogsOptions,
+  listRoutines,
   queryKeys,
   useMoveTodo,
   type GoalRecord,
@@ -69,12 +71,20 @@ export function TodoMenu({
     more.current?.closest('section')?.querySelector<HTMLButtonElement>('.goal-chip')?.focus();
     setPreparing(true);
     try {
-      const target = await cache.fetchQuery(monthTodosOptions(client, monthKeyOf(date), weekStart));
+      const [target, routines, logs] = await Promise.all([
+        cache.fetchQuery(monthTodosOptions(client, monthKeyOf(date), weekStart)),
+        cache.fetchQuery({
+          queryKey: queryKeys.routines(),
+          queryFn: ({ signal }) => listRoutines(client, signal),
+          staleTime: 30_000,
+        }),
+        cache.fetchQuery(monthRoutineLogsOptions(client, monthKeyOf(date), weekStart)),
+      ]);
       const groups = buildDay({
         goals: cache.getQueryData<GoalRecord[]>(queryKeys.goals()) ?? [],
         todos: target.filter((row) => row.id !== todo.id),
-        routines: [],
-        logs: [],
+        routines,
+        logs,
         date,
         timeZone,
       });
