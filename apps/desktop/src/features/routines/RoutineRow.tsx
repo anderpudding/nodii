@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { useIsMutating } from '@tanstack/react-query';
 import {
-  routineWriteKey,
+  useRoutineWritePending,
   useSetRoutineLog,
   type NodiiClient,
   type RoutineRecord,
@@ -34,8 +33,8 @@ export function RoutineRow({
   onStop: (deleting: boolean) => void;
   disabled?: boolean;
 }) {
-  const setLog = useSetRoutineLog(client, weekStart, { onError: notifyError });
-  const busy = useIsMutating({ mutationKey: routineWriteKey }) > 0 || disabled;
+  const setLog = useSetRoutineLog(client, weekStart, routine.id, date, { onError: notifyError });
+  const busy = useRoutineWritePending(routine.id, date) || disabled;
   const done = log?.status === 'done';
   const today = useUIStore((state) => state.today);
   const more = useRef<HTMLButtonElement>(null);

@@ -1,5 +1,4 @@
 import { useId, useState } from 'react';
-import { useIsMutating } from '@tanstack/react-query';
 import {
   keyBetween,
   lastSortKey,
@@ -13,11 +12,12 @@ import {
   type RoutineRuleValidation,
 } from '@nodii/core';
 import {
-  routineWriteKey,
+  useRoutineWritePending,
   useCreateRoutine,
   useGoals,
   useRoutines,
   useUpdateRoutine,
+  useSplitRoutine,
   type NodiiClient,
   type RoutineRecord,
 } from '@nodii/api';
@@ -89,9 +89,11 @@ export function RoutineEditor({
   const [stop, setStop] = useState<'end' | 'delete' | null>(null);
   const selectedGoalId = draft.goalId || activeGoals[0]?.id || '';
   const goal = activeGoals.find((item) => item.id === selectedGoalId);
-  const create = useCreateRoutine(client, { onError: notifyError });
-  const update = useUpdateRoutine(client, { onError: notifyError });
-  const busy = useIsMutating({ mutationKey: routineWriteKey }) > 0;
+  const [splitId] = useState(() => crypto.randomUUID());
+  const split = useSplitRoutine(client, splitId, { onError: notifyError });
+  const create = useCreateRoutine(client, draft.id, { onError: notifyError });
+  const update = useUpdateRoutine(client, draft.id, { onError: notifyError });
+  const busy = useRoutineWritePending(draft.id);
   const validation = validateRoutineRule(draft);
   const error = validation.ok ? null : errors[validation.reason];
   const preview = validation.ok
@@ -113,9 +115,9 @@ export function RoutineEditor({
   const after = { ...draft, title: draft.title.trim(), goalId: selectedGoalId };
   function save(scope: 'all' | 'today') {
     if (!canSave) return;
-    if (routine)
-      update.mutate(
-        { before: routine, after, today, scope },
+    if (routine && scope === 'today' && needsScopePrompt(routine, after, today))
+      split.mutate(
+        { before: routine, after, today },
         {
           onSuccess: (result) => {
             if ('endDateError' in result)
@@ -126,6 +128,7 @@ export function RoutineEditor({
           },
         },
       );
+    else if (routine) update.mutate({ before: routine, after }, { onSuccess: onClose });
     else
       create.mutate(
         {

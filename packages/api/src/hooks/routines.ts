@@ -1,14 +1,8 @@
-import {
-  addDays,
-  monthGridRange,
-  needsScopePrompt,
-  type Routine,
-  type RoutineLogStatus,
-} from '@nodii/core';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { addDays, monthGridRange, type Routine, type RoutineLogStatus } from '@nodii/core';
+import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NodiiClient } from '../client';
 import type { RoutineLogRecord, RoutineRecord } from '../mappers';
-import { beginOptimistic, commitOptimistic, rollbackOptimistic } from '../optimistic';
+import { commitOptimistic } from '../optimistic';
 import {
   beginRoutineSplit,
   cachedLogKeys,
@@ -53,18 +47,43 @@ export function monthRoutineLogsOptions(client: NodiiClient, monthKey: string, w
 export function useMonthRoutineLogs(client: NodiiClient, monthKey: string, weekStart: 0 | 1) {
   return useQuery(monthRoutineLogsOptions(client, monthKey, weekStart));
 }
-/** 분할 중 다른 화면에서 같은 루틴 기록을 변경하지 않도록 공통 키를 사용한다. */
+/** 분할만 공유 키를 사용하며 구독할 때는 exact로 행별 쓰기와 구분한다. */
 export const routineWriteKey = ['write', 'routine'] as const;
+/** 서로 다른 루틴의 규칙 저장이 각자의 화면만 잠그도록 분리한다. */
+export const routineRowWriteKey = (id: string) => [...routineWriteKey, id] as const;
+/** 같은 날짜의 완료·건너뛰기·취소만 중복 요청을 막는다. */
+export const routineLogWriteKey = (id: string, date: string) =>
+  ['write', 'routineLog', id, date] as const;
+/** 행은 그날 로그만, 편집기는 해당 루틴의 모든 날짜 로그가 끝나기를 기다린다. */
+export function useRoutineWritePending(id: string, date?: string) {
+  const splitting = useIsMutating({
+    mutationKey: routineWriteKey,
+    exact: true,
+  });
+  const writing = useIsMutating({ mutationKey: routineRowWriteKey(id), exact: true });
+  const logging = useIsMutating({
+    mutationKey: date ? routineLogWriteKey(id, date) : ['write', 'routineLog', id],
+    exact: !!date,
+  });
+  return splitting + writing + logging > 0;
+}
+
 export interface SetRoutineLog {
   routineId: string;
   date: string;
   status: RoutineLogStatus | null;
 }
 /** 완료·건너뛰기·취소를 모든 겹치는 월에 반영하고 실패한 복합 키만 복원한다. */
-export function useSetRoutineLog(client: NodiiClient, weekStart: 0 | 1, options: MutationOptions) {
+export function useSetRoutineLog(
+  client: NodiiClient,
+  weekStart: 0 | 1,
+  routineId: string,
+  date: string,
+  options: MutationOptions,
+) {
   const cache = useQueryClient();
   const mutation = useMutation({
-    mutationKey: routineWriteKey,
+    mutationKey: routineLogWriteKey(routineId, date),
     networkMode: 'always',
     retry: false,
     mutationFn: async (value: SetRoutineLog) =>
@@ -104,10 +123,10 @@ export function useSetRoutineLog(client: NodiiClient, weekStart: 0 | 1, options:
   return mutation;
 }
 /** 클라이언트 ID로 규칙 한 행만 낙관적으로 생성한다. */
-export function useCreateRoutine(client: NodiiClient, options: MutationOptions) {
+export function useCreateRoutine(client: NodiiClient, id: string, options: MutationOptions) {
   return useRowMutation(
     options,
-    routineWriteKey,
+    routineRowWriteKey(id),
     (_value: Routine) => [queryKeys.routines()],
     (value) => ({ ...value, deletedAt: null, updatedAt: '' }),
     (value) => createRoutine(client, value),
@@ -116,80 +135,76 @@ export function useCreateRoutine(client: NodiiClient, options: MutationOptions) 
 export interface UpdateRoutineInput {
   before: RoutineRecord;
   after: Routine;
+}
+/** 제목·목표·종료일과 전체 범위 규칙 변경은 해당 루틴만 잠근다 (ROUT-08). */
+export function useUpdateRoutine(client: NodiiClient, id: string, options: MutationOptions) {
+  return useRowMutation(
+    options,
+    routineRowWriteKey(id),
+    (_value: UpdateRoutineInput) => [queryKeys.routines()],
+    ({ before, after }) => ({ ...before, ...after }),
+    ({ before, after }) => updateRoutine(client, before.id, after),
+  );
+}
+interface SplitRoutineInput extends UpdateRoutineInput {
   today: string;
-  scope: 'all' | 'today';
-  newId?: string;
 }
-function shouldSplit(value: UpdateRoutineInput) {
-  return value.scope === 'today' && needsScopePrompt(value.before, value.after, value.today);
-}
-/** 규칙 변경 범위에 따라 UPDATE 또는 원자적 분할을 선택한다 (ROUT-08). */
-export function useUpdateRoutine(client: NodiiClient, options: MutationOptions) {
+/** 분할은 규칙 두 행과 여러 날짜의 로그를 함께 바꾸므로 공유 키로 보호한다. */
+export function useSplitRoutine(client: NodiiClient, newId: string, options: MutationOptions) {
   const cache = useQueryClient();
+  // 분할 후 종료일만 재시도할 때에는 새 행의 키를 사용하고 재분할하지 않는다.
+  const update = useUpdateRoutine(client, newId, options);
   const mutation = useMutation({
     mutationKey: routineWriteKey,
     networkMode: 'always',
     retry: false,
-    mutationFn: async (value: UpdateRoutineInput) =>
-      shouldSplit(value)
-        ? splitRoutine(client, value.before, value.after, value.today, value.newId!)
-        : { routine: await updateRoutine(client, value.before.id, value.after) },
-    onMutate: async (value) => {
-      if (shouldSplit(value)) {
-        value.newId ??= crypto.randomUUID();
-        const next = {
+    mutationFn: (value: SplitRoutineInput) =>
+      splitRoutine(client, value.before, value.after, value.today, newId),
+    onMutate: (value) =>
+      beginRoutineSplit(
+        cache,
+        value.before,
+        {
           ...value.after,
-          id: value.newId,
+          id: newId,
           startDate: value.today,
           sortKey: value.before.sortKey,
           updatedAt: '',
           deletedAt: null,
-        };
-        return { split: await beginRoutineSplit(cache, value.before, next, value.today) };
-      }
-      return {
-        rows: await beginOptimistic(cache, [queryKeys.routines()], {
-          ...value.before,
-          ...value.after,
-        }),
-      };
-    },
-    onSuccess: (result, value, context) => {
-      const snapshots = context?.split?.routines ?? context?.rows ?? [];
+        },
+        value.today,
+      ),
+    onSuccess: (result, value, snapshot) => {
+      const snapshots = snapshot?.routines ?? [];
       if (!snapshots.some((s) => snapshotAlive(cache, s))) return;
       commitOptimistic(cache, snapshots, [queryKeys.routines()], result.routine);
-      if (context?.split) {
-        commitOptimistic(cache, snapshots, [queryKeys.routines()], {
-          ...value.before,
-          endDate: addDays(value.today, -1),
-        });
-        remapSplitLogs(cache, value.before.id, result.routine.id, value.today);
-        void cache.invalidateQueries({ queryKey: ['routineLogs'] });
-        void cache.invalidateQueries({ queryKey: queryKeys.routines() });
-      }
+      commitOptimistic(cache, snapshots, [queryKeys.routines()], {
+        ...value.before,
+        endDate: addDays(value.today, -1),
+      });
+      remapSplitLogs(cache, value.before.id, result.routine.id, value.today);
+      void cache.invalidateQueries({ queryKey: ['routineLogs'] });
+      void cache.invalidateQueries({ queryKey: queryKeys.routines() });
       if ('endDateError' in result)
         options.onError(result.endDateError, () =>
-          mutation.mutate({
+          update.mutate({
             before: result.routine,
             after: { ...result.routine, endDate: value.after.endDate },
-            today: value.today,
-            scope: 'all',
           }),
         );
     },
-    onError: (error, value, context) => {
-      if (context?.split) rollbackRoutineSplit(cache, context.split, value.before.id, value.newId!);
-      else rollbackOptimistic(cache, context?.rows ?? [], value.before.id);
+    onError: (error, value, snapshot) => {
+      if (snapshot) rollbackRoutineSplit(cache, snapshot, value.before.id, newId);
       options.onError(error, () => mutation.mutate(value));
     },
   });
   return mutation;
 }
 /** 종료와 실행 취소는 원래 종료일 및 삭제 상태를 복원한다 (ROUT-09). */
-export function useEndRoutine(client: NodiiClient, options: MutationOptions) {
+export function useEndRoutine(client: NodiiClient, id: string, options: MutationOptions) {
   return useRowMutation(
     options,
-    routineWriteKey,
+    routineRowWriteKey(id),
     (_value: { routine: RoutineRecord; today: string; restore?: boolean }) => [
       queryKeys.routines(),
     ],
@@ -209,10 +224,10 @@ export function useEndRoutine(client: NodiiClient, options: MutationOptions) {
   );
 }
 /** 모든 날짜에서 숨기는 삭제도 5초 실행 취소를 지원한다. */
-export function useDeleteRoutine(client: NodiiClient, options: MutationOptions) {
+export function useDeleteRoutine(client: NodiiClient, id: string, options: MutationOptions) {
   return useRowMutation(
     options,
-    routineWriteKey,
+    routineRowWriteKey(id),
     (_value: { routine: RoutineRecord; restore?: boolean }) => [queryKeys.routines()],
     ({ routine, restore }) => ({
       ...routine,

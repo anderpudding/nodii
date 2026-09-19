@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useIsMutating } from '@tanstack/react-query';
 import {
-  routineWriteKey,
+  useRoutineWritePending,
   useDeleteRoutine,
   useEndRoutine,
   type NodiiClient,
@@ -31,9 +30,9 @@ export function RoutineStopDialog({
     cancel.current?.focus();
   }, [confirmDelete]);
   const today = useUIStore((s) => s.today);
-  const end = useEndRoutine(client, { onError: notifyError });
-  const remove = useDeleteRoutine(client, { onError: notifyError });
-  const busy = useIsMutating({ mutationKey: routineWriteKey }) > 0;
+  const end = useEndRoutine(client, routine.id, { onError: notifyError });
+  const remove = useDeleteRoutine(client, routine.id, { onError: notifyError });
+  const busy = useRoutineWritePending(routine.id);
   const ended = routine.endDate !== null && routine.endDate < today;
   function perform(deleteAll: boolean) {
     if (busy || (!deleteAll && ended)) return;

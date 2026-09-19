@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useIsMutating } from '@tanstack/react-query';
+import { useIsMutating, useMutationState } from '@tanstack/react-query';
 import { compareSortKey, type Profile } from '@nodii/core';
 import {
   routineWriteKey,
@@ -32,7 +32,17 @@ export function RoutineListSheet({
   const routines = useRoutines(client);
   const [editor, setEditor] = useState<RoutineRecord | 'new' | null>(null);
   const [ending, setEnding] = useState<RoutineRecord | null>(null);
-  const busy = useIsMutating({ mutationKey: routineWriteKey }) > 0;
+  const busy = useIsMutating({ mutationKey: routineWriteKey, exact: true }) > 0;
+  const pendingIds = useMutationState({
+    filters: {
+      status: 'pending',
+      predicate: (mutation) => {
+        const key = mutation.options.mutationKey;
+        return key?.[0] === 'write' && (key[1] === 'routine' || key[1] === 'routineLog');
+      },
+    },
+    select: (mutation) => mutation.options.mutationKey?.[2],
+  });
   const finished = (routines.data ?? []).filter((r) => r.endDate !== null && r.endDate < today);
   if (editor)
     return (
@@ -110,7 +120,7 @@ export function RoutineListSheet({
                         </div>
                         <Button
                           variant="ghost"
-                          disabled={busy}
+                          disabled={busy || pendingIds.includes(routine.id)}
                           onClick={() => setEditor(routine)}
                           aria-label={`${routine.title} 수정`}
                         >
@@ -118,7 +128,7 @@ export function RoutineListSheet({
                         </Button>
                         <Button
                           variant="ghost"
-                          disabled={busy}
+                          disabled={busy || pendingIds.includes(routine.id)}
                           onClick={() => setEnding(routine)}
                           aria-label={`${routine.title} 그만두기`}
                         >
@@ -145,7 +155,7 @@ export function RoutineListSheet({
                   </div>
                   <Button
                     variant="ghost"
-                    disabled={busy}
+                    disabled={busy || pendingIds.includes(routine.id)}
                     onClick={() => setEditor(routine)}
                     aria-label={`${routine.title} 수정`}
                   >

@@ -76,7 +76,7 @@ export function DayList({
                   />
                 ) : (
                   <RoutineRow
-                    key={item.routine.id}
+                    key={`${item.routine.id}:${date}`}
                     routine={routines.find((r) => r.id === item.routine.id)!}
                     log={item.log}
                     date={date}

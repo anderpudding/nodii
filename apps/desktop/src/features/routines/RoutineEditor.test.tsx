@@ -18,12 +18,17 @@ import {
   mapRoutine,
   queryKeys,
   useSetRoutineLog,
+  useSplitRoutine,
   useUpdateRoutine,
+  useEndRoutine,
+  useDeleteRoutine,
+  useRoutineWritePending,
   type NodiiClient,
   type RoutineRecord,
   type RoutineLogRecord,
 } from '@nodii/api';
 import { RoutineEditor } from './RoutineEditor';
+import { RoutineRow } from './RoutineRow';
 import { RoutineStopDialog } from './RoutineStopDialog';
 import { MainLayout } from '../../app/MainLayout';
 import { baseUrl, createTestClient, sessionResponse } from '../../test/auth-fixtures';
@@ -217,7 +222,10 @@ it('로그 upsert·취소는 겹친 모든 월에 즉시 반영하고 실패하�
       });
     }),
   );
-  const hook = renderHook(() => useSetRoutineLog(client, 0, { onError: error }), { wrapper });
+  const hook = renderHook(
+    () => useSetRoutineLog(client, 0, routine.id, '2026-10-01', { onError: error }),
+    { wrapper },
+  );
   act(() =>
     hook.result.current.mutate({ routineId: routine.id, date: '2026-10-01', status: 'done' }),
   );
@@ -274,14 +282,22 @@ it('분할 RPC 실패는 규칙 두 행과 로그를 롤백한다', async () => 
       return HttpResponse.json({ message: 'denied' }, { status: 403 });
     }),
   );
-  const hook = renderHook(() => useUpdateRoutine(client, { onError: error }), { wrapper });
+  const hook = renderHook(() => useSplitRoutine(client, 'new-id', { onError: error }), { wrapper });
+  render(
+    <RoutineEditor
+      client={client}
+      profile={profile}
+      routine={{ ...routine, id: 'other-routine' }}
+      onClose={() => {}}
+    />,
+    { wrapper },
+  );
+
   act(() =>
     hook.result.current.mutate({
       before: routine,
       after: { ...routine, byWeekday: [4] },
-      scope: 'today',
       today: '2026-10-01',
-      newId: 'new-id',
     }),
   );
   await waitFor(() =>
@@ -290,11 +306,18 @@ it('분할 RPC 실패는 규칙 두 행과 로그를 롤백한다', async () => 
       { ...routine, id: 'new-id', startDate: '2026-10-01', byWeekday: [4], updatedAt: '' },
     ]),
   );
+  expect(cache.isMutating({ mutationKey: ['write', 'routine'], exact: true })).toBe(1);
+  await waitFor(() =>
+    expect((screen.getByLabelText('제목') as HTMLInputElement).disabled).toBe(true),
+  );
   await act(async () => {
     finish();
   });
   await waitFor(() => expect(error).toHaveBeenCalled());
   expect(cache.getQueryData(queryKeys.routines())).toEqual([routine]);
+  await waitFor(() =>
+    expect((screen.getByLabelText('제목') as HTMLInputElement).disabled).toBe(false),
+  );
   for (const month of ['2026-09', '2026-10'])
     expect(cache.getQueryData(queryKeys.routineLogs(month))).toEqual([log]);
 });
@@ -320,14 +343,12 @@ it('분할 후 종료일 실패 재시도는 두 번째 split 없이 새 행의 
       });
     }),
   );
-  const hook = renderHook(() => useUpdateRoutine(client, { onError: error }), { wrapper });
+  const hook = renderHook(() => useSplitRoutine(client, 'new-id', { onError: error }), { wrapper });
   act(() =>
     hook.result.current.mutate({
       before: routine,
       after: { ...routine, byWeekday: [4], endDate: '2026-11-01' },
-      scope: 'today',
       today: '2026-09-18',
-      newId: 'new-id',
     }),
   );
   await waitFor(() => expect(error).toHaveBeenCalled());
@@ -445,4 +466,191 @@ it('과거에 끝난 루틴의 종료 확인은 기간 연장을 허용하지 �
   expect(
     (screen.getByRole('button', { name: '오늘부터 그만하기' }) as HTMLButtonElement).disabled,
   ).toBe(true);
+});
+
+it('서로 다른 루틴은 연달아 체크할 수 있고 첫 요청 실패가 두 번째 완료를 되돌리지 않는다', async () => {
+  const { client, cache, wrapper } = setup();
+  const second = {
+    ...routine,
+    id: '55555555-5555-4555-8555-555555555555',
+    title: '독서',
+    sortKey: 'a2',
+  };
+  cache.setQueryData(queryKeys.routines(), [routine, second]);
+  let finish!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  const requests = vi.fn();
+  server.use(
+    http.post(`${baseUrl}/rest/v1/routine_logs`, async ({ request }) => {
+      const body = (await request.json()) as { routine_id: string; date: string; status: string };
+      requests(body.routine_id);
+      if (body.routine_id === routine.id) {
+        await gate;
+        return HttpResponse.json({ message: 'denied' }, { status: 403 });
+      }
+      return HttpResponse.json({ ...body, updated_at: 'saved' });
+    }),
+  );
+  render(
+    <MainLayout
+      client={client}
+      profile={profile}
+      session={{ ...sessionResponse, token_type: 'bearer' }}
+    />,
+    { wrapper },
+  );
+  const firstCheck = () => screen.getByRole('button', { name: '운동 완료' }) as HTMLButtonElement;
+  const secondCheck = () => screen.getByRole('button', { name: '독서 완료' }) as HTMLButtonElement;
+  const user = userEvent.setup();
+  try {
+    await waitFor(() => expect(firstCheck().disabled).toBe(false));
+    await user.click(firstCheck());
+    await waitFor(() => expect(requests).toHaveBeenCalledWith(routine.id));
+    expect(firstCheck().disabled).toBe(true);
+    expect(secondCheck().disabled).toBe(false);
+    expect(
+      cache.isMutating({
+        mutationKey: ['write', 'routineLog', routine.id, '2026-09-18'],
+        exact: true,
+      }),
+    ).toBe(1);
+    await user.click(secondCheck());
+    await waitFor(() => expect(requests).toHaveBeenCalledWith(second.id));
+    await waitFor(() => expect(secondCheck().disabled).toBe(false));
+    expect(secondCheck().getAttribute('aria-pressed')).toBe('true');
+    expect(firstCheck().disabled).toBe(true);
+  } finally {
+    await act(async () => {
+      finish();
+    });
+  }
+  await waitFor(() => expect(firstCheck().disabled).toBe(false));
+  expect(firstCheck().getAttribute('aria-pressed')).toBe('false');
+  expect(cache.getQueryData(queryKeys.routineLogs('2026-09'))).toEqual([
+    { routineId: second.id, date: '2026-09-18', status: 'done', updatedAt: 'saved' },
+  ]);
+});
+
+it.each(['update', 'end', 'delete'] as const)(
+  '%s는 해당 루틴만 잠그고 분할 공유 키를 사용하지 않는다',
+  async (operation) => {
+    const { client, cache, wrapper } = setup();
+    let finish!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    server.use(
+      http.get(`${baseUrl}/rest/v1/routines`, () => HttpResponse.json(row)),
+      http.patch(`${baseUrl}/rest/v1/routines`, async ({ request }) => {
+        const body = (await request.json()) as object;
+        await gate;
+        return HttpResponse.json({ ...row, ...body });
+      }),
+    );
+    const { result } = renderHook(
+      () => ({
+        update: useUpdateRoutine(client, routine.id, { onError: vi.fn() }),
+        end: useEndRoutine(client, routine.id, { onError: vi.fn() }),
+        delete: useDeleteRoutine(client, routine.id, { onError: vi.fn() }),
+        ownBusy: useRoutineWritePending(routine.id),
+        otherBusy: useRoutineWritePending('other'),
+      }),
+      { wrapper },
+    );
+    try {
+      act(() => {
+        if (operation === 'update')
+          result.current.update.mutate({
+            before: routine,
+            after: { ...routine, title: '바꾼 제목' },
+          });
+        else if (operation === 'end') result.current.end.mutate({ routine, today: '2026-09-18' });
+        else result.current.delete.mutate({ routine });
+      });
+      await waitFor(() => expect(result.current.ownBusy).toBe(true));
+      expect(result.current.otherBusy).toBe(false);
+      expect(cache.isMutating({ mutationKey: ['write', 'routine', routine.id], exact: true })).toBe(
+        1,
+      );
+      expect(cache.isMutating({ mutationKey: ['write', 'routine'], exact: true })).toBe(0);
+    } finally {
+      await act(async () => {
+        finish();
+      });
+    }
+    await waitFor(() => expect(result.current[operation].isSuccess).toBe(true));
+  },
+);
+it('같은 루틴의 다른 날짜 로그는 독립적으로 체크할 수 있다', async () => {
+  const { client, cache, wrapper } = setup();
+  cache.setQueryData(queryKeys.routineLogs('2026-09'), []);
+  let finish!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  server.use(
+    http.post(`${baseUrl}/rest/v1/routine_logs`, async ({ request }) => {
+      const body = (await request.json()) as object;
+      await gate;
+      return HttpResponse.json({ ...body, updated_at: 'saved' });
+    }),
+  );
+  render(
+    <>
+      <RoutineRow
+        client={client}
+        routine={routine}
+        date="2026-09-18"
+        log={null}
+        weekStart={0}
+        onEdit={() => {}}
+        onStop={() => {}}
+      />
+      <RoutineRow
+        client={client}
+        routine={{ ...routine, title: '다른 날짜 운동' }}
+        date="2026-09-16"
+        log={null}
+        weekStart={0}
+        onEdit={() => {}}
+        onStop={() => {}}
+      />
+    </>,
+    { wrapper },
+  );
+  const user = userEvent.setup();
+  try {
+    await user.click(screen.getByRole('button', { name: '운동 완료' }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: '운동 완료' }) as HTMLButtonElement).disabled,
+      ).toBe(true),
+    );
+    expect(
+      (screen.getByRole('button', { name: '다른 날짜 운동 완료' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    await user.click(screen.getByRole('button', { name: '다른 날짜 운동 완료' }));
+    await waitFor(() =>
+      expect(cache.isMutating({ mutationKey: ['write', 'routineLog', routine.id] })).toBe(2),
+    );
+    expect(
+      cache.isMutating({
+        mutationKey: ['write', 'routineLog', routine.id, '2026-09-16'],
+        exact: true,
+      }),
+    ).toBe(1);
+    expect(
+      cache.isMutating({
+        mutationKey: ['write', 'routineLog', routine.id, '2026-09-18'],
+        exact: true,
+      }),
+    ).toBe(1);
+  } finally {
+    await act(async () => {
+      finish();
+    });
+  }
+  await waitFor(() => expect(cache.isMutating()).toBe(0));
 });
