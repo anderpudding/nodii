@@ -1,4 +1,4 @@
-import type { Goal, Todo, Profile } from '@nodii/core';
+import type { Goal, Todo, Profile, Routine, RoutineLog } from '@nodii/core';
 import type { Database } from './database.types';
 
 /** 동기화용 메타데이터는 도메인 타입을 오염시키지 않고 API 캐시에 보존한다. */
@@ -10,6 +10,82 @@ export interface TodoRecord extends Todo {
   updatedAt: string;
   deletedAt: string | null;
   doneAt: string | null;
+}
+export interface RoutineRecord extends Routine {
+  updatedAt: string;
+  deletedAt: string | null;
+}
+export interface RoutineLogRecord extends RoutineLog {
+  updatedAt: string;
+}
+export type RoutineChanges = Partial<Omit<RoutineRecord, 'id' | 'updatedAt'>>;
+
+/** 반복 규칙과 서버 갱신 시각을 같은 캐시에 보존한다 (ROUT-01). */
+export function mapRoutine(row: Database['public']['Tables']['routines']['Row']): RoutineRecord {
+  return {
+    id: row.id,
+    goalId: row.goal_id,
+    title: row.title,
+    freq: row.freq,
+    repeatEvery: row.repeat_every,
+    byWeekday: row.by_weekday,
+    byMonthday: row.by_monthday,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    sortKey: row.sort_key,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+  };
+}
+/** DB의 문자열 상태를 검증해 잘못된 기록을 조용히 완료로 표시하지 않는다. */
+export function mapRoutineLog(
+  row: Database['public']['Tables']['routine_logs']['Row'],
+): RoutineLogRecord {
+  if (row.status !== 'done' && row.status !== 'skipped') throw new Error('invalid_log_status');
+  return {
+    routineId: row.routine_id,
+    date: row.date,
+    status: row.status,
+    updatedAt: row.updated_at,
+  };
+}
+/** 반복 종류 변경 시 쓰지 않는 배열도 null로 함께 지운다 (ROUT-08). */
+export function routineChangesToRow(
+  changes: RoutineChanges,
+): Database['public']['Tables']['routines']['Update'] {
+  return {
+    goal_id: changes.goalId,
+    title: changes.title,
+    freq: changes.freq,
+    repeat_every: changes.repeatEvery,
+    by_weekday: changes.freq && changes.freq !== 'weekly' ? null : changes.byWeekday,
+    by_monthday: changes.freq && changes.freq !== 'monthly' ? null : changes.byMonthday,
+    start_date: changes.startDate,
+    end_date: changes.endDate,
+    sort_key: changes.sortKey,
+    deleted_at: changes.deletedAt,
+  };
+}
+/** 생성에도 클라이언트 UUID와 반복 종류별 null 규칙을 적용한다. */
+export function routineToRow(routine: Routine): Database['public']['Tables']['routines']['Insert'] {
+  return {
+    id: routine.id,
+    goal_id: routine.goalId,
+    title: routine.title,
+    freq: routine.freq,
+    repeat_every: routine.repeatEvery,
+    by_weekday: routine.freq === 'weekly' ? routine.byWeekday : null,
+    by_monthday: routine.freq === 'monthly' ? routine.byMonthday : null,
+    start_date: routine.startDate,
+    end_date: routine.endDate,
+    sort_key: routine.sortKey,
+  };
+}
+/** 복합 키를 한 곳에서 변환해 완료·건너뛰기 요청을 일치시킨다. */
+export function routineLogToRow(
+  log: RoutineLog,
+): Database['public']['Tables']['routine_logs']['Insert'] {
+  return { routine_id: log.routineId, date: log.date, status: log.status };
 }
 export type GoalChanges = Partial<Pick<Goal, 'name' | 'color' | 'sortKey' | 'archivedAt'>>;
 export type TodoChanges = Partial<

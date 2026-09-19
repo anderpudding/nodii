@@ -4,6 +4,7 @@ import type { NodiiClient } from '../client';
 import { queryKeys } from '../query-keys';
 import { listGoals } from '../repositories/goals';
 import { listOverdue, listTodosInRange } from '../repositories/todos';
+import { monthRoutineLogsOptions } from './routines';
 
 /** 활성·보관 목표를 하나의 서버 캐시로 공유한다. */
 export function useGoals(client: NodiiClient) {
@@ -50,10 +51,13 @@ export async function prefetchAdjacentMonths(
   weekStart: 0 | 1,
 ) {
   await Promise.all(
-    ([-1, 1] as const).map((direction) =>
+    ([-1, 1] as const).flatMap((direction) => [
       cache.prefetchQuery(
         monthTodosOptions(client, adjacentMonthKey(monthKey, direction), weekStart),
       ),
-    ),
+      cache.prefetchQuery(
+        monthRoutineLogsOptions(client, adjacentMonthKey(monthKey, direction), weekStart),
+      ),
+    ]),
   );
 }
