@@ -1,3 +1,5 @@
+import { useConnectivity } from '../../lib/connectivity';
+import { toast } from 'sonner';
 import { useState } from 'react';
 import { normalizeTitle, TITLE_MAX_LENGTH } from '@nodii/core';
 
@@ -11,6 +13,7 @@ export function AddTodoInput({
   onAdd: (title: string) => void;
   onClose: () => void;
 }) {
+  const online = useConnectivity();
   const [title, setTitle] = useState('');
   const [invalid, setInvalid] = useState(false);
   return (
@@ -35,6 +38,10 @@ export function AddTodoInput({
           }
           if (event.key === 'Enter') {
             event.preventDefault();
+            if (!online) {
+              toast.error('오프라인이라 저장할 수 없어요');
+              return;
+            }
             const normalized = normalizeTitle(title);
             if (!normalized) {
               setInvalid(true);

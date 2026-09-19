@@ -2,6 +2,7 @@ import { createNodiiClient, AUTH_STORAGE_KEY, type AuthStorage } from '@nodii/ap
 import { isTauri } from '@tauri-apps/api/core';
 import { env } from './env';
 import { tauriAuthStorage } from './tauri-store';
+import { connectivityFetch } from './connectivity';
 
 const browserAuthStorage: AuthStorage = {
   getItem: (key) => localStorage.getItem(key),
@@ -14,6 +15,7 @@ export const supabase = env.isSupabaseConfigured
       url: env.supabaseUrl,
       publishableKey: env.supabasePublishableKey,
       storage: authStorage,
+      fetch: connectivityFetch,
     })
   : null;
 

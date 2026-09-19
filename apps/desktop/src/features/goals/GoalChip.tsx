@@ -1,3 +1,5 @@
+import { useConnectivity } from '../../lib/connectivity';
+import { toast } from 'sonner';
 import { checkColor, goalInk, goalTint, type Goal } from '@nodii/core';
 import type { CSSProperties } from 'react';
 
@@ -24,13 +26,15 @@ export function GoalChip({
   disabled?: boolean;
   surface?: boolean;
 }) {
+  const online = useConnectivity();
   const className = `goal-chip${goal.archivedAt ? ' goal-chip-archived' : ''}`;
   return onAdd ? (
     <button
       type="button"
       className={className}
       style={goalStyle(goal.color, surface)}
-      onClick={onAdd}
+      aria-disabled={!online || undefined}
+      onClick={() => (online ? onAdd() : toast.error('오프라인이라 저장할 수 없어요'))}
       disabled={disabled}
       aria-label={`${goal.name}에 할 일 추가`}
     >
