@@ -857,3 +857,200 @@ button.goal-chip:disabled {
   font-size: 13px;
   font-weight: 500;
 }
+
+/* 5단계: 루틴 모달도 기존 입력·이름표·버튼과 동일한 토큰을 사용한다. */
+.routine-modal {
+  max-width: 440px;
+  border-radius: 16px;
+}
+.routine-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.routine-heading,
+.routine-group-heading,
+.routine-actions,
+.routine-interval,
+.routine-list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.routine-heading,
+.routine-list-row {
+  justify-content: space-between;
+}
+.routine-heading h2,
+.routine-list-copy {
+  min-width: 0;
+}
+.routine-wrap {
+  overflow-wrap: anywhere;
+}
+.routine-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.routine-form .input,
+.routine-form .button {
+  height: 40px;
+}
+.routine-fieldset {
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.routine-fieldset legend,
+.routine-preview h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.routine-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.routine-goal-option {
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.routine-goal-option[aria-pressed='true'] {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.routine-goal-option:hover {
+  text-decoration: underline;
+}
+.routine-goal-option:disabled {
+  cursor: wait;
+}
+.routine-segments,
+.routine-dates,
+.routine-days,
+.routine-scope-grid {
+  display: grid;
+  gap: 8px;
+}
+.routine-segments {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--color-box);
+}
+.routine-segments .button {
+  min-height: 34px;
+  height: 34px;
+  color: var(--color-ink-2);
+}
+.routine-segments .button[aria-checked='true'] {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  outline: 2px solid var(--color-focus);
+}
+.routine-dates {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.routine-dates .input {
+  min-width: 0;
+  padding: 0 8px;
+}
+.routine-interval .input {
+  width: 58px;
+  padding: 0 8px;
+  text-align: center;
+}
+.routine-interval span,
+.routine-preview-date {
+  font-size: 13px;
+  color: var(--color-ink-2);
+}
+.routine-days,
+.routine-scope-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.routine-days .button {
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+.routine-preview-date {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--color-side);
+}
+.routine-preview .goal-chip {
+  font-size: 13px;
+  font-weight: 500;
+}
+.routine-fieldset > .supporting,
+.routine-fieldset > .error-message {
+  margin-top: 8px;
+}
+.routine-destructive {
+  border-top: 1px solid var(--color-line);
+  padding-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.routine-danger,
+.routine-danger:hover {
+  background: #c4332c;
+  color: #ffffff;
+}
+.routine-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--color-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.routine-list-group {
+  margin-top: 26px;
+}
+.routine-list-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.routine-list-copy {
+  flex: 1;
+}
+.routine-scope-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.routine-scope-grid {
+  gap: 4px;
+}
+.routine-scope-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 58px;
+  padding: 4px 0;
+  border-radius: 8px;
+  background: var(--color-side);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.routine-scope-day.scope-done {
+  background: var(--color-ink);
+  color: var(--color-bg);
+}

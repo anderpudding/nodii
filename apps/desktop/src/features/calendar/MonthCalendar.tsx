@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { monthGridRange, monthKeyOf, summarizeMonth, type Profile } from '@nodii/core';
-import { prefetchAdjacentMonths, useGoals, useMonthTodos, type NodiiClient } from '@nodii/api';
+import {
+  prefetchAdjacentMonths,
+  useGoals,
+  useMonthTodos,
+  useRoutines,
+  useMonthRoutineLogs,
+  type NodiiClient,
+} from '@nodii/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
@@ -24,6 +31,8 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
   }, [cache, profile.weekStart]);
   const goals = useGoals(client);
   const todos = useMonthTodos(client, month, profile.weekStart);
+  const routines = useRoutines(client);
+  const logs = useMonthRoutineLogs(client, month, profile.weekStart);
   useEffect(() => {
     void prefetchAdjacentMonths(cache, client, month, profile.weekStart);
   }, [cache, client, month, profile.weekStart]);
@@ -33,11 +42,11 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
         ...monthGridRange(month, profile.weekStart),
         goals: goals.data ?? [],
         todos: todos.data ?? [],
-        routines: [],
-        logs: [],
+        routines: routines.data ?? [],
+        logs: logs.data ?? [],
         timeZone: profile.timezone,
       }),
-    [month, profile.weekStart, profile.timezone, goals.data, todos.data],
+    [month, profile.weekStart, profile.timezone, goals.data, todos.data, routines.data, logs.data],
   );
   return (
     <section className="sidebar-calendar" aria-label="월간 캘린더">
@@ -50,7 +59,7 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
         onMonthChange={(next) => setView({ selection: selectedDate, month: next })}
         onSelect={selectDate}
       />
-      {todos.isError || goals.isError ? (
+      {todos.isError || goals.isError || routines.isError || logs.isError ? (
         <div>
           <p role="alert" className="supporting">
             캘린더를 불러오지 못했어요.
@@ -60,6 +69,8 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
             onClick={() => {
               void todos.refetch();
               void goals.refetch();
+              void routines.refetch();
+              void logs.refetch();
             }}
           >
             다시 시도

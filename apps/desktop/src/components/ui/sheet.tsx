@@ -1,17 +1,24 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-const focusable = 'button:not(:disabled), input:not(:disabled), [href], [tabindex="0"]';
+const focusable =
+  'button:not(:disabled), input:not(:disabled), select:not(:disabled), [href], [tabindex="0"]';
 
 /** macOS 12 초기 WebView에서도 모달 포커스·복원·Esc를 지원한다. */
 export function Sheet({
   children,
   labelledBy,
   onClose,
+  role = 'dialog',
+  className = '',
+  describedBy,
 }: {
   children: ReactNode;
   labelledBy: string;
   onClose: () => void;
+  role?: 'dialog' | 'alertdialog';
+  className?: string;
+  describedBy?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
@@ -23,7 +30,10 @@ export function Sheet({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const dialog = ref.current!;
-    dialog.querySelector<HTMLElement>(focusable)?.focus();
+    (
+      dialog.querySelector<HTMLElement>('[data-initial-focus]') ??
+      dialog.querySelector<HTMLElement>(focusable)
+    )?.focus();
     const targets = () => [
       ...dialog.querySelectorAll<HTMLElement>(focusable),
       ...document.querySelectorAll<HTMLElement>('[data-sonner-toast] button'),
@@ -73,10 +83,11 @@ export function Sheet({
     >
       <div
         ref={ref}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className="goal-sheet"
+        aria-describedby={describedBy}
+        className={`goal-sheet ${className}`}
       >
         {children}
       </div>

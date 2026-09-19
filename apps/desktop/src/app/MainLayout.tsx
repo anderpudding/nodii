@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { logout } from '../lib/logout';
 import { MonthCalendar } from '../features/calendar/MonthCalendar';
+import { RoutineListSheet } from '../features/routines/RoutineListSheet';
 
 /** 인증된 셸 안에서 하루 목록과 목표 관리 시트를 연결한다. */
 export function MainLayout({
@@ -24,6 +25,7 @@ export function MainLayout({
   retryProfile?: () => void;
 }) {
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [routinesOpen, setRoutinesOpen] = useState(false);
   const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -64,7 +66,7 @@ export function MainLayout({
           <Button variant="ghost" onClick={() => setGoalsOpen(true)}>
             목표 관리
           </Button>
-          <Button variant="ghost" disabled>
+          <Button variant="ghost" disabled={!profile} onClick={() => setRoutinesOpen(true)}>
             루틴 관리
           </Button>
         </nav>
@@ -127,6 +129,13 @@ export function MainLayout({
         </main>
       </div>
       {goalsOpen && <GoalManagerSheet client={client} onClose={() => setGoalsOpen(false)} />}
+      {routinesOpen && profile && (
+        <RoutineListSheet
+          client={client}
+          profile={profile}
+          onClose={() => setRoutinesOpen(false)}
+        />
+      )}
     </div>
   );
 }
