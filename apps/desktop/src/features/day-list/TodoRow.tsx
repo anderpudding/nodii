@@ -1,3 +1,4 @@
+import { useConnectivity } from '../../lib/connectivity';
 import { useEffect, useRef, useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
 import { normalizeTitle, TITLE_MAX_LENGTH } from '@nodii/core';
@@ -25,6 +26,7 @@ export function TodoRow({
   weekStart: 0 | 1;
   timeZone: string;
 }) {
+  const online = useConnectivity();
   const options = { onError: notifyError };
   const toggle = useToggleTodo(client, weekStart, todo.id, options);
   const rename = useRenameTodo(client, weekStart, todo.id, options);
@@ -97,6 +99,7 @@ export function TodoRow({
       <button
         type="button"
         className="todo-check"
+        aria-disabled={!online || undefined}
         aria-label={`${todo.title} 완료`}
         aria-pressed={todo.isDone}
         disabled={pending}

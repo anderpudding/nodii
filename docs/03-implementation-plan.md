@@ -173,12 +173,23 @@
 
 ### 6단계 · 실시간 동기화 + 오프라인 읽기 (~1주)
 
-- [ ] Realtime 채널 구독, 이벤트를 `updated_at` 비교 후 캐시에 패치
-- [ ] DELETE 이벤트 처리 (필터가 적용되지 않으므로 캐시에 있는 키만 반영)
-- [ ] 오프라인 배너, TanStack Query persister (plugin-store)
-- [ ] 자정이 지나면 `today` 갱신
+- [x] Realtime 채널 구독, 이벤트를 `updated_at` 비교 후 캐시에 패치
+- [x] DELETE 이벤트 처리 (내 캐시에 있는 키만 반영, 버전별 구독 차이는 아래 기록)
+- [x] 오프라인 배너, TanStack Query persister (plugin-store)
+- [x] 자정이 지나면 `today` 갱신
 
 **완료 기준:** 앱 두 개에 같은 계정으로 로그인해서 한쪽 변경이 몇 초 안에 다른 쪽에 반영 (MVP 완료 기준 2).
+
+**구현·검증 기록 (2026-09-19)**
+- SYNC-03: 사용자별 단일 Realtime 채널, 매퍼 기반 캐시 패치·마이크로초 정밀도의 `updated_at` 비교. 할 일 날짜 이동은 기존 모든 월에서 제거하고 새 날짜가 속한 캐시된 월에만 삽입. 목표/할 일/루틴 소프트 삭제와 로그 복합 PK 변경·DELETE 처리, overdue 무효화. 재연결 시 모든 서버 쿼리 무효화, 주 시작 요일 변경은 기존 채널에서 최신 설정을 읽음. StrictMode/빠른 재로그인 시 해제 중인 topic을 재사용하지 않도록 구독별 이름을 부여.
+- SYNC-04·AUTH-03: 사용자별 QueryClient와 저장 키로 계정 격리, 별도 `query-cache.json`(브라우저는 localStorage), 앱 버전 buster·7일 maxAge/gcTime. 복원 완료 후 쿼리/prefetch/구독 시작, 낙관적 쓰기가 끝나기 전에는 디스크 캐시 저장 보류. 로그아웃 시 진행 중 저장/복원을 폐기하고 직렬 삭제해 늦은 응답으로 캐시가 되살아나지 않게 함. 보관 실패는 토스트로 안내.
+- SYNC-04·NFR-12: navigator·online/offline·포커스·실제 fetch 실패를 onlineManager와 `useConnectivity`에 연결하여 쓰기 가능 여부를 `navigator.onLine && !requestFailed`로 판정. 채널 상태는 `useConnectionStatus` 배지에서만 추가로 반영하여 오프라인과 실시간 연결 단절을 구분(사용자 요청 후속 수정). 모든 데이터 mutation은 onMutate 및 요청 직전에 검사하여 오프라인 캐시 변경·요청·큐잉 차단. 상단 안내와 체크/목표 추가 비활성 스타일, 저장 시도 시 한국어 토스트. 갱신 실패에도 기존 목록 유지.
+- NFR-01·날짜: 저장된 계정/Query 캐시를 먼저 읽어 만료 토큰 갱신과 버전 조회가 느려도 목록을 표시(버전 미달 결과가 도착하면 기존 차단 화면 적용). 1분 간격 및 focus/visibilitychange에서 기기 시간대로 today 재계산. 오늘을 보던 경우만 선택 날짜 이동, overdue 키도 새 날짜로 변경.
+- 검증: `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과(core 156 + api 72 + desktop 79 = 307검사). `pnpm build:web` 통과(JS 734.40KB, 기존 500KB 청크 경고 유지). pnpm 10.28.0을 임시 PATH로 사용. 오프라인 쓰기 3종·큐 없음, 사용자/버전/기간 분리·저장/삭제 경합·만료 세션의 느린 초기화 중 900ms 이내 캐시 화면 복원, 자정/복귀 및 최신 weekStart/재연결/해제를 테스트.
+- 실제 연동: 로컬 Supabase의 독립 JS 클라이언트 2개를 같은 OTP 계정으로 연결해 추가·완료 체크·월 경계 이동·루틴 완료/취소·분할 후 로그 ID 변경까지 실제 이벤트/캐시 반영 확인. 기본 replica identity의 DELETE에 `(routine_id, date)`가 모두 오는 것 확인. 모의 데이터 브라우저에서 880×600 라이트/다크, 오프라인 배너·체크 차단 토스트·scrollWidth=880/scrollHeight=600 확인. 임시 검증 파일 제거.
+- 새 의존성: `@tanstack/react-query-persist-client` 5.103.1 — 지시서의 캐시 복원/영속화 수명 관리. 추가된 간접 의존성은 `@tanstack/query-persist-client-core`이며, 저장소 어댑터는 기존 plugin-store로 구현. core·DB 스키마·Tauri 권한 변경 없음. DB 스키마 변경이 없어 db:reset·db:test·db:types는 실행하지 않음.
+- 문서 차이/설계 제안: **4개 사용자 필터 구독 + 루틴 로그 DELETE 전용 무필터 구독 1개**를 단일 채널에 연결. 로컬 Realtime v2.130.0은 DEFAULT replica identity에서 `user_id` 필터가 있는 구독에 DELETE를 전달하지 않음(같은 삭제를 무필터 진단 구독은 수신). PK만으로 충분하므로 FULL/스키마 변경 대신 실제 물리 삭제를 허용한 로그만 보완하고 내 캐시에 있는 키만 제거. 최신 [Supabase DELETE 문서](https://supabase.com/docs/guides/realtime/postgres-changes#delete-events)와 로컬 검증이 지시서/G4의 ‘필터가 적용되지 않음’ 설명과 다름. 설계서 §6.2/G4 및 지시서에 이 버전 차이를 반영할 것을 제안하며 기준 설계 문서는 직접 수정하지 않음.
+- 사람이 확인할 것: **MVP 완료 기준 2의 Tauri + 브라우저 조합은 아직 수동 확인 필요.** `pnpm dev`/`pnpm dev:web` 동일 계정에서 양방향 변경, Wi-Fi 끄기/켜기와 끊긴 동안 다른 기기의 변경 복구, Tauri 완전 종료 후 오프라인 실행 시 plugin-store 복원, 네이티브 시작 1초 이하 성능. JS 클라이언트 연동과 jsdom/브라우저 검증이 네이티브 검증을 대신하지 않음.
 
 ### 7단계 · 설정 + Should 항목 (~1주)
 
@@ -267,3 +278,7 @@
 | 2026-09-18 | 5 | ROUT-01~10 루틴 API·가상 전개 연결·편집/범위/관리 화면 구현. 겹치는 월 로그 낙관적 갱신·분할 롤백·부분 실패 재시도·5초 실행 취소, 이미 종료된 기간 보호, 키보드 라디오 검증. 필수 4종 275검사·core 커버리지·웹 빌드 통과. 모의 데이터 라이트/다크·최소 창 확인, 새 의존성·DB 변경 없음. 문서 차이·실제 Tauri/서버 확인은 위 5단계 기록 참고. |
 
 | 2026-09-18 | 5 | ROUT-05~09 후속: 로그 쓰기를 `['write','routineLog', routineId, date]`, 생성·수정·종료·삭제를 `['write','routine', routineId]`로 분리. `useSplitRoutine`만 기존 공유 키를 사용하고 `exact: true`로 분할 중 편집 제한 유지. 하루 행은 자신의 규칙·해당 날짜 로그만, 편집·관리 화면은 해당 루틴의 모든 날짜 로그를 관찰하며 날짜별 행 마운트로 재시도 키를 보존. 분할 후 종료일 재시도는 새 루틴의 행 키 사용. 지연된 첫 체크 중 다른 루틴 체크·첫 실패 시 두 번째 완료 보존, 같은 루틴의 다른 날짜 체크, 수정/종료/삭제의 개별 잠금, 분할 중 다른 편집기 비활성 회귀 검증. 필수 4종 통과(core 156 + api 60 + desktop 64 = 280검사). 새 의존성·DB·비주얼 변경 없음으로 DB 검증 미실행. 별도 제품 결정·필수 수동 확인 없음. |
+
+| 2026-09-19 | 6 | SYNC-03/04·AUTH-03·NFR-01/12 실시간 캐시 패치, 사용자별 영속 캐시/로그아웃 정리, 오프라인 쓰기 차단, 자정/복귀 날짜 갱신 구현. 필수 검사 4종 307검사·웹 빌드 통과. 실제 로컬 JS 세션 2개에서 추가/체크/이동/루틴 완료·취소/분할 확인, 최소 창 라이트·다크·차단 토스트 확인. Realtime v2.130.0의 필터 DELETE 미전달을 로그 DELETE 전용 구독으로 보완(단일 채널, 총 5개 바인딩), FULL/DB 변경 없음. Tauri+브라우저 및 네이티브 오프라인 재실행·시작 성능은 수동 확인 필요. |
+
+| 2026-09-19 | 6 | SYNC-03/04 후속: 쓰기 가드에서 Realtime 채널 상태를 분리하고 브라우저 연결·HTTP 실패만 사용. 배지는 오프라인 안내와 “동기화가 잠시 끊겼어요”를 구분하며 오프라인 우선. 채널 오류/시간 초과/종료에도 쓰기 허용, 채널 복구가 HTTP 실패를 지우지 않음, 채널만 끊긴 화면에서 체크의 HTTP 저장 응답까지 반영되는 회귀 테스트 추가. `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과(core 156 + api 72 + desktop 82 = 310검사). 새 의존성·DB 변경·추가 결정 사항 없음으로 DB 검증 미실행. 이번 수정의 별도 필수 수동 확인 없음(기존 6단계 네이티브 확인은 유지). |

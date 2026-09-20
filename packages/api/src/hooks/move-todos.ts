@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { assertOnline } from '../connectivity';
 import type { NodiiClient } from '../client';
 import type { TodoRecord } from '../mappers';
 import { moveTodo, moveTodos, type TodoMove } from '../repositories/todos';
@@ -23,10 +24,14 @@ export function useMoveTodo(
     mutationKey: todoWriteKey(id),
     networkMode: 'always',
     retry: false,
-    mutationFn: ({ todo, date, sortKey }: MoveTodoInput) =>
-      moveTodo(client, todo.id, date, sortKey),
-    onMutate: (input: MoveTodoInput) =>
-      beginTodoMove(cache, [input.todo], [after(input)], weekStart),
+    mutationFn: ({ todo, date, sortKey }: MoveTodoInput) => {
+      assertOnline();
+      return moveTodo(client, todo.id, date, sortKey);
+    },
+    onMutate: (input: MoveTodoInput) => {
+      assertOnline();
+      return beginTodoMove(cache, [input.todo], [after(input)], weekStart);
+    },
     onSuccess: (saved, input, snapshots) => {
       commitTodoMove(cache, snapshots ?? [], [input.todo], [saved], weekStart);
       void cache.invalidateQueries({ queryKey: ['overdue'] });
@@ -56,9 +61,14 @@ export function useImportOverdue(client: NodiiClient, weekStart: 0 | 1, options:
     mutationKey: ['write', 'import'],
     networkMode: 'always',
     retry: false,
-    mutationFn: (input: ImportOverdueInput) => moveTodos(client, input.moves, input.today),
-    onMutate: (input: ImportOverdueInput) =>
-      beginTodoMove(cache, input.overdue, rows(input), weekStart, input.today),
+    mutationFn: (input: ImportOverdueInput) => {
+      assertOnline();
+      return moveTodos(client, input.moves, input.today);
+    },
+    onMutate: (input: ImportOverdueInput) => {
+      assertOnline();
+      return beginTodoMove(cache, input.overdue, rows(input), weekStart, input.today);
+    },
     onSuccess: (_result, input, snapshots) => {
       commitTodoMove(cache, snapshots ?? [], input.overdue, rows(input), weekStart);
       // RPC는 void이므로 서버 updated_at과 동시 변경은 재조회로 받는다.

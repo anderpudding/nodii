@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { createNodiiClient, type AuthStorage } from '@nodii/api';
 
 export const baseUrl = 'http://127.0.0.1:54321';
@@ -19,7 +20,7 @@ export const sessionResponse = {
 };
 export function createTestClient(storage?: AuthStorage) {
   const values = new Map<string, string>();
-  return createNodiiClient({
+  const client = createNodiiClient({
     url: baseUrl,
     publishableKey: 'test-publishable-key',
     storage: storage ?? {
@@ -32,4 +33,12 @@ export function createTestClient(storage?: AuthStorage) {
       },
     },
   });
+  // HTTP 화면 테스트는 소켓을 열지 않는다. Realtime 콜백/재연결은 전용 테스트에서 검증한다.
+  const channel = client.channel.bind(client);
+  vi.spyOn(client, 'channel').mockImplementation((...args) => {
+    const result = channel(...args);
+    vi.spyOn(result, 'subscribe').mockReturnValue(result);
+    return result;
+  });
+  return client;
 }

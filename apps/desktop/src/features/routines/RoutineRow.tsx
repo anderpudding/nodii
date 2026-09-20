@@ -1,3 +1,4 @@
+import { useConnectivity } from '../../lib/connectivity';
 import { useEffect, useRef, useState } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -33,6 +34,7 @@ export function RoutineRow({
   onStop: (deleting: boolean) => void;
   disabled?: boolean;
 }) {
+  const online = useConnectivity();
   const setLog = useSetRoutineLog(client, weekStart, routine.id, date, { onError: notifyError });
   const busy = useRoutineWritePending(routine.id, date) || disabled;
   const done = log?.status === 'done';
@@ -114,6 +116,7 @@ export function RoutineRow({
           <button
             type="button"
             className="todo-check"
+            aria-disabled={!online || undefined}
             aria-label={`${routine.title} 완료`}
             aria-pressed={done}
             disabled={busy}

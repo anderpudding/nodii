@@ -50,7 +50,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
   return (
     <>
       <DayHeader total={items.length} done={done} />
-      {goals.isError || todos.isError ? (
+      {(goals.isError && !goals.data) || (todos.isError && !todos.data) ? (
         <div className="day-empty">
           <p role="alert">하루 목록을 불러오지 못했어요.</p>
           <Button
@@ -96,7 +96,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
             groups={groups}
             todos={todos.data}
             routines={routines.data ?? []}
-            routinesReady={!!routines.data && !!logs.data && !routines.isError && !logs.isError}
+            routinesReady={!!routines.data && !!logs.data}
           />
         </>
       )}

@@ -3,18 +3,23 @@ import { compareVersion } from '@nodii/core';
 import {
   fetchMinAppVersion,
   syncProfileTimezone,
+  readStoredSession,
+  normalizeAuthError,
   type NodiiClient,
   type Session,
 } from '@nodii/api';
 import { getVersion } from '@tauri-apps/api/app';
 import { isTauri } from '@tauri-apps/api/core';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useQuery, useQueryClient } from '@tanstack/react-query';
 import { version } from '../../package.json';
 import { env } from '../lib/env';
 import { Login } from '../features/auth/Login';
 import { MainLayout } from './MainLayout';
 import { UpdateRequired } from './UpdateRequired';
 import { Button } from '../components/ui/button';
+import { toast } from 'sonner';
+import { UserCache } from './UserCache';
+import { detachPersistedCache } from '../lib/query-persister';
 
 function SignedIn({ client, session }: { client: NodiiClient; session: Session }) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -81,10 +86,16 @@ export function AppGate({
   useEffect(() => {
     let active = true;
     let authEventReceived = false;
+    let resolvedSession = false;
     let previousUser: string | undefined;
     function applySession(next: Session | null) {
       if (!active) return;
-      if (previousUser && previousUser !== next?.user.id) queryClient.clear();
+      if (previousUser && previousUser !== next?.user.id) {
+        void detachPersistedCache(queryClient).catch(() =>
+          toast.error('이 기기의 캐시를 지우지 못했어요'),
+        );
+        queryClient.clear();
+      }
       previousUser = next?.user.id;
       setSessionError(false);
       setSession(next);
@@ -94,14 +105,31 @@ export function AppGate({
     } = client.auth.onAuthStateChange((event, next) => {
       // SDK 내부 잠금 중에는 다른 Supabase 메서드를 await하지 않는다.
       if (event !== 'INITIAL_SESSION') authEventReceived = true;
-      if (event !== 'INITIAL_SESSION' || !authEventReceived) applySession(next);
+      if (event === 'INITIAL_SESSION' && !next && !onlineManager.isOnline()) return;
+      if (event !== 'INITIAL_SESSION' || !authEventReceived) {
+        resolvedSession = true;
+        applySession(next);
+      }
     });
+    void readStoredSession(client)
+      .then((stored) => {
+        if (active && stored && !resolvedSession && !authEventReceived) applySession(stored);
+      })
+      .catch(() => {
+        /* SDK의 세션 읽기 결과가 오류와 재시도 UI를 결정한다. */
+      });
     void client.auth
       .getSession()
       .then(({ data, error }) => {
         if (!active || authEventReceived) return;
-        if (error) setSessionError(true);
-        else applySession(data.session);
+        if (error) {
+          if (previousUser && normalizeAuthError(error).code === 'network') return;
+          setSessionError(true);
+        } else {
+          if (!data.session && previousUser && !onlineManager.isOnline()) return;
+          resolvedSession = true;
+          applySession(data.session);
+        }
       })
       .catch(() => {
         if (active && !authEventReceived) setSessionError(true);
@@ -112,7 +140,7 @@ export function AppGate({
     };
   }, [client, queryClient, attempt]);
 
-  if (check.isPending)
+  if (check.isPending && !session)
     return (
       <main className="center-screen">
         <p role="status" className="supporting">
@@ -153,7 +181,9 @@ export function AppGate({
       </main>
     );
   return session ? (
-    <SignedIn key={session.user.id} client={client} session={session} />
+    <UserCache key={session.user.id} userId={session.user.id}>
+      <SignedIn client={client} session={session} />
+    </UserCache>
   ) : (
     <Login client={client} reviewAccountEmail={reviewAccountEmail} />
   );

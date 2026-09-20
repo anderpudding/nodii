@@ -1,3 +1,5 @@
+// 이 파일의 날짜별 UI fixture를 유지하고 실제 자정은 today.test.ts에서 검증한다.
+vi.mock('../../lib/today', () => ({ useTodayClock: vi.fn() }));
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
