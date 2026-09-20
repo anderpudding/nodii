@@ -102,7 +102,7 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
   await user.click(await screen.findByRole('button', { name: '설정' }));
   expect(screen.getByText('user@example.com')).toBeTruthy();
   queryClient.setQueryData(['private-test'], ['private-data']);
-  await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
+  await user.click(screen.getByRole('button', { name: '로그아웃' }));
   expect(await screen.findByLabelText('이메일')).toBeTruthy();
   expect(queryClient.getQueryData(['private-test'])).toBeUndefined();
   expect((await client.auth.getSession()).data.session).toBeNull();
@@ -168,7 +168,7 @@ it('오프라인 로그아웃은 인증 저장소와 캐시를 비우고 로그�
   const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: '설정' }));
   queryClient.setQueryData(['private-test'], ['private-data']);
-  await user.click(screen.getByRole('menuitem', { name: '로그아웃' }));
+  await user.click(screen.getByRole('button', { name: '로그아웃' }));
 
   expect(await screen.findByLabelText('이메일')).toBeTruthy();
   await waitFor(() => expect(successToast).toHaveBeenCalledWith('이 기기에서 로그아웃했어요'));

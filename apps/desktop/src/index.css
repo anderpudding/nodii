@@ -1078,3 +1078,27 @@ button.goal-chip:disabled {
 .todo-check[aria-disabled='true'] svg {
   stroke: var(--color-muted);
 }
+
+/* 7단계: 기존 시트·간격·타입 토큰을 재사용한다. */
+.settings-sheet {
+  background: var(--color-side);
+}
+.settings-section {
+  margin-top: 26px;
+}
+.settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+.settings-row .input {
+  width: auto;
+  height: 40px;
+}

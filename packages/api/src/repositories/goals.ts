@@ -73,3 +73,9 @@ export function archiveGoal(
 export function unarchiveGoal(client: NodiiClient, id: string) {
   return updateGoal(client, id, { archivedAt: null });
 }
+
+/** GOAL-06: 목표와 하위 항목을 RLS가 적용되는 RPC로 함께 삭제한다. */
+export async function deleteGoal(client: NodiiClient, goalId: string) {
+  const { error } = await client.rpc('delete_goal', { p_goal_id: goalId });
+  if (error) throw mapDataError(error);
+}

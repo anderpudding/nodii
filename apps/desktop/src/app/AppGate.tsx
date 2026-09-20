@@ -100,6 +100,11 @@ export function AppGate({
       setSessionError(false);
       setSession(next);
     }
+    const localLogout = () => {
+      authEventReceived = true;
+      applySession(null);
+    };
+    window.addEventListener('nodii:signed-out', localLogout);
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((event, next) => {
@@ -136,6 +141,7 @@ export function AppGate({
       });
     return () => {
       active = false;
+      window.removeEventListener('nodii:signed-out', localLogout);
       subscription.unsubscribe();
     };
   }, [client, queryClient, attempt]);
