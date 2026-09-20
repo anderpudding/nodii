@@ -20,11 +20,11 @@ export function DayHeader({ total = 0, done = 0 }: { total?: number; done?: numb
       if (
         event.target instanceof Element &&
         event.target.closest(
-          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="menu"], [role="dialog"], [role="grid"]',
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="menu"], [role="dialog"], [role="alertdialog"], [role="grid"]',
         )
       )
         return;
-      if (document.querySelector('[role="dialog"], [role="menu"]')) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       selectDate(addDays(useUIStore.getState().selectedDate, event.key === 'ArrowLeft' ? -1 : 1));

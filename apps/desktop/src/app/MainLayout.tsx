@@ -4,6 +4,8 @@ import type { Profile } from '@nodii/core';
 import { DayView, DaySkeleton } from '../features/day-list/DayView';
 import { GoalManagerSheet } from '../features/goals/GoalManagerSheet';
 import { Button } from '../components/ui/button';
+import { startBrowserShortcuts, type AppCommand } from '../lib/commands';
+import { useUIStore } from '../stores/ui';
 import { SettingsSheet } from '../features/settings/SettingsSheet';
 import { MonthCalendar } from '../features/calendar/MonthCalendar';
 import { RoutineListSheet } from '../features/routines/RoutineListSheet';
@@ -38,14 +40,20 @@ export function MainLayout({
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => {
-    const key = (event: KeyboardEvent) => {
-      if (event.metaKey && event.key === ',' && !event.isComposing) {
-        event.preventDefault();
-        setSettingsOpen(true);
-      }
+    const stop = startBrowserShortcuts();
+    const command = (event: Event) => {
+      // 열린 편집/확인 창을 다른 명령으로 덮지 않는다.
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
+      const value = (event as CustomEvent<AppCommand>).detail;
+      if (value === 'settings') setSettingsOpen(true);
+      if (value === 'today') useUIStore.getState().selectDate(useUIStore.getState().today);
     };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
+    window.addEventListener('nodii:command', command);
+    return () => {
+      stop();
+      window.removeEventListener('nodii:command', command);
+      useUIStore.setState({ lastAddedGoalByDate: {} });
+    };
   }, []);
 
   return (

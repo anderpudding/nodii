@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { keyBetween, lastSortKey, type DayGoalGroup, type Profile } from '@nodii/core';
 import { useCreateTodo, type NodiiClient, type TodoRecord, type RoutineRecord } from '@nodii/api';
 import { useUIStore } from '../../stores/ui';
@@ -9,6 +9,7 @@ import { TodoRow } from './TodoRow';
 import { RoutineRow } from '../routines/RoutineRow';
 import { RoutineEditor } from '../routines/RoutineEditor';
 import { RoutineStopDialog } from '../routines/RoutineStopDialog';
+import type { AppCommand } from '../../lib/commands';
 import { Button } from '../../components/ui/button';
 
 /** 캐시를 복사하지 않고 core 계산 결과로 목표별 하루를 그린다 (TODO-09). */
@@ -35,6 +36,26 @@ export function DayList({
   );
   const root = useRef<HTMLDivElement>(null);
   const create = useCreateTodo(client, profile.weekStart, { onError: notifyError });
+  useEffect(() => {
+    const command = (event: Event) => {
+      if (
+        (event as CustomEvent<AppCommand>).detail !== 'new-todo' ||
+        document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
+      )
+        return;
+      const last = useUIStore.getState().lastAddedGoalByDate[date];
+      const target =
+        groups.find(({ goal, canAdd }) => canAdd && goal.id === last) ??
+        groups.find(({ canAdd }) => canAdd);
+      if (target) {
+        setAdding(target.goal.id);
+        // 이미 열린 입력 줄도 다시 포커스한다.
+        root.current?.querySelector<HTMLInputElement>('.add-todo input')?.focus();
+      }
+    };
+    window.addEventListener('nodii:command', command);
+    return () => window.removeEventListener('nodii:command', command);
+  }, [date, groups]);
   const hasItems = groups.some((group) => group.items.length > 0);
   return (
     <div ref={root}>
@@ -105,16 +126,19 @@ export function DayList({
                     ).find((element) => element.getAttribute('aria-label') === goal.name);
                     section?.querySelector<HTMLButtonElement>('.goal-chip')?.focus();
                   }}
-                  onAdd={(title) =>
-                    create.mutate({
-                      id: crypto.randomUUID(),
-                      goalId: goal.id,
-                      title,
-                      date,
-                      isDone: false,
-                      sortKey: keyBetween(lastSortKey(items), null),
-                    })
-                  }
+                  onAdd={(title) => {
+                    create.mutate(
+                      {
+                        id: crypto.randomUUID(),
+                        goalId: goal.id,
+                        title,
+                        date,
+                        isDone: false,
+                        sortKey: keyBetween(lastSortKey(items), null),
+                      },
+                      { onSuccess: () => useUIStore.getState().rememberAddedGoal(date, goal.id) },
+                    );
+                  }}
                 />
               )}
             </div>

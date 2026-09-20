@@ -544,3 +544,37 @@ it.each([
     expect(within(group).queryByRole('button', { name: '할 일에 할 일 추가' })).toBeNull();
   },
 );
+
+it('⌘N은 선택 날짜의 마지막 추가 목표를 열고 보관되면 첫 활성 목표로 돌아간다', async () => {
+  const other = { ...goalRow, id: 'other-goal', name: '공부', sort_key: 'a1' };
+  server.use(http.get(`${baseUrl}/rest/v1/goals`, () => HttpResponse.json([goalRow, other])));
+  setup();
+  await screen.findByRole('button', { name: '공부에 할 일 추가' });
+  fireEvent.keyDown(window, { key: 'n', metaKey: true });
+  await waitFor(() =>
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('할 일 새 할 일'),
+  );
+  fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+  act(() => useUIStore.getState().rememberAddedGoal(todoRow.date, other.id));
+  fireEvent.keyDown(window, { key: 'n', metaKey: true });
+  await waitFor(() =>
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('공부 새 할 일'),
+  );
+  fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+  act(() => useUIStore.getState().rememberAddedGoal(todoRow.date, 'archived-or-deleted'));
+  fireEvent.keyDown(window, { key: 'n', metaKey: true });
+  await waitFor(() =>
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('할 일 새 할 일'),
+  );
+});
+it('⌘T는 오늘로 이동하고 ⌘, 설정 확인 중에는 날짜 단축키를 무시한다', async () => {
+  setup();
+  await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  act(() => useUIStore.getState().selectDate('2026-09-29'));
+  fireEvent.keyDown(window, { key: 't', metaKey: true });
+  expect(useUIStore.getState().selectedDate).toBe(todoRow.date);
+  fireEvent.keyDown(window, { key: ',', metaKey: true });
+  expect(screen.getByRole('dialog', { name: '설정' })).toBeTruthy();
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(useUIStore.getState().selectedDate).toBe(todoRow.date);
+});
