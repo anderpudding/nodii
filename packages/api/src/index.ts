@@ -22,3 +22,4 @@ export * from './realtime';
 export * from './connectivity';
 export * from './settings';
 export * from './hooks/settings';
+export * from './hooks/delete-goal';

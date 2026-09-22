@@ -107,6 +107,7 @@ export function applyRealtimeEvent(
   event: UserChange,
   { weekStart }: { weekStart: 0 | 1 },
 ): void {
+  if (event.table !== 'routine_logs') void cache.invalidateQueries({ queryKey: ['goalContents'] });
   if (event.table === 'routine_logs') {
     const old = event.eventType === 'INSERT' ? undefined : event.old;
     const row = event.eventType === 'DELETE' ? undefined : mapRoutineLog(event.new);

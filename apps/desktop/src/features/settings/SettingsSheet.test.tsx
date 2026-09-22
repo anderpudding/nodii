@@ -64,7 +64,9 @@ it('이메일 재입력과 이해 체크를 모두 확인해야 계정 삭제를
     http.post(`${baseUrl}/rest/v1/rpc/delete_my_account`, remove),
   );
   const { user, client, cache } = setup();
-  vi.spyOn(client.auth, 'signOut').mockResolvedValue({ error: null });
+  vi.spyOn(client.auth, 'signOut').mockRejectedValue(
+    new Error('server signOut failed after deletion'),
+  );
   const signedOut = vi.fn();
   window.addEventListener('nodii:signed-out', signedOut, { once: true });
   cache.setQueryData(['todos', '2026-09'], [{ id: 'private' }]);

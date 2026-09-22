@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
-import { GOAL_NAME_MAX_LENGTH } from '@nodii/core';
-import { useArchiveGoal, useUpdateGoal, type GoalRecord, type NodiiClient } from '@nodii/api';
+import { GOAL_NAME_MAX_LENGTH, isHexColor } from '@nodii/core';
+import {
+  useArchiveGoal,
+  useUpdateGoal,
+  type GoalContents,
+  type GoalRecord,
+  type NodiiClient,
+} from '@nodii/api';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -20,15 +26,19 @@ function notifyGoalError(error: unknown, retry: () => void) {
     toast.error('활성 목표는 하나 이상 있어야 해요');
   } else notifyError(error, retry);
 }
-/** 이름·프리셋 색·보관만 편집하고 다음 단계의 삭제·정렬은 노출하지 않는다. */
+/** 이름·프리셋/HEX 색·보관·삭제를 목표별로 편집한다. */
 export function GoalEditor({
   goal,
   client,
   lastActive,
+  counts,
+  onDelete,
 }: {
   goal: GoalRecord;
   client: NodiiClient;
   lastActive: boolean;
+  counts?: GoalContents;
+  onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const expand = useRef<HTMLButtonElement>(null);
@@ -42,7 +52,8 @@ export function GoalEditor({
   const update = useUpdateGoal(client, goal.id, { onError: notifyGoalError });
   const archive = useArchiveGoal(client, goal.id, { onError: notifyGoalError });
   const writing = useIsMutating({ mutationKey: ['write', 'goal'] }) > 0;
-  const valid = name.trim().length > 0 && name.trim().length <= GOAL_NAME_MAX_LENGTH;
+  const valid =
+    name.trim().length > 0 && name.trim().length <= GOAL_NAME_MAX_LENGTH && isHexColor(color);
   const editorId = `goal-editor-${goal.id}`;
   function changeArchive() {
     void archive
@@ -76,6 +87,9 @@ export function GoalEditor({
         >
           <GoalChip goal={goal} surface />
         </button>
+        <span className="supporting goal-counts">
+          {counts && `할 일 ${counts.todos}개 · 루틴 ${counts.routines}개`}
+        </span>
         <span title={lastActive ? '활성 목표는 하나 이상 있어야 해요' : undefined}>
           <Button
             variant="ghost"
@@ -135,7 +149,38 @@ export function GoalEditor({
               </button>
             ))}
           </fieldset>
-          <GoalChip goal={{ ...goal, name: name.trim() || goal.name, color }} surface />
+          <label htmlFor={`goal-color-${goal.id}`}>HEX 색상</label>
+          <Input
+            id={`goal-color-${goal.id}`}
+            value={color}
+            maxLength={7}
+            placeholder="#RRGGBB"
+            aria-invalid={!isHexColor(color)}
+            aria-describedby={!isHexColor(color) ? `goal-color-error-${goal.id}` : undefined}
+            onChange={(event) => setColor(event.target.value)}
+          />
+          {!isHexColor(color) && (
+            <p id={`goal-color-error-${goal.id}`} className="error-message" role="alert">
+              #RRGGBB 형식으로 입력해 주세요.
+            </p>
+          )}
+          <GoalChip
+            goal={{
+              ...goal,
+              name: name.trim() || goal.name,
+              color: isHexColor(color) ? color : goal.color,
+            }}
+            surface
+          />
+          <Button
+            variant="ghost"
+            className="danger-text"
+            disabled={writing || lastActive}
+            title={lastActive ? '활성 목표는 하나 이상 있어야 해요' : undefined}
+            onClick={onDelete}
+          >
+            목표 삭제
+          </Button>
           <div className="goal-edit-actions">
             <Button variant="ghost" onClick={() => setEditing(false)}>
               취소

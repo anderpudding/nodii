@@ -37,9 +37,10 @@ export function TodoRow({
     predicate: (mutation) =>
       (mutation.state.variables as { id?: string } | undefined)?.id === todo.id,
   });
+  const reordering = useIsMutating({ mutationKey: ['write', 'todo', 'reorder'] });
   const importing = useIsMutating({ mutationKey: ['write', 'import'] });
   const restoring = useIsMutating({ mutationKey: todoWriteKey('import-undo') });
-  const pending = updating > 0 || creating > 0 || importing > 0 || restoring > 0;
+  const pending = updating > 0 || creating > 0 || importing > 0 || restoring > 0 || reordering > 0;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(todo.title);
   const titleRef = useRef<HTMLButtonElement>(null);

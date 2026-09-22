@@ -2,11 +2,23 @@ import { useState } from 'react';
 import { Sheet } from '../../components/ui/sheet';
 import { useIsMutating } from '@tanstack/react-query';
 import { GOAL_NAME_MAX_LENGTH, compareSortKey, keyBetween, lastSortKey } from '@nodii/core';
-import { useCreateGoal, useGoals, type NodiiClient } from '@nodii/api';
+import {
+  useCreateGoal,
+  useGoals,
+  useGoalContents,
+  useUpdateGoal,
+  type GoalRecord,
+  type NodiiClient,
+} from '@nodii/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { notifyError } from '../../lib/notify-error';
 import { GoalEditor } from './GoalEditor';
+import { GoalDeleteDialog } from './GoalDeleteDialog';
+import { SortableList } from '../../components/ui/sortable-list';
+import { reorderedKey } from '../../lib/reorder';
+import { useConnectivity } from '../../lib/connectivity';
+import { toast } from 'sonner';
 import { goalPresets } from './presets';
 
 /** 네이티브 모달 시트로 포커스를 가두고 Esc·바깥 클릭·닫기를 지원한다. */
@@ -18,6 +30,10 @@ export function GoalManagerSheet({
   onClose: () => void;
 }) {
   const goals = useGoals(client);
+  const counts = useGoalContents(client);
+  const online = useConnectivity();
+  const reorder = useUpdateGoal(client, 'reorder', { onError: notifyError });
+  const [deleting, setDeleting] = useState<GoalRecord | null>(null);
   const create = useCreateGoal(client, { onError: notifyError });
   const writing = useIsMutating({ mutationKey: ['write', 'goal'] }) > 0;
   const [name, setName] = useState('');
@@ -25,6 +41,25 @@ export function GoalManagerSheet({
   const active = rows.filter((goal) => !goal.archivedAt);
   const archived = rows.filter((goal) => goal.archivedAt);
   const valid = !!name.trim() && name.trim().length <= GOAL_NAME_MAX_LENGTH;
+  if (deleting)
+    return (
+      <GoalDeleteDialog
+        client={client}
+        goal={deleting}
+        lastActive={!deleting.archivedAt && active.length <= 1}
+        onClose={() => setDeleting(null)}
+      />
+    );
+  function move(items: GoalRecord[], id: string, overId: string) {
+    const goal = items.find((row) => row.id === id);
+    if (!goal) return;
+    try {
+      const sortKey = reorderedKey(items, id, overId);
+      if (sortKey) reorder.mutate({ goal, changes: { sortKey } });
+    } catch {
+      toast.error('순서를 바꾸지 못했어요. 목록을 새로 열고 다시 시도해 주세요.');
+    }
+  }
   return (
     <Sheet labelledBy="goal-sheet-title" onClose={onClose}>
       <header className="goal-sheet-header">
@@ -45,14 +80,32 @@ export function GoalManagerSheet({
       ) : (
         <>
           <section aria-label="활성 목표">
-            {active.map((goal) => (
-              <GoalEditor
-                key={goal.id}
-                goal={goal}
-                client={client}
-                lastActive={active.length === 1}
-              />
-            ))}
+            <SortableList
+              items={active.map((goal) => ({ id: goal.id, label: goal.name }))}
+              disabled={writing || !online}
+              onMove={(id, overId) => move(active, id, overId)}
+            >
+              {({ id }) => {
+                const goal = active.find((row) => row.id === id)!;
+                return (
+                  <GoalEditor
+                    goal={goal}
+                    client={client}
+                    lastActive={active.length === 1}
+                    counts={counts.data?.[id]}
+                    onDelete={() => setDeleting(goal)}
+                  />
+                );
+              }}
+            </SortableList>
+            {counts.isError && (
+              <p className="error-message" role="alert">
+                개수를 불러오지 못했어요.{' '}
+                <Button variant="ghost" onClick={() => void counts.refetch()}>
+                  다시 시도
+                </Button>
+              </p>
+            )}
           </section>
           <form
             className="new-goal-form"
@@ -97,7 +150,14 @@ export function GoalManagerSheet({
             <h3>보관한 목표</h3>
             {archived.length ? (
               archived.map((goal) => (
-                <GoalEditor key={goal.id} goal={goal} client={client} lastActive={false} />
+                <GoalEditor
+                  key={goal.id}
+                  goal={goal}
+                  client={client}
+                  lastActive={false}
+                  counts={counts.data?.[goal.id]}
+                  onDelete={() => setDeleting(goal)}
+                />
               ))
             ) : (
               <p className="supporting">보관한 목표가 없어요.</p>

@@ -51,7 +51,10 @@ export async function countAllGoalContents(client: NodiiClient, signal?: AbortSi
     const { data, error } = await query;
     if (error) throw error;
     for (const row of data)
-      counts[row.id] = { todos: row.todos[0]?.count ?? 0, routines: row.routines[0]?.count ?? 0 };
+      counts[row.id] = {
+        todos: row.todos?.[0]?.count ?? 0,
+        routines: row.routines?.[0]?.count ?? 0,
+      };
     if (data.length < 1000) return counts;
   }
 }

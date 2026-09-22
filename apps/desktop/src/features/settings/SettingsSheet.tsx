@@ -45,17 +45,19 @@ function DeleteAccount({
   });
   async function remove() {
     setPending(true);
+    let accountRemoved = deleted;
     try {
       if (!deleted) {
         assertOnline();
         await deleteMyAccount(client);
         setDeleted(true);
+        accountRemoved = true;
       }
       await logout(client, cache, undefined, true);
       toast.success('계정을 삭제했어요');
     } catch {
       toast.error(
-        deleted
+        accountRemoved
           ? '이 기기의 정보를 지우지 못했어요. 다시 시도해 주세요.'
           : '계정을 삭제하지 못했어요. 다시 시도해 주세요.',
       );

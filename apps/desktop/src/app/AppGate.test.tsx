@@ -94,6 +94,8 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
     http.post(`${baseUrl}/auth/v1/logout`, () => new HttpResponse(null, { status: 204 })),
   );
   const { client, queryClient } = setup();
+  const startRefresh = vi.spyOn(client.auth, 'startAutoRefresh');
+  const stopRefresh = vi.spyOn(client.auth, 'stopAutoRefresh');
   const user = userEvent.setup();
   await user.type(await screen.findByLabelText('이메일'), 'user@example.com');
   await user.click(screen.getByRole('button', { name: '코드 받기' }));
@@ -101,11 +103,20 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
   await user.paste('123456');
   await user.click(await screen.findByRole('button', { name: '설정' }));
   expect(screen.getByText('user@example.com')).toBeTruthy();
+  await waitFor(() => expect(startRefresh).toHaveBeenCalled());
   queryClient.setQueryData(['private-test'], ['private-data']);
   await user.click(screen.getByRole('button', { name: '로그아웃' }));
   expect(await screen.findByLabelText('이메일')).toBeTruthy();
   expect(queryClient.getQueryData(['private-test'])).toBeUndefined();
   expect((await client.auth.getSession()).data.session).toBeNull();
+  expect(stopRefresh).toHaveBeenCalled();
+  const startsBeforeLogin = startRefresh.mock.calls.length;
+  await user.type(screen.getByLabelText('이메일'), 'user@example.com');
+  await user.click(screen.getByRole('button', { name: '코드 받기' }));
+  await user.click(await screen.findByLabelText('6자리 인증 코드'));
+  await user.paste('123456');
+  await screen.findByRole('button', { name: '설정' });
+  await waitFor(() => expect(startRefresh.mock.calls.length).toBeGreaterThan(startsBeforeLogin));
 });
 it.each([
   [{ status: 429 }, 'rate_limited'],

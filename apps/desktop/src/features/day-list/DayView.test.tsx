@@ -578,3 +578,108 @@ it('⌘T는 오늘로 이동하고 ⌘, 설정 확인 중에는 날짜 단축키
   fireEvent.keyDown(window, { key: 'ArrowRight' });
   expect(useUIStore.getState().selectedDate).toBe(todoRow.date);
 });
+
+it('HEX 입력은 잘못된 값의 저장을 막고 유효한 흰색도 대비 미리보기를 유지한다', async () => {
+  const patch = vi.fn(async ({ request }: { request: Request }) =>
+    HttpResponse.json({ ...goalRow, ...((await request.json()) as object) }),
+  );
+  server.use(http.patch(`${baseUrl}/rest/v1/goals`, patch));
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  await user.click(await screen.findByRole('button', { name: '할 일 편집' }));
+  const hex = screen.getByLabelText('HEX 색상');
+  await user.clear(hex);
+  await user.type(hex, '#XYZ');
+  expect(hex.getAttribute('aria-invalid')).toBe('true');
+  expect((screen.getByRole('button', { name: '저장' }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('button', { name: '목표 삭제' }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  await user.clear(hex);
+  await user.type(hex, '#FFFFFF');
+  expect(hex.getAttribute('aria-invalid')).toBe('false');
+  await user.click(screen.getByRole('button', { name: '저장' }));
+  await waitFor(() => expect(patch).toHaveBeenCalledOnce());
+});
+it('목표 삭제는 최신 개수를 확인하고 실패하면 목표와 인접 월 항목을 복원한다', async () => {
+  const extra = { ...goalRow, id: 'extra', name: '공부', sort_key: 'a1' };
+  const aggregate = vi.fn();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  server.use(
+    http.get(`${baseUrl}/rest/v1/goals`, ({ request }) => {
+      if (new URL(request.url).searchParams.get('select')?.includes('count')) {
+        aggregate();
+        return HttpResponse.json(
+          [goalRow, extra].map((row) => ({
+            id: row.id,
+            todos: [{ count: 12 }],
+            routines: [{ count: 2 }],
+          })),
+        );
+      }
+      return HttpResponse.json([goalRow, extra]);
+    }),
+    http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])),
+    http.head(
+      `${baseUrl}/rest/v1/todos`,
+      () => new HttpResponse(null, { headers: { 'content-range': '0-11/12' } }),
+    ),
+    http.head(
+      `${baseUrl}/rest/v1/routines`,
+      () => new HttpResponse(null, { headers: { 'content-range': '0-1/2' } }),
+    ),
+    http.post(`${baseUrl}/rest/v1/rpc/delete_goal`, async () => {
+      await gate;
+      return HttpResponse.json({ message: 'failure' }, { status: 500 });
+    }),
+  );
+  const { user, cache } = setup();
+  await screen.findByRole('button', { name: '책 읽기 완료' });
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  await waitFor(() => expect(screen.getAllByText('할 일 12개 · 루틴 2개')).toHaveLength(2));
+  expect(aggregate).toHaveBeenCalledOnce();
+  await user.click(screen.getByRole('button', { name: '할 일 편집' }));
+  await user.click(screen.getByRole('button', { name: '목표 삭제' }));
+  await screen.findByText(/할 일 12개와 루틴 2개가/);
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: '취소' }));
+  await user.click(screen.getByRole('button', { name: '삭제' }));
+  await waitFor(() => expect(cache.getQueryData<unknown[]>(['todos', '2026-09'])).toEqual([]));
+  expect(cache.getQueryData<unknown[]>(['todos', '2026-10'])).toEqual([]);
+  await act(async () => release());
+  await screen.findByText('저장하지 못했어요');
+  await waitFor(() =>
+    expect(cache.getQueryData<unknown[]>(['todos', '2026-09'])).toEqual([mapTodo(todoRow)]),
+  );
+  expect(cache.getQueryData<unknown[]>(['todos', '2026-10'])).toEqual([mapTodo(todoRow)]);
+});
+it('연속 삭제의 실행 취소는 각 할 일의 날짜와 정렬 키를 따로 복원한다', async () => {
+  const initial = [todoRow, { ...todoRow, id: 'second', title: '산책', sort_key: 'a1' }];
+  let rows: (typeof todoRow & { deleted_at: string | null })[] = initial;
+  server.use(
+    http.get(`${baseUrl}/rest/v1/todos`, () =>
+      HttpResponse.json(rows.filter((row) => !row.deleted_at)),
+    ),
+    http.patch(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+      const id = new URL(request.url).searchParams.get('id')?.slice(3);
+      const changes = (await request.json()) as object;
+      rows = rows.map((row) => (row.id === id ? { ...row, ...changes } : row));
+      return HttpResponse.json(rows.find((row) => row.id === id));
+    }),
+  );
+  const { user } = setup();
+  for (const title of ['책 읽기', '산책']) {
+    await user.click(await screen.findByRole('button', { name: `${title} 메뉴` }));
+    await user.click(screen.getByRole('menuitem', { name: '삭제' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: `${title} 완료` })).toBeNull());
+  }
+  const undo = await screen.findAllByRole('button', { name: '실행 취소' });
+  expect(undo).toHaveLength(2);
+  await user.click(undo[0]!);
+  await user.click(undo[1]!);
+  await screen.findByRole('button', { name: '책 읽기 완료' });
+  await screen.findByRole('button', { name: '산책 완료' });
+  expect(rows).toEqual(initial);
+});

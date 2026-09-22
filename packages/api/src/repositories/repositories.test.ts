@@ -168,3 +168,34 @@ it('최근 7일 미완료·삭제 제외 조건을 서버에 전달한다', asyn
   ])
     expect(url).toContain(filter);
 });
+
+it('목표 확인 개수는 본문 없이 정확한 개수를 요청하고 삭제된 행은 제외한다', async () => {
+  const { countGoalContents } = await import('../settings');
+  const { client, fetch } = setup(null);
+  fetch.mockImplementation(
+    async () => new Response(null, { headers: { 'content-range': '0-11/12' } }),
+  );
+  expect(await countGoalContents(client, goal.id)).toEqual({ todos: 12, routines: 12 });
+  expect(fetch).toHaveBeenCalledTimes(2);
+  for (const [url, init] of fetch.mock.calls) {
+    expect(String(url)).toContain('goal_id=eq.goal-id');
+    expect(String(url)).toContain('deleted_at=is.null');
+    expect((init as RequestInit).method).toBe('HEAD');
+    expect(new Headers((init as RequestInit).headers).get('prefer')).toContain('count=exact');
+  }
+});
+it('공용 집계는 목표 수만큼 요청하지 않고 한 관계 조회로 모든 행에 개수를 전달한다', async () => {
+  const { countAllGoalContents } = await import('../settings');
+  const { client, fetch } = setup([
+    { id: 'a', todos: [{ count: 42 }], routines: [{ count: 1 }] },
+    { id: 'b', todos: [{ count: 0 }], routines: [{ count: 0 }] },
+  ]);
+  expect(await countAllGoalContents(client)).toEqual({
+    a: { todos: 42, routines: 1 },
+    b: { todos: 0, routines: 0 },
+  });
+  expect(fetch).toHaveBeenCalledOnce();
+  const url = new URL(String(fetch.mock.calls[0]![0]));
+  expect(url.searchParams.get('todos.deleted_at')).toBe('is.null');
+  expect(url.searchParams.get('routines.deleted_at')).toBe('is.null');
+});
