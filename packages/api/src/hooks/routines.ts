@@ -191,6 +191,7 @@ export function useSplitRoutine(client: NodiiClient, newId: string, options: Mut
         endDate: addDays(value.today, -1),
       });
       remapSplitLogs(cache, value.before.id, result.routine.id, value.today);
+      void cache.invalidateQueries({ queryKey: ['goalContents'] });
       void cache.invalidateQueries({ queryKey: ['routineLogs'] });
       void cache.invalidateQueries({ queryKey: queryKeys.routines() });
       if ('endDateError' in result)

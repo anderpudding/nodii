@@ -1078,3 +1078,69 @@ button.goal-chip:disabled {
 .todo-check[aria-disabled='true'] svg {
   stroke: var(--color-muted);
 }
+
+/* 7단계: 기존 시트·간격·타입 토큰을 재사용한다. */
+.settings-sheet {
+  background: var(--color-side);
+}
+.settings-section {
+  margin-top: 26px;
+}
+.settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+.settings-row .input {
+  width: auto;
+  height: 40px;
+}
+.sortable-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.sortable-content {
+  flex: 1;
+  min-width: 0;
+}
+.sortable-dragging {
+  position: relative;
+  z-index: 1;
+  background: var(--color-side);
+  border-radius: 12px;
+}
+.drag-handle,
+.drag-spacer {
+  flex: 0 0 32px;
+  width: 32px;
+  margin-top: 4px;
+}
+.drag-handle {
+  touch-action: none;
+  padding: 4px;
+  cursor: grab;
+  color: var(--color-muted);
+}
+.drag-handle svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.goal-counts {
+  flex: 1;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}

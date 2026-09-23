@@ -264,6 +264,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_goal: { Args: { p_goal_id: string }; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
       move_todos: {
         Args: { p_date: string; p_moves: Json }
@@ -420,3 +421,4 @@ export const Constants = {
     },
   },
 } as const
+

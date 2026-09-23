@@ -43,6 +43,7 @@ export function useRowMutation<V, T extends MutationRow>(
     },
     onSuccess: (row, value, snapshots) => {
       commitOptimistic(cache, snapshots ?? [], keys(value), row);
+      void cache.invalidateQueries({ queryKey: ['goalContents'] });
       if (key[1] === 'todo' || key[1] === 'goal')
         void cache.invalidateQueries({ queryKey: ['overdue'] });
     },
@@ -157,5 +158,18 @@ export function useArchiveGoal(client: NodiiClient, id: string, options: Mutatio
     (_goal: GoalRecord) => [queryKeys.goals()],
     (goal) => ({ ...goal, archivedAt: goal.archivedAt ? null : new Date().toISOString() }),
     (goal) => (goal.archivedAt ? unarchiveGoal(client, goal.id) : archiveGoal(client, goal.id)),
+  );
+}
+
+/** TODO-06: 루틴을 포함한 이웃 사이에 이동한 할 일 한 행만 갱신한다. */
+export function useReorderTodo(client: NodiiClient, weekStart: 0 | 1, options: MutationOptions) {
+  const cache = useQueryClient();
+  return useRowMutation(
+    options,
+    ['write', 'todo', 'reorder'],
+    ({ todo }: { todo: TodoRecord; sortKey: string }) =>
+      cachedTodoKeys(cache, todo.date, weekStart),
+    ({ todo, sortKey }) => ({ ...todo, sortKey }),
+    ({ todo, sortKey }) => updateTodo(client, todo.id, { sortKey }),
   );
 }

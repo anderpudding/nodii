@@ -20,3 +20,6 @@ export * from './repositories/routines';
 export * from './repositories/routine-logs';
 export * from './realtime';
 export * from './connectivity';
+export * from './settings';
+export * from './hooks/settings';
+export * from './hooks/delete-goal';

@@ -21,7 +21,33 @@ import { toast } from 'sonner';
 import { UserCache } from './UserCache';
 import { detachPersistedCache } from '../lib/query-persister';
 
+// StrictMode의 setup/cleanup도 같은 SDK 타이머를 순서대로 시작·정지한다.
+const refreshQueues = new WeakMap<NodiiClient, Promise<void>>();
+function updateAuthRefresh(client: NodiiClient, enabled: boolean) {
+  const next = (refreshQueues.get(client) ?? Promise.resolve()).then(() =>
+    enabled ? client.auth.startAutoRefresh() : client.auth.stopAutoRefresh(),
+  );
+  refreshQueues.set(
+    client,
+    next.catch(() => {
+      toast.error('로그인 상태를 갱신하지 못했어요. 앱을 다시 열어 주세요.');
+    }),
+  );
+}
+
 function SignedIn({ client, session }: { client: NodiiClient; session: Session }) {
+  // 계정 삭제/로그아웃에서 멈춘 갱신은 다시 인증된 화면이 열릴 때만 재개한다.
+  useEffect(() => {
+    const update = () => {
+      updateAuthRefresh(client, document.visibilityState !== 'hidden');
+    };
+    update();
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      document.removeEventListener('visibilitychange', update);
+      updateAuthRefresh(client, false);
+    };
+  }, [client]);
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // G2의 쓰기는 로그인 진행과 독립적이며 실패하면 Query가 재시도한다.
   const profile = useQuery({
@@ -100,6 +126,11 @@ export function AppGate({
       setSessionError(false);
       setSession(next);
     }
+    const localLogout = () => {
+      authEventReceived = true;
+      applySession(null);
+    };
+    window.addEventListener('nodii:signed-out', localLogout);
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((event, next) => {
@@ -136,6 +167,7 @@ export function AppGate({
       });
     return () => {
       active = false;
+      window.removeEventListener('nodii:signed-out', localLogout);
       subscription.unsubscribe();
     };
   }, [client, queryClient, attempt]);

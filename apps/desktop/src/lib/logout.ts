@@ -8,17 +8,20 @@ export async function logout(
   client: NodiiClient,
   queryClient: QueryClient,
   clearStorage = clearSessionStorage,
+  accountDeleted = false,
 ): Promise<{ localOnly: boolean }> {
   let localOnly = false;
   try {
     await signOut(client);
   } catch (error) {
-    if (normalizeAuthError(error).code !== 'network') throw error;
+    if (!accountDeleted && normalizeAuthError(error).code !== 'network') throw error;
     localOnly = true;
   }
   await clearPersistedCache(queryClient);
   await queryClient.cancelQueries();
   queryClient.clear();
   await clearStorage();
+  await client.auth.stopAutoRefresh();
+  window.dispatchEvent(new Event('nodii:signed-out'));
   return { localOnly };
 }
