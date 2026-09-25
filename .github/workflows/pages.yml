@@ -1,0 +1,37 @@
+name: Pages
+
+# site/ 의 정적 페이지(소개·개인정보처리방침·이용약관·지원)를 GitHub Pages에 게시한다 (NFR-14).
+# 사용자 도메인은 Settings → Pages → Custom domain에서 지정한다 (site/CNAME.example, 런북 참고).
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
