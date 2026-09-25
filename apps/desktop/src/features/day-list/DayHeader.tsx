@@ -1,10 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { addDays } from '@nodii/core';
 import { Button } from '../../components/ui/button';
 import { useUIStore } from '../../stores/ui';
 
 /** 입력·메뉴 조작을 방해하지 않고 달 경계를 포함해 하루씩 이동한다. */
-export function DayHeader({ total = 0, done = 0 }: { total?: number; done?: number }) {
+export function DayHeader({
+  total = 0,
+  done = 0,
+  menu,
+}: {
+  total?: number;
+  done?: number;
+  menu?: ReactNode;
+}) {
   const { selectedDate, today, selectDate } = useUIStore();
   useEffect(() => {
     const move = (event: KeyboardEvent) => {
@@ -52,6 +60,7 @@ export function DayHeader({ total = 0, done = 0 }: { total?: number; done?: numb
         </p>
       </div>
       <div className="day-navigation">
+        {menu}
         <Button
           variant="ghost"
           aria-label="이전 날"

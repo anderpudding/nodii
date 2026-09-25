@@ -99,3 +99,34 @@ export function softDeleteTodo(
 ) {
   return updateTodo(client, id, { deletedAt });
 }
+
+async function setDeletedAt(client: NodiiClient, ids: string[], deletedAt: string | null) {
+  const uniqueIds = [...new Set(ids)];
+  const rows: TodoRecord[] = [];
+  for (let offset = 0; offset < uniqueIds.length; offset += 200) {
+    const batch = uniqueIds.slice(offset, offset + 200);
+    const { data, error } = await client
+      .from('todos')
+      .update({ deleted_at: deletedAt })
+      .in('id', batch)
+      .select('*');
+    if (error) throw error;
+    if (data.length !== batch.length) throw new Error('missing_bulk_todos');
+    rows.push(...data.map(mapTodo));
+  }
+  return rows;
+}
+
+/** URL 길이를 제한하면서 미완료 목록을 소프트 삭제한다 (TODO-12). */
+export function softDeleteTodos(
+  client: NodiiClient,
+  ids: string[],
+  deletedAt = new Date().toISOString(),
+) {
+  return setDeletedAt(client, ids, deletedAt);
+}
+
+/** 일괄 삭제 실행 취소도 같은 200개 단위 요청으로 복원한다 (TODO-12). */
+export function restoreTodos(client: NodiiClient, ids: string[]) {
+  return setDeletedAt(client, ids, null);
+}

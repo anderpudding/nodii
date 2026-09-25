@@ -61,109 +61,114 @@ export function GoalManagerSheet({
     }
   }
   return (
-    <Sheet labelledBy="goal-sheet-title" onClose={onClose}>
+    <Sheet labelledBy="goal-sheet-title" onClose={onClose} className="scroll-sheet">
       <header className="goal-sheet-header">
         <h2 id="goal-sheet-title">목표 관리</h2>
         <Button variant="ghost" aria-label="목표 관리 닫기" onClick={onClose}>
           닫기
         </Button>
       </header>
-      {goals.isError ? (
-        <div>
-          <p role="alert">목표를 불러오지 못했어요.</p>
-          <Button variant="outline" onClick={() => void goals.refetch()}>
-            다시 시도
-          </Button>
-        </div>
-      ) : !goals.data ? (
-        <p role="status">목표를 불러오고 있어요…</p>
-      ) : (
-        <>
-          <section aria-label="활성 목표">
-            <SortableList
-              items={active.map((goal) => ({ id: goal.id, label: goal.name }))}
-              disabled={writing || !online}
-              onMove={(id, overId) => move(active, id, overId)}
-            >
-              {({ id }) => {
-                const goal = active.find((row) => row.id === id)!;
-                return (
+      <div className="sheet-body">
+        {goals.isError ? (
+          <div>
+            <p role="alert">목표를 불러오지 못했어요.</p>
+            <Button variant="outline" onClick={() => void goals.refetch()}>
+              다시 시도
+            </Button>
+          </div>
+        ) : !goals.data ? (
+          <p role="status">목표를 불러오고 있어요…</p>
+        ) : (
+          <>
+            <section aria-label="활성 목표">
+              <SortableList
+                items={active.map((goal) => ({ id: goal.id, label: goal.name }))}
+                disabled={writing || !online}
+                onMove={(id, overId) => move(active, id, overId)}
+              >
+                {({ id }) => {
+                  const goal = active.find((row) => row.id === id)!;
+                  return (
+                    <GoalEditor
+                      goal={goal}
+                      client={client}
+                      lastActive={active.length === 1}
+                      counts={counts.data?.[id]}
+                      onDelete={() => setDeleting(goal)}
+                    />
+                  );
+                }}
+              </SortableList>
+              {counts.isError && (
+                <p className="error-message" role="alert">
+                  개수를 불러오지 못했어요.{' '}
+                  <Button variant="ghost" onClick={() => void counts.refetch()}>
+                    다시 시도
+                  </Button>
+                </p>
+              )}
+            </section>
+
+            <section aria-label="보관한 목표" className="archived-goals">
+              <h3>보관한 목표</h3>
+              {archived.length ? (
+                archived.map((goal) => (
                   <GoalEditor
+                    key={goal.id}
                     goal={goal}
                     client={client}
-                    lastActive={active.length === 1}
-                    counts={counts.data?.[id]}
+                    lastActive={false}
+                    counts={counts.data?.[goal.id]}
                     onDelete={() => setDeleting(goal)}
                   />
-                );
+                ))
+              ) : (
+                <p className="supporting">보관한 목표가 없어요.</p>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+      {!goals.isError && goals.data && (
+        <form
+          className="new-goal-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!valid || writing) return;
+            const preset =
+              goalPresets.find((preset) => !rows.some((goal) => goal.color === preset.color)) ??
+              goalPresets[rows.length % goalPresets.length]!;
+            create.mutate({
+              id: crypto.randomUUID(),
+              name: name.trim(),
+              color: preset.color,
+              sortKey: keyBetween(lastSortKey(rows), null),
+              archivedAt: null,
+            });
+            setName('');
+          }}
+        >
+          <label htmlFor="new-goal-name">새 목표</label>
+          <div>
+            <Input
+              id="new-goal-name"
+              value={name}
+              maxLength={GOAL_NAME_MAX_LENGTH}
+              placeholder="목표 이름을 적어 주세요"
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'Enter' &&
+                  (event.nativeEvent.isComposing || event.keyCode === 229)
+                )
+                  event.preventDefault();
               }}
-            </SortableList>
-            {counts.isError && (
-              <p className="error-message" role="alert">
-                개수를 불러오지 못했어요.{' '}
-                <Button variant="ghost" onClick={() => void counts.refetch()}>
-                  다시 시도
-                </Button>
-              </p>
-            )}
-          </section>
-          <form
-            className="new-goal-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!valid || writing) return;
-              const preset =
-                goalPresets.find((preset) => !rows.some((goal) => goal.color === preset.color)) ??
-                goalPresets[rows.length % goalPresets.length]!;
-              create.mutate({
-                id: crypto.randomUUID(),
-                name: name.trim(),
-                color: preset.color,
-                sortKey: keyBetween(lastSortKey(rows), null),
-                archivedAt: null,
-              });
-              setName('');
-            }}
-          >
-            <label htmlFor="new-goal-name">새 목표</label>
-            <div>
-              <Input
-                id="new-goal-name"
-                value={name}
-                maxLength={GOAL_NAME_MAX_LENGTH}
-                placeholder="목표 이름을 적어 주세요"
-                onChange={(event) => setName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (
-                    event.key === 'Enter' &&
-                    (event.nativeEvent.isComposing || event.keyCode === 229)
-                  )
-                    event.preventDefault();
-                }}
-              />
-              <Button type="submit" disabled={!valid || writing}>
-                추가
-              </Button>
-            </div>
-          </form>
-          <section aria-label="보관한 목표" className="archived-goals">
-            <h3>보관한 목표</h3>
-            {archived.length ? (
-              archived.map((goal) => (
-                <GoalEditor
-                  key={goal.id}
-                  goal={goal}
-                  client={client}
-                  lastActive={false}
-                  counts={counts.data?.[goal.id]}
-                  onDelete={() => setDeleting(goal)}
-                />
-              ))
-            ) : (
-              <p className="supporting">보관한 목표가 없어요.</p>
-            )}
-          </section>
-        </>
+            />
+            <Button type="submit" disabled={!valid || writing}>
+              추가
+            </Button>
+          </div>
+        </form>
       )}
     </Sheet>
   );

@@ -21,7 +21,6 @@ import { RoutineRow } from '../routines/RoutineRow';
 import { RoutineEditor } from '../routines/RoutineEditor';
 import { RoutineStopDialog } from '../routines/RoutineStopDialog';
 import type { AppCommand } from '../../lib/commands';
-import { Button } from '../../components/ui/button';
 
 /** 캐시를 복사하지 않고 core 계산 결과로 목표별 하루를 그린다 (TODO-09). */
 export function DayList({
@@ -88,16 +87,6 @@ export function DayList({
           >
             <div className="routine-group-heading">
               <GoalChip goal={goal} onAdd={canAdd ? () => setAdding(goal.id) : undefined} />
-              {canAdd && (
-                <Button
-                  variant="ghost"
-                  disabled={!routinesReady}
-                  onClick={() => setEditor({ goalId: goal.id })}
-                  aria-label={`${goal.name}에 루틴 추가`}
-                >
-                  루틴 추가
-                </Button>
-              )}
             </div>
             <div className="todo-rows">
               <SortableList

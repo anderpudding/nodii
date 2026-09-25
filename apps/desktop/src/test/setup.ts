@@ -42,3 +42,9 @@ HTMLElement.prototype.releasePointerCapture = () => {};
 if (!window.PointerEvent) vi.stubGlobal('PointerEvent', MouseEvent);
 if (!HTMLElement.prototype.hasPointerCapture) HTMLElement.prototype.hasPointerCapture = () => false;
 if (!HTMLElement.prototype.scrollIntoView) HTMLElement.prototype.scrollIntoView = () => {};
+
+// jsdom은 미디어 쿼리를 적용하지 않으므로 기본 넓은 창의 가시성만 명시한다.
+// 실제 759/760px 전환과 치수는 브라우저 검증으로 확인한다.
+const responsiveStyle = document.createElement('style');
+responsiveStyle.textContent = '.week-strip, .narrow-settings { display: none; }';
+document.head.append(responsiveStyle);

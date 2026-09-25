@@ -14,6 +14,7 @@ export function formatCalendarDate(
 }
 interface CalendarProps {
   month: string;
+  week?: { start: string; onChange: (date: string) => void };
   selectedDate: string;
   today: string;
   weekStart: 0 | 1;
@@ -24,6 +25,7 @@ interface CalendarProps {
 /** 42칸과 방향키 탐색을 월간 보기와 날짜 선택에서 재사용한다 (CAL-01~05). */
 export function CalendarGrid({
   month,
+  week,
   selectedDate,
   today,
   weekStart,
@@ -34,12 +36,14 @@ export function CalendarGrid({
   const headingId = useId();
   const grid = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(selectedDate);
-  const { days } = monthGridRange(month, weekStart);
+  const days = week
+    ? Array.from({ length: 7 }, (_, i) => addDays(week.start, i))
+    : monthGridRange(month, weekStart).days;
   const tabDate = days.includes(focused)
     ? focused
     : days.includes(selectedDate)
       ? selectedDate
-      : `${month}-01`;
+      : days[0]!;
   const weekdays = Array.from({ length: 7 }, (_, i) => (i + weekStart) % 7);
   return (
     <div className="month-calendar">
@@ -50,22 +54,31 @@ export function CalendarGrid({
         <div className="calendar-navigation">
           <Button
             variant="ghost"
-            aria-label="이전 달"
-            onClick={() => onMonthChange(adjacentMonthKey(month, -1))}
+            aria-label={week ? '이전 주' : '이전 달'}
+            onClick={() =>
+              week
+                ? week.onChange(addDays(week.start, -7))
+                : onMonthChange(adjacentMonthKey(month, -1))
+            }
           >
             ‹
           </Button>
           <Button
             variant="ghost"
-            aria-label="다음 달"
-            onClick={() => onMonthChange(adjacentMonthKey(month, 1))}
+            aria-label={week ? '다음 주' : '다음 달'}
+            onClick={() =>
+              week
+                ? week.onChange(addDays(week.start, 7))
+                : onMonthChange(adjacentMonthKey(month, 1))
+            }
           >
             ›
           </Button>
           <Button
             variant="ghost"
             onClick={() => {
-              onMonthChange(monthKeyOf(today));
+              if (week) week.onChange(today);
+              else onMonthChange(monthKeyOf(today));
               onSelect(today);
             }}
           >
@@ -81,9 +94,9 @@ export function CalendarGrid({
             </div>
           ))}
         </div>
-        {Array.from({ length: 6 }, (_, week) => (
-          <div role="row" className="calendar-week" key={week}>
-            {days.slice(week * 7, week * 7 + 7).map((date, column) => {
+        {Array.from({ length: days.length / 7 }, (_, weekIndex) => (
+          <div role="row" className="calendar-week" key={weekIndex}>
+            {days.slice(weekIndex * 7, weekIndex * 7 + 7).map((date, column) => {
               const counts = summary?.get(date);
               const completed = !!counts?.total && counts.remaining === 0;
               const label = `${formatCalendarDate(date, { year: 'numeric', month: 'long', day: 'numeric' })}${counts?.total ? (completed ? ', 모두 끝냄' : `, 남은 할 일 ${counts.remaining}개`) : ''}`;
@@ -98,7 +111,7 @@ export function CalendarGrid({
                     tabIndex={date === tabDate ? 0 : -1}
                     onFocus={() => setFocused(date)}
                     onClick={() => {
-                      if (monthKeyOf(date) !== month) onMonthChange(monthKeyOf(date));
+                      if (!week && monthKeyOf(date) !== month) onMonthChange(monthKeyOf(date));
                       onSelect(date);
                     }}
                     onKeyDown={(event) => {
@@ -115,7 +128,10 @@ export function CalendarGrid({
                       event.stopPropagation();
                       const next = addDays(date, offset);
                       setFocused(next);
-                      if (!days.includes(next)) onMonthChange(monthKeyOf(next));
+                      if (!days.includes(next)) {
+                        if (week) week.onChange(next);
+                        else onMonthChange(monthKeyOf(next));
+                      }
                       requestAnimationFrame(() =>
                         grid.current
                           ?.querySelector<HTMLButtonElement>(`[data-date="${next}"]`)
@@ -125,7 +141,7 @@ export function CalendarGrid({
                   >
                     <span
                       aria-hidden="true"
-                      className={`calendar-stamp${completed ? ' stamp-complete' : counts?.remaining ? (date > today ? ' stamp-future' : ' stamp-remaining') : ''}`}
+                      className={`calendar-stamp${completed ? ' stamp-complete' : counts?.remaining ? (date > today ? ' stamp-future' : ' stamp-remaining') : ' stamp-empty'}`}
                     >
                       {completed ? (
                         <svg viewBox="0 0 22 22">

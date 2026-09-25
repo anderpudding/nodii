@@ -13,6 +13,7 @@
   --color-field: #8f95a0;
   --color-box: #f1f2f5;
   --color-stamp: #eceef1;
+  --color-stamp-empty: #f4f5f7;
   --color-banner: #f2f4f7;
   --color-focus: #2a63c9;
   --color-danger: #c4332c;
@@ -36,6 +37,7 @@
   --color-field: #70757f;
   --color-box: #1e2024;
   --color-stamp: #2a2d33;
+  --color-stamp-empty: #212429;
   --color-banner: #1f2227;
   --color-focus: #7aa7ff;
   --color-danger: #ff7a70;
@@ -257,7 +259,9 @@ h2 {
 .app-shell {
   display: grid;
   grid-template-columns: 380px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 .sidebar {
   display: flex;
@@ -582,6 +586,9 @@ button.goal-chip:disabled {
   max-width: 880px;
   max-height: calc(100vh - 48px);
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   border: 0;
   border-radius: 14px;
   padding: 26px;
@@ -849,18 +856,6 @@ button.goal-chip:disabled {
 }
 .date-popover-heading {
   margin-bottom: 12px;
-}
-.overdue-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 26px;
-  padding: 8px 16px;
-  background: var(--color-banner);
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 500;
 }
 
 /* 5단계: 루틴 모달도 기존 입력·이름표·버튼과 동일한 토큰을 사용한다. */
@@ -1143,4 +1138,166 @@ button.goal-chip:disabled {
   display: flex;
   align-items: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* 7d: 창은 고정하고 작업 본문만 스크롤한다 (F1·F2·CAL-07). */
+html,
+body,
+#root {
+  height: 100%;
+}
+*,
+*::before,
+*::after {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+:focus-visible {
+  scroll-margin: 16px;
+}
+.sidebar,
+.day-panel,
+.day-content,
+.sheet-body,
+.routine-form {
+  min-height: 0;
+  min-width: 0;
+}
+.day-panel,
+.day-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.day-content {
+  flex: 1;
+  padding-bottom: 0;
+}
+.app-toolbar,
+.day-header,
+.goal-sheet-header,
+.routine-heading,
+.routine-actions,
+.routine-destructive {
+  flex-shrink: 0;
+}
+.day-header {
+  align-items: flex-start;
+}
+.day-header > div:first-child {
+  min-width: 0;
+}
+.day-header h1 {
+  overflow-wrap: anywhere;
+}
+.day-navigation {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.day-list-scroll,
+.sheet-body {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 4px;
+  padding-bottom: 26px;
+}
+.day-list-scroll {
+  flex: 1;
+}
+.goal-sheet {
+  inset: 26px 0 auto;
+}
+.goal-sheet-header {
+  margin-bottom: 0;
+}
+.routine-form {
+  overflow: hidden;
+  padding: 4px;
+  margin: -4px;
+}
+.routine-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.stamp-empty {
+  background: var(--color-stamp-empty);
+}
+.day-menu {
+  width: 380px;
+  max-width: calc(100vw - 48px);
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  overflow-y: auto;
+}
+.day-menu .todo-menu-item {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+}
+.week-strip,
+.narrow-settings {
+  display: none;
+}
+@media (max-width: 759px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar,
+  .wide-settings {
+    display: none;
+  }
+  .narrow-settings,
+  .week-strip {
+    display: block;
+  }
+  .week-strip {
+    flex-shrink: 0;
+    padding: 0 16px 16px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .app-toolbar {
+    padding: 8px 16px;
+  }
+  .day-content {
+    padding: 16px 16px 0;
+  }
+  .day-header {
+    flex-wrap: wrap;
+  }
+  .day-navigation {
+    margin-left: auto;
+  }
+  .goal-sheet {
+    padding: 16px;
+  }
+  .goal-manager-summary,
+  .goal-edit-actions,
+  .settings-row {
+    flex-wrap: wrap;
+  }
+  .goal-edit-form {
+    padding: 8px;
+  }
+  .input-hint {
+    flex-basis: 100%;
+  }
+  .offline-status {
+    display: inline-block;
+  }
+}
+
+.scroll-sheet {
+  overflow: hidden;
+}
+.scroll-sheet > .new-goal-form {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+.new-goal-form .input {
+  min-width: 0;
 }
