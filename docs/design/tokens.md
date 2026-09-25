@@ -17,6 +17,7 @@
 | `field` | `#8F95A0` | `#70757F` | 입력칸·빈 체크 테두리 (대비 3:1) |
 | `box-fill` | `#F1F2F5` | `#1E2024` | 빈 체크 안쪽 |
 | `stamp` | `#ECEEF1` | `#2A2D33` | 캘린더 남은 개수 도장 |
+| `stamp-empty` | `#F4F5F7` | `#212429` | 항목이 없는 날의 빈 도장 상자 (CAL-02) |
 | `banner` | `#F2F4F7` | `#1F2227` | 지난 미완료 배너 |
 | `focus` | `#2A63C9` | `#7AA7FF` | 포커스 링, 선택된 옵션 |
 | `danger` | `#C4332C` | `#FF7A70` | 삭제, 오류 |
@@ -92,6 +93,7 @@
   --color-field: #8f95a0;
   --color-box: #f1f2f5;
   --color-stamp: #eceef1;
+  --color-stamp-empty: #f4f5f7;
   --color-banner: #f2f4f7;
   --color-focus: #2a63c9;
   --color-danger: #c4332c;
@@ -112,6 +114,7 @@
   --color-field: #70757f;
   --color-box: #1e2024;
   --color-stamp: #2a2d33;
+  --color-stamp-empty: #212429;
   --color-banner: #1f2227;
   --color-focus: #7aa7ff;
   --color-danger: #ff7a70;
