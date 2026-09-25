@@ -8,7 +8,9 @@
 
 ## 1. GitHub Secrets · Variables
 
-저장소 **Settings → Secrets and variables → Actions**에서 등록합니다. `gh` CLI를 쓰면 클립보드를 거치지 않아도 됩니다(`gh secret set 이름 < 파일`).
+저장소 **Settings → Secrets and variables → Actions**의 **Repository secrets / Repository variables**에 등록합니다(`release.yml`은 environment를 쓰지 않으므로 environment secret은 읽지 못함). `gh` CLI를 쓰면 클립보드를 거치지 않아도 됩니다(`gh secret set 이름 < 파일`).
+
+> 아래 `gh` 명령은 **저장소 루트(`nodii` 폴더)에서** 실행합니다. `gh`는 현재 폴더의 git 저장소로 대상을 정하고, 파일 경로도 루트 기준입니다. 다른 폴더에서 실행하려면 `-R anderpudding/nodii`를 붙이세요.
 
 ### 1.1 Secrets (비밀 값)
 
