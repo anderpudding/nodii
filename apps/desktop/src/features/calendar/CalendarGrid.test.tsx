@@ -67,3 +67,12 @@ it('방향키는 초점만 이동하고 Enter로 날짜를 선택한다', async 
   await user.keyboard('{Enter}');
   expect(onSelect).toHaveBeenCalledWith('2026-09-16');
 });
+
+it('항목 없는 날도 빈 도장을 그리고 다른 달은 상자와 날짜를 함께 흐리게 한다', () => {
+  setup();
+  const empty = screen.getByRole('button', { name: '2026년 9월 15일' });
+  expect(empty.querySelector('.stamp-empty')?.textContent).toBe('');
+  const outside = screen.getByRole('button', { name: '2026년 8월 31일' });
+  expect(outside.classList.contains('calendar-outside')).toBe(true);
+  expect(outside.querySelector('.stamp-empty')).toBeTruthy();
+});

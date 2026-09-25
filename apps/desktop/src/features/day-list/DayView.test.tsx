@@ -357,7 +357,7 @@ it('날짜 선택 팝오버는 캘린더를 공유하고 오늘인 항목의 오
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '책 읽기 메뉴' }));
 });
-it('지난 배너 개수는 보관·완료·8일 전을 제외하고 가져오기 실패 시 목록과 배너를 복원한다', async () => {
+it('하루 메뉴의 가져오기는 보관·완료·8일 전을 제외하고 실패 시 캐시를 복원한다', async () => {
   const today = '2026-10-04';
   useUIStore.setState({ today, selectedDate: today });
   const overdueRow = { ...todoRow, date: '2026-09-27' };
@@ -391,23 +391,38 @@ it('지난 배너 개수는 보관·완료·8일 전을 제외하고 가져오�
     http.post(`${baseUrl}/rest/v1/rpc/move_todos`, rpc),
   );
   const { user, cache } = setup(1);
-  expect(await screen.findByText('지난 미완료 할 일 1개')).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: '하루 메뉴' }));
+  expect(
+    await screen.findByRole('menuitem', { name: /지난 미완료 할 일 1개 가져오기/ }),
+  ).toBeTruthy();
   const oldMonth = cache.getQueryData(queryKeys.todos('2026-09'));
   const todayMonth = cache.getQueryData(queryKeys.todos('2026-10'));
   const oldOverdue = cache.getQueryData(queryKeys.overdue(today));
-  await user.click(screen.getByRole('button', { name: '가져오기' }));
+  await user.click(screen.getByRole('menuitem', { name: /지난 미완료 할 일 1개 가져오기/ }));
   await waitFor(() => expect(screen.queryByText('지난 미완료 할 일 1개')).toBeNull());
   expect(await screen.findByRole('button', { name: '책 읽기 완료' })).toBeTruthy();
   await act(async () => release());
   expect(await screen.findByText('저장하지 못했어요')).toBeTruthy();
-  expect(await screen.findByText('지난 미완료 할 일 1개')).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: '하루 메뉴' }));
+  expect(
+    await screen.findByRole('menuitem', { name: /지난 미완료 할 일 1개 가져오기/ }),
+  ).toBeTruthy();
   expect(cache.getQueryData(queryKeys.todos('2026-09'))).toEqual(
     expect.arrayContaining(oldMonth as unknown[]),
   );
   expect(cache.getQueryData(queryKeys.todos('2026-10'))).toEqual(todayMonth);
-  expect(cache.getQueryData(queryKeys.overdue(today))).toEqual(oldOverdue);
+  expect(cache.getQueryData(queryKeys.overdue(today))).toEqual(
+    expect.arrayContaining(oldOverdue as unknown[]),
+  );
+  expect(cache.getQueryData(queryKeys.overdue(today))).toHaveLength(
+    (oldOverdue as unknown[]).length,
+  );
+  await user.keyboard('{Escape}');
   await user.click(screen.getByRole('button', { name: '이전 날' }));
-  expect(screen.queryByText('지난 미완료 할 일 1개')).toBeNull();
+  await user.click(screen.getByRole('button', { name: '하루 메뉴' }));
+  expect(screen.getByRole('menuitem', { name: /지난 미완료/ }).getAttribute('aria-disabled')).toBe(
+    'true',
+  );
 });
 it('가져올 항목이 없으면 배너를 숨기고 오늘이 아니면 overdue를 조회하지 않는다', async () => {
   useUIStore.setState({ selectedDate: '2026-10-01' });
@@ -455,14 +470,19 @@ it('가져오기 성공 뒤 실행 취소는 원래 날짜와 정렬 키를 복�
     http.patch(`${baseUrl}/rest/v1/todos`, restore),
   );
   const { user } = setup();
-  await user.click(await screen.findByRole('button', { name: '가져오기' }));
+  await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await user.click(screen.getByRole('button', { name: '하루 메뉴' }));
+  await user.click(await screen.findByRole('menuitem', { name: /지난 미완료 할 일 1개 가져오기/ }));
   expect(await screen.findByRole('button', { name: '책 읽기 완료' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: '가져오기' })).toBeNull();
   await user.click(await screen.findByRole('button', { name: '실행 취소' }));
-  await waitFor(() => expect(restore).toHaveBeenCalledOnce());
+  await waitFor(() => expect(row.date).toBe(todoRow.date));
   expect(row.date).toBe(todoRow.date);
   expect(row.sort_key).toBe(todoRow.sort_key);
-  expect(await screen.findByRole('button', { name: '가져오기' })).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: '하루 메뉴' }));
+  expect(
+    await screen.findByRole('menuitem', { name: /지난 미완료 할 일 1개 가져오기/ }),
+  ).toBeTruthy();
 });
 it('월 탐색과 오늘 복귀 후 하루 목록 이동이 캘린더 월을 따라 바꾼다', async () => {
   const { user, cache } = setup();

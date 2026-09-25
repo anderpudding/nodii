@@ -1,3 +1,5 @@
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { WeekStrip } from '../features/calendar/WeekStrip';
 import { useEffect, useState } from 'react';
 import type { NodiiClient, Session } from '@nodii/api';
 import type { Profile } from '@nodii/core';
@@ -79,10 +81,51 @@ export function MainLayout({
               </span>
             )}
           </div>
-          <Button variant="ghost" aria-haspopup="dialog" onClick={() => setSettingsOpen(true)}>
+          <Button
+            className="wide-settings"
+            variant="ghost"
+            aria-haspopup="dialog"
+            onClick={() => setSettingsOpen(true)}
+          >
             설정
           </Button>
+          <div className="narrow-settings">
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <Button variant="ghost" aria-label="설정 및 관리">
+                  설정
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="todo-menu"
+                  align="end"
+                  sideOffset={4}
+                  collisionPadding={8}
+                >
+                  <DropdownMenu.Item className="todo-menu-item" onSelect={() => setGoalsOpen(true)}>
+                    목표 관리
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    className="todo-menu-item"
+                    disabled={!profile}
+                    onSelect={() => setRoutinesOpen(true)}
+                  >
+                    루틴 관리
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator className="todo-menu-separator" />
+                  <DropdownMenu.Item
+                    className="todo-menu-item"
+                    onSelect={() => setSettingsOpen(true)}
+                  >
+                    설정
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
         </header>
+        {profile && <WeekStrip client={client} profile={profile} />}
         <main className="day-content">
           {profile ? (
             <DayView client={client} profile={profile} />

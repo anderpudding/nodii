@@ -159,7 +159,7 @@ export function RoutineEditor({
     );
   return (
     <Sheet
-      className="routine-modal"
+      className="routine-modal scroll-sheet"
       role={scopeOpen ? 'alertdialog' : 'dialog'}
       labelledBy="routine-editor-title"
       describedBy={scopeOpen ? 'routine-scope-description' : undefined}
@@ -170,7 +170,7 @@ export function RoutineEditor({
       }}
     >
       {scopeOpen && routine ? (
-        <div className="routine-form">
+        <div className="sheet-body routine-form-body">
           <RoutineScope
             before={routine}
             after={after}
@@ -204,226 +204,238 @@ export function RoutineEditor({
               닫기
             </Button>
           </header>
-          <div className="field-group">
-            <label htmlFor={`${id}-title`}>제목</label>
-            <Input
-              id={`${id}-title`}
-              value={draft.title}
-              maxLength={TITLE_MAX_LENGTH}
-              disabled={busy}
-              placeholder="어떤 일을 반복할까요?"
-              onChange={(e) => patch({ title: e.target.value })}
-            />
-          </div>
-          <fieldset className="routine-fieldset" disabled={busy}>
-            <legend>목표</legend>
-            <div className="routine-choices">
-              {activeGoals.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="routine-goal-option"
-                  aria-pressed={item.id === selectedGoalId}
-                  onClick={() => patch({ goalId: item.id })}
-                >
-                  <GoalChip goal={item} surface />
-                </button>
-              ))}
+          <div className="sheet-body routine-form-body">
+            <div className="field-group">
+              <label htmlFor={`${id}-title`}>제목</label>
+              <Input
+                id={`${id}-title`}
+                value={draft.title}
+                maxLength={TITLE_MAX_LENGTH}
+                disabled={busy}
+                placeholder="어떤 일을 반복할까요?"
+                onChange={(e) => patch({ title: e.target.value })}
+              />
             </div>
-            {!goal && <p className="error-message">활성 목표를 골라 주세요.</p>}
-          </fieldset>
-          {goals.isError && (
-            <Button variant="ghost" onClick={() => void goals.refetch()}>
-              목표를 불러오지 못했어요 · 다시 시도
-            </Button>
-          )}
-          <fieldset className="routine-fieldset" disabled={busy}>
-            <legend id={`${id}-frequency`}>반복</legend>
-            <div className="routine-segments" role="radiogroup" aria-labelledby={`${id}-frequency`}>
-              {(['daily', 'weekly', 'monthly'] as const).map((freq, i) => (
+            <fieldset className="routine-fieldset" disabled={busy}>
+              <legend>목표</legend>
+              <div className="routine-choices">
+                {activeGoals.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="routine-goal-option"
+                    aria-pressed={item.id === selectedGoalId}
+                    onClick={() => patch({ goalId: item.id })}
+                  >
+                    <GoalChip goal={item} surface />
+                  </button>
+                ))}
+              </div>
+              {!goal && <p className="error-message">활성 목표를 골라 주세요.</p>}
+            </fieldset>
+            {goals.isError && (
+              <Button variant="ghost" onClick={() => void goals.refetch()}>
+                목표를 불러오지 못했어요 · 다시 시도
+              </Button>
+            )}
+            <fieldset className="routine-fieldset" disabled={busy}>
+              <legend id={`${id}-frequency`}>반복</legend>
+              <div
+                className="routine-segments"
+                role="radiogroup"
+                aria-labelledby={`${id}-frequency`}
+              >
+                {(['daily', 'weekly', 'monthly'] as const).map((freq, i) => (
+                  <Button
+                    key={freq}
+                    variant="ghost"
+                    role="radio"
+                    aria-checked={draft.freq === freq}
+                    tabIndex={draft.freq === freq ? 0 : -1}
+                    onKeyDown={(event) => {
+                      const offset = ['ArrowRight', 'ArrowDown'].includes(event.key)
+                        ? 1
+                        : ['ArrowLeft', 'ArrowUp'].includes(event.key)
+                          ? -1
+                          : 0;
+                      if (!offset) return;
+                      event.preventDefault();
+                      const next =
+                        event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+                          '[role="radio"]',
+                        )[(i + offset + 3) % 3];
+                      next?.focus();
+                      next?.click();
+                    }}
+                    onClick={() =>
+                      patch({
+                        freq,
+                        byWeekday: freq === 'weekly' ? (draft.byWeekday ?? []) : null,
+                        byMonthday: freq === 'monthly' ? (draft.byMonthday ?? []) : null,
+                      })
+                    }
+                  >
+                    {['매일', '매주', '매월'][i]}
+                  </Button>
+                ))}
+              </div>
+            </fieldset>
+            <div className="field-group">
+              <label htmlFor={`${id}-interval`}>반복 간격</label>
+              <div className="routine-interval">
                 <Button
-                  key={freq}
-                  variant="ghost"
-                  role="radio"
-                  aria-checked={draft.freq === freq}
-                  tabIndex={draft.freq === freq ? 0 : -1}
-                  onKeyDown={(event) => {
-                    const offset = ['ArrowRight', 'ArrowDown'].includes(event.key)
-                      ? 1
-                      : ['ArrowLeft', 'ArrowUp'].includes(event.key)
-                        ? -1
-                        : 0;
-                    if (!offset) return;
-                    event.preventDefault();
-                    const next =
-                      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
-                        '[role="radio"]',
-                      )[(i + offset + 3) % 3];
-                    next?.focus();
-                    next?.click();
-                  }}
+                  variant="outline"
+                  aria-label="반복 간격 줄이기"
+                  disabled={busy || draft.repeatEvery <= 1}
+                  onClick={() => patch({ repeatEvery: Math.max(1, draft.repeatEvery - 1) })}
+                >
+                  −
+                </Button>
+                <Input
+                  id={`${id}-interval`}
+                  type="number"
+                  min={1}
+                  max={365}
+                  step={1}
+                  value={Number.isNaN(draft.repeatEvery) ? '' : draft.repeatEvery}
+                  disabled={busy}
+                  aria-invalid={error?.field === 'interval'}
+                  aria-describedby={
+                    error?.field === 'interval' ? `${id}-interval-error` : undefined
+                  }
+                  onChange={(e) => patch({ repeatEvery: e.target.valueAsNumber })}
+                />
+                <Button
+                  variant="outline"
+                  aria-label="반복 간격 늘리기"
+                  disabled={busy || draft.repeatEvery >= 365}
                   onClick={() =>
-                    patch({
-                      freq,
-                      byWeekday: freq === 'weekly' ? (draft.byWeekday ?? []) : null,
-                      byMonthday: freq === 'monthly' ? (draft.byMonthday ?? []) : null,
-                    })
+                    patch({ repeatEvery: Math.min(365, (draft.repeatEvery || 0) + 1) })
                   }
                 >
-                  {['매일', '매주', '매월'][i]}
+                  +
                 </Button>
-              ))}
-            </div>
-          </fieldset>
-          <div className="field-group">
-            <label htmlFor={`${id}-interval`}>반복 간격</label>
-            <div className="routine-interval">
-              <Button
-                variant="outline"
-                aria-label="반복 간격 줄이기"
-                disabled={busy || draft.repeatEvery <= 1}
-                onClick={() => patch({ repeatEvery: Math.max(1, draft.repeatEvery - 1) })}
-              >
-                −
-              </Button>
-              <Input
-                id={`${id}-interval`}
-                type="number"
-                min={1}
-                max={365}
-                step={1}
-                value={Number.isNaN(draft.repeatEvery) ? '' : draft.repeatEvery}
-                disabled={busy}
-                aria-invalid={error?.field === 'interval'}
-                aria-describedby={error?.field === 'interval' ? `${id}-interval-error` : undefined}
-                onChange={(e) => patch({ repeatEvery: e.target.valueAsNumber })}
-              />
-              <Button
-                variant="outline"
-                aria-label="반복 간격 늘리기"
-                disabled={busy || draft.repeatEvery >= 365}
-                onClick={() => patch({ repeatEvery: Math.min(365, (draft.repeatEvery || 0) + 1) })}
-              >
-                +
-              </Button>
-              <span>
-                {draft.freq === 'daily'
-                  ? '일마다'
-                  : draft.freq === 'weekly'
-                    ? '주마다'
-                    : '개월마다'}
-              </span>
-            </div>
-            {fieldError('interval')}
-          </div>
-          {draft.freq === 'weekly' && (
-            <fieldset
-              className="routine-fieldset"
-              disabled={busy}
-              aria-describedby={error?.field === 'weekdays' ? `${id}-weekdays-error` : undefined}
-            >
-              <legend>요일</legend>
-              <div className="routine-days">
-                {Array.from({ length: 7 }, (_, i) => (i + profile.weekStart) % 7).map((day) => (
-                  <Button
-                    key={day}
-                    variant={draft.byWeekday?.includes(day) ? 'default' : 'outline'}
-                    aria-label={`${weekdays[day]}요일`}
-                    aria-pressed={draft.byWeekday?.includes(day) ?? false}
-                    onClick={() => toggle('byWeekday', day)}
-                  >
-                    {weekdays[day]}
-                  </Button>
-                ))}
+                <span>
+                  {draft.freq === 'daily'
+                    ? '일마다'
+                    : draft.freq === 'weekly'
+                      ? '주마다'
+                      : '개월마다'}
+                </span>
               </div>
-              {fieldError('weekdays')}
-            </fieldset>
-          )}
-          {draft.freq === 'monthly' && (
-            <fieldset
-              className="routine-fieldset"
-              disabled={busy}
-              aria-describedby={error?.field === 'monthdays' ? `${id}-monthdays-error` : undefined}
-            >
-              <legend>날짜</legend>
-              <div className="routine-days">
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <Button
-                    key={day}
-                    variant={draft.byMonthday?.includes(day) ? 'default' : 'outline'}
-                    aria-label={`${day}일`}
-                    aria-pressed={draft.byMonthday?.includes(day) ?? false}
-                    onClick={() => toggle('byMonthday', day)}
-                  >
-                    {day}
-                  </Button>
-                ))}
-              </div>
-              {fieldError('monthdays')}
-              <p className="supporting">없는 달은 말일에 표시돼요.</p>
-            </fieldset>
-          )}
-          <div className="routine-dates">
-            <div className="field-group">
-              <label htmlFor={`${id}-start`}>시작일</label>
-              <Input
-                id={`${id}-start`}
-                type="date"
-                value={draft.startDate}
-                disabled={busy}
-                aria-invalid={error?.field === 'start'}
-                aria-describedby={error?.field === 'start' ? `${id}-start-error` : undefined}
-                onChange={(e) => patch({ startDate: e.target.value })}
-              />
-              {fieldError('start')}
+              {fieldError('interval')}
             </div>
-            <div className="field-group">
-              <label htmlFor={`${id}-end`}>종료일 (선택)</label>
-              <Input
-                id={`${id}-end`}
-                type="date"
-                value={draft.endDate ?? ''}
+            {draft.freq === 'weekly' && (
+              <fieldset
+                className="routine-fieldset"
                 disabled={busy}
-                aria-invalid={error?.field === 'end'}
-                aria-describedby={error?.field === 'end' ? `${id}-end-error` : undefined}
-                onChange={(e) => patch({ endDate: e.target.value || null })}
-              />
-              {fieldError('end')}
-            </div>
-          </div>
-          <section
-            className="routine-preview"
-            aria-label="다음 5회 미리보기"
-            aria-live="polite"
-            style={goal ? goalStyle(goal.color, true) : undefined}
-          >
-            <h3>다음 5회 미리보기</h3>
-            {error ? (
-              <p className="supporting">{error.message}</p>
-            ) : (
-              <>
-                <div className="routine-choices">
-                  {preview.map((date, i) => (
-                    <span className={i === 0 ? 'goal-chip' : 'routine-preview-date'} key={date}>
-                      {formatCalendarDate(date)}
-                    </span>
+                aria-describedby={error?.field === 'weekdays' ? `${id}-weekdays-error` : undefined}
+              >
+                <legend>요일</legend>
+                <div className="routine-days">
+                  {Array.from({ length: 7 }, (_, i) => (i + profile.weekStart) % 7).map((day) => (
+                    <Button
+                      key={day}
+                      variant={draft.byWeekday?.includes(day) ? 'default' : 'outline'}
+                      aria-label={`${weekdays[day]}요일`}
+                      aria-pressed={draft.byWeekday?.includes(day) ?? false}
+                      onClick={() => toggle('byWeekday', day)}
+                    >
+                      {weekdays[day]}
+                    </Button>
                   ))}
                 </div>
-                {preview.length < 5 && (
-                  <p className="supporting">
-                    {draft.endDate
-                      ? '종료일까지 예정된 날짜만 보여드려요.'
-                      : '앞으로 3년 안에 예정된 날짜를 보여드려요.'}
-                  </p>
-                )}
-              </>
+                {fieldError('weekdays')}
+              </fieldset>
             )}
-          </section>
-          {routines.isError && (
-            <Button variant="ghost" onClick={() => void routines.refetch()}>
-              루틴을 불러오지 못했어요 · 다시 시도
-            </Button>
-          )}
+            {draft.freq === 'monthly' && (
+              <fieldset
+                className="routine-fieldset"
+                disabled={busy}
+                aria-describedby={
+                  error?.field === 'monthdays' ? `${id}-monthdays-error` : undefined
+                }
+              >
+                <legend>날짜</legend>
+                <div className="routine-days">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                    <Button
+                      key={day}
+                      variant={draft.byMonthday?.includes(day) ? 'default' : 'outline'}
+                      aria-label={`${day}일`}
+                      aria-pressed={draft.byMonthday?.includes(day) ?? false}
+                      onClick={() => toggle('byMonthday', day)}
+                    >
+                      {day}
+                    </Button>
+                  ))}
+                </div>
+                {fieldError('monthdays')}
+                <p className="supporting">없는 달은 말일에 표시돼요.</p>
+              </fieldset>
+            )}
+            <div className="routine-dates">
+              <div className="field-group">
+                <label htmlFor={`${id}-start`}>시작일</label>
+                <Input
+                  id={`${id}-start`}
+                  type="date"
+                  value={draft.startDate}
+                  disabled={busy}
+                  aria-invalid={error?.field === 'start'}
+                  aria-describedby={error?.field === 'start' ? `${id}-start-error` : undefined}
+                  onChange={(e) => patch({ startDate: e.target.value })}
+                />
+                {fieldError('start')}
+              </div>
+              <div className="field-group">
+                <label htmlFor={`${id}-end`}>종료일 (선택)</label>
+                <Input
+                  id={`${id}-end`}
+                  type="date"
+                  value={draft.endDate ?? ''}
+                  disabled={busy}
+                  aria-invalid={error?.field === 'end'}
+                  aria-describedby={error?.field === 'end' ? `${id}-end-error` : undefined}
+                  onChange={(e) => patch({ endDate: e.target.value || null })}
+                />
+                {fieldError('end')}
+              </div>
+            </div>
+            <section
+              className="routine-preview"
+              aria-label="다음 5회 미리보기"
+              aria-live="polite"
+              style={goal ? goalStyle(goal.color, true) : undefined}
+            >
+              <h3>다음 5회 미리보기</h3>
+              {error ? (
+                <p className="supporting">{error.message}</p>
+              ) : (
+                <>
+                  <div className="routine-choices">
+                    {preview.map((date, i) => (
+                      <span className={i === 0 ? 'goal-chip' : 'routine-preview-date'} key={date}>
+                        {formatCalendarDate(date)}
+                      </span>
+                    ))}
+                  </div>
+                  {preview.length < 5 && (
+                    <p className="supporting">
+                      {draft.endDate
+                        ? '종료일까지 예정된 날짜만 보여드려요.'
+                        : '앞으로 3년 안에 예정된 날짜를 보여드려요.'}
+                    </p>
+                  )}
+                </>
+              )}
+            </section>
+            {routines.isError && (
+              <Button variant="ghost" onClick={() => void routines.refetch()}>
+                루틴을 불러오지 못했어요 · 다시 시도
+              </Button>
+            )}
+          </div>
           <div className="routine-actions">
             <Button variant="ghost" disabled={busy} onClick={onClose}>
               취소

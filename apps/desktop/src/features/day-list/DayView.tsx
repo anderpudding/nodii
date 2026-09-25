@@ -11,7 +11,7 @@ import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
 import { DayHeader } from './DayHeader';
 import { DayList } from './DayList';
-import { OverdueBanner } from './OverdueBanner';
+import { DayMenu } from './DayMenu';
 
 /** 조회 중에도 목록의 자리를 유지해 빈 창을 보여주지 않는다. */
 export function DaySkeleton() {
@@ -49,57 +49,67 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
   ).length;
   return (
     <>
-      <DayHeader total={items.length} done={done} />
-      {(goals.isError && !goals.data) || (todos.isError && !todos.data) ? (
-        <div className="day-empty">
-          <p role="alert">하루 목록을 불러오지 못했어요.</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              void goals.refetch();
-              void todos.refetch();
-            }}
-          >
-            다시 시도
-          </Button>
-        </div>
-      ) : !goals.data || !todos.data ? (
-        <DaySkeleton />
-      ) : (
-        <>
-          {(routines.isError || logs.isError) && (
-            <div className="day-empty">
-              <p role="alert" className="supporting">
-                루틴 기록을 불러오지 못했어요.
-              </p>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  void routines.refetch();
-                  void logs.refetch();
-                }}
-              >
-                다시 시도
-              </Button>
-            </div>
-          )}
-          <OverdueBanner
-            client={client}
-            weekStart={profile.weekStart}
-            goals={goals.data}
-            todayItems={items}
-          />
-          <DayList
+      <DayHeader
+        total={items.length}
+        done={done}
+        menu={
+          <DayMenu
             key={date}
             client={client}
             profile={profile}
-            groups={groups}
-            todos={todos.data}
-            routines={routines.data ?? []}
-            routinesReady={!!routines.data && !!logs.data}
+            goals={goals.data ?? []}
+            items={items}
+            todos={todos.data ?? []}
+            ready={!!goals.data && !!todos.data && !!routines.data && !!logs.data}
           />
-        </>
-      )}
+        }
+      />
+      <div className="day-list-scroll" tabIndex={0} role="region" aria-label="목표별 할 일 목록">
+        {(goals.isError && !goals.data) || (todos.isError && !todos.data) ? (
+          <div className="day-empty">
+            <p role="alert">하루 목록을 불러오지 못했어요.</p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void goals.refetch();
+                void todos.refetch();
+              }}
+            >
+              다시 시도
+            </Button>
+          </div>
+        ) : !goals.data || !todos.data ? (
+          <DaySkeleton />
+        ) : (
+          <>
+            {(routines.isError || logs.isError) && (
+              <div className="day-empty">
+                <p role="alert" className="supporting">
+                  루틴 기록을 불러오지 못했어요.
+                </p>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    void routines.refetch();
+                    void logs.refetch();
+                  }}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
+            <DayList
+              key={date}
+              client={client}
+              profile={profile}
+              groups={groups}
+              todos={todos.data}
+              routines={routines.data ?? []}
+              routinesReady={!!routines.data && !!logs.data}
+            />
+          </>
+        )}
+      </div>
     </>
   );
 }

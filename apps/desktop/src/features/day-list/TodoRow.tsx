@@ -40,7 +40,12 @@ export function TodoRow({
   const reordering = useIsMutating({ mutationKey: ['write', 'todo', 'reorder'] });
   const importing = useIsMutating({ mutationKey: ['write', 'import'] });
   const restoring = useIsMutating({ mutationKey: todoWriteKey('import-undo') });
-  const pending = updating > 0 || creating > 0 || importing > 0 || restoring > 0 || reordering > 0;
+  const bulk = useIsMutating({
+    predicate: (mutation) =>
+      ['bulkMoveTodos', 'bulkDeleteTodos'].includes(String(mutation.options.mutationKey?.[1])),
+  });
+  const pending =
+    bulk > 0 || updating > 0 || creating > 0 || importing > 0 || restoring > 0 || reordering > 0;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(todo.title);
   const titleRef = useRef<HTMLButtonElement>(null);

@@ -18,7 +18,8 @@ import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { notifyError } from '../../lib/notify-error';
 import { useUIStore } from '../../stores/ui';
-import { CalendarGrid, formatCalendarDate } from '../calendar/CalendarGrid';
+import { formatCalendarDate } from '../calendar/CalendarGrid';
+import { TodoDatePicker } from './TodoDatePicker';
 
 /** 두 진입점이 같은 메뉴를 제공하고 달력 팝오버로 포커스를 넘긴다 (TODO-05). */
 export function TodoMenu({
@@ -239,44 +240,18 @@ export function TodoMenu({
           </ContextMenu.Portal>
         )}
       </ContextMenu.Root>
-      {/* 4단계 지시서의 팝오버를 따른다. components.md의 왼쪽 달력 선택 모드와 다름. */}
-      <Popover.Portal>
-        <Popover.Content
-          className="date-popover"
-          align="end"
-          sideOffset={8}
-          collisionPadding={8}
-          aria-label="옮길 날짜 선택"
-          onOpenAutoFocus={(event) => {
-            event.preventDefault();
-            requestAnimationFrame(() =>
-              document.querySelector<HTMLButtonElement>('.date-popover [tabindex="0"]')?.focus(),
-            );
-          }}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            more.current?.focus();
-          }}
-        >
-          <div className="date-popover-heading">
-            <p className="supporting">옮길 날짜를 고르세요</p>
-            <Popover.Close asChild>
-              <Button variant="ghost">취소</Button>
-            </Popover.Close>
-          </div>
-          <CalendarGrid
-            month={month}
-            selectedDate={todo.date}
-            today={today}
-            weekStart={weekStart}
-            onMonthChange={setMonth}
-            onSelect={(date) => {
-              setPickerOpen(false);
-              void moveTo(date);
-            }}
-          />
-        </Popover.Content>
-      </Popover.Portal>
+      <TodoDatePicker
+        month={month}
+        selectedDate={todo.date}
+        today={today}
+        weekStart={weekStart}
+        onMonthChange={setMonth}
+        onSelect={(date) => {
+          setPickerOpen(false);
+          void moveTo(date);
+        }}
+        onReturnFocus={() => more.current?.focus()}
+      />
     </Popover.Root>
   );
 }
