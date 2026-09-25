@@ -139,6 +139,75 @@ it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc
   expect(screen.queryByRole('textbox')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '할 일에 할 일 추가' }));
 });
+it('입력 줄 바깥을 클릭하면 적던 글자를 저장하지 않고 닫으며 포커스를 가로채지 않는다', async () => {
+  const inserts: unknown[] = [];
+  server.use(
+    http.post(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+      inserts.push(await request.json());
+      return HttpResponse.json(todoRow);
+    }),
+  );
+  const { user } = setup();
+  const chip = await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await user.click(chip);
+  const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
+  await user.type(input, '버릴 글자');
+  // 안쪽(안내 문구, 빈 체크 자리)을 눌러도 닫히지 않고 입력이 유지된다.
+  await user.click(screen.getByText('Enter로 추가, Esc로 닫기'));
+  await user.click(document.querySelector('.add-todo .empty-check')!);
+  expect((screen.getByRole('textbox', { name: '할 일 새 할 일' }) as HTMLInputElement).value).toBe(
+    '버릴 글자',
+  );
+  expect(document.activeElement).toBe(input);
+  // 휠·트랙패드 스크롤만으로는 닫히지 않는다.
+  fireEvent.wheel(document.body, { deltaY: 120 });
+  expect(screen.getByRole('textbox', { name: '할 일 새 할 일' })).toBe(input);
+  await user.click(document.body);
+  expect(screen.queryByRole('textbox')).toBeNull();
+  expect(document.activeElement).not.toBe(chip);
+  // 다시 열면 버린 글자는 남아 있지 않다.
+  await user.click(chip);
+  expect((screen.getByRole('textbox', { name: '할 일 새 할 일' }) as HTMLInputElement).value).toBe(
+    '',
+  );
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(inserts).toHaveLength(0);
+  expect(screen.queryByRole('button', { name: '버릴 글자 완료' })).toBeNull();
+});
+it('다른 목표의 +를 누르면 기존 입력 줄이 닫히고 그 목표의 입력 줄이 열린다', async () => {
+  const other = { ...goalRow, id: 'other-goal', name: '공부', sort_key: 'a1' };
+  server.use(http.get(`${baseUrl}/rest/v1/goals`, () => HttpResponse.json([goalRow, other])));
+  const { user } = setup();
+  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  await user.type(screen.getByRole('textbox', { name: '할 일 새 할 일' }), '적던 것');
+  await user.click(screen.getByRole('button', { name: '공부에 할 일 추가' }));
+  expect(screen.queryByRole('textbox', { name: '할 일 새 할 일' })).toBeNull();
+  const input = screen.getByRole('textbox', { name: '공부 새 할 일' });
+  await waitFor(() => expect(document.activeElement).toBe(input));
+  expect(screen.getAllByRole('textbox')).toHaveLength(1);
+});
+it('IME 조합 중 바깥을 클릭해도 조합 중이던 글자를 저장하지 않는다', async () => {
+  const inserts: unknown[] = [];
+  server.use(
+    http.post(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+      inserts.push(await request.json());
+      return HttpResponse.json(todoRow);
+    }),
+  );
+  const { user } = setup();
+  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
+  fireEvent.compositionStart(input);
+  fireEvent.change(input, { target: { value: '조합' } });
+  fireEvent.keyDown(input, { key: 'Process', keyCode: 229, isComposing: true });
+  fireEvent.pointerDown(document.body);
+  // 닫히며 조합이 확정되더라도 늦게 오는 이벤트가 저장으로 이어지지 않는다.
+  fireEvent.compositionEnd(input);
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(screen.queryByRole('textbox')).toBeNull();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(inserts).toHaveLength(0);
+});
 it('체크 실패 시 인접 월 모두 원상복구하고 토스트에서 재시도한다', async () => {
   server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
   let release!: () => void;
