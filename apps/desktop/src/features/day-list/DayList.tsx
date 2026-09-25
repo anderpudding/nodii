@@ -150,8 +150,10 @@ export function DayList({
               {canAdd && adding === goal.id && (
                 <AddTodoInput
                   goalName={goal.name}
-                  onClose={() => {
+                  onClose={(reason) => {
                     setAdding(null);
+                    // 바깥 클릭으로 닫을 때는 포커스를 클릭한 곳에 둔다.
+                    if (reason === 'outside') return;
                     const section = Array.from(
                       root.current?.querySelectorAll('section') ?? [],
                     ).find((element) => element.getAttribute('aria-label') === goal.name);
