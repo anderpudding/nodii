@@ -7,7 +7,7 @@
 #   APPLE_SIGNING_IDENTITY     예: "Apple Distribution: Sungjun Lee (ABCDE12345)"
 #   APPLE_INSTALLER_IDENTITY   예: "3rd Party Mac Developer Installer: Sungjun Lee (ABCDE12345)"
 # 선택
-#   BUNDLE_VERSION             업로드마다 올라가야 하는 빌드 번호 (기본: 현재 시각 YYYYMMDDHHMM)
+#   BUNDLE_VERSION             업로드마다 올라가야 하는 빌드 번호 (기본: 현재 UTC 시각 YYYYMMDDHHMM, CI와 같은 형식)
 #   APPLE_API_KEY_ID, APPLE_API_ISSUER
 #                              둘 다 있으면 altool로 App Store Connect에 바로 업로드
 #                              (키 파일은 ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8)
@@ -29,7 +29,7 @@ DESKTOP="$ROOT/apps/desktop"
 TAURI_DIR="$DESKTOP/src-tauri"
 PROFILE="$TAURI_DIR/profiles/Nodii_MAS.provisionprofile"
 OUT_DIR="$ROOT/dist-appstore"
-BUNDLE_VERSION="${BUNDLE_VERSION:-$(date +%Y%m%d%H%M)}"
+BUNDLE_VERSION="${BUNDLE_VERSION:-$(date -u +%Y%m%d%H%M)}"
 
 if [[ ! -f "$PROFILE" ]]; then
   echo "프로비저닝 프로파일이 없습니다: $PROFILE" >&2
