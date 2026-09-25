@@ -15,6 +15,7 @@ export * from './hooks/queries';
 export * from './hooks/mutations';
 
 export * from './hooks/move-todos';
+export * from './hooks/bulk-todos';
 export * from './hooks/routines';
 export * from './repositories/routines';
 export * from './repositories/routine-logs';

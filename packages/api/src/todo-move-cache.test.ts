@@ -69,3 +69,42 @@ it('요청 중 열린 월을 성공 시 패치하지만 로그아웃 뒤에는 �
   commitTodoMove(cache, snapshots, [todo], [next], 0);
   expect(cache.getQueryCache().getAll()).toHaveLength(0);
 });
+
+it('여러 행 삭제·복원은 겹치는 월과 overdue에 반영하고 실패 시 다른 행을 보존한다', async () => {
+  const rows = [todo, { ...todo, id: 'b', sortKey: 'a1' }];
+  const keys = [
+    queryKeys.todos('2026-09'),
+    queryKeys.todos('2026-10'),
+    queryKeys.overdue('2026-10-01'),
+  ];
+  for (const key of keys) cache.setQueryData(key, rows);
+  const removed = rows.map((row) => ({ ...row, deletedAt: 'deleted' }));
+  const snapshots = await beginTodoMove(cache, rows, removed, 1);
+  for (const key of keys) expect(cache.getQueryData(key)).toEqual([]);
+  const other = { ...todo, id: 'other' };
+  cache.setQueryData(keys[0]!, [other]);
+  rollbackTodoMove(cache, snapshots, rows);
+  expect(cache.getQueryData(keys[0]!)).toEqual([other, ...rows]);
+  const deleting = await beginTodoMove(cache, rows, removed, 1);
+  commitTodoMove(cache, deleting, rows, removed, 1);
+  const restoring = await beginTodoMove(cache, removed, rows, 1);
+  for (const key of keys) expect(cache.getQueryData(key)).toEqual(expect.arrayContaining(rows));
+  rollbackTodoMove(cache, restoring, removed);
+  expect(cache.getQueryData(keys[0]!)).toEqual([other]);
+  for (const key of keys.slice(1)) expect(cache.getQueryData(key)).toEqual([]);
+});
+it('일괄 이동은 원래 날짜와 대상 날짜의 모든 캐시를 갱신한다', async () => {
+  const rows = [todo, { ...todo, id: 'b', sortKey: 'a1' }];
+  cache.setQueryData(queryKeys.todos('2026-09'), rows);
+  cache.setQueryData(queryKeys.todos('2026-10'), rows);
+  cache.setQueryData(queryKeys.todos('2026-12'), []);
+  const moved = rows.map((row) => ({ ...row, date: '2026-12-20' }));
+  const snapshots = await beginTodoMove(cache, rows, moved, 1);
+  expect(cache.getQueryData(queryKeys.todos('2026-09'))).toEqual([]);
+  expect(cache.getQueryData(queryKeys.todos('2026-10'))).toEqual([]);
+  expect(cache.getQueryData(queryKeys.todos('2026-12'))).toEqual(moved);
+  rollbackTodoMove(cache, snapshots, rows);
+  expect(cache.getQueryData(queryKeys.todos('2026-09'))).toEqual(rows);
+  expect(cache.getQueryData(queryKeys.todos('2026-10'))).toEqual(rows);
+  expect(cache.getQueryData(queryKeys.todos('2026-12'))).toEqual([]);
+});

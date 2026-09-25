@@ -2,7 +2,14 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createNodiiClient, type NodiiClient } from '../client';
 import { mapGoal, mapTodo } from '../mappers';
 import { archiveGoal, createGoal, listGoals, unarchiveGoal, updateGoal } from './goals';
-import { createTodo, listTodosInRange, softDeleteTodo, updateTodo } from './todos';
+import {
+  createTodo,
+  listTodosInRange,
+  softDeleteTodo,
+  softDeleteTodos,
+  restoreTodos,
+  updateTodo,
+} from './todos';
 
 const goal = {
   id: 'goal-id',
@@ -198,4 +205,31 @@ it('공용 집계는 목표 수만큼 요청하지 않고 한 관계 조회로 �
   const url = new URL(String(fetch.mock.calls[0]![0]));
   expect(url.searchParams.get('todos.deleted_at')).toBe('is.null');
   expect(url.searchParams.get('routines.deleted_at')).toBe('is.null');
+});
+
+it('일괄 삭제·복원은 중복 ID를 제거하고 200개씩 한 UPDATE로 요청한다', async () => {
+  const { client, fetch } = setup([]);
+  fetch.mockImplementation(async (url: string, init: RequestInit) => {
+    const ids = new URL(url).searchParams.get('id')!.slice(4, -1).split(',');
+    const patch = JSON.parse(String(init.body)) as { deleted_at: string | null };
+    return new Response(JSON.stringify(ids.map((id) => ({ ...todo, id, ...patch }))));
+  });
+  const ids = Array.from({ length: 401 }, (_, i) => `id-${i}`);
+  const deleted = await softDeleteTodos(client, [...ids, ids[0]!], 'delete-time');
+  expect(deleted).toHaveLength(401);
+  expect(fetch).toHaveBeenCalledTimes(3);
+  expect(deleted.every((row) => row.deletedAt === 'delete-time')).toBe(true);
+  const restored = await restoreTodos(client, ids);
+  expect(fetch).toHaveBeenCalledTimes(6);
+  expect(restored.every((row) => row.deletedAt === null)).toBe(true);
+  await softDeleteTodos(client, []);
+  expect(fetch).toHaveBeenCalledTimes(6);
+});
+it('일괄 삭제는 요청 실패와 RLS로 누락된 행을 성공으로 처리하지 않는다', async () => {
+  const { client, fetch } = setup([]);
+  await expect(softDeleteTodos(client, [todo.id])).rejects.toThrow('missing_bulk_todos');
+  fetch.mockImplementation(
+    async () => new Response(JSON.stringify({ message: 'denied' }), { status: 403 }),
+  );
+  await expect(restoreTodos(client, [todo.id])).rejects.toMatchObject({ message: 'denied' });
 });
