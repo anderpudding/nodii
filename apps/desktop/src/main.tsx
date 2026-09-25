@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { ErrorBoundary } from './app/ErrorBoundary';
 import { installAppMenu } from './lib/commands';
 import { toast } from 'sonner';
 import 'pretendard/dist/web/variable/pretendardvariable.css';
@@ -11,7 +12,9 @@ if (!root) throw new Error('#root element not found');
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
 

@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
 > 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
-> 상태: **진행 중 — 5단계 완료 (2026-09-18), 다음은 6단계.** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 상태: **진행 중 — 8단계 코드 작업 완료 (2026-09-25), 남은 일은 `05-release-runbook.md`의 사람 작업(Secrets·Supabase·게시·TestFlight·심사).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -229,14 +229,26 @@
 
 ### 8단계 · 출시 준비 + 심사 (~1~2주 + 심사)
 
-- [ ] CI 배포 파이프라인 (설계서 §11.3), GitHub Secrets 등록
+- [x] CI 배포 파이프라인 (설계서 §11.3): `release.yml`(태그·수동 실행 → 검증 → 서명 → 업로드), `scripts/bump-version.sh`
+- [ ] GitHub Secrets · Variables 등록 후 `workflow_dispatch`로 첫 실행 (런북 1장)
 - [ ] 클라우드 `nodii` 프로젝트: 마이그레이션 적용, 커스텀 SMTP 연결, 이메일 템플릿에 `{{ .Token }}`, 스파이크·베타 테스트 계정 정리
-- [ ] 개인정보처리방침 · 이용약관 · 지원 페이지 게시
+- [x] 개인정보처리방침 · 이용약관 · 지원 페이지 초안 (`site/`) + GitHub Pages 워크플로 (`pages.yml`)
+- [ ] 페이지의 `[[TODO]]` 채우기 · 도메인 연결 · 게시 후 `VITE_*_URL` 설정 (런북 2.6)
+- [x] 심사 대비 코드 점검 (설계서 §11.4): 최상위 Error Boundary, 개인정보 로그·CSP·capability·크기 점검
+- [x] 출시 런북 `docs/05-release-runbook.md` (Secrets, Supabase, 심사 계정, App Store Connect, 릴리스 순서, 수동 E2E, 거절 대응)
 - [ ] 심사용 데모 계정 + 예시 데이터
 - [ ] App Store Connect: 스크린샷, 개인정보 라벨, 심사 노트
 - [ ] 개발에 쓰지 않은 다른 맥에서 TestFlight 설치 확인 (MVP 완료 기준 4)
 - [ ] 1주일 동안 Nodii만 사용 (MVP 완료 기준 3)
 - [ ] 설계서 §11.4 체크리스트 확인 후 심사 제출
+
+**8단계 코드 점검 기록 (2026-09-25)**
+- 빈 창·멈춤: Supabase 설정 누락(`App` 안내 화면), 오프라인 시작(최소 버전 조회 3초 제한 후 진행, 저장된 캐시 표시), 로그인 실패(오류 코드별 문구), 데이터 0개(하루·루틴·보관 목표 빈 상태), 목록·캘린더·관리 시트의 불러오기 실패(다시 시도)가 이미 처리되어 있음을 확인. 빠져 있던 **최상위 Error Boundary**("문제가 생겼어요 · 다시 시도")만 `main.tsx`에 추가하고 오류 내용은 기록하지 않음.
+- 콘솔 로그: `apps/`, `packages/`의 비테스트 코드에 `console.*` 호출 없음.
+- CSP: `connect-src`는 `'self'`, `https://*.supabase.co`, `wss://*.supabase.co`만 허용(폰트는 번들 포함, 외부 링크는 opener). 제안: 출시 후 프로젝트 호스트 `hwipekipumrnpriytqbe.supabase.co`로 좁힐 수 있음(프로젝트를 바꾸면 함께 수정 필요).
+- capability: `core:default`(JS 메뉴·창), `store:default`(세션·캐시), `opener:default` + App Store URL 범위 — 모두 사용 중, 불필요한 권한 없음.
+- 크기(NFR-04): `pnpm build:web` 2.8MB — Pretendard 가변 폰트 woff2 2.06MB, JS 809KB(gzip 238KB), CSS 26KB. 0단계 스파이크 `.pkg` 3.1MB에 더하면 약 6MB로 추정되어 15MB 이내. 가장 큰 위험 요소는 폰트이며, 필요하면 Pretendard 부분 집합(subset) 폰트로 바꾸는 방안을 검토할 수 있음.
+- 빌드 번호: 스파이크 빌드(`202609170301`)보다 작은 `run_number`는 App Store Connect에서 거절되므로 CI와 로컬 스크립트 모두 UTC `YYYYMMDDHHMM`을 사용(로컬 기본값을 현지 시각 → UTC로 변경).
 
 ---
 
@@ -319,3 +331,5 @@
 | 2026-09-22 | 7C | GOAL-03/04/06·TODO-04/06 HEX·공용 개수·목표 삭제 확인/롤백·목표/할 일 정렬 및 연속 실행 취소 검증. 필수 4종 324검사·웹 빌드 통과, 네이티브 편집 메뉴/복사·붙여넣기 유지 확인. dnd-kit 두 직접 의존성 추가, Tauri 권한/Rust 변경 없음. 7단계 체크 완료 및 수동 확인·문서 차이는 위 기록 참조. |
 
 | 2026-09-24 | 7d | F1~F6·TODO-10~12·CAL-02/07·NFR-05: 목록/관리 본문 스크롤, 하루 메뉴 일괄 작업·실행 취소, 400×600 주간 보기, 빈 날짜 도장, 하루 루틴 추가 제거. 기본 검증·338테스트·웹 빌드 통과. 400×600/1120×740·759/760px·다크·고정 헤더/버튼 모의 브라우저 확인. 새 의존성/DB 변경 없음. 문서 차이·분할 요청 제약·사람 확인은 7d 절 참조. |
+
+| 2026-09-25 | 8 | NFR-04/13/14/15 출시 준비(코드): `release.yml`(v* 태그·수동 실행, check 후 macOS 임시 키체인 서명·프로파일·API 키 복원, publishable 키만 허용·service_role 차단, 태그·버전 일치 검사, UTC 빌드 번호, .pkg 7일 보관, 항상 정리), `bump-version.sh`, `site/` 4페이지(다크·모바일, 법적 판단은 `[[TODO]]`)와 `pages.yml`, 최상위 Error Boundary, 출시 런북. 필수 검사 4종 통과(core 156 + api 78 + desktop 108 = 342검사), 웹 빌드 통과, actionlint 1.7.7(shellcheck 0.10.0 포함)·`bash -n scripts/*.sh` 통과. 새 의존성·DB 변경 없음으로 DB 검증 미실행. 사람 확인: 런북 1~7장. |
