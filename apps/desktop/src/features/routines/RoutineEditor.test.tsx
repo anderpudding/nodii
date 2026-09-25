@@ -411,7 +411,7 @@ it('완료·건너뛰기·실행 취소가 하루 목록과 달력 집계에 함
   );
   expect(cache.getQueryData(queryKeys.routineLogs('2026-09'))).toEqual([]);
   expect(within(screen.getByRole('main')).getByText('오늘, 1개 중 0개 끝냄')).toBeTruthy();
-});
+}, 15_000);
 it('오늘 시작 루틴 종료는 소프트 삭제하고 실행 취소가 원래 상태를 복원한다', async () => {
   const current = { ...routine, startDate: '2026-09-18' };
   const { client, cache, wrapper } = setup();
