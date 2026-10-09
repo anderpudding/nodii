@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  type Modifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -22,6 +23,15 @@ export interface SortableEntry {
 }
 
 type SortableActivator = 'handle' | 'row';
+type DragTransform = Parameters<Modifier>[0]['transform'];
+
+/** 행 드래그가 옆으로 흔들리지 않고 목록의 세로 흐름만 따르게 한다. */
+export function lockTransformToVerticalAxis(transform: DragTransform): DragTransform {
+  return { ...transform, x: 0 };
+}
+
+const verticalAxisModifier: Modifier = ({ transform }) => lockTransformToVerticalAxis(transform);
+const verticalAxisModifiers = [verticalAxisModifier];
 
 function SortableItem({
   item,
@@ -115,6 +125,7 @@ export function SortableList({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      modifiers={activator === 'row' ? verticalAxisModifiers : undefined}
       accessibility={{
         screenReaderInstructions: {
           draggable:
