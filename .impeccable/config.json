@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.2, 0.9, 0.3, 1.35)",
+        "createdAt": "2026-10-09T09:02:33.889Z",
+        "reason": "Design system: docs/design/tokens.md section 5 specifies this easing for the 0.28s checkbox mark animation"
+      }
+    ]
+  }
+}
