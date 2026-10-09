@@ -1,6 +1,6 @@
 # Nodii v2 계획 — iOS 앱
 
-> 버전 0.2 · 2026-10-09 · 근거: `01-requirements.md`, `02-system-design.md` §12, `12-design-mobile-screens.md`
+> 버전 0.2 · 2026-10-09 · 근거: `01-requirements.md`, `02-system-design.md` §12, `design/mobile-screens.md`
 > v0.2 변경: 디자인 완료 반영, 푸시를 v3(커뮤니티)로 확정, 로드맵 v2→v2.1→v3 추가, M2 분할, i18n 제안, 커뮤니티 대비 메모(§7)
 
 ## 1. 왜 iOS인가
@@ -14,7 +14,7 @@ v1을 만든 이유가 "모바일과 PC가 연동되는 투두 앱"이었고, �
 - 로그인이 이메일 6자리 코드라 **딥링크 처리가 필요 없습니다.**
 - DB 스키마·RLS·RPC는 그대로 씁니다. 서버 변경 없이 클라이언트만 추가하는 게 NFR-09였고, 이번에 그걸 실제로 확인하는 셈입니다.
 
-**방식:** Expo (React Native). **디자인:** `12-design-mobile-screens.md` 완료, 토큰은 데스크톱과 공유.
+**방식:** Expo (React Native). **디자인:** `design/mobile-screens.md` 완료, 토큰은 데스크톱과 공유.
 
 ## 2. v2 범위
 

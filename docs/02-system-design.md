@@ -880,7 +880,7 @@ Secrets: `APPLE_DISTRIBUTION_CERT_P12`, `APPLE_INSTALLER_CERT_P12`, `APPLE_CERT_
 
 ## 14. 모바일 아키텍처 (v2, iOS)
 
-> 근거: 요구사항 v2.0 §2.1b·§4.8, 단계는 `11-v2-plan.md` §3, 화면은 `12-design-mobile-screens.md`
+> 근거: 요구사항 v2.0 §2.1b·§4.8, 단계는 `11-v2-plan.md` §3, 화면은 `design/mobile-screens.md`
 
 ### 14.1 저장소 구조
 
