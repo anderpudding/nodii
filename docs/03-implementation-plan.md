@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
 > 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
-> 상태: **v1 8단계 완료, v2 M0 Expo 배포 스파이크 진행 중 (2026-10-09).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 상태: **v1 8단계 완료, v2 M0 Expo 배포 스파이크 완료 (2026-10-09).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -258,8 +258,10 @@
 - [x] `packages/i18n` 한국어 카탈로그·조사 헬퍼·단위 테스트 (SET-06)
 - [x] Expo Router 단일 스택·safe area·44·라이트/다크 스파이크 화면 (MOB-04)
 - [x] EAS development·preview·production 프로필, 동일 번들 ID, iOS 16.4 최소 지원
-- [ ] 시뮬레이터/실기기에서 Supabase 헬스·2KB SecureStore·재실행 유지 확인
-- [ ] EAS production 빌드 → TestFlight 설치 및 두 항목 성공 확인
+- [x] 시뮬레이터/실기기에서 Supabase 헬스·2KB SecureStore·재실행 유지 확인
+- [x] EAS production 빌드 → TestFlight 설치 및 두 항목 성공 확인
+
+**완료 기준:** TestFlight 설치본에서 Supabase 헬스 체크와 SecureStore 읽기/쓰기·재실행 유지를 확인한다. → ✅ **통과 (2026-10-09)**
 
 **구현 결정 (2026-10-09)**
 
@@ -352,4 +354,4 @@
 
 | 2026-09-25 | 8 | NFR-04/13/14/15 출시 준비(코드): `release.yml`(v* 태그·수동 실행, check 후 macOS 임시 키체인 서명·프로파일·API 키 복원, publishable 키만 허용·service_role 차단, 태그·버전 일치 검사, UTC 빌드 번호, .pkg 7일 보관, 항상 정리), `bump-version.sh`, `site/` 4페이지(다크·모바일, 법적 판단은 `[[TODO]]`)와 `pages.yml`, 최상위 Error Boundary, 출시 런북. 필수 검사 4종 통과(core 156 + api 78 + desktop 108 = 342검사), 웹 빌드 통과, actionlint 1.7.7(shellcheck 0.10.0 포함)·`bash -n scripts/*.sh` 통과. 새 의존성·DB 변경 없음으로 DB 검증 미실행. 사람 확인: 런북 1~7장. |
 | 2026-10-04 | 8 | **심사 제출 완료.** Secrets·Variables 등록과 `Release` 첫 실행(v0.1.0 태그 업로드), 클라우드 `nodii` 마이그레이션·SMTP·템플릿 설정, 웹 페이지 게시와 `VITE_*_URL` 연결, 심사 계정·예시 데이터, App Store Connect 입력(스크린샷·개인정보 라벨·심사 노트) 완료. 다른 맥에서 TestFlight 설치 확인과 1주일 실사용(완료 기준 3·4) 통과. 9/26 Guideline 2.1 정보 요청 → `docs/10-app-review-response.md`의 답장과 화면 녹화 제출, **승인 대기 중** |
-| 2026-10-09 | v2 M0 | SET-06·MOB-04·NFR-09/16: Expo SDK 57 모바일 앱, Expo Router 단일 스택, core/api 스모크, SecureStore 2KB 왕복·재실행 기록, 한국어 i18n/조사 헬퍼, EAS 3프로필·동일 번들 ID·iOS 16.4 설정. React 19.2.3으로 모노레포를 정렬하고 API peer를 `^19.2.3`으로 넓힘. 필수 4종 350검사·데스크톱 웹 빌드·iOS Hermes 번들(1,238모듈, 3.3MB) 통과. Expo Doctor 20/21(지시서대로 유지한 수동 Metro 설정 경고 1건). 로컬 Simulator는 Expo Go 설치는 완료했지만 CLI의 Simulator 활성화 시간 초과와 localhost IPv6 바인딩으로 화면 실행을 확정하지 못함. Supabase 환경 값·EAS/TestFlight·실기기 재실행은 사람 확인. DB 변경 없음으로 DB 검증 미실행. |
+| 2026-10-09 | v2 M0 | SET-06·MOB-04·NFR-09/16: Expo SDK 57 모바일 앱, Expo Router 단일 스택, core/api 스모크, SecureStore 2KB 왕복·재실행 기록, 한국어 i18n/조사 헬퍼, EAS 3프로필·동일 번들 ID·iOS 16.4 설정. React 19.2.3으로 모노레포를 정렬하고 API peer를 `^19.2.3`으로 넓힘. 필수 4종 350검사·데스크톱 웹 빌드·iOS Hermes 번들(1,238모듈, 3.3MB) 통과. Expo Doctor 20/21(지시서대로 유지한 수동 Metro 설정 경고 1건). 로컬 Simulator 자동 실행은 CLI 활성화 시간 초과와 localhost IPv6 바인딩으로 확정하지 못했으나, EAS 프로젝트·환경 값을 연결해 production 빌드와 TestFlight 설치를 완료했고 실기기에서 Supabase 헬스·2KB SecureStore 왕복·앱 재실행 이전 기록 유지가 모두 성공해 M0 완료. DB 변경 없음으로 DB 검증 미실행. |
