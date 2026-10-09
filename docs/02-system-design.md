@@ -1,9 +1,10 @@
 # Nodii 시스템 설계서 (MVP)
 
-> 버전 1.4 · 2026-09-24 · 근거 문서: `01-requirements.md` v1.2 · 상태: **확정 (기준선)**
+> 버전 1.5 · 2026-10-09 · 근거 문서: `01-requirements.md` v2.0 · 상태: **확정 (기준선)**
 > 확정된 결정: **macOS 전용** · **Tauri v2 + React + TypeScript** · **Supabase(로그인 + 클라우드 DB)** · MVP 기능 = 목표·할 일 / 월간 캘린더 / 루틴 · **이메일 OTP 로그인** · **Mac App Store 출시**
 > v0.2 변경: 루틴 규칙 수정 시 범위 선택과 분할(§6.4), 지난 미완료 할 일 가져오기(§6.6), OTP 확정(§6.5), RPC 함수 2개(§4.5)
 > v0.3 변경: Mac App Store 배포 파이프라인과 샌드박스(§11), 자체 업데이트 제거, 심사용 데모 계정(§6.5), 최소 지원 버전 확인(§6.7, `app_config` 테이블)
+> v1.5 변경: v2 모바일(iOS) 아키텍처 §14 추가 — Expo 앱 위치, 저장소 어댑터, 캐시 영속화, 문구 카탈로그, 제스처 계층, 배포. ADR-018~021
 > v1.4 변경: 실사용 피드백 반영(요구사항 §8.3) — 목록 영역만 스크롤·스크롤바 숨김, 날짜 헤더의 하루 메뉴(TODO-10~12), 최소 창 400×600과 좁은 폭 주간 보기(CAL-07), 캘린더 빈 날 상자(CAL-02), 하루 목록의 루틴 추가 진입점 제거 — 모두 §7
 > v1.3 변경: 1단계 DB 구현 반영 — 테이블 권한 명시·물리 DELETE는 `routine_logs`만(§4.2, §4.3), `ensure_active_goal` 동시 보관 잠금(§4.5), `delete_my_account` RPC(§4.5), RPC 타입 주의(§4.5), 보안·테스트 표(§9, §10), ADR-017
 > v1.2 변경: 도메인 `nodii.app`, 인증 메일 Resend + 발신 `no-reply@mail.nodii.app` 확정(§2, §6.5), 심사 계정 주소(§6.5)
@@ -868,5 +869,76 @@ Secrets: `APPLE_DISTRIBUTION_CERT_P12`, `APPLE_INSTALLER_CERT_P12`, `APPLE_CERT_
 | ADR-015 | 지난 미완료 할 일 가져오기 기간 7일, 도메인·발신 주소는 개발 초기에 확보 | **확정** (Q8, Q9) |
 | ADR-016 | 번들 ID `com.sungjunlee.Nodii`, App Store 카테고리 생산성, 무료 | **확정** (Q10, Q11) |
 | ADR-017 | 테이블 권한을 명시적으로 부여하고, 물리 DELETE는 `routine_logs`만 허용. 활성 목표 규칙은 사용자별 잠금으로 동시 요청에도 보장 | **확정** (1단계 DB, pgTAP) |
+| ADR-018 | iOS 앱은 **Expo (React Native)**. `core`·`api`를 재사용하고 서버는 바꾸지 않는다 | **확정** (Q13) |
+| ADR-019 | **UI는 공유하지 않는다.** 디자인 토큰과 문구만 공유하고 화면·제스처·내비게이션은 플랫폼별로 따로 만든다 | **확정** (Q14) |
+| ADR-020 | 사용자 문구는 메시지 카탈로그로 관리한다. v2는 한국어만 채운다 | **확정** (Q16) |
+| ADR-021 | 푸시 알림과 커뮤니티(프로필·친구·공개 범위)는 v3. 관련 스키마를 미리 넣지 않는다 | **확정** (Q15, Q17) |
 
 > '제안' 상태인 ADR은 구현 초기에 프로토타입과 테스트로 검증한 뒤 확정합니다. 바꿔야 하면 설계서 버전을 올리고 이 표에 기록합니다.
+
+---
+
+## 14. 모바일 아키텍처 (v2, iOS)
+
+> 근거: 요구사항 v2.0 §2.1b·§4.8, 단계는 `11-v2-plan.md` §3, 화면은 `12-design-mobile-screens.md`
+
+### 14.1 저장소 구조
+
+```
+apps/
+├─ desktop/            Tauri v2 (v1)
+└─ mobile/             Expo (v2)
+   ├─ app/ 또는 src/   화면·내비게이션 (공유하지 않음)
+   ├─ lib/             SecureStore 어댑터, 캐시 영속화, 제스처 래퍼
+   └─ app.json/eas.json
+packages/
+├─ core/               그대로 공유 (순수 TS)
+├─ api/                그대로 공유 (repository·훅·realtime)
+└─ i18n/               (v2 신규) 메시지 카탈로그
+```
+
+의존 방향은 v1과 같습니다: `apps/*` → `packages/api` → `packages/core`. 모바일이 `packages/*`를 고쳐야 한다면 데스크톱 테스트가 먼저 깨지므로, 공유 코드의 회귀는 CI에서 잡힙니다.
+
+### 14.2 플랫폼별로 다른 것 (세 군데뿐)
+
+| 관심사 | 데스크톱 | 모바일 |
+|---|---|---|
+| 세션 저장 (`AuthStorage`) | `@tauri-apps/plugin-store` | **expo-secure-store** (토큰은 키체인) |
+| 캐시 영속화 (SYNC-04) | plugin-store 파일 | **AsyncStorage 또는 MMKV** (M5에서 결정) |
+| 연결 상태 | `navigator.onLine` + 요청 실패 | **@react-native-community/netinfo** + 요청 실패 |
+
+`packages/api`의 쓰기 가드(`assertOnline`)는 `onlineManager`만 보므로, 모바일은 netinfo를 `onlineManager`에 연결하면 그대로 동작합니다. 실시간 채널 상태를 쓰기 차단에 쓰지 않는 규칙(v1 6단계 수정)도 그대로 유지합니다.
+
+### 14.3 문구 카탈로그 (`packages/i18n`, ADR-020)
+
+- 키 → 문구 맵과 `t(key, params)`만 있는 얇은 계층입니다. 무거운 i18n 런타임은 넣지 않습니다.
+- 데스크톱과 모바일이 같은 카탈로그를 씁니다. 플랫폼 전용 문구는 접두사로 구분합니다(예: `mobile.add.title`).
+- `core`가 돌려주는 오류 코드값(`weekday_required` 등)이 그대로 키가 됩니다.
+- 복수형·조사: 한국어는 받침에 따라 을/를·이/가가 달라집니다. 카탈로그에 조사 헬퍼를 두고 화면에서 직접 문자열을 잇지 않습니다.
+- 데스크톱 문구 이전은 한 번에 하지 않아도 됩니다. 새로 쓰는 모바일 문구부터 카탈로그를 쓰고, 데스크톱은 건드리는 화면만 옮깁니다.
+
+### 14.4 제스처 계층 (MOB-01)
+
+- `react-native-gesture-handler` + `react-native-reanimated`(Expo 기본 포함)로 구현합니다.
+- 밀기 동작은 공통 컴포넌트 하나(`SwipeableRow`)에 모으고, 할 일·루틴·목표 줄이 그걸 씁니다.
+- **밀기로 되는 모든 동작은 길게 누르기 메뉴에도 있어야 합니다.** 접근성 설정이나 손 떨림으로 밀기를 못 하는 사람이 막히면 안 됩니다. 이 규칙은 컴포넌트 단위 테스트로 못 박습니다.
+
+### 14.5 내비게이션
+
+탭 막대 없이 "오늘" 한 화면이 중심이고 관리 화면은 push, 편집은 바텀 시트입니다(화면 스펙 §1). Expo Router와 React Navigation 중 어느 쪽을 쓸지는 M0에서 정합니다.
+
+### 14.6 배포
+
+| 항목 | 내용 |
+|---|---|
+| 빌드 | **EAS Build** (Expo). 로컬 Xcode 빌드는 디버깅용 |
+| 제출 | EAS Submit 또는 Transporter → TestFlight → 심사 |
+| 번들 ID·앱 레코드 | 맥 앱(`com.sungjunlee.Nodii`)과 같은 레코드에 iOS를 넣을 수 있는지 M0에서 확인. 비 Catalyst 맥 앱이라 **별도 레코드 + 새 번들 ID**가 될 가능성이 높음 |
+| 최소 지원 버전 | `app_config.min_macos_app_version`과 별도로 **`min_ios_app_version`** 키를 추가한다 (§6.7과 같은 흐름). 이 한 줄이 v2의 유일한 서버 변경 |
+| 심사 | `10-app-review-response.md`를 iOS용으로 고쳐 재사용 |
+
+### 14.7 테스트
+
+- `core`·`api`는 v1 테스트를 그대로 씁니다(모바일 때문에 다시 쓰지 않습니다).
+- 모바일 화면은 핵심 인터랙션만 React Native Testing Library로. 제스처는 길게 누르기 대체 경로 존재 여부를 반드시 포함합니다.
+- 실기기 수동 확인: 키보드 회피, safe area, 다크 모드, 맥–폰 동기화.
