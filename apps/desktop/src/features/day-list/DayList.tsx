@@ -69,14 +69,8 @@ export function DayList({
   const reorder = useReorderTodo(client, profile.weekStart, { onError: notifyError });
   const writing = useIsMutating({ mutationKey: ['write'] }) > 0;
   const online = useConnectivity();
-  const hasItems = groups.some((group) => group.items.length > 0);
   return (
     <div ref={root}>
-      {!hasItems && (
-        <p className="supporting day-empty">
-          이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.
-        </p>
-      )}
       <div className="goal-groups">
         {groups.map(({ goal, items, canAdd }) => (
           <section

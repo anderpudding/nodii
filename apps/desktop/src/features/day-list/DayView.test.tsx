@@ -91,10 +91,11 @@ it.each([false, true])(
     expect(screen.queryByRole('button', { name: '숨겨진 미완료 완료' })).toBeNull();
     expect(screen.queryByRole('button', { name: '숨겨진 완료 완료' })).toBeNull();
     expect(screen.queryByRole('button', { name: '다른 날 할 일 완료' })).toBeNull();
-    const emptyMessage = '이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.';
+    expect(
+      screen.queryByText('이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.'),
+    ).toBeNull();
     if (hiddenOnly) {
       expect(screen.getByText('할 일 없음')).toBeTruthy();
-      expect(screen.getByText(emptyMessage)).toBeTruthy();
       expect(screen.queryAllByRole('button', { name: / 완료$/ })).toHaveLength(0);
     } else {
       expect(screen.getByText('오늘, 2개 중 1개 끝냄')).toBeTruthy();
@@ -102,7 +103,6 @@ it.each([false, true])(
       expect(
         screen.getByRole('button', { name: '지난 목표 기록 완료' }).getAttribute('aria-pressed'),
       ).toBe('true');
-      expect(screen.queryByText(emptyMessage)).toBeNull();
     }
   },
 );
