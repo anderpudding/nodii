@@ -106,16 +106,13 @@ it('매주를 고르면 요일 필수 오류와 저장 비활성을 표시한다
   expect(screen.queryByRole('alert')).toBeNull();
   expect((screen.getByRole('button', { name: '저장' }) as HTMLButtonElement).disabled).toBe(false);
 });
-it('매월 31일의 다음 5회는 9월·11월·2월 말일을 표시한다', async () => {
+it('매월은 날짜 선택을 요구하고 다음 5회 미리보기는 표시하지 않는다', async () => {
   const { user } = editor();
   await user.click(screen.getByRole('radio', { name: '매월' }));
+  expect(screen.getByRole('alert').textContent).toContain('날짜를 하나 이상');
+  expect(screen.queryByRole('region', { name: '다음 5회 미리보기' })).toBeNull();
   await user.click(screen.getByRole('button', { name: '31일' }));
-  let preview = screen.getByRole('region', { name: '다음 5회 미리보기' });
-  expect(preview.textContent).toContain('9월 30일');
-  expect(preview.textContent).toContain('11월 30일');
-  fireEvent.change(screen.getByLabelText('시작일'), { target: { value: '2027-02-01' } });
-  preview = screen.getByRole('region', { name: '다음 5회 미리보기' });
-  expect(preview.textContent).toContain('2월 28일');
+  expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.getByText('없는 달은 말일에 표시돼요.')).toBeTruthy();
 });
 it('제목만 수정하면 범위 창 없이 같은 행을 UPDATE한다', async () => {

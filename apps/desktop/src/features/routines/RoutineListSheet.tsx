@@ -56,23 +56,25 @@ export function RoutineListSheet({
   if (ending)
     return <RoutineStopDialog routine={ending} client={client} onClose={() => setEnding(null)} />;
   return (
-    <Sheet labelledBy="routine-list-title" onClose={onClose} className="scroll-sheet">
-      <header className="goal-sheet-header">
+    <Sheet
+      labelledBy="routine-list-title"
+      onClose={onClose}
+      className="scroll-sheet routine-list-sheet"
+    >
+      <header className="routine-list-header">
         <h2 id="routine-list-title">루틴 관리</h2>
-        <div className="routine-actions">
+        <div className="routine-list-actions">
           <Button
             variant="outline"
             disabled={busy || !goals.data?.some((g) => !g.archivedAt)}
             onClick={() => setEditor('new')}
           >
-            새 루틴
+            <span aria-hidden="true">＋</span> 새 루틴
           </Button>
-          <Button variant="ghost" onClick={onClose}>
-            닫기
-          </Button>
+          <Button onClick={onClose}>완료</Button>
         </div>
       </header>
-      <div className="sheet-body">
+      <div className="sheet-body routine-list-body">
         {goals.isError || routines.isError ? (
           <>
             <p role="alert">루틴을 불러오지 못했어요.</p>
@@ -91,7 +93,7 @@ export function RoutineListSheet({
         ) : (
           <>
             {!routines.data.some((r) => r.endDate === null || r.endDate >= today) && (
-              <p className="supporting">
+              <p className="supporting routine-list-empty">
                 아직 진행 중인 루틴이 없어요. 반복하고 싶은 일을 추가해 보세요.
               </p>
             )}
@@ -110,60 +112,60 @@ export function RoutineListSheet({
                           보관한 목표예요. 보관 이후 날짜에는 나타나지 않아요.
                         </p>
                       )}
-                      {rows.map((routine) => (
-                        <div className="routine-list-row" key={routine.id}>
-                          <div className="routine-list-copy">
-                            <p className="routine-wrap">{routine.title}</p>
-                            <p className="supporting">
-                              {formatRoutineRule(routine, profile.weekStart)},{' '}
-                              {formatCalendarDate(routine.startDate)}부터
-                            </p>
+                      <div className="routine-group-rows">
+                        {rows.map((routine) => (
+                          <div className="routine-list-row" key={routine.id}>
+                            <div className="routine-list-copy">
+                              <strong className="routine-wrap">{routine.title}</strong>
+                              <p className="supporting">
+                                {formatRoutineRule(routine, profile.weekStart)},{' '}
+                                {formatCalendarDate(routine.startDate)}부터
+                              </p>
+                            </div>
+                            <div className="routine-row-actions">
+                              <Button
+                                variant="ghost"
+                                disabled={busy || pendingIds.includes(routine.id)}
+                                onClick={() => setEditor(routine)}
+                                aria-label={`${routine.title} 편집`}
+                              >
+                                편집
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                disabled={busy || pendingIds.includes(routine.id)}
+                                onClick={() => setEnding(routine)}
+                                aria-label={`${routine.title} 그만두기`}
+                              >
+                                그만두기
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            disabled={busy || pendingIds.includes(routine.id)}
-                            onClick={() => setEditor(routine)}
-                            aria-label={`${routine.title} 수정`}
-                          >
-                            수정
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            disabled={busy || pendingIds.includes(routine.id)}
-                            onClick={() => setEnding(routine)}
-                            aria-label={`${routine.title} 그만두기`}
-                          >
-                            그만두기
-                          </Button>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </section>
                   )
                 );
               })}
             {finished.length > 0 && (
-              <section className="archived-goals">
-                <h3>끝난 루틴</h3>
-                <p className="supporting">기록은 캘린더에 남아 있어요.</p>
-                {finished.map((routine) => (
-                  <div className="routine-list-row" key={routine.id}>
-                    <div className="routine-list-copy">
-                      <p className="routine-wrap">{routine.title}</p>
-                      <p className="supporting">
-                        {formatCalendarDate(routine.startDate)} ~{' '}
-                        {formatCalendarDate(routine.endDate!)}
-                      </p>
+              <section className="routine-finished">
+                <div className="routine-finished-heading">
+                  <h3>끝난 루틴</h3>
+                  <p className="supporting">기록은 캘린더에 남아 있어요.</p>
+                </div>
+                <div className="routine-group-rows">
+                  {finished.map((routine) => (
+                    <div className="routine-list-row routine-list-row-finished" key={routine.id}>
+                      <div className="routine-list-copy">
+                        <strong className="routine-wrap">{routine.title}</strong>
+                        <p className="supporting">
+                          {formatCalendarDate(routine.startDate)} ~{' '}
+                          {formatCalendarDate(routine.endDate!)}
+                        </p>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      disabled={busy || pendingIds.includes(routine.id)}
-                      onClick={() => setEditor(routine)}
-                      aria-label={`${routine.title} 수정`}
-                    >
-                      수정
-                    </Button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </section>
             )}
           </>
