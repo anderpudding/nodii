@@ -139,6 +139,23 @@ it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc
   expect(screen.queryByRole('textbox')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '할 일에 할 일 추가' }));
 });
+it('빈 할 일에서 Enter를 누르면 저장하지 않고 입력을 닫는다', async () => {
+  const inserts: unknown[] = [];
+  server.use(
+    http.post(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+      inserts.push(await request.json());
+      return HttpResponse.json(todoRow);
+    }),
+  );
+  const { user } = setup();
+  const chip = await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await user.click(chip);
+  await user.keyboard('{Enter}');
+
+  expect(screen.queryByRole('textbox', { name: '할 일 새 할 일' })).toBeNull();
+  expect(document.activeElement).toBe(chip);
+  expect(inserts).toHaveLength(0);
+});
 it('메인 할 일은 손잡이와 앞 여백 없이 행 전체를 드래그 영역으로 쓴다', async () => {
   server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
   const { user } = setup();

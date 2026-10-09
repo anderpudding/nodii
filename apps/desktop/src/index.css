@@ -565,9 +565,6 @@ button.goal-chip:disabled {
   font-weight: 600;
   color: var(--color-muted);
 }
-.add-todo [aria-invalid='true'] + .input-hint {
-  color: var(--color-danger);
-}
 .todo-menu {
   position: relative;
   z-index: 1;
