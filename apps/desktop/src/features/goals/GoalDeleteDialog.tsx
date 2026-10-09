@@ -18,11 +18,13 @@ export function GoalDeleteDialog({
   goal,
   lastActive,
   onClose,
+  onDeleted,
 }: {
   client: NodiiClient;
   goal: GoalRecord;
   lastActive: boolean;
   onClose: () => void;
+  onDeleted?: () => void;
 }) {
   const counts = useQuery({
     queryKey: ['goalContents', goal.id],
@@ -88,7 +90,7 @@ export function GoalDeleteDialog({
             onClick={() =>
               remove.mutate(goal, {
                 onSuccess: () => {
-                  onClose();
+                  (onDeleted ?? onClose)();
                   toast('목표를 삭제했어요');
                 },
               })

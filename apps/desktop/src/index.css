@@ -385,9 +385,7 @@ h2 {
 /* 3단계: DESIGN.md / docs/design의 목표 이름표·하루 목록·시트 토큰. */
 .day-header,
 .day-navigation,
-.goal-sheet-header,
-.goal-manager-summary,
-.goal-edit-actions {
+.goal-sheet-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -427,7 +425,6 @@ h2 {
   color: var(--goal-ink-dark);
 }
 button.goal-chip,
-.goal-expand,
 .color-option {
   cursor: pointer;
 }
@@ -634,41 +631,77 @@ button.goal-chip:disabled {
   background: rgba(0, 0, 0, 0.5);
 }
 .goal-sheet-header {
-  margin-bottom: 26px;
+  margin-bottom: 0;
+}
+.goal-header-actions,
+.goal-editor-header,
+.goal-editor-actions,
+.goal-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.goal-manager-intro {
+  margin-bottom: 16px;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 .goal-manager-row {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
 }
-.goal-expand {
+.goal-row-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
   padding: 0;
   border: 0;
   background: transparent;
   text-align: left;
-  border-radius: 999px;
+  cursor: pointer;
 }
-.goal-expand:disabled {
-  cursor: wait;
+.goal-row-main:disabled {
+  cursor: not-allowed;
 }
-.goal-edit-form {
+.goal-row-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+.goal-manager-row:hover .goal-row-actions,
+.goal-manager-row:focus-within .goal-row-actions {
+  opacity: 1;
+}
+.goal-editor-screen {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--color-side);
+  min-height: 0;
+  overflow: hidden;
 }
-.goal-edit-form label,
-.new-goal-form label,
+.goal-editor-header {
+  justify-content: space-between;
+}
+.close-glyph {
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+}
+.goal-editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin-top: 16px;
+}
+.goal-editor-body label,
 .goal-palette legend {
   font-size: 12px;
   font-weight: 600;
-}
-.goal-edit-form .input,
-.new-goal-form .input {
-  height: 40px;
 }
 .goal-palette {
   display: flex;
@@ -697,25 +730,97 @@ button.goal-chip:disabled {
 .color-option:hover {
   box-shadow: 0 0 0 1px var(--color-field);
 }
-.goal-edit-actions {
-  align-self: flex-end;
-}
-.new-goal-form {
-  margin-top: 26px;
-}
-.new-goal-form > div {
+.goal-color-field {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 8px;
 }
-.archived-goals {
+.goal-color-field .input {
+  width: 152px;
+  height: 40px;
+}
+.goal-preview {
+  min-height: 32px;
+}
+.goal-destructive {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+  padding-top: 26px;
+  border-top: 1px solid var(--color-line);
+}
+.goal-destructive strong {
+  display: block;
+  font-size: 14px;
+}
+.goal-editor-actions {
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding-top: 16px;
+}
+.archive-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  margin-top: 26px;
+  padding: 0 16px;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.archive-link:hover {
+  background: var(--color-side);
+}
+.archive-link span {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+.archive-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+.archive-header .button:first-child {
+  justify-self: start;
+}
+.archive-header .button:last-child {
+  justify-self: end;
+}
+.archive-body {
+  margin-top: 16px;
+}
+.archive-description {
+  max-width: 65ch;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.archive-goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 26px;
 }
-.archived-goals h3 {
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 700;
+.archive-goal-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+}
+.goal-empty-state {
+  margin-top: 48px;
+  text-align: center;
 }
 
 /* 4단계: 문서의 58px 칸·24px 도장·캘린더 및 메뉴 토큰. */
@@ -1290,13 +1395,26 @@ body,
   .goal-sheet {
     padding: 16px;
   }
-  .goal-manager-summary,
-  .goal-edit-actions,
   .settings-row {
     flex-wrap: wrap;
   }
-  .goal-edit-form {
-    padding: 8px;
+  .goal-row-main,
+  .archive-goal-row {
+    align-items: flex-start;
+  }
+  .goal-row-main {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .goal-row-actions {
+    opacity: 1;
+  }
+  .archive-goal-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .archive-goal-row .supporting {
+    grid-column: 1;
+    grid-row: 2;
   }
   .input-hint {
     flex-basis: 100%;
@@ -1308,11 +1426,4 @@ body,
 
 .scroll-sheet {
   overflow: hidden;
-}
-.scroll-sheet > .new-goal-form {
-  flex-shrink: 0;
-  margin-top: 0;
-}
-.new-goal-form .input {
-  min-width: 0;
 }

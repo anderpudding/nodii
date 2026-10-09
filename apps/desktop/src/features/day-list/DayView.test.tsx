@@ -345,28 +345,36 @@ it('목표 생성·이름과 프리셋 변경·보관·보관 해제를 화면�
   );
   const { user } = setup();
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
-  const dialog = await screen.findByRole('dialog');
-  await user.type(await within(dialog).findByLabelText('새 목표'), '공부');
-  await user.click(within(dialog).getByRole('button', { name: '추가' }));
+  await user.click(await screen.findByRole('button', { name: /추가하기/ }));
+  const addDialog = await screen.findByRole('dialog', { name: '목표 추가' });
+  await user.type(within(addDialog).getByLabelText('이름'), '공부');
+  await user.click(within(addDialog).getByRole('button', { name: '추가' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 관리' });
   const edit = await within(dialog).findByRole('button', { name: '공부 편집' });
   await waitFor(() => expect((edit as HTMLButtonElement).disabled).toBe(false));
   await user.click(edit);
-  const name = within(dialog).getByLabelText('목표 이름');
+  const editDialog = await screen.findByRole('dialog', { name: '목표 편집' });
+  const name = within(editDialog).getByLabelText('이름');
   await user.clear(name);
   await user.type(name, '독서');
-  await user.click(within(dialog).getByRole('button', { name: '퍼플' }));
-  await user.click(within(dialog).getByRole('button', { name: '저장' }));
-  const renamed = await within(dialog).findByRole('button', { name: '독서 편집' });
+  await user.click(within(editDialog).getByRole('button', { name: '퍼플' }));
+  await user.click(within(editDialog).getByRole('button', { name: '저장' }));
+  const listDialog = await screen.findByRole('dialog', { name: '목표 관리' });
+  const renamed = await within(listDialog).findByRole('button', { name: '독서 편집' });
   await waitFor(() => expect((renamed as HTMLButtonElement).disabled).toBe(false));
   expect(created.color).toBe('#A06CD5');
   expect(created.name).toBe('독서');
-  await user.click(within(renamed.parentElement!).getByRole('button', { name: '보관' }));
-  const restore = await within(dialog).findByRole('button', { name: '보관 해제' });
+  await user.click(
+    within(renamed.closest('.goal-manager-row')!).getByRole('button', { name: '보관' }),
+  );
+  await user.click(await within(listDialog).findByRole('button', { name: /보관한 목표/ }));
+  const archiveDialog = await screen.findByRole('dialog', { name: '보관한 목표' });
+  const restore = await within(archiveDialog).findByRole('button', { name: '보관 해제' });
   await waitFor(() => expect((restore as HTMLButtonElement).disabled).toBe(false));
   expect(created.archived_at).toBeTruthy();
   await user.click(restore);
   await waitFor(() => expect(created.archived_at).toBeNull());
-  expect(within(dialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
+  expect(within(archiveDialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
 });
 it('서버의 마지막 활성 목표 오류는 보관을 롤백하고 이유를 안내한다', async () => {
   server.use(
@@ -384,7 +392,9 @@ it('서버의 마지막 활성 목표 오류는 보관을 롤백하고 이유를
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
   const dialog = await screen.findByRole('dialog');
   const editor = await within(dialog).findByRole('button', { name: '공부 편집' });
-  await user.click(within(editor.parentElement!).getByRole('button', { name: '보관' }));
+  await user.click(
+    within(editor.closest('.goal-manager-row')!).getByRole('button', { name: '보관' }),
+  );
   expect(await screen.findByText('활성 목표는 하나 이상 있어야 해요')).toBeTruthy();
   expect(within(dialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
   expect(within(dialog).getAllByRole('button', { name: '보관' })).toHaveLength(2);
@@ -676,14 +686,12 @@ it('HEX 입력은 잘못된 값의 저장을 막고 유효한 흰색도 대비 �
   const { user } = setup();
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
   await user.click(await screen.findByRole('button', { name: '할 일 편집' }));
-  const hex = screen.getByLabelText('HEX 색상');
+  const hex = screen.getByLabelText('HEX');
   await user.clear(hex);
   await user.type(hex, '#XYZ');
   expect(hex.getAttribute('aria-invalid')).toBe('true');
   expect((screen.getByRole('button', { name: '저장' }) as HTMLButtonElement).disabled).toBe(true);
-  expect((screen.getByRole('button', { name: '목표 삭제' }) as HTMLButtonElement).disabled).toBe(
-    true,
-  );
+  expect((screen.getByRole('button', { name: '삭제' }) as HTMLButtonElement).disabled).toBe(true);
   await user.clear(hex);
   await user.type(hex, '#FFFFFF');
   expect(hex.getAttribute('aria-invalid')).toBe('false');
@@ -731,7 +739,7 @@ it('목표 삭제는 최신 개수를 확인하고 실패하면 목표와 인접
   await waitFor(() => expect(screen.getAllByText('할 일 12개 · 루틴 2개')).toHaveLength(2));
   expect(aggregate).toHaveBeenCalledOnce();
   await user.click(screen.getByRole('button', { name: '할 일 편집' }));
-  await user.click(screen.getByRole('button', { name: '목표 삭제' }));
+  await user.click(screen.getByRole('button', { name: '삭제' }));
   await screen.findByText(/할 일 12개와 루틴 2개가/);
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '취소' }));
   await user.click(screen.getByRole('button', { name: '삭제' }));
