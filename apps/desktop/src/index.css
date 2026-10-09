@@ -50,7 +50,22 @@
 :root {
   color-scheme: light dark;
 }
-::selection {
+body,
+body * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+[contenteditable='true'],
+[contenteditable='plaintext-only'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+input::selection,
+textarea::selection,
+[contenteditable='true']::selection,
+[contenteditable='plaintext-only']::selection {
   background: var(--color-ink);
   color: var(--color-bg);
 }
