@@ -14,6 +14,7 @@ import { RoutineListSheet } from '../features/routines/RoutineListSheet';
 import { useUserSync } from '../lib/use-user-sync';
 import { useTodayClock } from '../lib/today';
 import { useConnectionStatus } from '../lib/connectivity';
+import { GoalIcon, RoutineIcon, SettingsIcon } from '../components/ui/icons';
 
 /** 인증된 셸 안에서 하루 목록과 목표 관리 시트를 연결한다. */
 export function MainLayout({
@@ -38,7 +39,7 @@ export function MainLayout({
       : connectionStatus === 'sync-disconnected'
         ? '동기화가 잠시 끊겼어요'
         : null;
-  const [goalsOpen, setGoalsOpen] = useState(false);
+  const [goalView, setGoalView] = useState<'list' | 'archive' | null>(null);
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => {
@@ -61,13 +62,14 @@ export function MainLayout({
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="캘린더와 관리 메뉴">
-        <p className="brand">Nodii</p>
         {profile && <MonthCalendar client={client} profile={profile} />}
         <nav className="management" aria-label="관리">
-          <Button variant="ghost" onClick={() => setGoalsOpen(true)}>
+          <Button variant="ghost" onClick={() => setGoalView('list')}>
+            <GoalIcon className="management-icon" />
             목표 관리
           </Button>
           <Button variant="ghost" disabled={!profile} onClick={() => setRoutinesOpen(true)}>
+            <RoutineIcon className="management-icon" />
             루틴 관리
           </Button>
         </nav>
@@ -84,16 +86,17 @@ export function MainLayout({
           <Button
             className="wide-settings"
             variant="ghost"
+            aria-label="설정"
             aria-haspopup="dialog"
             onClick={() => setSettingsOpen(true)}
           >
-            설정
+            <SettingsIcon className="toolbar-icon" />
           </Button>
           <div className="narrow-settings">
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <Button variant="ghost" aria-label="설정 및 관리">
-                  설정
+                  <SettingsIcon className="toolbar-icon" />
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
@@ -103,7 +106,10 @@ export function MainLayout({
                   sideOffset={4}
                   collisionPadding={8}
                 >
-                  <DropdownMenu.Item className="todo-menu-item" onSelect={() => setGoalsOpen(true)}>
+                  <DropdownMenu.Item
+                    className="todo-menu-item"
+                    onSelect={() => setGoalView('list')}
+                  >
                     목표 관리
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
@@ -147,9 +153,19 @@ export function MainLayout({
           session={session}
           profile={profile}
           onClose={() => setSettingsOpen(false)}
+          onOpenArchivedGoals={() => {
+            setSettingsOpen(false);
+            setGoalView('archive');
+          }}
         />
       )}
-      {goalsOpen && <GoalManagerSheet client={client} onClose={() => setGoalsOpen(false)} />}
+      {goalView && (
+        <GoalManagerSheet
+          client={client}
+          initialView={goalView}
+          onClose={() => setGoalView(null)}
+        />
+      )}
       {routinesOpen && profile && (
         <RoutineListSheet
           client={client}

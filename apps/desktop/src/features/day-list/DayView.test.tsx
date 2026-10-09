@@ -91,10 +91,11 @@ it.each([false, true])(
     expect(screen.queryByRole('button', { name: '숨겨진 미완료 완료' })).toBeNull();
     expect(screen.queryByRole('button', { name: '숨겨진 완료 완료' })).toBeNull();
     expect(screen.queryByRole('button', { name: '다른 날 할 일 완료' })).toBeNull();
-    const emptyMessage = '이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.';
+    expect(
+      screen.queryByText('이날은 비어 있어요. 목표 이름을 누르면 할 일을 바로 추가할 수 있어요.'),
+    ).toBeNull();
     if (hiddenOnly) {
       expect(screen.getByText('할 일 없음')).toBeTruthy();
-      expect(screen.getByText(emptyMessage)).toBeTruthy();
       expect(screen.queryAllByRole('button', { name: / 완료$/ })).toHaveLength(0);
     } else {
       expect(screen.getByText('오늘, 2개 중 1개 끝냄')).toBeTruthy();
@@ -102,7 +103,6 @@ it.each([false, true])(
       expect(
         screen.getByRole('button', { name: '지난 목표 기록 완료' }).getAttribute('aria-pressed'),
       ).toBe('true');
-      expect(screen.queryByText(emptyMessage)).toBeNull();
     }
   },
 );
@@ -138,6 +138,36 @@ it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc
   await user.keyboard('{Escape}');
   expect(screen.queryByRole('textbox')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '할 일에 할 일 추가' }));
+});
+it('빈 할 일에서 Enter를 누르면 저장하지 않고 입력을 닫는다', async () => {
+  const inserts: unknown[] = [];
+  server.use(
+    http.post(`${baseUrl}/rest/v1/todos`, async ({ request }) => {
+      inserts.push(await request.json());
+      return HttpResponse.json(todoRow);
+    }),
+  );
+  const { user } = setup();
+  const chip = await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await user.click(chip);
+  await user.keyboard('{Enter}');
+
+  expect(screen.queryByRole('textbox', { name: '할 일 새 할 일' })).toBeNull();
+  expect(document.activeElement).toBe(chip);
+  expect(inserts).toHaveLength(0);
+});
+it('메인 할 일은 손잡이와 앞 여백 없이 행 전체를 드래그 영역으로 쓴다', async () => {
+  server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
+  const { user } = setup();
+  await screen.findByRole('button', { name: '책 읽기 완료' });
+
+  expect(screen.getByRole('group', { name: '책 읽기 순서 변경' })).toBeTruthy();
+  expect(document.querySelector('.todo-rows .drag-handle')).toBeNull();
+  expect(document.querySelector('.todo-rows .drag-spacer')).toBeNull();
+
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 관리' });
+  expect(within(dialog).getByRole('button', { name: '할 일 순서 변경' })).toBeTruthy();
 });
 it('입력 줄 바깥을 클릭하면 적던 글자를 저장하지 않고 닫으며 포커스를 가로채지 않는다', async () => {
   const inserts: unknown[] = [];
@@ -345,28 +375,36 @@ it('목표 생성·이름과 프리셋 변경·보관·보관 해제를 화면�
   );
   const { user } = setup();
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
-  const dialog = await screen.findByRole('dialog');
-  await user.type(await within(dialog).findByLabelText('새 목표'), '공부');
-  await user.click(within(dialog).getByRole('button', { name: '추가' }));
+  await user.click(await screen.findByRole('button', { name: /추가하기/ }));
+  const addDialog = await screen.findByRole('dialog', { name: '목표 추가' });
+  await user.type(within(addDialog).getByLabelText('이름'), '공부');
+  await user.click(within(addDialog).getByRole('button', { name: '추가' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 관리' });
   const edit = await within(dialog).findByRole('button', { name: '공부 편집' });
   await waitFor(() => expect((edit as HTMLButtonElement).disabled).toBe(false));
   await user.click(edit);
-  const name = within(dialog).getByLabelText('목표 이름');
+  const editDialog = await screen.findByRole('dialog', { name: '목표 편집' });
+  const name = within(editDialog).getByLabelText('이름');
   await user.clear(name);
   await user.type(name, '독서');
-  await user.click(within(dialog).getByRole('button', { name: '퍼플' }));
-  await user.click(within(dialog).getByRole('button', { name: '저장' }));
-  const renamed = await within(dialog).findByRole('button', { name: '독서 편집' });
+  await user.click(within(editDialog).getByRole('button', { name: '퍼플' }));
+  await user.click(within(editDialog).getByRole('button', { name: '저장' }));
+  const listDialog = await screen.findByRole('dialog', { name: '목표 관리' });
+  const renamed = await within(listDialog).findByRole('button', { name: '독서 편집' });
   await waitFor(() => expect((renamed as HTMLButtonElement).disabled).toBe(false));
   expect(created.color).toBe('#A06CD5');
   expect(created.name).toBe('독서');
-  await user.click(within(renamed.parentElement!).getByRole('button', { name: '보관' }));
-  const restore = await within(dialog).findByRole('button', { name: '보관 해제' });
+  await user.click(
+    within(renamed.closest('.goal-manager-row')!).getByRole('button', { name: '보관' }),
+  );
+  await user.click(await within(listDialog).findByRole('button', { name: /보관한 목표/ }));
+  const archiveDialog = await screen.findByRole('dialog', { name: '보관한 목표' });
+  const restore = await within(archiveDialog).findByRole('button', { name: '보관 해제' });
   await waitFor(() => expect((restore as HTMLButtonElement).disabled).toBe(false));
   expect(created.archived_at).toBeTruthy();
   await user.click(restore);
   await waitFor(() => expect(created.archived_at).toBeNull());
-  expect(within(dialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
+  expect(within(archiveDialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
 });
 it('서버의 마지막 활성 목표 오류는 보관을 롤백하고 이유를 안내한다', async () => {
   server.use(
@@ -384,7 +422,9 @@ it('서버의 마지막 활성 목표 오류는 보관을 롤백하고 이유를
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
   const dialog = await screen.findByRole('dialog');
   const editor = await within(dialog).findByRole('button', { name: '공부 편집' });
-  await user.click(within(editor.parentElement!).getByRole('button', { name: '보관' }));
+  await user.click(
+    within(editor.closest('.goal-manager-row')!).getByRole('button', { name: '보관' }),
+  );
   expect(await screen.findByText('활성 목표는 하나 이상 있어야 해요')).toBeTruthy();
   expect(within(dialog).queryByRole('button', { name: '보관 해제' })).toBeNull();
   expect(within(dialog).getAllByRole('button', { name: '보관' })).toHaveLength(2);
@@ -676,14 +716,12 @@ it('HEX 입력은 잘못된 값의 저장을 막고 유효한 흰색도 대비 �
   const { user } = setup();
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
   await user.click(await screen.findByRole('button', { name: '할 일 편집' }));
-  const hex = screen.getByLabelText('HEX 색상');
+  const hex = screen.getByLabelText('HEX');
   await user.clear(hex);
   await user.type(hex, '#XYZ');
   expect(hex.getAttribute('aria-invalid')).toBe('true');
   expect((screen.getByRole('button', { name: '저장' }) as HTMLButtonElement).disabled).toBe(true);
-  expect((screen.getByRole('button', { name: '목표 삭제' }) as HTMLButtonElement).disabled).toBe(
-    true,
-  );
+  expect((screen.getByRole('button', { name: '삭제' }) as HTMLButtonElement).disabled).toBe(true);
   await user.clear(hex);
   await user.type(hex, '#FFFFFF');
   expect(hex.getAttribute('aria-invalid')).toBe('false');
@@ -731,7 +769,7 @@ it('목표 삭제는 최신 개수를 확인하고 실패하면 목표와 인접
   await waitFor(() => expect(screen.getAllByText('할 일 12개 · 루틴 2개')).toHaveLength(2));
   expect(aggregate).toHaveBeenCalledOnce();
   await user.click(screen.getByRole('button', { name: '할 일 편집' }));
-  await user.click(screen.getByRole('button', { name: '목표 삭제' }));
+  await user.click(screen.getByRole('button', { name: '삭제' }));
   await screen.findByText(/할 일 12개와 루틴 2개가/);
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '취소' }));
   await user.click(screen.getByRole('button', { name: '삭제' }));

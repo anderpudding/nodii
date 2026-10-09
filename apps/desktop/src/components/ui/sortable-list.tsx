@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  type Modifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -20,15 +21,30 @@ export interface SortableEntry {
   label: string;
   draggable?: boolean;
 }
+
+type SortableActivator = 'handle' | 'row';
+type DragTransform = Parameters<Modifier>[0]['transform'];
+
+/** 행 드래그가 옆으로 흔들리지 않고 목록의 세로 흐름만 따르게 한다. */
+export function lockTransformToVerticalAxis(transform: DragTransform): DragTransform {
+  return { ...transform, x: 0 };
+}
+
+const verticalAxisModifier: Modifier = ({ transform }) => lockTransformToVerticalAxis(transform);
+const verticalAxisModifiers = [verticalAxisModifier];
+
 function SortableItem({
   item,
   disabled,
+  activator,
   children,
 }: {
   item: SortableEntry;
   disabled: boolean;
+  activator: SortableActivator;
   children: ReactNode;
 }) {
+  const rowActivator = activator === 'row' && item.draggable !== false && !disabled;
   const {
     attributes,
     listeners,
@@ -40,49 +56,63 @@ function SortableItem({
   } = useSortable({
     id: item.id,
     disabled: { draggable: disabled || item.draggable === false, droppable: disabled },
+    attributes:
+      activator === 'row' ? { role: 'group', roleDescription: '정렬 가능한 할 일' } : undefined,
     transition: { duration: 150, easing: 'ease-out' },
   });
   return (
     <div
       ref={setNodeRef}
-      className={`sortable-row${isDragging ? ' sortable-dragging' : ''}`}
+      className={`sortable-row sortable-row-${activator}${isDragging ? ' sortable-dragging' : ''}`}
       style={{
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
         transition,
       }}
     >
-      {item.draggable === false ? (
-        <span className="drag-spacer" />
-      ) : (
-        <Button
-          variant="ghost"
-          className="drag-handle"
-          data-drag-handle
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          aria-roledescription="정렬 손잡이"
-          aria-label={`${item.label} 순서 변경`}
-          disabled={disabled}
-        >
-          <svg viewBox="0 0 22 22" aria-hidden="true">
-            <path d="M6 7h10M6 11h10M6 15h10" />
-          </svg>
-        </Button>
-      )}
-      <div className="sortable-content">{children}</div>
+      {activator === 'handle' &&
+        (item.draggable === false ? (
+          <span className="drag-spacer" />
+        ) : (
+          <Button
+            variant="ghost"
+            className="drag-handle"
+            data-drag-handle
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            aria-roledescription="정렬 손잡이"
+            aria-label={`${item.label} 순서 변경`}
+            disabled={disabled}
+          >
+            <svg viewBox="0 0 22 22" aria-hidden="true">
+              <path d="M6 7h10M6 11h10M6 15h10" />
+            </svg>
+          </Button>
+        ))}
+      <div
+        ref={activator === 'row' && item.draggable !== false ? setActivatorNodeRef : undefined}
+        className={`sortable-content${rowActivator ? ' sortable-row-activator' : ''}`}
+        {...(rowActivator ? attributes : {})}
+        {...(rowActivator ? listeners : {})}
+        data-drag-handle={rowActivator ? true : undefined}
+        aria-label={rowActivator ? `${item.label} 순서 변경` : undefined}
+      >
+        {children}
+      </div>
     </div>
   );
 }
-/** 손잡이·이동 거리·키보드 센서로 클릭과 드래그를 분리한다. */
+/** 화면 성격에 맞는 활성 영역과 8px 이동 거리로 클릭과 드래그를 분리한다. */
 export function SortableList({
   items,
   disabled = false,
+  activator = 'handle',
   onMove,
   children,
 }: {
   items: SortableEntry[];
   disabled?: boolean;
+  activator?: SortableActivator;
   onMove: (id: string, overId: string) => void;
   children: (item: SortableEntry) => ReactNode;
 }) {
@@ -95,6 +125,7 @@ export function SortableList({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      modifiers={activator === 'row' ? verticalAxisModifiers : undefined}
       accessibility={{
         screenReaderInstructions: {
           draggable:
@@ -115,7 +146,7 @@ export function SortableList({
     >
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortableItem key={item.id} item={item} disabled={disabled}>
+          <SortableItem key={item.id} item={item} disabled={disabled} activator={activator}>
             {children(item)}
           </SortableItem>
         ))}

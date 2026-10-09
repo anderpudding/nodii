@@ -27,6 +27,7 @@ function setup(calendar = false) {
   });
   cache.setQueryData(['profile', testUser.id, 'UTC'], profile);
   useUIStore.setState({ today: '2026-09-17', selectedDate: '2026-09-17' });
+  const openArchivedGoals = vi.fn();
   function Content() {
     const { data } = useQuery({
       queryKey: ['profile', testUser.id, 'UTC'],
@@ -40,6 +41,7 @@ function setup(calendar = false) {
           session={{ ...sessionResponse, token_type: 'bearer' }}
           profile={data}
           onClose={() => {}}
+          onOpenArchivedGoals={openArchivedGoals}
         />
         {calendar && <MonthCalendar client={client} profile={data!} />}
       </>
@@ -50,7 +52,7 @@ function setup(calendar = false) {
       <Content />
     </QueryClientProvider>,
   );
-  return { client, cache, user: userEvent.setup() };
+  return { client, cache, user: userEvent.setup(), openArchivedGoals };
 }
 it('이메일 재입력과 이해 체크를 모두 확인해야 계정 삭제를 허용한다', async () => {
   const remove = vi.fn(() => new HttpResponse(null, { status: 204 }));
@@ -85,12 +87,11 @@ it('이메일 재입력과 이해 체크를 모두 확인해야 계정 삭제를
 });
 it('테마를 즉시 반영하고 이 기기에 저장하며 미설정 정보 링크는 비활성화한다', async () => {
   const { user } = setup();
-  await user.selectOptions(screen.getByLabelText('테마'), 'dark');
+  await user.click(screen.getByRole('radio', { name: '다크' }));
   expect(document.documentElement.classList.contains('dark')).toBe(true);
   expect(localStorage.getItem('nodii-theme')).toBe('dark');
   expect(
-    (screen.getByRole('button', { name: '개인정보처리방침 · 준비 중' }) as HTMLButtonElement)
-      .disabled,
+    (screen.getByRole('button', { name: /개인정보처리방침/ }) as HTMLButtonElement).disabled,
   ).toBe(true);
 });
 it('주 시작 요일 변경은 캘린더 첫 칸과 월 조회 범위를 함께 바꾼다', async () => {
@@ -106,7 +107,7 @@ it('주 시작 요일 변경은 캘린더 첫 칸과 월 조회 범위를 함께
       '8월 30일',
     ),
   );
-  await user.selectOptions(screen.getByLabelText('주 시작 요일'), '1');
+  await user.click(screen.getByRole('radio', { name: '월요일' }));
   await waitFor(() =>
     expect(document.querySelector('.calendar-cell')?.getAttribute('aria-label')).toContain(
       '8월 31일',
@@ -120,8 +121,14 @@ it('주 시작 저장 실패는 설정을 롤백하고 오류를 알린다', asy
     ),
   );
   const { user, cache } = setup();
-  await user.selectOptions(screen.getByLabelText('주 시작 요일'), '1');
+  await user.click(screen.getByRole('radio', { name: '월요일' }));
   await waitFor(() =>
     expect(cache.getQueryData<Profile>(['profile', testUser.id, 'UTC'])?.weekStart).toBe(0),
   );
+});
+
+it('보관한 목표 행에서 보관함으로 이동한다', async () => {
+  const { user, openArchivedGoals } = setup();
+  await user.click(screen.getByRole('button', { name: /보관한 목표/ }));
+  expect(openArchivedGoals).toHaveBeenCalledOnce();
 });

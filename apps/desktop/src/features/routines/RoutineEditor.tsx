@@ -3,7 +3,6 @@ import {
   keyBetween,
   lastSortKey,
   needsScopePrompt,
-  nextOccurrences,
   normalizeTitle,
   TITLE_MAX_LENGTH,
   validateRoutineRule,
@@ -27,8 +26,7 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { notifyError } from '../../lib/notify-error';
 import { useUIStore } from '../../stores/ui';
-import { GoalChip, goalStyle } from '../goals/GoalChip';
-import { formatCalendarDate } from '../calendar/CalendarGrid';
+import { GoalChip } from '../goals/GoalChip';
 import { weekdays } from './format-rule';
 import { RoutineScope } from './RoutineScope';
 import { RoutineStopDialog } from './RoutineStopDialog';
@@ -96,9 +94,6 @@ export function RoutineEditor({
   const busy = useRoutineWritePending(draft.id);
   const validation = validateRoutineRule(draft);
   const error = validation.ok ? null : errors[validation.reason];
-  const preview = validation.ok
-    ? nextOccurrences(draft, today > draft.startDate ? today : draft.startDate, 5)
-    : [];
   const canSave =
     !!normalizeTitle(draft.title) && !!goal && validation.ok && !!routines.data && !busy;
   function patch(changes: Partial<Routine>) {
@@ -199,7 +194,7 @@ export function RoutineEditor({
           }}
         >
           <header className="routine-heading">
-            <h2 id="routine-editor-title">{routine ? '루틴 수정' : '루틴 추가'}</h2>
+            <h2 id="routine-editor-title">{routine ? '루틴 편집' : '루틴 만들기'}</h2>
             <Button variant="ghost" disabled={busy} onClick={onClose}>
               닫기
             </Button>
@@ -402,34 +397,6 @@ export function RoutineEditor({
                 {fieldError('end')}
               </div>
             </div>
-            <section
-              className="routine-preview"
-              aria-label="다음 5회 미리보기"
-              aria-live="polite"
-              style={goal ? goalStyle(goal.color, true) : undefined}
-            >
-              <h3>다음 5회 미리보기</h3>
-              {error ? (
-                <p className="supporting">{error.message}</p>
-              ) : (
-                <>
-                  <div className="routine-choices">
-                    {preview.map((date, i) => (
-                      <span className={i === 0 ? 'goal-chip' : 'routine-preview-date'} key={date}>
-                        {formatCalendarDate(date)}
-                      </span>
-                    ))}
-                  </div>
-                  {preview.length < 5 && (
-                    <p className="supporting">
-                      {draft.endDate
-                        ? '종료일까지 예정된 날짜만 보여드려요.'
-                        : '앞으로 3년 안에 예정된 날짜를 보여드려요.'}
-                    </p>
-                  )}
-                </>
-              )}
-            </section>
             {routines.isError && (
               <Button variant="ghost" onClick={() => void routines.refetch()}>
                 루틴을 불러오지 못했어요 · 다시 시도

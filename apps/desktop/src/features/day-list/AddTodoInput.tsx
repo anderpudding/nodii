@@ -3,11 +3,11 @@ import { toast } from 'sonner';
 import { useEffect, useRef, useState } from 'react';
 import { normalizeTitle, TITLE_MAX_LENGTH } from '@nodii/core';
 
-export type AddTodoCloseReason = 'escape' | 'outside';
+export type AddTodoCloseReason = 'empty-submit' | 'escape' | 'outside';
 
 /**
- * IME 입력을 보존하고 Enter 이후에도 입력 줄을 유지한다 (TODO-01).
- * Esc 또는 입력 줄 바깥 클릭으로 닫으며, 적던 글자는 저장하지 않는다.
+ * IME 입력을 보존하고 추가 뒤에는 연속 입력을, 빈 Enter에는 빠른 취소를 제공한다 (TODO-01).
+ * Esc·빈 Enter·입력 줄 바깥 클릭으로 닫으며, 적던 글자는 저장하지 않는다.
  */
 export function AddTodoInput({
   goalName,
@@ -20,7 +20,6 @@ export function AddTodoInput({
 }) {
   const online = useConnectivity();
   const [title, setTitle] = useState('');
-  const [invalid, setInvalid] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   // 닫힌 뒤(IME 확정 등)에 늦게 오는 이벤트가 저장으로 이어지지 않게 막는다.
   const closed = useRef(false);
@@ -52,14 +51,10 @@ export function AddTodoInput({
       <input
         autoFocus
         aria-label={`${goalName} 새 할 일`}
-        aria-invalid={invalid}
         placeholder="할 일을 적어 주세요"
         value={title}
         maxLength={TITLE_MAX_LENGTH}
-        onChange={(event) => {
-          setTitle(event.target.value);
-          setInvalid(false);
-        }}
+        onChange={(event) => setTitle(event.target.value)}
         onKeyDown={(event) => {
           if (closed.current || event.nativeEvent.isComposing || event.keyCode === 229) return;
           if (event.key === 'Escape') {
@@ -69,24 +64,22 @@ export function AddTodoInput({
           }
           if (event.key === 'Enter') {
             event.preventDefault();
+            const normalized = normalizeTitle(title);
+            if (!normalized) {
+              closed.current = true;
+              onClose('empty-submit');
+              return;
+            }
             if (!online) {
               toast.error('오프라인이라 저장할 수 없어요');
               return;
             }
-            const normalized = normalizeTitle(title);
-            if (!normalized) {
-              setInvalid(true);
-              return;
-            }
             onAdd(normalized);
             setTitle('');
-            setInvalid(false);
           }
         }}
       />
-      <span className="input-hint">
-        {invalid ? '할 일을 1~200자로 적어 주세요' : 'Enter로 추가, Esc로 닫기'}
-      </span>
+      <span className="input-hint">Enter로 추가, Esc로 닫기</span>
     </div>
   );
 }

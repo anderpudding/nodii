@@ -4,6 +4,7 @@ import {
   assertOnline,
   countAccountContents,
   deleteMyAccount,
+  useGoals,
   useUpdateWeekStart,
   type NodiiClient,
   type Session,
@@ -150,11 +151,13 @@ export function SettingsSheet({
   session,
   profile,
   onClose,
+  onOpenArchivedGoals,
 }: {
   client: NodiiClient;
   session: Session;
   profile?: Profile;
   onClose: () => void;
+  onOpenArchivedGoals: () => void;
 }) {
   const cache = useQueryClient();
   const theme = useTheme();
@@ -163,6 +166,8 @@ export function SettingsSheet({
   const [deleting, setDeleting] = useState(false);
   const [appVersion, setAppVersion] = useState(isTauri() ? '확인 중…' : version);
   const online = useConnectivity();
+  const goals = useGoals(client);
+  const archivedGoals = (goals.data ?? []).filter((goal) => goal.archivedAt).length;
   const week = useUpdateWeekStart(client, session.user.id, { onError: notifyError });
   useEffect(() => {
     if (isTauri())
@@ -180,98 +185,179 @@ export function SettingsSheet({
     );
   return (
     <Sheet labelledBy="settings-title" className="settings-sheet" onClose={onClose}>
-      <header className="goal-sheet-header">
+      <header className="settings-header">
+        <span aria-hidden="true" />
         <h2 id="settings-title">설정</h2>
         <Button variant="ghost" aria-label="설정 닫기" onClick={onClose}>
-          닫기
+          완료
         </Button>
       </header>
-      <section className="settings-section" aria-labelledby="view-settings">
-        <h3 id="view-settings">보기</h3>
-        <label className="settings-row">
-          주 시작 요일
-          <select
-            className="input"
-            value={profile?.weekStart ?? 0}
-            disabled={!profile || week.isPending || !online}
-            onChange={(event) => week.mutate(Number(event.target.value) as 0 | 1)}
-          >
-            <option value={0}>일요일</option>
-            <option value={1}>월요일</option>
-          </select>
-        </label>
-        <label className="settings-row">
-          테마
-          <select
-            className="input"
-            value={theme}
-            disabled={themePending}
-            onChange={(event) => {
-              setThemePending(true);
-              void setTheme(event.target.value as Theme)
-                .catch(() => toast.error('테마를 저장하지 못했어요'))
-                .finally(() => setThemePending(false));
-            }}
-          >
-            <option value="system">시스템</option>
-            <option value="light">라이트</option>
-            <option value="dark">다크</option>
-          </select>
-        </label>
-      </section>
-      <section className="settings-section" aria-labelledby="account-settings">
-        <h3 id="account-settings">계정</h3>
-        <p className="email-address">{session.user.email}</p>
-        <p className="supporting">로그아웃하면 이 기기에 저장된 캐시도 지워져요.</p>
-        <div className="settings-row">
-          <Button
-            variant="outline"
-            disabled={pending}
-            onClick={() => {
-              setPending(true);
-              void logout(client, cache)
-                .then(({ localOnly }) => {
-                  if (localOnly) toast.success('이 기기에서 로그아웃했어요');
-                })
-                .catch(() => toast.error('로그아웃하지 못했어요. 다시 시도해 주세요.'))
-                .finally(() => setPending(false));
-            }}
-          >
-            {pending ? '로그아웃 중…' : '로그아웃'}
-          </Button>
-          <Button
-            variant="ghost"
-            className="danger-text"
-            disabled={!online || pending}
-            onClick={() => setDeleting(true)}
-          >
-            계정 삭제
-          </Button>
-        </div>
-      </section>
-      <section className="settings-section" aria-labelledby="shortcut-settings">
-        <h3 id="shortcut-settings">단축키</h3>
-        <p className="supporting">⌘N 새 할 일 · ⌘T 오늘로 · ←/→ 이전·다음 날 · ⌘, 설정</p>
-      </section>
-      <section className="settings-section" aria-labelledby="info-settings">
-        <h3 id="info-settings">정보</h3>
-        <div className="routine-choices">
-          {links.map(({ label, url }) => (
-            <Button
-              key={label}
-              variant="ghost"
-              disabled={!url}
-              onClick={() => {
-                if (url) void openLink(url).catch(() => toast.error('링크를 열지 못했어요'));
-              }}
+      <div className="sheet-body settings-grid">
+        <div className="settings-column">
+          <section className="settings-group" aria-labelledby="account-settings">
+            <h3 id="account-settings">계정</h3>
+            <div className="settings-card">
+              <div className="settings-card-row">
+                <span>이메일</span>
+                <span className="email-address settings-value">{session.user.email}</span>
+              </div>
+              <div className="settings-card-row">
+                <div>
+                  <strong>로그아웃</strong>
+                  <p className="supporting">이 맥에 저장된 데이터도 함께 지워져요.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => {
+                    setPending(true);
+                    void logout(client, cache)
+                      .then(({ localOnly }) => {
+                        if (localOnly) toast.success('이 기기에서 로그아웃했어요');
+                      })
+                      .catch(() => toast.error('로그아웃하지 못했어요. 다시 시도해 주세요.'))
+                      .finally(() => setPending(false));
+                  }}
+                >
+                  {pending ? '로그아웃 중…' : '로그아웃'}
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <section className="settings-group" aria-labelledby="view-settings">
+            <h3 id="view-settings">보기</h3>
+            <div className="settings-card">
+              <div className="settings-card-row">
+                <span id="week-start-label">주 시작 요일</span>
+                <div
+                  className="settings-segment"
+                  role="radiogroup"
+                  aria-labelledby="week-start-label"
+                >
+                  {(['일요일', '월요일'] as const).map((label, value) => (
+                    <Button
+                      key={label}
+                      variant="ghost"
+                      role="radio"
+                      aria-checked={(profile?.weekStart ?? 0) === value}
+                      disabled={!profile || week.isPending || !online}
+                      onClick={() => week.mutate(value as 0 | 1)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="settings-card-row">
+                <span id="theme-label">테마</span>
+                <div className="settings-segment" role="radiogroup" aria-labelledby="theme-label">
+                  {(
+                    [
+                      ['system', '시스템'],
+                      ['light', '라이트'],
+                      ['dark', '다크'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <Button
+                      key={value}
+                      variant="ghost"
+                      role="radio"
+                      aria-checked={theme === value}
+                      disabled={themePending}
+                      onClick={() => {
+                        setThemePending(true);
+                        void setTheme(value as Theme)
+                          .catch(() => toast.error('테마를 저장하지 못했어요'))
+                          .finally(() => setThemePending(false));
+                      }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="settings-group" aria-labelledby="goal-settings">
+            <h3 id="goal-settings">목표</h3>
+            <button
+              type="button"
+              className="settings-card settings-link-row"
+              onClick={onOpenArchivedGoals}
             >
-              {label}
-              {!url && ' · 준비 중'}
-            </Button>
-          ))}
+              <span>보관한 목표</span>
+              <span className="settings-value">{archivedGoals}개</span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </section>
+
+          <section className="settings-group" aria-labelledby="delete-account-settings">
+            <h3 id="delete-account-settings">계정 삭제</h3>
+            <div className="settings-card settings-card-row">
+              <p className="supporting settings-delete-copy">
+                목표, 할 일, 루틴 기록을 모두 지우고 계정을 없애요.
+              </p>
+              <Button
+                variant="outline"
+                className="danger-text"
+                disabled={!online || pending}
+                onClick={() => setDeleting(true)}
+              >
+                계정 삭제
+              </Button>
+            </div>
+          </section>
         </div>
-        <p className="supporting version-details">버전 {appVersion}</p>
-      </section>
+
+        <div className="settings-column">
+          <section className="settings-group" aria-labelledby="shortcut-settings">
+            <h3 id="shortcut-settings">단축키</h3>
+            <div className="settings-card shortcut-list">
+              {[
+                ['새 할 일', ['⌘', 'N']],
+                ['오늘로 이동', ['⌘', 'T']],
+                ['이전 날, 다음 날', ['←', '→']],
+                ['설정 열기', ['⌘', ',']],
+              ].map(([label, keys]) => (
+                <div className="settings-card-row" key={label as string}>
+                  <span>{label as string}</span>
+                  <span className="shortcut-keys">
+                    {(keys as string[]).map((key) => (
+                      <kbd key={key}>{key}</kbd>
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="settings-group" aria-labelledby="info-settings">
+            <h3 id="info-settings">정보</h3>
+            <div className="settings-card info-list">
+              {links.map(({ label, url }) => (
+                <button
+                  type="button"
+                  className="settings-card-row settings-info-link"
+                  key={label}
+                  disabled={!url}
+                  onClick={() => {
+                    if (url) void openLink(url).catch(() => toast.error('링크를 열지 못했어요'));
+                  }}
+                >
+                  <span>{label}</span>
+                  <span aria-hidden="true">{url ? '↗' : '준비 중'}</span>
+                </button>
+              ))}
+              <div className="settings-card-row">
+                <span>버전</span>
+                <span className="settings-value version-details">{appVersion}</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
     </Sheet>
   );
 }

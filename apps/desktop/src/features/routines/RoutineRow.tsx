@@ -131,9 +131,6 @@ export function RoutineRow({
             )}
           </button>
           <span className="todo-title">{routine.title}</span>
-          <svg className="routine-icon" viewBox="0 0 24 24" role="img" aria-label="반복 루틴">
-            <path d="M19 8a8 8 0 1 0 1 8M19 3v5h-5" />
-          </svg>
           <DropdownMenu.Root
             open={dropdownOpen}
             onOpenChange={(open) => {

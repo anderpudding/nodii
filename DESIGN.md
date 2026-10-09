@@ -57,6 +57,7 @@
 - 모든 버튼·링크·입력에 보이는 포커스 링(2px `focus` 색, offset 2px). `outline: none`만 두는 코드는 금지.
 - 아이콘만 있는 버튼에는 `aria-label`. 체크박스는 `aria-pressed`, 메뉴는 `aria-haspopup`/`aria-expanded`, 확인 창은 `role="alertdialog"`.
 - 색만으로 상태를 나타내지 않습니다(완료는 색 + 체크 + 취소선, 건너뜀은 점선 + "건너뜀" 글자).
+- 드래그와 앱 조작 중 UI 문구가 선택되지 않게 하되, 입력칸과 편집 중인 텍스트는 `⌘A`와 드래그 선택을 유지합니다.
 
 ## 8. 하지 않는 것
 

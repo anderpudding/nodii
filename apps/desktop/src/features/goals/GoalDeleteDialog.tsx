@@ -18,11 +18,15 @@ export function GoalDeleteDialog({
   goal,
   lastActive,
   onClose,
+  onDeleted,
+  onArchived,
 }: {
   client: NodiiClient;
   goal: GoalRecord;
   lastActive: boolean;
   onClose: () => void;
+  onDeleted?: () => void;
+  onArchived?: () => void;
 }) {
   const counts = useQuery({
     queryKey: ['goalContents', goal.id],
@@ -67,7 +71,7 @@ export function GoalDeleteDialog({
               onClick={() =>
                 archive.mutate(goal, {
                   onSuccess: (saved) => {
-                    onClose();
+                    (onArchived ?? onClose)();
                     toast('목표를 보관했어요', {
                       duration: 5000,
                       action: { label: '실행 취소', onClick: () => archive.mutate(saved) },
@@ -88,7 +92,7 @@ export function GoalDeleteDialog({
             onClick={() =>
               remove.mutate(goal, {
                 onSuccess: () => {
-                  onClose();
+                  (onDeleted ?? onClose)();
                   toast('목표를 삭제했어요');
                 },
               })
