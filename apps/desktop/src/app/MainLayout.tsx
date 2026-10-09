@@ -39,7 +39,7 @@ export function MainLayout({
       : connectionStatus === 'sync-disconnected'
         ? '동기화가 잠시 끊겼어요'
         : null;
-  const [goalsOpen, setGoalsOpen] = useState(false);
+  const [goalView, setGoalView] = useState<'list' | 'archive' | null>(null);
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => {
@@ -64,7 +64,7 @@ export function MainLayout({
       <aside className="sidebar" aria-label="캘린더와 관리 메뉴">
         {profile && <MonthCalendar client={client} profile={profile} />}
         <nav className="management" aria-label="관리">
-          <Button variant="ghost" onClick={() => setGoalsOpen(true)}>
+          <Button variant="ghost" onClick={() => setGoalView('list')}>
             <GoalIcon className="management-icon" />
             목표 관리
           </Button>
@@ -106,7 +106,10 @@ export function MainLayout({
                   sideOffset={4}
                   collisionPadding={8}
                 >
-                  <DropdownMenu.Item className="todo-menu-item" onSelect={() => setGoalsOpen(true)}>
+                  <DropdownMenu.Item
+                    className="todo-menu-item"
+                    onSelect={() => setGoalView('list')}
+                  >
                     목표 관리
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
@@ -150,9 +153,19 @@ export function MainLayout({
           session={session}
           profile={profile}
           onClose={() => setSettingsOpen(false)}
+          onOpenArchivedGoals={() => {
+            setSettingsOpen(false);
+            setGoalView('archive');
+          }}
         />
       )}
-      {goalsOpen && <GoalManagerSheet client={client} onClose={() => setGoalsOpen(false)} />}
+      {goalView && (
+        <GoalManagerSheet
+          client={client}
+          initialView={goalView}
+          onClose={() => setGoalView(null)}
+        />
+      )}
       {routinesOpen && profile && (
         <RoutineListSheet
           client={client}
