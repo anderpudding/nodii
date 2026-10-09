@@ -272,9 +272,32 @@ h2 {
 }
 .management {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   border-top: 1px solid var(--color-line);
   padding-top: 16px;
+}
+.management .button {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.management-icon,
+.toolbar-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toolbar-icon {
+  width: 22px;
+  height: 22px;
+}
+.wide-settings {
+  width: 34px;
+  padding: 0;
 }
 .app-toolbar {
   display: flex;
@@ -698,7 +721,7 @@ button.goal-chip:disabled {
 /* 4단계: 문서의 58px 칸·24px 도장·캘린더 및 메뉴 토큰. */
 .sidebar-calendar {
   flex: 1;
-  padding: 26px 0 12px;
+  padding: 0 0 12px;
 }
 .calendar-header,
 .calendar-navigation,
@@ -709,12 +732,14 @@ button.goal-chip:disabled {
   gap: 4px;
 }
 .calendar-header h2 {
-  font-size: 15px;
-  letter-spacing: 0;
+  font-size: 20px;
+  letter-spacing: -0.4px;
   white-space: nowrap;
 }
 .calendar-navigation .button {
+  min-width: 34px;
   padding: 0 8px;
+  font-size: 15px;
 }
 .calendar-grid {
   margin-top: 16px;
@@ -1006,16 +1031,6 @@ button.goal-chip:disabled {
 .routine-danger:hover {
   background: #c4332c;
   color: #ffffff;
-}
-.routine-icon {
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: var(--color-muted);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 .routine-list-group {
   margin-top: 26px;

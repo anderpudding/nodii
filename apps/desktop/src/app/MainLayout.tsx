@@ -14,6 +14,7 @@ import { RoutineListSheet } from '../features/routines/RoutineListSheet';
 import { useUserSync } from '../lib/use-user-sync';
 import { useTodayClock } from '../lib/today';
 import { useConnectionStatus } from '../lib/connectivity';
+import { GoalIcon, RoutineIcon, SettingsIcon } from '../components/ui/icons';
 
 /** 인증된 셸 안에서 하루 목록과 목표 관리 시트를 연결한다. */
 export function MainLayout({
@@ -61,13 +62,14 @@ export function MainLayout({
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="캘린더와 관리 메뉴">
-        <p className="brand">Nodii</p>
         {profile && <MonthCalendar client={client} profile={profile} />}
         <nav className="management" aria-label="관리">
           <Button variant="ghost" onClick={() => setGoalsOpen(true)}>
+            <GoalIcon className="management-icon" />
             목표 관리
           </Button>
           <Button variant="ghost" disabled={!profile} onClick={() => setRoutinesOpen(true)}>
+            <RoutineIcon className="management-icon" />
             루틴 관리
           </Button>
         </nav>
@@ -84,16 +86,17 @@ export function MainLayout({
           <Button
             className="wide-settings"
             variant="ghost"
+            aria-label="설정"
             aria-haspopup="dialog"
             onClick={() => setSettingsOpen(true)}
           >
-            설정
+            <SettingsIcon className="toolbar-icon" />
           </Button>
           <div className="narrow-settings">
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <Button variant="ghost" aria-label="설정 및 관리">
-                  설정
+                  <SettingsIcon className="toolbar-icon" />
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
