@@ -30,12 +30,13 @@ export default defineConfig([
     },
   },
   {
-    files: ['apps/desktop/src/**/*.{ts,tsx}'],
+    files: ['apps/desktop/src/**/*.{ts,tsx}', 'apps/mobile/{app,src}/**/*.{ts,tsx}'],
     extends: [reactHooks.configs.flat.recommended],
     languageOptions: { globals: globals.browser },
   },
   {
     files: ['**/*.config.{js,ts}', 'scripts/**/*.js'],
     languageOptions: { globals: globals.node },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 ]);

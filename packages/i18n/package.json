@@ -1,0 +1,20 @@
+{
+  "name": "@nodii/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nodii 사용자 문구 카탈로그와 한국어 조사 헬퍼",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.1",
+    "vitest": "^5.0.1"
+  }
+}

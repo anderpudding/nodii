@@ -4,4 +4,5 @@ supabase/
 **/src-tauri/
 **/dist/
 **/coverage/
+**/expo-env.d.ts
 packages/api/src/database.types.ts
