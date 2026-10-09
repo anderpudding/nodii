@@ -95,6 +95,7 @@ export function DayList({
                   label: item.kind === 'todo' ? item.todo.title : item.routine.title,
                   draggable: item.kind === 'todo',
                 }))}
+                activator="row"
                 disabled={writing || !online || !routinesReady}
                 onMove={(id, overId) => {
                   const todo = todos.find(

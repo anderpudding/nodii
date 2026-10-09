@@ -1370,11 +1370,25 @@ button.goal-chip:disabled {
 .sortable-row {
   display: flex;
   align-items: flex-start;
+}
+.sortable-row-handle {
   gap: 4px;
 }
 .sortable-content {
   flex: 1;
   min-width: 0;
+}
+.sortable-row-activator {
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+}
+.sortable-row-activator:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.sortable-dragging .sortable-row-activator {
+  cursor: grabbing;
 }
 .sortable-dragging {
   position: relative;

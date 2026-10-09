@@ -139,6 +139,19 @@ it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc
   expect(screen.queryByRole('textbox')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: '할 일에 할 일 추가' }));
 });
+it('메인 할 일은 손잡이와 앞 여백 없이 행 전체를 드래그 영역으로 쓴다', async () => {
+  server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
+  const { user } = setup();
+  await screen.findByRole('button', { name: '책 읽기 완료' });
+
+  expect(screen.getByRole('group', { name: '책 읽기 순서 변경' })).toBeTruthy();
+  expect(document.querySelector('.todo-rows .drag-handle')).toBeNull();
+  expect(document.querySelector('.todo-rows .drag-spacer')).toBeNull();
+
+  await user.click(screen.getByRole('button', { name: '목표 관리' }));
+  const dialog = await screen.findByRole('dialog', { name: '목표 관리' });
+  expect(within(dialog).getByRole('button', { name: '할 일 순서 변경' })).toBeTruthy();
+});
 it('입력 줄 바깥을 클릭하면 적던 글자를 저장하지 않고 닫으며 포커스를 가로채지 않는다', async () => {
   const inserts: unknown[] = [];
   server.use(
