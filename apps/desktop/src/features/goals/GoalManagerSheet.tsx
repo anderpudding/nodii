@@ -175,6 +175,7 @@ export function GoalManagerSheet({
         goal={view.goal}
         lastActive={!view.goal.archivedAt && active.length <= 1}
         onDeleted={() => setView({ kind: 'list' })}
+        onArchived={() => setView({ kind: 'list' })}
         onClose={() => setView({ kind: 'edit', goal: view.goal })}
       />
     );
