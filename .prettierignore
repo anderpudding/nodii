@@ -6,3 +6,6 @@ supabase/
 **/coverage/
 **/expo-env.d.ts
 packages/api/src/database.types.ts
+
+# 로컬 디자인 에이전트의 생성 캐시
+.impeccable/
