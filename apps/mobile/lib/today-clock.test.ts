@@ -36,10 +36,12 @@ it('자정과 여러 날 뒤 포그라운드 복귀에서 오늘을 갱신하고
   expect(vi.getTimerCount()).toBe(0);
 });
 it('DST의 23/25시간 날에도 현지 자정까지의 실제 시간을 구한다', () => {
-  expect(nextMidnightDelay('America/Vancouver', new Date('2026-03-08T08:00:00Z'))).toBe(
+  // BC주는 2026년부터 가을 시계 되돌리기를 폐지했다.
+  // 시간대 데이터 버전이 달라도 실제 DST 전환을 검사하도록 2025년 날짜를 쓴다.
+  expect(nextMidnightDelay('America/Vancouver', new Date('2025-03-09T08:00:00Z'))).toBe(
     23 * 3600000,
   );
-  expect(nextMidnightDelay('America/Vancouver', new Date('2026-11-01T07:00:00Z'))).toBe(
+  expect(nextMidnightDelay('America/Vancouver', new Date('2025-11-02T07:00:00Z'))).toBe(
     25 * 3600000,
   );
 });
