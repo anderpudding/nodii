@@ -89,7 +89,7 @@ export function AppGate({
     queryKey: ['appVersionCheck', appVersion ?? version],
     queryFn: async () => {
       const [minimum, current] = await Promise.all([
-        fetchMinAppVersion(client),
+        fetchMinAppVersion(client, 'min_macos_app_version'),
         appVersion
           ? Promise.resolve(appVersion)
           : isTauri()

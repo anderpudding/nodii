@@ -2,14 +2,17 @@ import { compareVersion } from '@nodii/core';
 import type { NodiiClient } from './client';
 
 /** SET-05: 오프라인·잘못된 설정·느린 서버가 앱 시작을 막지 않게 한다. */
-export async function fetchMinAppVersion(client: NodiiClient): Promise<string | null> {
+export async function fetchMinAppVersion(
+  client: NodiiClient,
+  key: 'min_macos_app_version' | 'min_ios_app_version',
+): Promise<string | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3000);
   try {
     const { data, error } = await client
       .from('app_config')
       .select('value')
-      .eq('key', 'min_macos_app_version')
+      .eq('key', key)
       .abortSignal(controller.signal)
       .maybeSingle()
       .retry(false);

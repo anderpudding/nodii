@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
 > 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
-> 상태: **v1 8단계 완료, v2 M0 Expo 배포 스파이크 완료 (2026-10-09).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 상태: **v1 8단계 완료, v2 M1 인증·앱 셸 구현 및 로컬 시뮬레이터 확인 완료 (실기기 후속 확인, 2026-10-09).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -270,6 +270,31 @@
 - Expo SDK 57의 최소 iOS가 16.4이므로 같은 값을 선택했다. 더 낮은 OS를 위해 구버전 SDK를 쓰지 않는다.
 - 최신 Expo는 모노레포를 자동 설정하여 Doctor가 수동 Metro 설정을 경고하지만, M0 지시서의 `watchFolders`·`nodeModulesPaths`·`unstable_enableSymlinks`를 유지했다. 실제 iOS Hermes 번들 생성으로 공유 패키지 해석을 검증했다.
 
+
+### v2 M1 · 인증 + 앱 셸 (iOS)
+
+- [x] `min_ios_app_version = 0.1.0` 마이그레이션과 anon 읽기·쓰기 거부 pgTAP (SET-05)
+- [x] `fetchMinAppVersion(client, key)` 플랫폼 키 명시 및 데스크톱 호출부 회귀 검증
+- [x] 기존 인증 함수 재사용, SecureStore 클라이언트 및 AppState 자동 갱신 시작·정지 (AUTH-01/02)
+- [x] 이메일 → 6자리 자동완성·자동 제출, 이메일별 60초 재전송 제한, 심사 계정 분기 (AUTH-07/08)
+- [x] GestureHandler·SafeArea·Query·토스트 Provider, 버전 → 세션 게이트·스플래시·오늘 자리
+- [x] 시스템 라이트/다크 토큰, 번들 Pretendard, KeyboardAvoidingView + ScrollView (MOB-04/05)
+- [x] 카탈로그 인증·오류 문구와 시간대 동기화 (SET-06, G2)
+- [x] 서버 → Query 취소/정리 → SecureStore 인증 키 정리, 네트워크 실패 로컬 로그아웃 (AUTH-03)
+- [x] 단위·RN Web 화면 테스트, 전체 필수 검사·DB 검사·iOS Hermes 번들
+- [x] 로컬 시뮬레이터 새 이메일 → Mailpit 코드 → 오늘 → 완전 종료/재실행 유지 → 로그아웃
+- [ ] TestFlight/dev client 실기기 가입·Keychain 재실행·토큰 만료 후 복귀·한국어 키보드/safe area 확인
+
+**검증 및 구현 결정 (2026-10-09)**
+
+- 공유 API 변경은 지시서가 명시한 `app-config.ts`와 테스트뿐이다. 인증 함수·client·core는 변경하지 않았다. `packages/api` 수정 중단 규칙은 명시된 최소 버전 인자 변경 이외의 변경에 적용했다.
+- `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile 38 = 391검사. `pnpm db:reset`·`pnpm db:test`(145검사)·`pnpm db:types` 통과, 생성 타입 변경 없음. 로컬 Supabase security advisor 경고 없음.
+- iOS Hermes export 통과(1,711모듈·4.5MB 번들, Pretendard 정적 4굵기 약 6.3MB 에셋 포함; 설치 파일 크기는 EAS 빌드에서 확인 필요). Simulator iPhone 17 Pro / iOS 26.4.1 / Expo Go에서 실제 로컬 OTP·완전 종료/재실행 세션 유지·로그아웃 확인. Metro localhost의 IPv6 바인딩은 `NODE_OPTIONS=--dns-result-order=ipv4first`로 해결했다.
+- 화면 자동 테스트는 기존 Vitest에 RN Web + Testing Library를 사용한다. React Native의 Flow 변환·네이티브 모듈은 Metro 환경이 필요하여 별도 Jest/RNTL 환경을 도입하지 않았다. 자동 테스트는 네이티브 키보드·자동완성 제안·Keychain·실제 스플래시/터치 크기를 대신 검증하지 않는다.
+- `expo-font`는 로컬 Pretendard 로드, 개발 의존성 `@testing-library/react`·`jsdom`은 화면 상호작용 검증을 위해 추가했다. 인증·상태 관리 라이브러리는 추가하지 않았다.
+- Expo Router가 `src/app`을 우선 라우트로 탐색하므로 셸 구현은 `src/shell`에 두고 라우트/Provider는 기존 `app/`에 유지했다. 모바일 화면의 16px 본문·52pt 입력·12/14 모서리는 `mobile-screens.md` 값을 우선했다. 시안의 제목은 문서/데스크톱 문구와 달라 문서대로 구현했다. 실제 Simulator 라이트/다크 스냅샷에서 색과 글꼴 굵기를 확인했다.
+- 기존 AGENTS의 macOS MVP·모바일 제외 요약보다 `docs/` v2 및 M1 지시서의 iOS 범위를 우선했다. iOS에서 Variable 폰트를 단일 별칭으로 로드하면 600/700 굵기가 적용되지 않아 동일 Pretendard의 400/500/600/700 정적 파일을 번들로 로드한다. 글꼴 종류·크기·굵기 값은 그대로이며 데스크톱 Variable 폰트는 유지한다. 그 외 제품/DB 설계 변경 제안 없음. 로컬 디자인 PNG 제외 `.gitignore` 변경을 유지하며 생성된 `.impeccable` 캐시만 포맷 검사에서 제외했다.
+
 ---
 
 ## 4. 작업 방식
@@ -360,3 +385,5 @@
 | 2026-10-09 | 디자인 후속 | TODO-01/06: 입력·편집 필드를 제외한 앱 UI의 텍스트 선택을 막아 `⌘A`·포인터 드래그가 행 정렬과 충돌하지 않게 하고, 빈 할 일 입력에서 Enter를 누르면 저장 없이 닫히도록 변경. `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(353검사)·`pnpm build:web` 통과. 브라우저에서 본문 `user-select: none`·입력 `text`, 본문 `⌘A` 선택 없음과 입력 내부 `⌘A` 교체를 확인. 새 의존성·DB 변경 없음. |
 | 2026-10-09 | 디자인 후속 | TODO-06: 메인 할 일 행의 dnd-kit 변환에 세로축 modifier를 적용해 수평 이동과 수평 충돌 계산을 제거. 목표 관리 손잡이 정렬은 기존 동작 유지. 수평값 제거·세로값/크기 보존 단위 테스트를 추가하고 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(354검사)·`pnpm build:web` 통과. 새 의존성·DB 변경 없음. |
 | 2026-10-09 | 디자인 후속 | TODO-01/09: 할 일이 없는 날의 중복 안내 문구를 메인 목록에서 제거하고 헤더의 `할 일 없음` 요약과 목표 이름표 추가 동작만 유지. 빈 목록과 숨겨진 항목 회귀 테스트를 갱신하고 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(354검사)·`pnpm build:web` 통과. 새 의존성·DB 변경 없음. |
+
+| 2026-10-09 | v2 M1 | AUTH-01/02/03/07/08·SET-05/06·MOB-04/05: iOS 인증·버전/세션 게이트·Provider·시스템 테마·카탈로그·오늘 자리 구현, AppState 갱신과 오프라인 로그아웃 정리. 필수 4종 391검사·DB 145검사/reset/types·보안 advisor·iOS Hermes export 통과. 로컬 시뮬레이터 새 OTP 가입·완전 종료/재실행 세션 유지·로그아웃 확인. API는 최소 버전 키 인자만 변경. expo-font 및 화면 테스트용 Testing Library/jsdom 추가. 네이티브 키보드·토큰 만료 복귀·실기기 TestFlight 확인은 후속 항목. |
