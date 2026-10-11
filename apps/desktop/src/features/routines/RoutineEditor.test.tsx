@@ -384,25 +384,27 @@ it('완료·건너뛰기·실행 취소가 하루 목록과 달력 집계에 함
     />,
     { wrapper },
   );
+  // 로딩 대기 중 전체 캘린더 역할 조회로 기본 1초를 소모하지 않는다.
+  const list = within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
   const user = userEvent.setup();
   await waitFor(() =>
-    expect((screen.getByRole('button', { name: '운동 완료' }) as HTMLButtonElement).disabled).toBe(
+    expect((list.getByRole('button', { name: '운동 완료' }) as HTMLButtonElement).disabled).toBe(
       false,
     ),
   );
-  await user.click(screen.getByRole('button', { name: '운동 완료' }));
+  await user.click(list.getByRole('button', { name: '운동 완료' }));
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: '운동 완료' }).getAttribute('aria-pressed')).toBe(
+    expect(list.getByRole('button', { name: '운동 완료' }).getAttribute('aria-pressed')).toBe(
       'true',
     ),
   );
-  await user.click(screen.getByRole('button', { name: '운동 메뉴' }));
+  await user.click(list.getByRole('button', { name: '운동 메뉴' }));
   await user.click(screen.getByRole('menuitem', { name: '이날은 건너뛰기' }));
-  await waitFor(() => expect(screen.queryByRole('button', { name: '운동 완료' })).toBeNull());
+  await waitFor(() => expect(list.queryByRole('button', { name: '운동 완료' })).toBeNull());
   // jsdom의 제거된 메뉴 포커스는 Document로 이동하므로 클릭 이벤트만 보낸다.
   fireEvent.click(screen.getByRole('button', { name: '실행 취소' }));
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: '운동 완료' }).getAttribute('aria-pressed')).toBe(
+    expect(list.getByRole('button', { name: '운동 완료' }).getAttribute('aria-pressed')).toBe(
       'false',
     ),
   );
@@ -500,8 +502,10 @@ it('서로 다른 루틴은 연달아 체크할 수 있고 첫 요청 실패가 
     />,
     { wrapper },
   );
-  const firstCheck = () => screen.getByRole('button', { name: '운동 완료' }) as HTMLButtonElement;
-  const secondCheck = () => screen.getByRole('button', { name: '독서 완료' }) as HTMLButtonElement;
+  // 반복 역할 조회는 캘린더를 제외한 하루 목록 안에서만 수행한다.
+  const list = within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
+  const firstCheck = () => list.getByRole('button', { name: '운동 완료' }) as HTMLButtonElement;
+  const secondCheck = () => list.getByRole('button', { name: '독서 완료' }) as HTMLButtonElement;
   const user = userEvent.setup();
   try {
     await waitFor(() => expect(firstCheck().disabled).toBe(false));
