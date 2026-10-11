@@ -4,6 +4,7 @@ export default defineConfig({
   resolve: { alias: { 'react-native': 'react-native-web' } },
   test: {
     include: ['{lib,src}/**/*.test.{ts,tsx}'],
+    exclude: ['**/*.native.test.tsx'],
     environment: 'jsdom',
     coverage: {
       provider: 'v8',

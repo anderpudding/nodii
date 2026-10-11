@@ -96,11 +96,18 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     if (!client || !userId) return;
     const controller = new AbortController();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    void syncProfileTimezone(client, userId, timezone, controller.signal).catch(() => {
-      if (!controller.signal.aborted) toast(t('mobile.profile.failed'));
-    });
+    void syncProfileTimezone(client, userId, timezone, controller.signal)
+      .then(async (profile) => {
+        if (controller.signal.aborted) return;
+        // 동시에 시작한 이전 프로필 조회가 동기화 결과를 덮지 않게 한다.
+        await query.cancelQueries({ queryKey: ['profile', userId], exact: true });
+        if (!controller.signal.aborted) query.setQueryData(['profile', userId], profile);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) toast(t('mobile.profile.failed'));
+      });
     return () => controller.abort();
-  }, [client, userId, toast]);
+  }, [client, userId, toast, query]);
 
   const ready = !client || gate.status !== 'loading';
   useEffect(() => {
@@ -138,7 +145,10 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   }
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg }]}>
+    <SafeAreaView
+      edges={gate.status === 'ready' && gate.session ? ['top', 'left', 'right'] : undefined}
+      style={[styles.root, { backgroundColor: colors.bg }]}
+    >
       <StatusBar style={isDark ? 'light' : 'dark'} />
       {!client ? (
         <View style={styles.center}>
@@ -181,7 +191,13 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
           <Button label={t('mobile.update.action')} onPress={() => void openStore()} />
         </View>
       ) : gate.session ? (
-        <Today key={gate.session.user.id} onLogout={() => void signOut()} loggingOut={loggingOut} />
+        <Today
+          key={gate.session.user.id}
+          client={client}
+          userId={gate.session.user.id}
+          onLogout={() => void signOut()}
+          loggingOut={loggingOut}
+        />
       ) : (
         <Login client={client} reviewAccountEmail={mobileEnv.reviewAccountEmail} />
       )}
