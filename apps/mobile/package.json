@@ -10,9 +10,10 @@
     "test": "vitest run && jest --runInBand",
     "test:native": "jest --runInBand",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage && pnpm test:native"
   },
   "dependencies": {
+    "@babel/runtime": "^7.29.7",
     "@nodii/api": "workspace:*",
     "@nodii/core": "workspace:*",
     "@nodii/i18n": "workspace:*",

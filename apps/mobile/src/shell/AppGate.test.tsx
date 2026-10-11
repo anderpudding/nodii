@@ -83,8 +83,9 @@ it('버전이 낮으면 세션 조회 전에 업데이트 안내를 띄운다', 
   vi.mocked(fetchMinAppVersion).mockResolvedValueOnce('0.2.0');
   mount();
   await screen.findByRole('heading', { name: t('mobile.update.title') });
+  // 화면 DOM과 스플래시 종료 effect의 실행 시점은 같지 않으므로 종료 자체를 기다린다.
+  await waitFor(() => expect(hideAsync).toHaveBeenCalled());
   expect(getSession).not.toHaveBeenCalled();
-  expect(hideAsync).toHaveBeenCalled();
 });
 it('버전 조회 실패는 통과하며 세션 복원을 마칠 때까지 스플래시를 유지한다', async () => {
   vi.mocked(fetchMinAppVersion).mockRejectedValueOnce(new Error('offline'));
@@ -100,7 +101,7 @@ it('버전 조회 실패는 통과하며 세션 복원을 마칠 때까지 스�
   expect(hideAsync).not.toHaveBeenCalled();
   await act(async () => restore({ data: { session }, error: null }));
   await screen.findByText(t('mobile.today.preparing'));
-  expect(hideAsync).toHaveBeenCalled();
+  await waitFor(() => expect(hideAsync).toHaveBeenCalled());
   expect(syncProfileTimezone).toHaveBeenCalled();
 });
 it('로그인 이벤트로 오늘 화면을 열고 시간대 실패도 진입을 막지 않는다', async () => {
