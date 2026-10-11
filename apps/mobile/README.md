@@ -1,6 +1,6 @@
-# Nodii iOS M1
+# Nodii iOS M2a
 
-Expo SDK 57 기반의 iOS 앱입니다. 이메일 코드·심사 계정 로그인, Keychain 세션 복원, 최소 iOS 버전 안내와 오늘 화면 자리를 제공합니다.
+Expo SDK 57 기반의 iOS 앱입니다. 이메일 코드·심사 계정 로그인, Keychain 세션 복원, 최소 iOS 버전 안내, 주간 날짜 선택·목표별 하루 목록·체크·하단 연속 추가를 제공합니다.
 
 ## 로컬 실행
 
@@ -14,13 +14,19 @@ Expo CLI에서 `i`를 눌러 iOS Simulator를 열거나 Expo Go의 QR 코드를 
 
 `EXPO_PUBLIC_REVIEW_ACCOUNT_EMAIL`은 심사 계정 주소, `EXPO_PUBLIC_APP_STORE_ID`는 iOS App Store 숫자 ID입니다. 예시 값은 비워 두며 preview/production EAS 환경에도 등록합니다. 심사 비밀번호는 환경 변수나 저장소에 넣지 않습니다. 로컬 시뮬레이터는 `http://127.0.0.1:54321`, 실기기는 접근 가능한 Supabase URL을 사용합니다.
 
-키보드·safe area·Keychain·토큰 만료 후 복귀·자동완성은 실기기에서도 확인해야 합니다. 모바일 화면 자동 테스트는 Vitest에서 RN Web과 Testing Library로 실행하며 네이티브 동작을 대신 검증하지 않습니다.
+키보드·safe area·Keychain·토큰 만료 후 복귀·자동완성은 실기기에서도 확인해야 합니다. 모바일 단위/기존 화면 검사는 Vitest/RN Web으로, 오늘 화면 컴포넌트 검사는 Expo Jest와 React Native Testing Library로 실행합니다. `pnpm --filter @nodii/mobile test`는 둘 다 실행하며 `test:native`는 RNTL만 실행합니다. 실제 OS 키보드 조합·스크롤 성능·safe area는 실기기에서 별도로 확인합니다. iOS의 조합 상태는 RN submit 이벤트에 노출되지 않아 한국어 하드웨어 Enter 차단은 미보장이며, 자세한 한계는 구현 계획 M2a 기록을 참고합니다.
 
 localhost가 IPv6로만 바인딩되어 시뮬레이터 접속이 실패하면 다음처럼 IPv4를 우선합니다.
 
 ```bash
 NODE_OPTIONS=--dns-result-order=ipv4first pnpm --filter @nodii/mobile exec expo start --go --ios --localhost
 ```
+
+## M2a 확인
+
+주간 스트립으로 날짜를 고른 뒤 하단 “할 일 추가”를 열어 목표를 선택합니다. 추가 후 입력칸만 비워져 같은 시트에서 계속 입력할 수 있습니다. 날짜 줄은 표시 전용이며 월간·설정 버튼은 다음 단계까지 비활성입니다.
+
+할 일 3개 추가 → 하나 체크 → 같은 로컬 계정의 맥 앱/브라우저에서 목록과 완료 상태가 같은지 확인합니다. 입력이 남은 시트를 아래로 밀거나 취소하면 폐기 확인이 표시됩니다. 실기기에서는 30개 목록·한국어 키보드·노치/홈 인디케이터·Dynamic Type을 확인합니다.
 
 ## EAS 환경 변수
 

@@ -1,64 +1,308 @@
-import { useEffect, useState } from 'react';
-import { AppState, StyleSheet, Text, View } from 'react-native';
-import { todayISO } from '@nodii/core';
+import { useEffect, useMemo, useState } from 'react';
+import { AppState, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
+import { fetchProfile, useGoals, useMonthTodos, type NodiiClient } from '@nodii/api';
+import { monthKeyOf, type Profile } from '@nodii/core';
 import { t } from '@nodii/i18n';
+import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { Button } from '../components/Button';
+import { useUIStore } from '../stores/ui';
+import { AddSheet } from './today/AddSheet';
+import { GoalBadge } from './today/GoalBadge';
+import { TodoRow } from './today/TodoRow';
+import { WeekStrip } from './today/WeekStrip';
+import {
+  daySections,
+  mergeWeekTodos,
+  preferredGoal,
+  quickAddHeight,
+  quickAddInset,
+  weekRange,
+  weekSummary,
+} from './today/model';
 
-function deviceToday() {
-  return todayISO(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', new Date());
+interface TodayProps {
+  client: NodiiClient;
+  userId: string;
+  onLogout(): void;
+  loggingOut: boolean;
 }
-/** M1: 실제 하루 목록을 붙이기 전 날짜 제목과 로그아웃 자리만 제공한다. */
-export function Today({ onLogout, loggingOut }: { onLogout(): void; loggingOut: boolean }) {
+/** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
+export function Today(props: TodayProps) {
   const { colors } = useTheme();
-  const [today, setToday] = useState(deviceToday);
+  const profile = useQuery({
+    queryKey: ['profile', props.userId],
+    queryFn: ({ signal }) => fetchProfile(props.client, props.userId, signal),
+    staleTime: 30_000,
+  });
   useEffect(() => {
-    const update = () => setToday(deviceToday());
-    const timer = setInterval(update, 1000);
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') update();
-    });
-    return () => {
-      clearInterval(timer);
-      subscription.remove();
-    };
-  }, []);
-  const date = new Intl.DateTimeFormat('ko-KR', {
+    useUIStore.getState().reset();
+  }, [props.userId]);
+  if (!profile.data)
+    return (
+      <View style={styles.center}>
+        <Text style={[styles.supporting, { color: colors.muted }]}>
+          {t(profile.isError ? 'mobile.today.failed' : 'mobile.today.loading')}
+        </Text>
+        {profile.isError && (
+          <Button label={t('common.tryAgain')} onPress={() => void profile.refetch()} />
+        )}
+        <Button
+          label={t('auth.logout')}
+          secondary
+          disabled={props.loggingOut}
+          onPress={props.onLogout}
+        />
+      </View>
+    );
+  return <TodayContent {...props} profile={profile.data} />;
+}
+function TodayContent({
+  client,
+  profile,
+  onLogout,
+  loggingOut,
+}: TodayProps & { profile: Profile }) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { selectedDate, today, selectDate, lastAddedGoalId } = useUIStore();
+  const [adding, setAdding] = useState(false);
+  const [barFocused, setBarFocused] = useState(false);
+  const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
+  const firstMonth = monthKeyOf(from);
+  const lastMonth = monthKeyOf(to);
+  const goals = useGoals(client);
+  const first = useMonthTodos(client, firstMonth, profile.weekStart);
+  const last = useMonthTodos(client, lastMonth, profile.weekStart);
+  const rows = useMemo(
+    () => mergeWeekTodos(from, to, first.data ?? [], last.data ?? []),
+    [from, to, first.data, last.data],
+  );
+  const sections = useMemo(
+    () => daySections(goals.data ?? [], rows, selectedDate, profile.timezone),
+    [goals.data, rows, selectedDate, profile.timezone],
+  );
+  const summary = useMemo(
+    () => weekSummary(goals.data ?? [], rows, from, to, profile.timezone),
+    [goals.data, rows, from, to, profile.timezone],
+  );
+  const items = sections.flatMap((section) => section.data);
+  const done = items.filter((todo) => todo.isDone).length;
+  const activeGoal = preferredGoal(goals.data ?? [], lastAddedGoalId);
+  const failed = [goals, first, last].some((query) => query.isError);
+  const loading = [goals, first, last].some((query) => query.isPending);
+  useEffect(
+    () =>
+      bindTodayClock(
+        AppState,
+        () => profile.timezone,
+        (date) => useUIStore.getState().updateToday(date),
+      ),
+    [profile.timezone],
+  );
+  const dateObject = new Date(`${selectedDate}T00:00:00Z`);
+  const dateLabel = new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
     day: 'numeric',
-    weekday: 'long',
+    weekday: 'short',
     timeZone: 'UTC',
-  }).format(new Date(`${today}T00:00:00Z`));
+  }).format(dateObject);
+  const monthLabel = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  }).format(dateObject);
+  function retry() {
+    for (const query of [goals, first, last]) void query.refetch();
+  }
   return (
-    <View style={styles.content}>
-      <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-        {date}
-      </Text>
-      <Text style={[styles.description, { color: colors.muted }]}>
-        {t('mobile.today.preparing')}
-      </Text>
-      <Button
-        label={t('auth.logout')}
-        secondary
-        busy={loggingOut}
-        disabled={loggingOut}
-        onPress={onLogout}
+    <View style={styles.root}>
+      <View style={[styles.top, { backgroundColor: colors.side }]}>
+        <Pressable
+          disabled
+          accessibilityRole="button"
+          accessibilityLabel={t('mobile.month.unavailable')}
+          accessibilityState={{ disabled: true }}
+          style={styles.month}
+        >
+          <Text style={[styles.heading, { color: colors.ink }]}>{monthLabel} ⌄</Text>
+        </Pressable>
+        <Button label={t('day.today')} secondary onPress={() => selectDate(today)} />
+        <Pressable
+          disabled
+          accessibilityRole="button"
+          accessibilityLabel={t('mobile.settings.unavailable')}
+          accessibilityState={{ disabled: true }}
+          style={styles.settings}
+        >
+          <Text style={[styles.heading, { color: colors.muted }]}>☰</Text>
+        </Pressable>
+      </View>
+      <WeekStrip
+        dates={dates}
+        today={today}
+        selectedDate={selectedDate}
+        summary={summary}
+        onSelect={selectDate}
       />
+      <SectionList
+        testID="day-list"
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: quickAddInset(insets.bottom) + m.space.lg },
+        ]}
+        ListHeaderComponent={
+          <View style={styles.dayHeader}>
+            <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+              {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
+            </Text>
+            <Text style={[styles.supporting, { color: colors.muted }]}>
+              {items.length
+                ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
+                    total: items.length,
+                    done,
+                  })
+                : t('day.empty')}
+            </Text>
+            {failed ? (
+              <View>
+                <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+                  {t('mobile.today.failed')}
+                </Text>
+                <Button label={t('common.tryAgain')} secondary onPress={retry} />
+              </View>
+            ) : loading ? (
+              <Text style={[styles.supporting, { color: colors.muted }]}>
+                {t('mobile.today.loading')}
+              </Text>
+            ) : !items.length ? (
+              <Text style={[styles.supporting, { color: colors.muted }]}>
+                {t('mobile.today.empty')}
+              </Text>
+            ) : null}
+          </View>
+        }
+        renderSectionHeader={({ section }) => (
+          <View style={styles.section}>
+            <GoalBadge goal={section.goal} />
+          </View>
+        )}
+        renderItem={({ item, section }) => (
+          <TodoRow todo={item} goal={section.goal} client={client} weekStart={profile.weekStart} />
+        )}
+        // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
+        ListFooterComponent={
+          <View style={styles.footer}>
+            <Button
+              label={t('auth.logout')}
+              secondary
+              disabled={loggingOut}
+              busy={loggingOut}
+              onPress={onLogout}
+            />
+          </View>
+        }
+      />
+      <Pressable
+        testID="quick-add"
+        accessibilityRole="button"
+        accessibilityLabel={t('todo.add')}
+        accessibilityState={{ disabled: !activeGoal || loading || failed }}
+        disabled={!activeGoal || loading || failed}
+        onPress={() => setAdding(true)}
+        onFocus={() => setBarFocused(true)}
+        onBlur={() => setBarFocused(false)}
+        style={({ pressed }) => [
+          styles.bar,
+          {
+            minHeight: quickAddInset(insets.bottom),
+            paddingBottom: Math.max(insets.bottom, 34),
+            backgroundColor: colors.surface,
+            borderTopColor: barFocused ? colors.focus : colors.line,
+            opacity: pressed ? m.pressedOpacity : 1,
+          },
+        ]}
+      >
+        <View style={styles.barContent}>
+          {activeGoal && <GoalBadge goal={activeGoal} />}
+          <Text style={[styles.addLabel, { color: colors.muted }]}>{t('todo.add')}</Text>
+          <View style={[styles.plus, { backgroundColor: colors.ink }]}>
+            <Text accessible={false} style={[styles.heading, { color: colors.bg }]}>
+              +
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+      {adding && (
+        <AddSheet
+          client={client}
+          date={selectedDate}
+          today={today}
+          goals={goals.data ?? []}
+          weekStart={profile.weekStart}
+          onClose={() => setAdding(false)}
+        />
+      )}
     </View>
   );
 }
 const styles = StyleSheet.create({
-  content: { flex: 1, padding: m.space.group, gap: m.space.lg },
+  root: { flex: 1 },
+  center: { flex: 1, padding: m.space.group, justifyContent: 'center', gap: m.space.lg },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.space.sm,
+    paddingHorizontal: m.space.lg,
+  },
+  month: { flex: 1, minHeight: m.height.touch, justifyContent: 'center' },
+  settings: {
+    minHeight: m.height.touch,
+    minWidth: m.height.touch,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heading: { fontFamily: m.fontBold, fontWeight: '700', fontSize: m.type.heading },
   title: {
     fontFamily: m.fontBold,
-    fontSize: m.type.title,
     fontWeight: '700',
+    fontSize: m.type.title,
     letterSpacing: m.letterSpacing.title,
   },
-  description: {
-    flex: 1,
-    fontFamily: m.fontFamily,
-    fontSize: m.type.body,
-    lineHeight: m.type.body * m.lineHeight.body,
+  supporting: {
+    fontFamily: m.fontMedium,
+    fontSize: m.type.supporting,
+    lineHeight: m.type.supporting * m.lineHeight.body,
+  },
+  dayHeader: { gap: m.space.sm, paddingTop: m.space.group },
+  list: { paddingHorizontal: m.space.lg },
+  section: { alignItems: 'flex-start', paddingTop: m.space.group, paddingBottom: m.space.sm },
+  footer: { alignItems: 'flex-start', marginTop: m.space.group },
+  bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: m.border,
+    paddingHorizontal: m.space.lg,
+  },
+  barContent: {
+    minHeight: quickAddHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.space.md,
+  },
+  addLabel: { flex: 1, fontFamily: m.fontFamily, fontSize: m.type.body },
+  plus: {
+    width: m.height.touch,
+    height: m.height.touch,
+    borderRadius: m.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

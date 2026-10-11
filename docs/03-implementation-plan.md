@@ -295,6 +295,32 @@
 - Expo Router가 `src/app`을 우선 라우트로 탐색하므로 셸 구현은 `src/shell`에 두고 라우트/Provider는 기존 `app/`에 유지했다. 모바일 화면의 16px 본문·52pt 입력·12/14 모서리는 `mobile-screens.md` 값을 우선했다. 시안의 제목은 문서/데스크톱 문구와 달라 문서대로 구현했다. 실제 Simulator 라이트/다크 스냅샷에서 색과 글꼴 굵기를 확인했다.
 - 기존 AGENTS의 macOS MVP·모바일 제외 요약보다 `docs/` v2 및 M1 지시서의 iOS 범위를 우선했다. iOS에서 Variable 폰트를 단일 별칭으로 로드하면 600/700 굵기가 적용되지 않아 동일 Pretendard의 400/500/600/700 정적 파일을 번들로 로드한다. 글꼴 종류·크기·굵기 값은 그대로이며 데스크톱 Variable 폰트는 유지한다. 그 외 제품/DB 설계 변경 제안 없음. 로컬 디자인 PNG 제외 `.gitignore` 변경을 유지하며 생성된 `.impeccable` 캐시만 포맷 검사에서 제외했다.
 
+
+### v2 M2a · 오늘 화면 + 빠른 추가 (iOS)
+
+- [x] Zustand 선택 날짜·오늘·직전 추가 목표, 자정/DST·포그라운드 복귀 갱신 (MOB-02)
+- [x] 프로필 주 시작 요일·7칸 스트립·주 이동·빈/남음/완료 도장·월 경계 두 기존 캐시 합치기 (CAL-02/05/07, MOB-02)
+- [x] `buildDay` 기반 목표별 SectionList·실제 표시 항목 요약·보관 목표 과거 표시 (TODO-09, GOAL-05)
+- [x] 행별 독립 낙관적 체크·겹치는 월 캐시 패치·실패 롤백/토스트·44pt 터치 영역 (TODO-02, MOB-04)
+- [x] 48pt + safe area 고정 추가 바·목표 선택·클라이언트 UUID·제목 검증·연속 입력·고유 정렬 키 (TODO-01, MOB-03)
+- [x] KeyboardAvoidingView·추가 시트/버튼 키보드 회피·미저장 닫기 확인·Modal 토스트 포털·모션 감소 대응 (MOB-05, NFR-12)
+- [x] 전체 문구 카탈로그·할 일 제목 조사 헬퍼 (SET-06)
+- [x] 단위·실제 RNTL 컴포넌트 테스트 및 필수 4종 검사·iOS Hermes export
+- [x] Simulator 날짜 선택 → 3개 추가 → 체크 → 같은 로컬 계정의 맥 브라우저 목록/완료 상태 확인
+- [x] Simulator 한국어 소프트웨어 키보드 위 입력·추가 버튼 및 라이트/다크 확인
+- [ ] 실기기 30개 스크롤·100ms 체크 체감·한국어 하드웨어 Enter 조합·Dynamic Type·홈 인디케이터 확인
+
+**구현·검증 기록 (2026-10-10)**
+
+- 목표 그룹을 섹션으로 유지하고 긴 목록에서 보이는 행을 가상화하기 위해 `SectionList`를 선택했다. 루틴/로그는 빈 배열이며 M2b 줄 제스처·메뉴, M3 월간/날짜 선택·가져오기, M4 루틴, M5 설정·netinfo·캐시 영속화는 구현하지 않았다.
+- 고정 바 높이는 `48 + max(insets.bottom, 34)`이고, 목록 `paddingBottom`은 그 높이 + 기존 16pt 토큰이다. 바가 실제 화면 하단을 담당하도록 인증 뒤 AppGate SafeAreaView의 아래 inset은 중복 적용하지 않는다. 체크는 24px 글리프 안에 44×44pt 터치 영역을 두며 생성/체크 중인 해당 ID만 잠근다.
+- 시트 전체를 iOS `KeyboardAvoidingView(padding)` 안에 두고, 내부 ScrollView와 `keyboardShouldPersistTaps=always`로 추가 버튼을 키보드 위에 유지한다. `submitBehavior=submit`으로 연속 입력 때 포커스를 보존하며, 새 키는 렌더 배열 대신 최신 낙관적 월 캐시에서 구한다. 시트를 요청 중 닫아도 실패 토스트/롤백과 성공한 마지막 목표 기억이 실행된다.
+- core/api 소스·테스트와 DB 스키마는 변경하지 않았다. 모바일에서 기존 Query 키/프로필 키만 사용하며 서버 데이터를 Zustand로 복사하지 않는다. API의 `monthKeysContaining` 기반 캐시 패치를 그대로 재사용한다.
+- 필수 검사 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 49/RNTL 7 = 409검사. `expo export --platform ios` 통과(1,728모듈, Hermes 약 4.5MB). 스키마 변경 없음으로 `db:reset`·`db:test`·`db:types`는 미실행했다. 로컬 테스트 데이터 생성·체크·임시 항목 소프트 삭제만 수행했다.
+- 런타임 의존성: 지시서가 지정한 `zustand`(UI 상태), `expo-crypto`(Hermes/iOS 클라이언트 `crypto.randomUUID()`). 테스트 의존성: `@testing-library/react-native`, `jest`, `jest-expo`, `@react-native/jest-preset`, `react-test-renderer`, Jest/renderer 타입. 기존 Vitest/RN Web 검사는 유지하고 네이티브 컴포넌트 검사만 Expo Jest 프리셋으로 별도 실행한다. React Query 테스트 캐시의 gcTime을 Infinity로 설정해 테스트 종료를 지연시키는 타이머도 제거했다.
+- 테스트가 대신하지 못하는 부분: 실제 프레임률·응답 시간, 긴 목록 실기기 성능, Dynamic Type, 모든 기기 safe area, 실제 OS 키보드 조합 이벤트. iPhone 17 Pro / iOS 26.4.1 / Expo Go에서 3개 연속 추가·체크·날짜 이동·한국어 소프트웨어 키보드와 라이트/다크를 확인했고, 맥 로컬 브라우저에 같은 계정으로 로그인해 세 항목/완료 상태가 일치했다. 한국어 소프트웨어 [완료]는 UIKit이 글자를 확정하며 추가하는 것을 확인했다.
+- 문서 차이/결정이 필요한 사항: RN iOS `onSubmitEditing`은 `isComposing`을 제공하지 않는다. 전달되는 조합 플래그/229는 차단하고 iOS는 UIKit 제출 이벤트를 사용하지만, **한국어 하드웨어 Enter의 조합 중 제출 차단은 미보장**이며 실기기 검증 또는 별도 네이티브 입력 지원 결정이 필요하다. 이를 휴리스틱으로 추정하거나 RN을 패치하지 않았다. M1 로그아웃은 M5 설정 진입 전까지 목록 끝에 유지한다. 기존 AGENTS의 모바일 제외 요약보다 docs의 v2/M2a 범위를 우선했다. 토큰은 기존 공통/모바일 문서 값을 사용했다.
+
 ---
 
 ## 4. 작업 방식
@@ -387,3 +413,5 @@
 | 2026-10-09 | 디자인 후속 | TODO-01/09: 할 일이 없는 날의 중복 안내 문구를 메인 목록에서 제거하고 헤더의 `할 일 없음` 요약과 목표 이름표 추가 동작만 유지. 빈 목록과 숨겨진 항목 회귀 테스트를 갱신하고 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`(354검사)·`pnpm build:web` 통과. 새 의존성·DB 변경 없음. |
 
 | 2026-10-09 | v2 M1 | AUTH-01/02/03/07/08·SET-05/06·MOB-04/05: iOS 인증·버전/세션 게이트·Provider·시스템 테마·카탈로그·오늘 자리 구현, AppState 갱신과 오프라인 로그아웃 정리. 필수 4종 391검사·DB 145검사/reset/types·보안 advisor·iOS Hermes export 통과. 로컬 시뮬레이터 새 OTP 가입·완전 종료/재실행 세션 유지·로그아웃 확인. API는 최소 버전 키 인자만 변경. expo-font 및 화면 테스트용 Testing Library/jsdom 추가. 네이티브 키보드·토큰 만료 복귀·실기기 TestFlight 확인은 후속 항목. |
+
+| 2026-10-10 | v2 M2a | TODO-01/02/09·GOAL-05·CAL-02/05/07·MOB-02/03/04/05·SET-06: 오늘 날짜 스토어·자정/복귀 갱신, 두 월 캐시 주간 스트립, 목표별 SectionList, 독립 낙관적 체크, 하단 연속 추가 시트·키보드 회피·Modal 토스트 구현. 필수 4종 409검사(Vitest 402 + RNTL 7)·iOS Hermes export 통과. Simulator 3개 추가/체크·날짜 이동·소프트웨어 키보드·라이트/다크, 같은 로컬 계정 맥 브라우저 일치 확인. core/api·DB 스키마 변경 없음. 한국어 하드웨어 Enter 조합 보장은 결정/실기기 확인 필요(M2a 기록 참조). |

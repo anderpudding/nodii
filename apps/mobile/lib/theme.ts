@@ -1,4 +1,5 @@
-import { useColorScheme } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, useColorScheme } from 'react-native';
 
 export const lightColors = {
   bg: '#FFFFFF',
@@ -52,8 +53,11 @@ export const metrics = {
   fontSemiBold: 'Pretendard-SemiBold',
   fontBold: 'Pretendard-Bold',
   space: { xs: 4, sm: 8, md: 12, lg: 16, group: 26, page: 48 },
-  radius: { field: 12, button: 14, card: 14, mark: 7 },
-  height: { touch: 44, field: 52 },
+  radius: { field: 12, button: 14, card: 14, mark: 7, stamp: 8, sheet: 22, pill: 999 },
+  height: { touch: 44, field: 52, chip: 36 },
+  glyph: { check: 24, icon: 20 },
+  handle: { width: 36, height: 5 },
+  selectionRing: 2,
   focusRing: 3,
   border: 1,
   pressedOpacity: 0.55,
@@ -66,4 +70,25 @@ export const metrics = {
 export function useTheme() {
   const isDark = useColorScheme() === 'dark';
   return { isDark, colors: isDark ? darkColors : lightColors };
+}
+/** 모션 감소가 켜졌거나 아직 확인 전이면 시트 전환을 애니메이션 없이 표시한다. */
+export function useReducedMotion() {
+  const [reduced, setReduced] = useState(true);
+  useEffect(() => {
+    let live = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(
+      (value) => {
+        if (live) setReduced(value);
+      },
+      () => {
+        /* 확인할 수 없으면 애니메이션을 끈 상태를 유지한다. */
+      },
+    );
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
+    return () => {
+      live = false;
+      subscription.remove();
+    };
+  }, []);
+  return reduced;
 }
