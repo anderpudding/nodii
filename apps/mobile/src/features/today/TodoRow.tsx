@@ -6,7 +6,7 @@ import { checkColor, goalTint, goalInk, type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { lightColors, metrics as m, useTheme } from '../../../lib/theme';
 import { SwipeableRow } from '../../components/gestures/SwipeableRow';
-import { actionLabel, todoActions } from './actions';
+import { actionLabel, splitSwipeActions, todoActions } from './actions';
 import { useTodoActions } from './useTodoActions';
 import { TodoMenu } from './TodoMenu';
 
@@ -47,10 +47,10 @@ export function TodoRow({
   function openMenu() {
     if (!locked && !actions.locallyBusy()) setMenu(true);
   }
-  const swipeActions = todoActions
-    .filter((action) => action.swipe)
-    .map(({ id }) => ({
+  const swipeActions = splitSwipeActions(
+    todoActions.map(({ id, swipe }) => ({
       id,
+      swipe,
       label: actionLabel(id, todo.isDone),
       background:
         id === 'toggle'
@@ -67,14 +67,15 @@ export function TodoRow({
       run: () => {
         if (!locked && id !== 'rename') void actions.run(id);
       },
-    }));
+    })),
+  );
   return (
     <>
       <SwipeableRow
         id={todo.id}
         disabled={locked}
-        leading={swipeActions[0]!}
-        trailing={swipeActions.slice(1)}
+        leading={swipeActions.leading}
+        trailing={swipeActions.trailing}
         onMenu={openMenu}
       >
         <View style={styles.row}>
