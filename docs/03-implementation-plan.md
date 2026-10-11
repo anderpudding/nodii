@@ -336,6 +336,9 @@
 - [x] 기존 API 훅으로 낙관적 반영/롤백 · 내일 목표 맨 아래 이동 · 겹치는 월 캐시 갱신 재사용
 - [x] 5초 개별 실행 취소 큐 · 행 언마운트 뒤 소프트 삭제 복원 · 복원 실패 재시도 · 고정 바/키보드 위 토스트 (TODO-04)
 - [x] 임계값/메뉴/큐 단위 검사 · 네이티브 gesture callback/메뉴/실패/연속 3복원 회귀 검사
+- [x] CI의 루트 `test:coverage`에 모바일 Vitest + Jest/RNTL 포함 (커버리지 수집은 Vitest만)
+- [x] 모바일 `@babel/runtime` 직접 의존성 · frozen lockfile 설치 · 캐시 없는 네이티브 검사
+- [x] `swipe` 값으로 방향 분리 · leading 단일 계약 · 선언 순서 변경/leading 누락·중복 회귀 검사 (MOB-01)
 - [x] Simulator 길게 누르기 메뉴 · 이름 수정 · 내일로/이동 취소 · 삭제 · 라이트/다크 메뉴 확인
 - [ ] Simulator 실제 오른쪽 밀기 완료/취소 · 왼쪽 밀기 내일로/삭제 · 삭제 직후 실행 취소 확인
 - [ ] 실기기 밀기/햅틱 감각 · 긴 목록 세로 스크롤 · VoiceOver 로터 · Dynamic Type · 양 테마 밀기 칸 대비 · 연속 3삭제/복원
@@ -349,6 +352,15 @@
 - 추가 의존성은 지시서가 지정한 `expo-haptics ~57.0.3` 하나다. Gesture Handler/Reanimated/Worklets는 기존 설치를 재사용하며 Jest에는 공식 제스처/애니메이션 mock을 연결했다.
 - 필수 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 60/RNTL 20 = 433검사. `pnpm --filter @nodii/mobile exec expo export --platform ios`도 통과(1,737모듈, Hermes 약 4.6MB). DB 변경 없음으로 `pnpm db:reset`·`pnpm db:test`·`pnpm db:types`는 미실행했다. 별도 검토에서 이전 완료 취소의 삭제 행 재등장과 잠금 뒤 숨은 동작 버튼의 접근성 잔류를 발견해 수정했고, 두 회귀 테스트로 확인했다. RN Web의 Keyboard API 차이도 보완해 미리보기 검사를 유지했다.
 - 자동 CUA 드래그를 여러 번 시도했으나 시뮬레이터에서 반응을 확정하지 못했다. 네이티브 callback 검사가 통과해도 실제 인식·스크롤 충돌·햅틱 세기·VoiceOver 로터를 입증하지 못하므로 위 수동 항목은 미완료로 남긴다. 메뉴 경로의 이름 수정/내일 이동/이동 취소/삭제, 길게 누르기와 라이트/다크 메뉴는 실제 Expo Go에서 확인했다. 연속 3삭제/복원과 실패 경로는 RNTL에서 확인했다. 한국어 하드웨어 Enter 조합 중 제출 차단은 M2a와 동일하게 미보장이다.
+
+**CI·의존성·방향 분리 후속 (2026-10-11)**
+
+- 기존 `.github/workflows/ci.yml`은 루트 `pnpm test:coverage` → `pnpm -r test:coverage`를 실행했으나 모바일 스크립트가 Vitest만 실행해 M2a/M2b RNTL이 CI 경로에서 제외됐다. 모바일 스크립트를 `vitest run --coverage && pnpm test:native`로 바꾸고 CI 단계 이름에 두 실행기를 명시했다. Jest 커버리지는 추가하지 않았다.
+- `@babel/runtime ^7.29.7`을 모바일 런타임 의존성으로 선언하고 기존 lockfile의 7.29.7을 직접 연결했다. 수정 전 현재 환경의 캐시된 Jest 검사는 통과했지만 모바일 기준 `require.resolve`는 `interopRequireDefault`/`interopRequireWildcard` 모두 실패했다. 수정 후 두 helper 해석 및 `pnpm install --frozen-lockfile`, `pnpm --filter @nodii/mobile test:native --no-cache`(2스위트·20검사)가 통과했다.
+- 루트·desktop·core·api·i18n은 Babel runtime을 직접 해석하지 못하지만, 자체 스크립트/변환 설정/소스에는 Jest/Babel helper 의존 경로가 없어 추가하지 않았다. 전체 일반 검사와 CI 동일 명령에서도 다른 워크스페이스의 동일 실행 실패는 없었다.
+- `TodoRow`는 배열 인덱스 대신 `splitSwipeActions`에서 `swipe === 'leading'/'trailing'`으로 나눈 결과를 사용한다. `SwipeableRow` 계약에 따라 leading은 정확히 하나여야 하며 0개·복수이면 구성 오류를 던진다. 첫 동작을 임의 선택하지 않고 테스트가 선언 오류를 발견하게 한다. 같은 방향의 버튼 순서는 선언 순서를 유지한다. 순서 변경·누락·중복 회귀 검사 3개를 추가했다.
+- 필수 검사 첫 실행에서 기존 `AppGate` 검사 하나가 업데이트 화면 DOM은 표시됐지만 스플래시 종료 effect는 아직 실행되지 않아 실패했다. 스플래시 종료 호출을 `waitFor`로 기다리도록 보완했고 앱 동작이나 시간 제한은 변경하지 않았다.
+- 수정 후 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 모두 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 63/RNTL 20 = 436검사. CI와 같은 루트 `pnpm test:coverage`도 436검사 통과했고 로그에서 모바일 `vitest run --coverage` 63개 뒤 `jest --runInBand`의 `Today.native.test.tsx`·`SwipeableRow.native.test.tsx` 2스위트·20개 실행을 확인했다. 커버리지는 Vitest만 수집한다. 로컬 명령 검증이며 수정된 브랜치의 GitHub Actions 실행은 미실행이다. DB 변경 없음으로 DB reset/test/types는 미실행했다. 기존 실기기/VoiceOver 확인 항목은 그대로 남긴다.
 
 ---
 
@@ -448,3 +460,4 @@
 | 2026-10-10 | 하루 목록 CI 수정 | TODO-01/09: 후속 CI(5b77f68)는 lint·format·typecheck·모바일 49검사를 통과했지만 데스크톱 `DayView.test.tsx`의 초기 추가 버튼 조회 3검사가 실패. 전체 화면의 캘린더까지 반복 조회하던 11곳을 `목표별 할 일 목록` 영역의 `within().findByRole` 헬퍼로 한정하고 역할·접근성 이름·기본 1초 대기 시간·기존 검증 조건을 유지. 임시 진단에서 목표 조회에 850ms 지연을 주면 기존 전체 화면 조회는 동일 오류로 실패, 영역 조회는 2검사 통과(진단 파일 제거). 하루 목록 커버리지 29검사, 필수 4종 409검사 및 전체 커버리지 402검사 통과. 새 의존성·앱 동작·core/api·DB 변경 없음으로 DB 검증 미실행. 원격 반영 뒤 GitHub CI 재확인 필요. |
 
 | 2026-10-10 | v2 M2b | TODO-02/03/04/05·MOB-01/04: 공통 SwipeableRow·400ms 햅틱/메뉴·이름 시트·내일 이동·행별 낙관적 잠금·5초 독립 복원 큐·VoiceOver actions 구현. 필수 4종 433검사(Vitest 413 + RNTL 20)·iOS Hermes export 통과. Simulator 길게 누르기/메뉴 이름 수정·이동/취소·삭제·라이트/다크 확인. 실제 밀기/삭제 복원은 CUA 드래그 반응 미확정으로 미완료, 실기기/VoiceOver/긴 스크롤/한국어 하드웨어 IME는 수동 확인 필요. expo-haptics만 추가; core/api·DB 변경 없음으로 DB 검증 미실행. 보수적 임계값/토큰 해석은 M2b 절 참조. |
+| 2026-10-11 | v2 M2b CI 후속 | MOB-01: 모바일 test:coverage에 Jest/RNTL 연결, @babel/runtime ^7.29.7 직접 선언/lockfile 갱신, swipe 값 기반 방향 분리와 leading 단일 계약·3회귀 검사 추가. 기존 AppGate 스플래시 effect 대기 보완. frozen 설치·캐시 없는 native 2스위트/20검사·필수4종 및 CI 동일 루트 coverage 436검사(Vitest 416 + RNTL 20) 통과. 다른 워크스페이스의 동일 실행 실패 없음. GitHub Actions 원격 실행·DB 검증 미실행(DB 변경 없음); 기존 실기기 항목 유지. |
