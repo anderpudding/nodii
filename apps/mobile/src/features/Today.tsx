@@ -7,6 +7,8 @@ import { monthKeyOf, type Profile } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
+import { ToastInset } from '../components/Toast';
+import { SwipeRows } from '../components/gestures/SwipeableRow';
 import { Button } from '../components/Button';
 import { useUIStore } from '../stores/ui';
 import { AddSheet } from './today/AddSheet';
@@ -147,67 +149,75 @@ function TodayContent({
         summary={summary}
         onSelect={selectDate}
       />
-      <SectionList
-        testID="day-list"
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        stickySectionHeadersEnabled={false}
-        contentContainerStyle={[
-          styles.list,
-          { paddingBottom: quickAddInset(insets.bottom) + m.space.lg },
-        ]}
-        ListHeaderComponent={
-          <View style={styles.dayHeader}>
-            <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-              {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
-            </Text>
-            <Text style={[styles.supporting, { color: colors.muted }]}>
-              {items.length
-                ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
-                    total: items.length,
-                    done,
-                  })
-                : t('day.empty')}
-            </Text>
-            {failed ? (
-              <View>
-                <Text accessibilityRole="alert" style={{ color: colors.danger }}>
-                  {t('mobile.today.failed')}
+      <ToastInset bottom={quickAddInset(insets.bottom)} />
+      <SwipeRows>
+        <SectionList
+          testID="day-list"
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          stickySectionHeadersEnabled={false}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: quickAddInset(insets.bottom) + m.space.lg },
+          ]}
+          ListHeaderComponent={
+            <View style={styles.dayHeader}>
+              <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+                {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
+              </Text>
+              <Text style={[styles.supporting, { color: colors.muted }]}>
+                {items.length
+                  ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
+                      total: items.length,
+                      done,
+                    })
+                  : t('day.empty')}
+              </Text>
+              {failed ? (
+                <View>
+                  <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {t('mobile.today.failed')}
+                  </Text>
+                  <Button label={t('common.tryAgain')} secondary onPress={retry} />
+                </View>
+              ) : loading ? (
+                <Text style={[styles.supporting, { color: colors.muted }]}>
+                  {t('mobile.today.loading')}
                 </Text>
-                <Button label={t('common.tryAgain')} secondary onPress={retry} />
-              </View>
-            ) : loading ? (
-              <Text style={[styles.supporting, { color: colors.muted }]}>
-                {t('mobile.today.loading')}
-              </Text>
-            ) : !items.length ? (
-              <Text style={[styles.supporting, { color: colors.muted }]}>
-                {t('mobile.today.empty')}
-              </Text>
-            ) : null}
-          </View>
-        }
-        renderSectionHeader={({ section }) => (
-          <View style={styles.section}>
-            <GoalBadge goal={section.goal} />
-          </View>
-        )}
-        renderItem={({ item, section }) => (
-          <TodoRow todo={item} goal={section.goal} client={client} weekStart={profile.weekStart} />
-        )}
-        // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
-        ListFooterComponent={
-          <View style={styles.footer}>
-            <Button
-              label={t('auth.logout')}
-              secondary
-              disabled={loggingOut}
-              busy={loggingOut}
-              onPress={onLogout}
+              ) : !items.length ? (
+                <Text style={[styles.supporting, { color: colors.muted }]}>
+                  {t('mobile.today.empty')}
+                </Text>
+              ) : null}
+            </View>
+          }
+          renderSectionHeader={({ section }) => (
+            <View style={styles.section}>
+              <GoalBadge goal={section.goal} />
+            </View>
+          )}
+          renderItem={({ item, section }) => (
+            <TodoRow
+              todo={item}
+              goal={section.goal}
+              client={client}
+              weekStart={profile.weekStart}
             />
-          </View>
-        }
-      />
+          )}
+          // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
+          ListFooterComponent={
+            <View style={styles.footer}>
+              <Button
+                label={t('auth.logout')}
+                secondary
+                disabled={loggingOut}
+                busy={loggingOut}
+                onPress={onLogout}
+              />
+            </View>
+          }
+        />
+      </SwipeRows>
       <Pressable
         testID="quick-add"
         accessibilityRole="button"
