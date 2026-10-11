@@ -361,6 +361,7 @@
 - `TodoRow`는 배열 인덱스 대신 `splitSwipeActions`에서 `swipe === 'leading'/'trailing'`으로 나눈 결과를 사용한다. `SwipeableRow` 계약에 따라 leading은 정확히 하나여야 하며 0개·복수이면 구성 오류를 던진다. 첫 동작을 임의 선택하지 않고 테스트가 선언 오류를 발견하게 한다. 같은 방향의 버튼 순서는 선언 순서를 유지한다. 순서 변경·누락·중복 회귀 검사 3개를 추가했다.
 - 필수 검사 첫 실행에서 기존 `AppGate` 검사 하나가 업데이트 화면 DOM은 표시됐지만 스플래시 종료 effect는 아직 실행되지 않아 실패했다. 스플래시 종료 호출을 `waitFor`로 기다리도록 보완했고 앱 동작이나 시간 제한은 변경하지 않았다.
 - 수정 후 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 모두 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 63/RNTL 20 = 436검사. CI와 같은 루트 `pnpm test:coverage`도 436검사 통과했고 로그에서 모바일 `vitest run --coverage` 63개 뒤 `jest --runInBand`의 `Today.native.test.tsx`·`SwipeableRow.native.test.tsx` 2스위트·20개 실행을 확인했다. 커버리지는 Vitest만 수집한다. 로컬 명령 검증이며 수정된 브랜치의 GitHub Actions 실행은 미실행이다. DB 변경 없음으로 DB reset/test/types는 미실행했다. 기존 실기기/VoiceOver 확인 항목은 그대로 남긴다.
+- 이후 제공받은 GitHub Actions 로그에서는 lint·format·typecheck와 모바일 Vitest 63/RNTL 20이 실제 통과했다. 실패는 데스크톱 `RoutineEditor.test.tsx`의 완료/건너뛰기/실행 취소 초기 버튼 조회와 서로 다른 루틴 연속 체크 2검사였다. 전체 화면의 캘린더까지 반복 조회하던 역할 검사를 하루 목록 region의 `within`으로 한정했다(ROUT-06/07). 임시 진단에서 초기 todos 조회를 850ms 지연하면 기존 검사는 같은 버튼 조회 오류로 실패하고 수정된 검사는 통과했으며 진단 파일은 제거했다. 접근성 역할·이름·클릭 경로·검증 조건·기본 1초 대기/5초 테스트 제한은 유지했다. 제품 코드·의존성·CI 설정 변경은 없다.
 
 ---
 
@@ -461,3 +462,4 @@
 
 | 2026-10-10 | v2 M2b | TODO-02/03/04/05·MOB-01/04: 공통 SwipeableRow·400ms 햅틱/메뉴·이름 시트·내일 이동·행별 낙관적 잠금·5초 독립 복원 큐·VoiceOver actions 구현. 필수 4종 433검사(Vitest 413 + RNTL 20)·iOS Hermes export 통과. Simulator 길게 누르기/메뉴 이름 수정·이동/취소·삭제·라이트/다크 확인. 실제 밀기/삭제 복원은 CUA 드래그 반응 미확정으로 미완료, 실기기/VoiceOver/긴 스크롤/한국어 하드웨어 IME는 수동 확인 필요. expo-haptics만 추가; core/api·DB 변경 없음으로 DB 검증 미실행. 보수적 임계값/토큰 해석은 M2b 절 참조. |
 | 2026-10-11 | v2 M2b CI 후속 | MOB-01: 모바일 test:coverage에 Jest/RNTL 연결, @babel/runtime ^7.29.7 직접 선언/lockfile 갱신, swipe 값 기반 방향 분리와 leading 단일 계약·3회귀 검사 추가. 기존 AppGate 스플래시 effect 대기 보완. frozen 설치·캐시 없는 native 2스위트/20검사·필수4종 및 CI 동일 루트 coverage 436검사(Vitest 416 + RNTL 20) 통과. 다른 워크스페이스의 동일 실행 실패 없음. GitHub Actions 원격 실행·DB 검증 미실행(DB 변경 없음); 기존 실기기 항목 유지. |
+| 2026-10-11 | M2b 후속 CI 테스트 수정 | ROUT-06/07: 첨부 Actions 로그에서 lint·format·typecheck·모바일 83검사 통과, 데스크톱 RoutineEditor 통합 2검사 실패 확인. 두 검사의 반복 역할 조회를 목표별 하루 목록 region으로 한정해 캘린더 전체 탐색 제거. 850ms 초기 조회 지연 진단에서 기존 실패/수정 후 통과 확인(임시 파일 제거). 대기/테스트 제한과 검증 조건 유지. 필수4종 및 루트 coverage 436검사 통과. 제품 코드·의존성·DB·CI 설정 변경 없음, DB 검증 미실행. 수정 커밋의 원격 CI 재확인 필요. |
