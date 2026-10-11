@@ -43,6 +43,11 @@ function setup(weekStart: 0 | 1 = 0, timezone = 'UTC') {
   );
   return { user: userEvent.setup(), cache };
 }
+function findAddTodoButton() {
+  // 로딩 중 전체 화면의 캘린더 버튼까지 반복 검사하면 CI에서 기본 대기 시간을 소모한다.
+  const list = screen.getByRole('region', { name: '목표별 할 일 목록' });
+  return within(list).findByRole('button', { name: '할 일에 할 일 추가' });
+}
 it.each([false, true])(
   '헤더와 빈 상태는 삭제된 목표의 할 일을 제외한 표시 목록을 따른다 (숨겨진 항목만: %s)',
   async (hiddenOnly) => {
@@ -87,7 +92,7 @@ it.each([false, true])(
       ),
     );
     setup();
-    await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+    await findAddTodoButton();
     expect(screen.queryByRole('button', { name: '숨겨진 미완료 완료' })).toBeNull();
     expect(screen.queryByRole('button', { name: '숨겨진 완료 완료' })).toBeNull();
     expect(screen.queryByRole('button', { name: '다른 날 할 일 완료' })).toBeNull();
@@ -121,7 +126,7 @@ it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc
     }),
   );
   const { user } = setup();
-  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  await user.click(await findAddTodoButton());
   const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
   await user.type(input, '첫 번째');
   fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
@@ -148,7 +153,7 @@ it('빈 할 일에서 Enter를 누르면 저장하지 않고 입력을 닫는다
     }),
   );
   const { user } = setup();
-  const chip = await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  const chip = await findAddTodoButton();
   await user.click(chip);
   await user.keyboard('{Enter}');
 
@@ -178,7 +183,7 @@ it('입력 줄 바깥을 클릭하면 적던 글자를 저장하지 않고 닫�
     }),
   );
   const { user } = setup();
-  const chip = await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  const chip = await findAddTodoButton();
   await user.click(chip);
   const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
   await user.type(input, '버릴 글자');
@@ -208,7 +213,7 @@ it('다른 목표의 +를 누르면 기존 입력 줄이 닫히고 그 목표의
   const other = { ...goalRow, id: 'other-goal', name: '공부', sort_key: 'a1' };
   server.use(http.get(`${baseUrl}/rest/v1/goals`, () => HttpResponse.json([goalRow, other])));
   const { user } = setup();
-  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  await user.click(await findAddTodoButton());
   await user.type(screen.getByRole('textbox', { name: '할 일 새 할 일' }), '적던 것');
   await user.click(screen.getByRole('button', { name: '공부에 할 일 추가' }));
   expect(screen.queryByRole('textbox', { name: '할 일 새 할 일' })).toBeNull();
@@ -225,7 +230,7 @@ it('IME 조합 중 바깥을 클릭해도 조합 중이던 글자를 저장하�
     }),
   );
   const { user } = setup();
-  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  await user.click(await findAddTodoButton());
   const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
   fireEvent.compositionStart(input);
   fireEvent.change(input, { target: { value: '조합' } });
@@ -316,7 +321,7 @@ it('날짜 이동은 입력 중에는 무시하고 달 경계에서는 프로필
     }),
   );
   const { user } = setup(1);
-  await user.click(await screen.findByRole('button', { name: '할 일에 할 일 추가' }));
+  await user.click(await findAddTodoButton());
   await user.keyboard('{ArrowRight}');
   expect(useUIStore.getState().selectedDate).toBe('2026-09-30');
   await user.keyboard('{Escape}{ArrowRight}');
@@ -543,7 +548,7 @@ it('가져올 항목이 없으면 배너를 숨기고 오늘이 아니면 overdu
     }),
   );
   const { user } = setup();
-  await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await findAddTodoButton();
   expect(overdueRequests).not.toHaveBeenCalled();
   expect(screen.queryByRole('button', { name: '가져오기' })).toBeNull();
   await user.click(screen.getByRole('button', { name: '오늘' }));
@@ -579,7 +584,7 @@ it('가져오기 성공 뒤 실행 취소는 원래 날짜와 정렬 키를 복�
     http.patch(`${baseUrl}/rest/v1/todos`, restore),
   );
   const { user } = setup();
-  await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await findAddTodoButton();
   await user.click(screen.getByRole('button', { name: '하루 메뉴' }));
   await user.click(await screen.findByRole('menuitem', { name: /지난 미완료 할 일 1개 가져오기/ }));
   expect(await screen.findByRole('button', { name: '책 읽기 완료' })).toBeTruthy();
@@ -595,7 +600,7 @@ it('가져오기 성공 뒤 실행 취소는 원래 날짜와 정렬 키를 복�
 });
 it('월 탐색과 오늘 복귀 후 하루 목록 이동이 캘린더 월을 따라 바꾼다', async () => {
   const { user, cache } = setup();
-  await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await findAddTodoButton();
   await waitFor(() => expect(cache.getQueryData(queryKeys.todos('2026-08'))).toEqual([]));
   expect(cache.getQueryData(queryKeys.todos('2026-10'))).toEqual([]);
   await user.click(screen.getByRole('button', { name: '다음 달' }));
@@ -698,7 +703,7 @@ it('⌘N은 선택 날짜의 마지막 추가 목표를 열고 보관되면 첫 
 });
 it('⌘T는 오늘로 이동하고 ⌘, 설정 확인 중에는 날짜 단축키를 무시한다', async () => {
   setup();
-  await screen.findByRole('button', { name: '할 일에 할 일 추가' });
+  await findAddTodoButton();
   act(() => useUIStore.getState().selectDate('2026-09-29'));
   fireEvent.keyDown(window, { key: 't', metaKey: true });
   expect(useUIStore.getState().selectedDate).toBe(todoRow.date);
