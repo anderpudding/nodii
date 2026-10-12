@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
 import { type NodiiClient, type TodoRecord } from '@nodii/api';
@@ -30,6 +31,7 @@ export function TodoRow({
   isDateLocked?: (date: ISODate) => boolean;
 }) {
   const { colors, isDark } = useTheme();
+  const online = useOnline();
   const [menu, setMenu] = useState(false);
   const [picking, setPicking] = useState(false);
   const today = useUIStore((state) => state.today);
@@ -64,7 +66,7 @@ export function TodoRow({
             ? lightColors.bg
             : colors.ink,
       run: () => {
-        if (locked || id === 'rename') return;
+        if (!online || locked || id === 'rename') return;
         if (id === 'move') setPicking(true);
         else void actions.run(id);
       },
@@ -74,7 +76,7 @@ export function TodoRow({
     <>
       <SwipeableRow
         id={todo.id}
-        disabled={locked}
+        disabled={locked || !online}
         leading={swipeActions.leading}
         trailing={swipeActions.trailing}
         onMenu={openMenu}
@@ -93,7 +95,7 @@ export function TodoRow({
           onMenu={openMenu}
           onAction={(name) => {
             const action = todoActions.find(({ id }) => id === name);
-            if (!action || locked) return;
+            if (!online || !action || locked) return;
             if (action.id === 'rename') openMenu();
             else if (action.id === 'move') setPicking(true);
             else void actions.run(action.id);

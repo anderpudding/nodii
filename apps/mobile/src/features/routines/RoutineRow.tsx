@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import type { NodiiClient } from '@nodii/api';
 import {
@@ -41,11 +42,12 @@ export function RoutineRow({
   onStop(): void;
 }) {
   const { colors, isDark } = useTheme();
+  const online = useOnline();
   const [menu, setMenu] = useState(false);
   const actions = useRoutineActions(client, weekStart, routine, date);
   const done = log?.status === 'done';
   function run(id: RoutineAction) {
-    if (actions.pending || actions.locallyBusy()) return;
+    if (!online || actions.pending || actions.locallyBusy()) return;
     if (id === 'edit') onEdit();
     else if (id === 'stop') onStop();
     else void actions.run(id);
@@ -77,7 +79,7 @@ export function RoutineRow({
     <>
       <SwipeableRow
         id={routine.id}
-        disabled={actions.pending}
+        disabled={!online || actions.pending}
         leading={swipe.leading}
         trailing={swipe.trailing}
         onMenu={openMenu}

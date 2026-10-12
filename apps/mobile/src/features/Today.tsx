@@ -1,3 +1,4 @@
+import { useOnline } from '../../lib/connectivity';
 import { useEffect, useMemo, useState } from 'react';
 import { AppState, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +27,7 @@ import { AddSheet } from './today/AddSheet';
 import { GoalBadge } from './today/GoalBadge';
 import { TodoRow } from './today/TodoRow';
 import { RoutineRow } from './routines/RoutineRow';
-import { RoutineList } from './routines/RoutineList';
+import { Settings } from './settings/Settings';
 import { RoutineEditor } from './routines/RoutineEditor';
 import { RoutineStop } from './routines/RoutineStop';
 import { DayMenu } from './today/DayMenu';
@@ -48,6 +49,8 @@ interface TodayProps {
   userId: string;
   onLogout(): void;
   loggingOut: boolean;
+  email?: string;
+  onAccountDeleted?(): Promise<void>;
 }
 /** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
 export function Today(props: TodayProps) {
@@ -84,8 +87,11 @@ function TodayContent({
   profile,
   onLogout,
   loggingOut,
+  email = '',
+  onAccountDeleted = async () => {},
 }: TodayProps & { profile: Profile }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const insets = useSafeAreaInsets();
   const {
     selectedDate,
@@ -100,11 +106,12 @@ function TodayContent({
   const cache = useQueryClient();
   const dayActions = useDayActions(client, profile.weekStart);
   const [adding, setAdding] = useState(false);
-  const [managingRoutines, setManagingRoutines] = useState(false);
+  const [settings, setSettings] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<RoutineRecord | null>(null);
   const [stoppingRoutine, setStoppingRoutine] = useState<RoutineRecord | null>(null);
   const [barFocused, setBarFocused] = useState(false);
   const [monthFocused, setMonthFocused] = useState(false);
+  const [settingsFocused, setSettingsFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
@@ -233,16 +240,35 @@ function TodayContent({
           </View>
         ) : (
           <Pressable
-            disabled
+            onPress={() => setSettings(true)}
+            onFocus={() => setSettingsFocused(true)}
+            onBlur={() => setSettingsFocused(false)}
             accessibilityRole="button"
-            accessibilityLabel={t('mobile.settings.unavailable')}
-            accessibilityState={{ disabled: true }}
-            style={styles.settings}
+            accessibilityLabel={t('settings.title')}
+            accessibilityState={{ expanded: settings }}
+            style={({ pressed }) => [
+              styles.settings,
+              {
+                opacity: pressed ? m.pressedOpacity : 1,
+                borderColor: settingsFocused ? colors.focus : colors.side,
+              },
+            ]}
           >
-            <Text style={[styles.heading, { color: colors.muted }]}>☰</Text>
+            <Text style={[styles.heading, { color: colors.ink2 }]}>☰</Text>
           </Pressable>
         )}
       </View>
+      {!online && (
+        <Text
+          accessibilityRole="alert"
+          style={[
+            styles.offline,
+            { backgroundColor: colors.side, color: colors.ink2, borderBottomColor: colors.line },
+          ]}
+        >
+          {t('sync.offline')}
+        </Text>
+      )}
       {monthExpanded ? (
         <MonthGrid
           month={calendarMonth}
@@ -360,23 +386,6 @@ function TodayContent({
               />
             )
           }
-          // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
-          ListFooterComponent={
-            <View style={styles.footer}>
-              <Button
-                label={t('routine.manage')}
-                secondary
-                onPress={() => setManagingRoutines(true)}
-              />
-              <Button
-                label={t('auth.logout')}
-                secondary
-                disabled={loggingOut}
-                busy={loggingOut}
-                onPress={onLogout}
-              />
-            </View>
-          }
         />
       </SwipeRows>
       <Pressable
@@ -384,9 +393,13 @@ function TodayContent({
         accessibilityRole="button"
         accessibilityLabel={t('todo.add')}
         accessibilityState={{
-          disabled: !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate),
+          disabled:
+            !online || !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate),
         }}
-        disabled={!activeGoal || loading || failed || dayActions.isDateLocked(selectedDate)}
+        accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
+        disabled={
+          !online || !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate)
+        }
         onPress={() => setAdding(true)}
         onFocus={() => setBarFocused(true)}
         onBlur={() => setBarFocused(false)}
@@ -403,7 +416,9 @@ function TodayContent({
       >
         <View style={styles.barContent}>
           {activeGoal && <GoalBadge goal={activeGoal} />}
-          <Text style={[styles.addLabel, { color: colors.muted }]}>{t('todo.add')}</Text>
+          <Text style={[styles.addLabel, { color: colors.muted }]}>
+            {t(online ? 'todo.add' : 'sync.writeDisabled')}
+          </Text>
           <View style={[styles.plus, { backgroundColor: colors.ink }]}>
             <Text accessible={false} style={[styles.heading, { color: colors.bg }]}>
               +
@@ -423,14 +438,15 @@ function TodayContent({
           onClose={() => setAdding(false)}
         />
       )}
-      {managingRoutines && (
-        <RoutineList
-          timeZone={profile.timezone}
+      {settings && (
+        <Settings
           client={client}
-          date={selectedDate}
-          today={today}
-          weekStart={profile.weekStart}
-          onClose={() => setManagingRoutines(false)}
+          profile={profile}
+          email={email}
+          onLogout={onLogout}
+          loggingOut={loggingOut}
+          onAccountDeleted={onAccountDeleted}
+          onClose={() => setSettings(false)}
         />
       )}
       {editingRoutine && (
@@ -459,6 +475,14 @@ function TodayContent({
 }
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  offline: {
+    minHeight: m.type.title,
+    textAlign: 'center',
+    fontFamily: m.fontMedium,
+    fontSize: m.type.supporting,
+    lineHeight: m.type.title,
+    borderBottomWidth: m.border,
+  },
   center: { flex: 1, padding: m.space.group, justifyContent: 'center', gap: m.space.lg },
   top: {
     flexDirection: 'row',
@@ -475,6 +499,8 @@ const styles = StyleSheet.create({
   },
   arrows: { flexDirection: 'row', gap: m.space.sm },
   settings: {
+    borderWidth: m.selectionRing,
+    borderRadius: m.radius.field,
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     alignItems: 'center',

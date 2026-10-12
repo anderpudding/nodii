@@ -43,6 +43,8 @@ export function SwipeableRow({
   leading,
   trailing,
   onMenu,
+  onUnavailableSwipe,
+  onReorder,
   children,
 }: {
   id: string;
@@ -50,6 +52,8 @@ export function SwipeableRow({
   leading?: RowAction;
   trailing: RowAction[];
   onMenu(): void;
+  onUnavailableSwipe?(): void;
+  onReorder?(distance: number): void;
   children: ReactNode;
 }) {
   const context = useContext(SwipeContext);
@@ -60,6 +64,8 @@ export function SwipeableRow({
   const start = useSharedValue(0);
   const width = useSharedValue(0);
   const scale = useSharedValue(1);
+  const vertical = useSharedValue(0);
+  const [dragging, setDragging] = useState(false);
   const [opened, setOpened] = useState(false);
   const actionWidth = m.height.chip * 2;
   const railWidth = trailing.length * actionWidth;
@@ -100,6 +106,10 @@ export function SwipeableRow({
       scheduleOnRN(activate);
     })
     .onUpdate((event) => {
+      if (railWidth === 0 && event.translationX < 0) {
+        offset.set(0);
+        return;
+      }
       offset.set(
         Math.max(
           -width.get(),
@@ -108,6 +118,11 @@ export function SwipeableRow({
       );
     })
     .onEnd((event) => {
+      if (railWidth === 0 && event.translationX < -swipeRules.horizontalActivation) {
+        offset.set(0);
+        if (onUnavailableSwipe) scheduleOnRN(onUnavailableSwipe);
+        return;
+      }
       // 빠른 밀기는 update 없이 끝날 수 있으므로 최종 네이티브 이동 거리로 판정한다.
       const result = swipeOutcome(
         Math.min(hasLeading ? width.get() : 0, start.get() + event.translationX),
@@ -142,19 +157,46 @@ export function SwipeableRow({
       scale.set(withTiming(1, { duration: reduced ? 0 : m.motion.press }));
       scheduleOnRN(close);
     });
+  const reorder = Gesture.Pan()
+    .withTestId(`reorder-${id}`)
+    .enabled(!disabled && !!onReorder)
+    .activateAfterLongPress(swipeRules.longPressMs)
+    .onStart(() => {
+      scheduleOnRN(activate);
+      scheduleOnRN(feedback);
+      scheduleOnRN(setDragging, true);
+      scale.set(reduced ? 1 : m.longPressScale);
+    })
+    .onUpdate((event) => {
+      vertical.set(event.translationY);
+    })
+    .onEnd((event) => {
+      if (Math.abs(event.translationY) < m.space.md) scheduleOnRN(onMenu);
+      else if (onReorder) scheduleOnRN(onReorder, event.translationY);
+    })
+    .onFinalize(() => {
+      vertical.set(0);
+      scale.set(1);
+      scheduleOnRN(setDragging, false);
+    });
   if (context) {
     pan.simultaneousWithExternalGesture(context.scroll);
     longPress.simultaneousWithExternalGesture(context.scroll);
+    if (onReorder) reorder.blocksExternalGesture(context.scroll);
   }
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: offset.get() }, { scale: scale.get() }],
+    transform: [
+      { translateX: offset.get() },
+      { translateY: vertical.get() },
+      { scale: scale.get() },
+    ],
   }));
   const leadingStyle = useAnimatedStyle(() => ({ opacity: offset.get() > 0 ? 1 : 0 }));
   const trailingStyle = useAnimatedStyle(() => ({ opacity: offset.get() < 0 ? 1 : 0 }));
   return (
     <View
       testID={`swipe-layout-${id}`}
-      style={styles.clip}
+      style={[styles.clip, dragging && { overflow: 'visible', zIndex: 1 }]}
       onLayout={(event) => {
         width.set(event.nativeEvent.layout.width);
       }}
@@ -200,7 +242,7 @@ export function SwipeableRow({
           </Pressable>
         ))}
       </Animated.View>
-      <GestureDetector gesture={Gesture.Race(pan, longPress)}>
+      <GestureDetector gesture={Gesture.Race(pan, onReorder ? reorder : longPress)}>
         <Animated.View style={[{ backgroundColor: colors.bg }, animatedStyle]}>
           {children}
         </Animated.View>

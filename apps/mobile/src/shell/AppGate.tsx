@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
-import { useQueryClient } from '@tanstack/react-query';
-import { syncProfileTimezone, type NodiiClient, type Session } from '@nodii/api';
-import { t } from '@nodii/i18n';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import { readStoredSession, type NodiiClient, type Session } from '@nodii/api';
+import { t, type MessageKey } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
 import { logout } from '../../lib/logout';
@@ -15,6 +15,8 @@ import { mobileClient, mobileEnv } from '../../lib/supabase';
 import { useToast } from '../components/Toast';
 import { Button } from '../components/Button';
 import { Login } from '../features/auth/Login';
+import { clearPersistedCache } from '../../lib/query-cache';
+import { UserData } from './UserData';
 import { Today } from '../features/Today';
 
 type Gate =
@@ -29,6 +31,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   const [attempt, setAttempt] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const logoutBusy = useRef(false);
+  const logoutNotice = useRef<MessageKey | null>(null);
   const refresh = useRef<ReturnType<typeof bindAuthRefresh> | null>(null);
   const query = useQueryClient();
   const toast = useToast();
@@ -54,13 +57,18 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     let previousUser: string | undefined;
     function applySession(session: Session | null) {
       if (!live) return;
-      if (previousUser && previousUser !== session?.user.id) query.clear();
+      if (previousUser && previousUser !== session?.user.id) {
+        void clearPersistedCache(query).catch(() => toast(t('sync.cache.clearFailed')));
+        query.clear();
+      }
       previousUser = session?.user.id;
       refresh.current?.setSignedIn(!!session);
       setGate({ status: 'ready', session });
     }
     async function restore() {
-      const info = await checkMobileVersion(client!, Constants.expoConfig?.version ?? '0.1.0');
+      const info = onlineManager.isOnline()
+        ? await checkMobileVersion(client!, Constants.expoConfig?.version ?? '0.1.0')
+        : null;
       if (!live) return;
       if (info) {
         setGate({ status: 'update', info });
@@ -76,6 +84,14 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
       });
       unsubscribe = () => subscription.unsubscribe();
       try {
+        // SYNC-04: 만료 토큰의 HTTP 갱신을 기다리지 않고 오프라인 읽기 계정만 복원한다.
+        if (!onlineManager.isOnline()) {
+          const stored = await readStoredSession(client!);
+          if (stored && live && !eventReceived) {
+            applySession(stored);
+            return;
+          }
+        }
         const { data, error } = await client!.auth.getSession();
         if (!live || eventReceived) return;
         if (error) setGate({ status: 'error' });
@@ -89,43 +105,42 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
       live = false;
       unsubscribe?.();
     };
-  }, [client, query, attempt]);
+  }, [client, query, attempt, toast]);
 
-  const userId = gate.status === 'ready' ? gate.session?.user.id : undefined;
   useEffect(() => {
-    if (!client || !userId) return;
-    const controller = new AbortController();
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    void syncProfileTimezone(client, userId, timezone, controller.signal)
-      .then(async (profile) => {
-        if (controller.signal.aborted) return;
-        // 동시에 시작한 이전 프로필 조회가 동기화 결과를 덮지 않게 한다.
-        await query.cancelQueries({ queryKey: ['profile', userId], exact: true });
-        if (!controller.signal.aborted) query.setQueryData(['profile', userId], profile);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) toast(t('mobile.profile.failed'));
-      });
-    return () => controller.abort();
-  }, [client, userId, toast, query]);
+    if (gate.status !== 'ready' || gate.session || !logoutNotice.current) return;
+    // 하루 화면의 실행 취소 정리가 끝난 뒤 로그인 화면에서 결과를 알린다.
+    const message = logoutNotice.current;
+    logoutNotice.current = null;
+    toast(t(message));
+  }, [gate, toast]);
 
   const ready = !client || gate.status !== 'loading';
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => toast(t('mobile.session.failed')));
   }, [ready, toast]);
 
-  async function signOut() {
+  async function signOut(accountDeleted = false) {
     if (!client || logoutBusy.current) return;
     logoutBusy.current = true;
     setLoggingOut(true);
     await refresh.current?.pause();
     try {
-      const result = await logout(client, query);
+      const result = await logout(client, query, undefined, accountDeleted);
+      logoutNotice.current = accountDeleted
+        ? 'settings.deleted'
+        : result.localOnly
+          ? 'auth.logout.local'
+          : null;
       setGate({ status: 'ready', session: null });
-      if (result.localOnly) toast(t('auth.logout.local'));
     } catch {
-      refresh.current?.setSignedIn(true);
-      toast(t('auth.logout.failed'));
+      if (accountDeleted) {
+        logoutNotice.current = 'sync.cache.clearFailed';
+        setGate({ status: 'ready', session: null });
+      } else {
+        refresh.current?.setSignedIn(true);
+        toast(t('auth.logout.failed'));
+      }
     } finally {
       logoutBusy.current = false;
       setLoggingOut(false);
@@ -191,13 +206,17 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
           <Button label={t('mobile.update.action')} onPress={() => void openStore()} />
         </View>
       ) : gate.session ? (
-        <Today
-          key={gate.session.user.id}
-          client={client}
-          userId={gate.session.user.id}
-          onLogout={() => void signOut()}
-          loggingOut={loggingOut}
-        />
+        <UserData key={gate.session.user.id} client={client} userId={gate.session.user.id}>
+          <Today
+            key={gate.session.user.id}
+            client={client}
+            userId={gate.session.user.id}
+            onLogout={() => void signOut()}
+            loggingOut={loggingOut}
+            email={gate.session.user.email ?? ''}
+            onAccountDeleted={() => signOut(true)}
+          />
+        </UserData>
       ) : (
         <Login client={client} reviewAccountEmail={mobileEnv.reviewAccountEmail} />
       )}

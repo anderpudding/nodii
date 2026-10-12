@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useThemePreference } from './theme-preference';
 import { AccessibilityInfo, useColorScheme } from 'react-native';
 
 export const lightColors = {
@@ -68,9 +69,11 @@ export const metrics = {
   lineHeight: { body: 1.5, title: 1.25 },
   motion: { state: 150, press: 120, check: 280, menu: 140, toast: 240 },
 };
-/** SET-02: M1은 기기 시스템 테마만 따른다. */
+/** SET-02: 저장한 기기 테마 또는 시스템 테마를 모든 화면이 공유한다. */
 export function useTheme() {
-  const isDark = useColorScheme() === 'dark';
+  const system = useColorScheme();
+  const preference = useThemePreference((state) => state.preference);
+  const isDark = preference === 'dark' || (preference === 'system' && system === 'dark');
   return { isDark, colors: isDark ? darkColors : lightColors };
 }
 /** 모션 감소가 켜졌거나 아직 확인 전이면 시트 전환을 애니메이션 없이 표시한다. */

@@ -7,19 +7,27 @@ import {
 } from '@nodii/api';
 import type { QueryClient } from '@tanstack/react-query';
 import { secureStoreAuthStorage } from './secure-store';
+import { clearPersistedCache } from './query-cache';
 
 /** AUTH-03: 서버 해제 후 캐시와 인증 키를 지우며 네트워크 오류도 로컬 로그아웃을 허용한다. */
 export async function logout(
   client: NodiiClient,
   query: QueryClient,
   storage: AuthStorage = secureStoreAuthStorage,
+  accountDeleted = false,
 ): Promise<{ localOnly: boolean }> {
   let localOnly = false;
   try {
     await signOut(client);
   } catch (error) {
-    if (normalizeAuthError(error).code !== 'network') throw error;
+    if (!accountDeleted && normalizeAuthError(error).code !== 'network') throw error;
     localOnly = true;
+  }
+  let cleanupError: unknown;
+  try {
+    await clearPersistedCache(query);
+  } catch (error) {
+    cleanupError = error;
   }
   await query.cancelQueries();
   query.clear();
@@ -28,8 +36,13 @@ export async function logout(
     `${AUTH_STORAGE_KEY}-code-verifier`,
     `${AUTH_STORAGE_KEY}-user`,
   ]) {
-    await storage.removeItem(key);
+    try {
+      await storage.removeItem(key);
+    } catch (error) {
+      cleanupError ??= error;
+    }
   }
   await client.auth.stopAutoRefresh();
+  if (cleanupError) throw cleanupError;
   return { localOnly };
 }

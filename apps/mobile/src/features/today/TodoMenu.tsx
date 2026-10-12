@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -40,6 +41,7 @@ export function TodoMenu({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState(false);
@@ -73,7 +75,7 @@ export function TodoMenu({
     [close],
   );
   async function submit(event?: unknown) {
-    if (busy.current || locked) return;
+    if (!online || busy.current || locked) return;
     const title = submissionTitle(draft, event);
     if (!title) {
       // IME 확인 이벤트는 검증 오류도 띄우지 않는다.
@@ -139,7 +141,7 @@ export function TodoMenu({
                   label={t('mobile.rename.save')}
                   secondary
                   busy={saving}
-                  disabled={saving || locked || !normalizeTitle(draft)}
+                  disabled={!online || saving || locked || !normalizeTitle(draft)}
                   onPress={() => void submit()}
                 />
               </View>
@@ -187,6 +189,11 @@ export function TodoMenu({
                   {todo.title}
                 </Text>
               </View>
+              {!online && (
+                <Text style={[styles.supporting, { color: colors.muted }]}>
+                  {t('sync.writeDisabled')}
+                </Text>
+              )}
               {todoActions.map(({ id }) => (
                 <Pressable
                   key={id}
@@ -194,8 +201,9 @@ export function TodoMenu({
                   accessibilityLabel={
                     id === 'move' ? t('todo.action.move.menu') : actionLabel(id, todo.isDone)
                   }
-                  accessibilityState={{ disabled: locked, busy: locked }}
-                  disabled={locked}
+                  accessibilityState={{ disabled: !online || locked, busy: locked }}
+                  accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
+                  disabled={!online || locked}
                   onPress={() => {
                     if (id === 'rename') setEditing(true);
                     else {

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from 'react';
@@ -20,7 +21,8 @@ const ToastViewContext = createContext<{
   bottom: number;
   dismiss(id: number): void;
   restore(id: number): void;
-  registerPortal(delta: number): void;
+  registerPortal(id: symbol, mounted: boolean): void;
+  activePortal?: symbol;
   setBottom(value: number): void;
   clear(): void;
 }>({
@@ -35,7 +37,7 @@ const ToastViewContext = createContext<{
 /** TODO-04/NFR-12: 행이 목록에서 사라져도 각각의 복원 작업은 Provider에 살아 있다. */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<ToastEntry[]>([]);
-  const [portals, setPortals] = useState(0);
+  const [portals, setPortals] = useState<symbol[]>([]);
   const [bottom, setBottom] = useState(0);
   const nextId = useRef(0);
   const restoring = useRef(new Set<number>());
@@ -49,7 +51,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [],
   );
   const clear = useCallback(() => setEntries([]), []);
-  const registerPortal = useCallback((delta: number) => setPortals((count) => count + delta), []);
+  const registerPortal = useCallback(
+    (id: symbol, mounted: boolean) =>
+      setPortals((current) =>
+        mounted
+          ? [...current.filter((entry) => entry !== id), id]
+          : current.filter((entry) => entry !== id),
+      ),
+    [],
+  );
   useEffect(() => {
     const next = Math.min(
       ...entries.filter((entry) => !entry.busy).map((entry) => entry.expiresAt),
@@ -92,12 +102,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           dismiss,
           restore: (id) => void restore(id),
           registerPortal,
+          activePortal: portals[portals.length - 1],
           setBottom,
           clear,
         }}
       >
         {children}
-        {portals === 0 && <ToastView />}
+        {portals.length === 0 && <ToastView />}
       </ToastViewContext.Provider>
     </ToastContext.Provider>
   );
@@ -115,15 +126,22 @@ export function ToastInset({ bottom }: { bottom: number }) {
   return null;
 }
 /** 네이티브 Modal은 별도 창이므로 같은 토스트를 그 창 안에 한 번만 그린다. */
-export function ToastPortal() {
-  const { registerPortal } = useContext(ToastViewContext);
-  useEffect(() => {
-    registerPortal(1);
-    return () => registerPortal(-1);
-  }, [registerPortal]);
-  return <ToastView portal />;
+export function ToastPortal({ bottom = 0 }: { bottom?: number } = {}) {
+  const { registerPortal, activePortal } = useContext(ToastViewContext);
+  const [id] = useState(() => Symbol('toast-portal'));
+  useLayoutEffect(() => {
+    registerPortal(id, true);
+    return () => registerPortal(id, false);
+  }, [registerPortal, id]);
+  return activePortal === id ? <ToastView portal portalBottom={bottom} /> : null;
 }
-function ToastView({ portal = false }: { portal?: boolean }) {
+function ToastView({
+  portal = false,
+  portalBottom = 0,
+}: {
+  portal?: boolean;
+  portalBottom?: number;
+}) {
   const { entries, bottom, dismiss, restore } = useContext(ToastViewContext);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -146,7 +164,7 @@ function ToastView({ portal = false }: { portal?: boolean }) {
         {
           bottom:
             (portal
-              ? Math.max(insets.bottom, keyboardHeight)
+              ? Math.max(portalBottom, insets.bottom, keyboardHeight)
               : Math.max(bottom, insets.bottom, keyboardHeight)) + m.toastInset,
         },
       ]}

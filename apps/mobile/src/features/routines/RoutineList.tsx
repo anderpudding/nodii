@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useOnline } from '../../../lib/connectivity';
+import { useMemo, useState } from 'react';
+import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useGoals,
@@ -34,6 +35,7 @@ export function RoutineList({
   weekStart,
   timeZone = 'UTC',
   onClose,
+  backLabel = t('day.today'),
 }: {
   client: NodiiClient;
   date: ISODate;
@@ -41,9 +43,24 @@ export function RoutineList({
   weekStart: 0 | 1;
   timeZone?: string;
   onClose(): void;
+  backLabel?: string;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const insets = useSafeAreaInsets();
+  const edge = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gesture) =>
+          gesture.x0 <= m.height.touch &&
+          gesture.dx > m.space.md &&
+          Math.abs(gesture.dy) < m.space.sm,
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dx > m.height.touch) onClose();
+        },
+      }),
+    [onClose],
+  );
   const routines = useRoutines(client);
   const goals = useGoals(client);
   const [editing, setEditing] = useState<RoutineRecord | null | undefined>(undefined);
@@ -70,11 +87,12 @@ export function RoutineList({
     <Modal visible animationType="none" onRequestClose={onClose}>
       <View
         accessibilityViewIsModal
+        {...edge.panHandlers}
         style={[styles.screen, { backgroundColor: colors.side, paddingTop: insets.top }]}
       >
         <ToastInset bottom={barHeight} />
         <View style={styles.header}>
-          <Button label={t('day.today')} secondary onPress={onClose} />
+          <Button label={backLabel} secondary onPress={onClose} />
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             {t('routine.manage')}
           </Text>
@@ -130,6 +148,11 @@ export function RoutineList({
             ))}
           </ScrollView>
         </SwipeRows>
+        {!online && (
+          <Text style={[styles.supporting, { color: colors.muted }]}>
+            {t('sync.writeDisabled')}
+          </Text>
+        )}
         <View
           style={[
             styles.bar,
@@ -142,7 +165,9 @@ export function RoutineList({
         >
           <Button
             label={t('routine.create')}
-            disabled={loading || failed || !allGoals.some((goal) => goal.archivedAt === null)}
+            disabled={
+              !online || loading || failed || !allGoals.some((goal) => goal.archivedAt === null)
+            }
             onPress={() => setEditing(null)}
           />
         </View>
@@ -168,7 +193,7 @@ export function RoutineList({
           />
         )}
       </View>
-      <ToastPortal />
+      <ToastPortal bottom={barHeight} />
     </Modal>
   );
 }
@@ -186,12 +211,13 @@ function ManagementRow({
   onStop(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const busy = useRoutineWritePending(routine.id);
   const [menu, setMenu] = useState(false);
   const [focused, setFocused] = useState(false);
   const label = `${routine.title} · ${ruleLabel(routine)} · ${t(routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from', { date: routineDate(routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate) })}`;
   function run(action: RoutineManagementAction) {
-    if (busy) return;
+    if (busy || !online) return;
     if (action === 'edit') onEdit();
     else onStop();
   }
@@ -210,7 +236,7 @@ function ManagementRow({
     <>
       <SwipeableRow
         id={`manage-${routine.id}`}
-        disabled={busy}
+        disabled={busy || !online}
         trailing={swipe.trailing}
         onMenu={() => setMenu(true)}
       >
@@ -219,7 +245,11 @@ function ManagementRow({
           accessibilityLabel={label}
           accessibilityState={{ disabled: busy }}
           disabled={busy}
-          onPress={() => run('edit')}
+          accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
+          onPress={() => {
+            if (online) run('edit');
+            else setMenu(true);
+          }}
           onLongPress={() => setMenu(true)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}

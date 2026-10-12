@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { t } from '@nodii/i18n';
@@ -12,6 +12,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { metrics as m, useTheme } from '../lib/theme';
+import { restoreTheme } from '../lib/theme-preference';
+import { bindConnectivity } from '../lib/connectivity';
 import { ToastProvider } from '../src/components/Toast';
 
 // AUTH-02: 세션 복원이 끝나기 전에 네이티브 스플래시가 사라지지 않게 한다.
@@ -22,6 +24,14 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const { colors } = useTheme();
+  const [themeLoaded, setThemeLoaded] = useState(false);
+  const [themeError, setThemeError] = useState(false);
+  useEffect(() => {
+    void restoreTheme()
+      .catch(() => setThemeError(true))
+      .finally(() => setThemeLoaded(true));
+  }, []);
+  useEffect(() => bindConnectivity(), []);
   const [fontsLoaded, fontError] = useFonts({
     'Pretendard-Regular': regular,
     'Pretendard-Medium': medium,
@@ -44,13 +54,18 @@ export default function RootLayout() {
         <Text style={{ color: colors.ink }}>{t('mobile.font.failed')}</Text>
       </View>
     );
-  if (!fontsLoaded) return null; // 네이티브 스플래시가 계속 표시된다.
+  if (!fontsLoaded || !themeLoaded) return null; // 네이티브 스플래시가 계속 표시된다.
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
+            {themeError && (
+              <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+                {t('settings.theme.failed')}
+              </Text>
+            )}
             <Stack screenOptions={{ headerShown: false }} />
           </ToastProvider>
         </QueryClientProvider>
