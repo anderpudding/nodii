@@ -126,23 +126,26 @@ it('추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc
     }),
   );
   const { user } = setup();
-  await user.click(await findAddTodoButton());
-  const input = screen.getByRole('textbox', { name: '할 일 새 할 일' });
+  const addButton = await findAddTodoButton();
+  const list = within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
+  await user.click(addButton);
+  const input = list.getByRole('textbox', { name: '할 일 새 할 일' });
   await user.type(input, '첫 번째');
   fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
   expect(inserts).toHaveLength(0);
   await user.keyboard('{Enter}');
-  expect(await screen.findByRole('button', { name: '첫 번째 완료' })).toBeTruthy();
+  // 반복 조회마다 42칸 캘린더의 접근성/스타일까지 계산하지 않도록 목록에 한정한다.
+  expect(await list.findByRole('button', { name: '첫 번째 완료' })).toBeTruthy();
   expect((input as HTMLInputElement).value).toBe('');
   await user.type(input, '두 번째{Enter}');
-  expect(await screen.findByRole('button', { name: '두 번째 완료' })).toBeTruthy();
+  expect(await list.findByRole('button', { name: '두 번째 완료' })).toBeTruthy();
   await waitFor(() => expect(inserts).toHaveLength(2));
   expect(String(inserts[0]!.sort_key) < String(inserts[1]!.sort_key)).toBe(true);
   expect(inserts[0]!.id).toMatch(/^[0-9a-f-]{36}$/);
   await act(async () => release());
   await user.keyboard('{Escape}');
   expect(screen.queryByRole('textbox')).toBeNull();
-  expect(document.activeElement).toBe(screen.getByRole('button', { name: '할 일에 할 일 추가' }));
+  expect(document.activeElement).toBe(addButton);
 });
 it('빈 할 일에서 Enter를 누르면 저장하지 않고 입력을 닫는다', async () => {
   const inserts: unknown[] = [];
