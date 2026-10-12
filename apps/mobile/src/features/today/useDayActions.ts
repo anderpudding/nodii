@@ -27,16 +27,29 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
   const remove = useBulkDeleteTodos(client, weekStart, options);
   const imports = useImportOverdue(client, weekStart, options);
   // 행 쓰기 중 묶음이 시작해 오래된 완료/정렬 스냅샷을 덮지 않게 한다.
-  useIsMutating({ mutationKey: ['write', 'todo'] });
+  useIsMutating({ mutationKey: ['write'] });
   function rowWriting(date: ISODate) {
     return (
       cache.isMutating({
-        mutationKey: ['write', 'todo'],
+        mutationKey: ['write'],
         predicate: (mutation) => {
           const value: unknown = mutation.state.variables;
           if (!value || typeof value !== 'object') return false;
-          const row = 'todo' in value ? value.todo : value;
-          return !!row && typeof row === 'object' && 'date' in row && row.date === date;
+          if ('date' in value && value.date === date) return true;
+          if ('today' in value && value.today === date) return true;
+          const rows =
+            'todos' in value
+              ? value.todos
+              : 'overdue' in value
+                ? value.overdue
+                : ['todo' in value ? value.todo : value];
+          return (
+            Array.isArray(rows) &&
+            rows.some(
+              (row: unknown) =>
+                !!row && typeof row === 'object' && 'date' in row && row.date === date,
+            )
+          );
         },
       }) > 0
     );
@@ -73,10 +86,13 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
         for (const date of new Set(originals.map((row) => row.date))) {
           if (restored.has(date)) continue;
           const group = originals.filter((row) => row.date === date);
-          const current = group.map((row) => latest(row.id));
-          if (current.some((row) => !row)) throw new Error('todo_no_longer_active');
+          const current = group.map((row) => {
+            const active = latest(row.id);
+            if (!active) throw new Error('todo_no_longer_active');
+            return active;
+          });
           await move.mutateAsync({
-            todos: current as TodoRecord[],
+            todos: current,
             moves: group.map((row) => ({ id: row.id, sort_key: row.sortKey })),
             date,
           });
@@ -106,6 +122,15 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
     if (!moves.length) return;
     try {
       await locked([today], async () => {
+        if (originals.some((row) => rowWriting(row.date))) throw new Error('day_busy');
+        for (const original of originals) {
+          const active = latest(original.id);
+          if (
+            active &&
+            (active.isDone || active.date !== original.date || active.sortKey !== original.sortKey)
+          )
+            throw new Error('todos_changed');
+        }
         await imports.mutateAsync({ overdue: originals, moves, today });
         toast(t('day.menu.imported', { count: originals.length }), undoMove(originals, today));
       });

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppState, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   adjacentMonthKey,
   fetchProfile,
+  monthTodosOptions,
   useGoals,
   useMonthTodos,
   type NodiiClient,
@@ -15,6 +16,7 @@ import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
+import { CalendarArrow } from '../components/CalendarArrow';
 import { Button } from '../components/Button';
 import { useUIStore } from '../stores/ui';
 import { AddSheet } from './today/AddSheet';
@@ -88,9 +90,11 @@ function TodayContent({
     toggleMonth,
     showMonth,
   } = useUIStore();
+  const cache = useQueryClient();
   const dayActions = useDayActions(client, profile.weekStart);
   const [adding, setAdding] = useState(false);
   const [barFocused, setBarFocused] = useState(false);
+  const [monthFocused, setMonthFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
@@ -99,6 +103,14 @@ function TodayContent({
   const last = useMonthTodos(client, lastMonth, profile.weekStart);
   const month = useMonthTodos(client, calendarMonth, profile.weekStart);
   const monthRange = monthGridRange(calendarMonth, profile.weekStart);
+  useEffect(() => {
+    if (!monthExpanded) return;
+    // M3는 할 일만 미리 읽는다. 루틴/로그 구독은 M4에서 붙인다.
+    for (const direction of [-1, 1] as const)
+      void cache.prefetchQuery(
+        monthTodosOptions(client, adjacentMonthKey(calendarMonth, direction), profile.weekStart),
+      );
+  }, [cache, client, calendarMonth, profile.weekStart, monthExpanded]);
   const rows = useMemo(
     () => mergeWeekTodos(from, to, first.data ?? [], last.data ?? []),
     [from, to, first.data, last.data],
@@ -131,7 +143,7 @@ function TodayContent({
   const items = sections.flatMap((section) => section.data);
   const done = items.filter((todo) => todo.isDone).length;
   const activeGoal = preferredGoal(goals.data ?? [], lastAddedGoalId);
-  const queries = monthExpanded ? [goals, first, last, month] : [goals, first, last];
+  const queries = [goals, first, last];
   const failed = queries.some((query) => query.isError);
   const loading = queries.some((query) => query.isPending);
   useEffect(
@@ -166,47 +178,54 @@ function TodayContent({
           accessibilityLabel={t(monthExpanded ? 'mobile.month.collapse' : 'mobile.month.expand')}
           accessibilityState={{ expanded: monthExpanded }}
           onPress={toggleMonth}
-          style={({ pressed }) => [styles.month, { opacity: pressed ? m.pressedOpacity : 1 }]}
+          onFocus={() => setMonthFocused(true)}
+          onBlur={() => setMonthFocused(false)}
+          style={({ pressed }) => [
+            styles.month,
+            {
+              borderColor: monthFocused ? colors.focus : colors.side,
+              opacity: pressed ? m.pressedOpacity : 1,
+            },
+          ]}
         >
           <Text style={[styles.heading, { color: colors.ink }]}>
             {monthLabel} {monthExpanded ? '⌃' : '⌄'}
           </Text>
         </Pressable>
         <Button label={t('day.today')} secondary onPress={() => selectDate(today)} />
-        <Pressable
-          disabled
-          accessibilityRole="button"
-          accessibilityLabel={t('mobile.settings.unavailable')}
-          accessibilityState={{ disabled: true }}
-          style={styles.settings}
-        >
-          <Text style={[styles.heading, { color: colors.muted }]}>☰</Text>
-        </Pressable>
-      </View>
-      {monthExpanded ? (
-        <>
-          <View style={[styles.monthNavigation, { backgroundColor: colors.side }]}>
-            <Button
-              label={t('calendar.previousMonth')}
-              secondary
+        {monthExpanded ? (
+          <View style={styles.arrows}>
+            <CalendarArrow
+              direction={-1}
               onPress={() => showMonth(adjacentMonthKey(calendarMonth, -1))}
             />
-            <Button
-              label={t('calendar.nextMonth')}
-              secondary
+            <CalendarArrow
+              direction={1}
               onPress={() => showMonth(adjacentMonthKey(calendarMonth, 1))}
             />
           </View>
-          <MonthGrid
-            month={calendarMonth}
-            weekStart={profile.weekStart}
-            today={today}
-            selectedDate={selectedDate}
-            summary={summary}
-            onSelect={selectDate}
-            onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
-          />
-        </>
+        ) : (
+          <Pressable
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel={t('mobile.settings.unavailable')}
+            accessibilityState={{ disabled: true }}
+            style={styles.settings}
+          >
+            <Text style={[styles.heading, { color: colors.muted }]}>☰</Text>
+          </Pressable>
+        )}
+      </View>
+      {monthExpanded ? (
+        <MonthGrid
+          month={calendarMonth}
+          weekStart={profile.weekStart}
+          today={today}
+          selectedDate={selectedDate}
+          summary={summary}
+          onSelect={selectDate}
+          onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
+        />
       ) : (
         <WeekStrip
           dates={dates}
@@ -215,6 +234,14 @@ function TodayContent({
           summary={summary}
           onSelect={selectDate}
         />
+      )}
+      {monthExpanded && month.isError && (
+        <View style={styles.calendarError}>
+          <Text accessibilityRole="alert" style={[styles.supporting, { color: colors.danger }]}>
+            {t('mobile.calendar.failed')}
+          </Text>
+          <Button label={t('common.tryAgain')} secondary onPress={() => void month.refetch()} />
+        </View>
       )}
       <View style={styles.dayHeader}>
         <View style={styles.dateTitle}>
@@ -353,7 +380,14 @@ const styles = StyleSheet.create({
     gap: m.space.sm,
     paddingHorizontal: m.space.lg,
   },
-  month: { flex: 1, minHeight: m.height.touch, justifyContent: 'center' },
+  month: {
+    flex: 1,
+    minHeight: m.height.touch,
+    justifyContent: 'center',
+    borderWidth: m.selectionRing,
+    borderRadius: m.radius.field,
+  },
+  arrows: { flexDirection: 'row', gap: m.space.sm },
   settings: {
     minHeight: m.height.touch,
     minWidth: m.height.touch,
@@ -374,12 +408,7 @@ const styles = StyleSheet.create({
     lineHeight: m.type.supporting * m.lineHeight.body,
   },
   dayHeader: { gap: m.space.sm, paddingTop: m.space.lg, paddingHorizontal: m.space.lg },
-  monthNavigation: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: m.space.sm,
-    paddingHorizontal: m.space.lg,
-  },
+  calendarError: { paddingHorizontal: m.space.lg },
   dateTitle: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
   list: { paddingHorizontal: m.space.lg },
   section: { alignItems: 'flex-start', paddingTop: m.space.group, paddingBottom: m.space.sm },

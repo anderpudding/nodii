@@ -5,6 +5,7 @@ import { monthGridRange, monthKeyOf, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
+import { CalendarArrow } from '../../components/CalendarArrow';
 import { Button } from '../../components/Button';
 import { MonthGrid } from './MonthGrid';
 import { quickDates } from './calendar-model';
@@ -50,16 +51,13 @@ export function DatePickSheet({
             key={value}
             label={t((['day.today', 'date.tomorrow', 'date.nextWeek'] as const)[i]!)}
             secondary
+            pill
             onPress={() => select(value)}
           />
         ))}
       </View>
       <View style={styles.navigation}>
-        <Button
-          label={t('calendar.previousMonth')}
-          secondary
-          onPress={() => setMonth(adjacentMonthKey(month, -1))}
-        />
+        <CalendarArrow direction={-1} onPress={() => setMonth(adjacentMonthKey(month, -1))} />
         <Text style={[styles.month, { color: colors.ink }]}>
           {new Intl.DateTimeFormat('ko-KR', {
             year: 'numeric',
@@ -67,11 +65,7 @@ export function DatePickSheet({
             timeZone: 'UTC',
           }).format(new Date(`${month}-01T00:00:00Z`))}
         </Text>
-        <Button
-          label={t('calendar.nextMonth')}
-          secondary
-          onPress={() => setMonth(adjacentMonthKey(month, 1))}
-        />
+        <CalendarArrow direction={1} onPress={() => setMonth(adjacentMonthKey(month, 1))} />
       </View>
       {todos.isError || goals.isError ? (
         <Button

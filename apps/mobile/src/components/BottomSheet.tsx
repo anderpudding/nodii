@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@nodii/i18n';
@@ -12,14 +12,17 @@ export function BottomSheet({
   testID,
   children,
   onClose,
+  bottomCancel = false,
 }: {
   title: string;
   testID: string;
   children: ReactNode;
   onClose(): void;
+  bottomCancel?: boolean;
 }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
+  const [cancelFocused, setCancelFocused] = useState(false);
   const insets = useSafeAreaInsets();
   const pan = useMemo(
     () =>
@@ -59,7 +62,7 @@ export function BottomSheet({
             <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
               {title}
             </Text>
-            <Button label={t('mobile.add.cancel')} secondary onPress={onClose} />
+            {!bottomCancel && <Button label={t('mobile.add.cancel')} secondary onPress={onClose} />}
           </View>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -67,6 +70,26 @@ export function BottomSheet({
             contentContainerStyle={styles.content}
           >
             {children}
+            {bottomCancel && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('mobile.add.cancel')}
+                onPress={onClose}
+                onFocus={() => setCancelFocused(true)}
+                onBlur={() => setCancelFocused(false)}
+                style={({ pressed }) => [
+                  styles.cancel,
+                  {
+                    borderColor: cancelFocused ? colors.focus : colors.field,
+                    opacity: pressed ? m.pressedOpacity : 1,
+                  },
+                ]}
+              >
+                <Text style={[styles.cancelText, { color: colors.ink2 }]}>
+                  {t('mobile.add.cancel')}
+                </Text>
+              </Pressable>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -92,5 +115,14 @@ const styles = StyleSheet.create({
     paddingBottom: m.space.sm,
   },
   title: { flex: 1, fontFamily: m.fontBold, fontSize: m.type.heading },
+  cancel: {
+    minHeight: m.height.field,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: m.border,
+    borderRadius: m.radius.field,
+    marginTop: m.space.lg,
+  },
+  cancelText: { fontFamily: m.fontMedium, fontSize: m.type.body },
   content: { gap: m.space.sm, paddingBottom: m.space.lg },
 });

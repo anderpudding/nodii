@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   monthTodosOptions,
-  todoWriteKey,
   useDeleteTodo,
   useMoveTodo,
   useRenameTodo,
@@ -14,7 +13,7 @@ import { keyBetween, lastSortKey, monthKeyOf, type ISODate } from '@nodii/core';
 import { t, withParticle, type MessageKey } from '@nodii/i18n';
 import { useToast } from '../../components/Toast';
 import { formatMoveDate } from './calendar-model';
-import type { TodoAction } from './actions';
+import { mutationTouchesTodo, type TodoAction } from './actions';
 
 /** TODO-02~05: 네 경로는 기존 API 훅을 사용하고 실행 취소도 같은 낙관적 경로로 쓴다. */
 export function useTodoActions(
@@ -62,7 +61,10 @@ export function useTodoActions(
     if (
       isDateLocked(current(todo).date) ||
       busy.current ||
-      cache.isMutating({ mutationKey: todoWriteKey(todo.id) })
+      cache.isMutating({
+        mutationKey: ['write'],
+        predicate: (mutation) => mutationTouchesTodo(mutation.state.variables, todo.id),
+      })
     )
       throw new Error('todo_busy');
     busy.current = true;
@@ -77,7 +79,14 @@ export function useTodoActions(
     }
   }
   async function run(action: Exclude<TodoAction, 'rename'>, destination?: ISODate) {
-    if (busy.current || cache.isMutating({ mutationKey: todoWriteKey(todo.id) })) return;
+    if (
+      busy.current ||
+      cache.isMutating({
+        mutationKey: ['write'],
+        predicate: (mutation) => mutationTouchesTodo(mutation.state.variables, todo.id),
+      })
+    )
+      return;
     const before = current(todo);
     if (isDateLocked(before.date)) return;
     if (action === 'move' && (!destination || destination === before.date)) return;
@@ -108,6 +117,10 @@ export function useTodoActions(
               preparationFailed = true;
               throw error;
             });
+          if (isDateLocked(before.date)) {
+            preparationFailed = true;
+            throw new Error('day_busy');
+          }
           const rows = cache.getQueryData<TodoRecord[]>(['todos', monthKeyOf(date)]) ?? [];
           const sortKey = keyBetween(
             lastSortKey(

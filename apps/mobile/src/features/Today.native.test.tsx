@@ -789,6 +789,17 @@ it('묶음 옮기기는 두 달 캐시를 낙관적으로 패치하고 원래 �
       .accessibilityState.disabled,
   ).toBe(true);
   expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  act(() => useUIStore.getState().selectDate('2026-11-01'));
+  const moved = await screen.findByRole('checkbox', {
+    name: t('todo.complete', { title: '장보기' }),
+  });
+  expect(moved.props.accessibilityState.disabled).toBe(true);
+  expect(
+    screen.getByRole('checkbox', { name: t('todo.complete', { title: '다음 달' }) }).props
+      .accessibilityState.disabled,
+  ).toBe(false);
+  fireEvent.press(moved);
+  expect(updateTodo).not.toHaveBeenCalled();
   act(() => useUIStore.getState().selectDate('2026-10-11'));
   const other = await screen.findByRole('checkbox', {
     name: t('todo.complete', { title: '다른 날' }),
@@ -881,7 +892,7 @@ it.each(['import', 'move', 'delete'] as const)(
     const request = action === 'delete' ? jest.mocked(softDeleteTodos) : jest.mocked(moveTodos);
     request.mockImplementationOnce(
       () =>
-        new Promise((_resolve, fail) => {
+        new Promise<never>((_resolve, fail) => {
           reject = fail;
         }),
     );
@@ -948,4 +959,17 @@ it('묶음 삭제 복원 실패도 전부 롤백하고 같은 실행 취소를 �
   await screen.findByTestId('todo-menu-two');
   expect(server.get('one')!.deletedAt).toBeNull();
   expect(server.get('two')!.deletedAt).toBeNull();
+});
+
+it('월간에서 다른 달을 둘러봐도 선택한 날짜의 목록은 유지한다', async () => {
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  fireEvent.press(screen.getByRole('button', { name: t('calendar.nextMonth') }));
+  expect(useUIStore.getState().selectedDate).toBe('2026-10-10');
+  expect(useUIStore.getState().calendarMonth).toBe('2026-11');
+  expect(screen.getByTestId('todo-menu-one')).toBeTruthy();
+  expect(screen.getByTestId('day-list').props.ListHeaderComponent).toBeUndefined();
+  const month = screen.getByRole('button', { name: t('mobile.month.collapse') });
+  fireEvent(month, 'focus');
+  expect(StyleSheet.flatten(month.props.style).borderColor).toBe('#2A63C9');
 });

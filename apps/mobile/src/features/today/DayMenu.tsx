@@ -121,6 +121,7 @@ export function DayMenu({
         <BottomSheet
           title={t('day.menu.open')}
           testID="day-menu-sheet"
+          bottomCancel
           onClose={() => setOpen(false)}
         >
           {entries.map((entry) => (

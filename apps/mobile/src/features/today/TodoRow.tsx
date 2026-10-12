@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { todoWriteKey, type NodiiClient, type TodoRecord } from '@nodii/api';
+import { type NodiiClient, type TodoRecord } from '@nodii/api';
 import { checkColor, goalTint, goalInk, type Goal, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { lightColors, metrics as m, useTheme } from '../../../lib/theme';
 import { SwipeableRow } from '../../components/gestures/SwipeableRow';
-import { actionLabel, splitSwipeActions, todoActions } from './actions';
+import { actionLabel, mutationTouchesTodo, splitSwipeActions, todoActions } from './actions';
 import { useTodoActions } from './useTodoActions';
 import { useUIStore } from '../../stores/ui';
 import { DatePickSheet } from './DatePickSheet';
@@ -34,21 +34,12 @@ export function TodoRow({
   const today = useUIStore((state) => state.today);
   const actions = useTodoActions(client, weekStart, todo, isDateLocked);
   const [focused, setFocused] = useState(false);
-  const creating =
+  const updating =
     useIsMutating({
-      mutationKey: ['write', 'todo', 'create'],
-      predicate: (mutation) => {
-        const variables: unknown = mutation.state.variables;
-        return (
-          !!variables &&
-          typeof variables === 'object' &&
-          'id' in variables &&
-          variables.id === todo.id
-        );
-      },
+      mutationKey: ['write'],
+      predicate: (mutation) => mutationTouchesTodo(mutation.state.variables, todo.id),
     }) > 0;
-  const updating = useIsMutating({ mutationKey: todoWriteKey(todo.id) }) > 0;
-  const locked = dayLocked || updating || creating || actions.pending;
+  const locked = dayLocked || updating || actions.pending;
   function check() {
     if (!locked) void actions.run('toggle');
   }
