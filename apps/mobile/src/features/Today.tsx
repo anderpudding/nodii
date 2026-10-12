@@ -20,6 +20,8 @@ import { useUIStore } from '../stores/ui';
 import { AddSheet } from './today/AddSheet';
 import { GoalBadge } from './today/GoalBadge';
 import { TodoRow } from './today/TodoRow';
+import { DayMenu } from './today/DayMenu';
+import { useDayActions } from './today/useDayActions';
 import { MonthGrid } from './today/MonthGrid';
 import { WeekStrip } from './today/WeekStrip';
 import {
@@ -86,6 +88,7 @@ function TodayContent({
     toggleMonth,
     showMonth,
   } = useUIStore();
+  const dayActions = useDayActions(client, profile.weekStart);
   const [adding, setAdding] = useState(false);
   const [barFocused, setBarFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
@@ -214,9 +217,22 @@ function TodayContent({
         />
       )}
       <View style={styles.dayHeader}>
-        <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-          {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
-        </Text>
+        <View style={styles.dateTitle}>
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+            {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
+          </Text>
+          <DayMenu
+            key={selectedDate}
+            client={client}
+            date={selectedDate}
+            today={today}
+            goals={goals.data ?? []}
+            items={items}
+            ready={!loading && !failed}
+            weekStart={profile.weekStart}
+            actions={dayActions}
+          />
+        </View>
         <Text style={[styles.supporting, { color: colors.muted }]}>
           {items.length
             ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
@@ -264,6 +280,8 @@ function TodayContent({
               goal={section.goal}
               client={client}
               weekStart={profile.weekStart}
+              dayLocked={dayActions.isDateLocked(selectedDate)}
+              isDateLocked={dayActions.isDateLocked}
             />
           )}
           // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
@@ -284,8 +302,10 @@ function TodayContent({
         testID="quick-add"
         accessibilityRole="button"
         accessibilityLabel={t('todo.add')}
-        accessibilityState={{ disabled: !activeGoal || loading || failed }}
-        disabled={!activeGoal || loading || failed}
+        accessibilityState={{
+          disabled: !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate),
+        }}
+        disabled={!activeGoal || loading || failed || dayActions.isDateLocked(selectedDate)}
         onPress={() => setAdding(true)}
         onFocus={() => setBarFocused(true)}
         onBlur={() => setBarFocused(false)}
@@ -316,6 +336,7 @@ function TodayContent({
           date={selectedDate}
           today={today}
           goals={goals.data ?? []}
+          isDateLocked={dayActions.isDateLocked}
           weekStart={profile.weekStart}
           onClose={() => setAdding(false)}
         />
@@ -341,6 +362,7 @@ const styles = StyleSheet.create({
   },
   heading: { fontFamily: m.fontBold, fontWeight: '700', fontSize: m.type.heading },
   title: {
+    flex: 1,
     fontFamily: m.fontBold,
     fontWeight: '700',
     fontSize: m.type.title,
@@ -358,6 +380,7 @@ const styles = StyleSheet.create({
     gap: m.space.sm,
     paddingHorizontal: m.space.lg,
   },
+  dateTitle: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
   list: { paddingHorizontal: m.space.lg },
   section: { alignItems: 'flex-start', paddingTop: m.space.group, paddingBottom: m.space.sm },
   footer: { alignItems: 'flex-start', marginTop: m.space.group },
