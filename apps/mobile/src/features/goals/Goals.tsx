@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import {
   useGoals,
+  useDeleteGoal,
   useGoalContents,
   type GoalRecord,
   type GoalContents,
@@ -149,6 +150,8 @@ function GoalRow({
   const online = useOnline();
   const toast = useToast();
   const actions = useGoalActions(client, goal);
+  const deleting = useRef(false);
+  const remove = useDeleteGoal(client, { onError: () => toast(t('todo.save.failed')) });
   const [menu, setMenu] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -168,7 +171,33 @@ function GoalRow({
     setMenu(false);
     if (id === 'archive') void actions.archive(true).catch(() => {});
     else if (id === 'reorder') setOrdering(true);
-    else onEdit();
+    else if (id === 'delete') {
+      if (!contents || deleting.current) return;
+      Alert.alert(
+        t('goal.delete.title', { name: goal.name }),
+        t('goal.delete.description', { ...contents }),
+        [
+          ...(!archived
+            ? [{ text: t('goal.delete.archiveInstead'), onPress: () => run('archive') }]
+            : []),
+          { text: t('mobile.add.cancel'), style: 'cancel' },
+          {
+            text: t('todo.action.delete'),
+            style: 'destructive',
+            onPress: () => {
+              if (deleting.current) return;
+              deleting.current = true;
+              void remove
+                .mutateAsync(goal)
+                .catch(() => {})
+                .finally(() => {
+                  deleting.current = false;
+                });
+            },
+          },
+        ],
+      );
+    } else onEdit();
   }
   const swipe = splitSwipeActions(
     goalActions.map(({ id, swipe }) => ({
@@ -286,10 +315,17 @@ function GoalRow({
                 label={labels[id]}
                 danger={id === 'delete'}
                 description={
-                  (id === 'archive' || id === 'delete') && last ? t('goal.lastActive') : undefined
+                  (id === 'archive' || id === 'delete') && last
+                    ? t('goal.lastActive')
+                    : id === 'delete' && !contents
+                      ? t('goal.counts.loading')
+                      : undefined
                 }
                 disabled={
-                  !online || actions.pending || ((id === 'archive' || id === 'delete') && last)
+                  !online ||
+                  actions.pending ||
+                  (id === 'delete' && !contents) ||
+                  ((id === 'archive' || id === 'delete') && last)
                 }
                 onPress={() => run(id)}
               />

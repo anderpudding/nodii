@@ -196,9 +196,10 @@ it('HEX 오류는 저장을 막고 새 목표 저장은 기존 생성 훅을 사
 it('완전 삭제 확인에는 개수를 표시하고 delete_goal 경로를 한 번만 호출한다', async () => {
   const confirm = jest.spyOn(Alert, 'alert');
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: '공부, 할 일 42개, 루틴 1개' }));
-  const editor = await screen.findByTestId('goal-editor-sheet');
-  fireEvent.press(within(editor).getByRole('button', { name: '목표 삭제' }));
+  fireEvent(screen.getByRole('button', { name: '공부, 할 일 42개, 루틴 1개' }), 'longPress');
+  const menu = await screen.findByTestId('goal-menu-sheet');
+  fireEvent.press(within(menu).getByRole('button', { name: '목표 삭제' }));
+  expect(screen.queryByTestId('goal-editor-sheet')).toBeNull();
   expect(confirm.mock.calls[0]![1]).toContain('할 일 42개와 루틴 1개');
   const remove = confirm.mock.calls[0]![2]!.find((button) => button.text === '삭제')!;
   act(() => {
