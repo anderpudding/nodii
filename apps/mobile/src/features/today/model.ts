@@ -28,11 +28,11 @@ export function weekRange(date: ISODate, weekStart: 0 | 1) {
   };
 }
 /** 두 42칸 캐시의 중복 행은 날짜가 속한 달에서 한 번만 읽는다 (CAL-02/07). */
-export function mergeWeekTodos(
+export function mergeWeekTodos<T extends { date: ISODate }>(
   from: ISODate,
   to: ISODate,
-  first: readonly TodoRecord[],
-  last: readonly TodoRecord[],
+  first: readonly T[],
+  last: readonly T[],
 ) {
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);

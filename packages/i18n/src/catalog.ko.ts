@@ -120,6 +120,8 @@ export const ko = {
   'mobile.update.action': 'App Store에서 업데이트',
   'mobile.update.failed': 'App Store를 열지 못했어요. 다시 시도해 주세요.',
   'mobile.update.missing': 'App Store 주소가 아직 준비되지 않았어요.',
+  'routine.partialSplit':
+    '새 규칙은 적용됐지만 종료일을 저장하지 못했어요. 다시 시도하면 종료일만 저장해요.',
   'routine.manage': '루틴 관리',
   'routine.create': '루틴 만들기',
   'routine.edit': '루틴 편집',
@@ -175,7 +177,8 @@ export const ko = {
   'routine.delete': '완전히 삭제',
   'routine.endDescription': '어제까지의 기록과 표시는 캘린더에 그대로 남아요.',
   'routine.deleteDescription': '모든 날짜에서 사라지고, 완료 기록도 더 이상 보이지 않아요.',
-  'routine.deleteCount': '완료·건너뛰기 기록 {count}개도 더 이상 보이지 않아요.',
+  'routine.deleteWarning': '완전히 삭제하면 루틴 1개와 모든 날짜의 기록이 보이지 않게 돼요.',
+  'routine.scope.ended': '종료일이 지난 루틴은 과거 날짜까지 모두 적용해 주세요.',
   'routine.scope.title': '반복 규칙을 바꿨어요. 어디부터 적용할까요?',
   'routine.scope.today': '오늘부터',
   'routine.scope.all': '과거 날짜까지 모두',

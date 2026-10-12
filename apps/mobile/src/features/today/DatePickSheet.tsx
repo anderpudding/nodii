@@ -20,6 +20,8 @@ export function DatePickSheet({
   weekStart,
   onSelect,
   onClose,
+  allowSameDate = false,
+  timeZone = 'UTC',
 }: {
   client: NodiiClient;
   title: string;
@@ -28,6 +30,8 @@ export function DatePickSheet({
   weekStart: 0 | 1;
   onSelect(date: ISODate): void;
   onClose(): void;
+  allowSameDate?: boolean;
+  timeZone?: string;
 }) {
   const { colors } = useTheme();
   const [month, setMonth] = useState(monthKeyOf(date));
@@ -35,12 +39,12 @@ export function DatePickSheet({
   const todos = useMonthTodos(client, month, weekStart);
   const { from, to } = monthGridRange(month, weekStart);
   const summary = useMemo(
-    () => weekSummary(goals.data ?? [], todos.data ?? [], from, to, 'UTC'),
-    [goals.data, todos.data, from, to],
+    () => weekSummary(goals.data ?? [], todos.data ?? [], from, to, timeZone),
+    [goals.data, todos.data, from, to, timeZone],
   );
   function select(next: ISODate) {
     onClose();
-    if (next !== date) onSelect(next);
+    if (allowSameDate || next !== date) onSelect(next);
   }
   // 추가 입력의 키보드는 날짜 선택을 가리지 않게 진입 버튼에서 먼저 내린다.
   return (

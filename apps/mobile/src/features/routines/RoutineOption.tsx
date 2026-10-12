@@ -12,6 +12,8 @@ export function RoutineOption({
   danger = false,
   selected,
   compact = false,
+  accessibilityLabel = label,
+  multiple = false,
 }: {
   label: string;
   description?: string;
@@ -21,13 +23,15 @@ export function RoutineOption({
   danger?: boolean;
   selected?: boolean;
   compact?: boolean;
+  accessibilityLabel?: string;
+  multiple?: boolean;
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   return (
     <Pressable
-      accessibilityRole={selected === undefined ? 'button' : 'radio'}
-      accessibilityLabel={label}
+      accessibilityRole={selected === undefined ? 'button' : multiple ? 'checkbox' : 'radio'}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled, selected, checked: selected }}
       disabled={disabled}
       onPress={onPress}
@@ -43,14 +47,16 @@ export function RoutineOption({
         },
       ]}
     >
-      <Text
-        style={[
-          styles.label,
-          { color: selected ? colors.bg : danger ? colors.danger : colors.ink },
-        ]}
-      >
-        {label}
-      </Text>
+      {!children && (
+        <Text
+          style={[
+            styles.label,
+            { color: selected ? colors.bg : danger ? colors.danger : colors.ink },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
       {description && (
         <Text style={[styles.supporting, { color: selected ? colors.bg : colors.ink2 }]}>
           {description}
