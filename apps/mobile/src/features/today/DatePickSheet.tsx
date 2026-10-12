@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { adjacentMonthKey, useGoals, useMonthTodos, type NodiiClient } from '@nodii/api';
+import {
+  adjacentMonthKey,
+  useGoals,
+  useMonthTodos,
+  useRoutines,
+  useMonthRoutineLogs,
+  type NodiiClient,
+} from '@nodii/api';
 import { monthGridRange, monthKeyOf, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
@@ -37,11 +44,25 @@ export function DatePickSheet({
   const [month, setMonth] = useState(monthKeyOf(date));
   const goals = useGoals(client);
   const todos = useMonthTodos(client, month, weekStart);
+  const routines = useRoutines(client);
+  const logs = useMonthRoutineLogs(client, month, weekStart);
   const { from, to } = monthGridRange(month, weekStart);
   const summary = useMemo(
-    () => weekSummary(goals.data ?? [], todos.data ?? [], from, to, timeZone),
-    [goals.data, todos.data, from, to, timeZone],
+    () =>
+      weekSummary(
+        goals.data ?? [],
+        todos.data ?? [],
+        from,
+        to,
+        timeZone,
+        routines.data ?? [],
+        logs.data ?? [],
+      ),
+    [goals.data, todos.data, from, to, timeZone, routines.data, logs.data],
   );
+  const queries = [todos, goals, routines, logs];
+  const failed = queries.some((query) => query.isError);
+  const loading = queries.some((query) => query.isPending);
   function select(next: ISODate) {
     onClose();
     if (allowSameDate || next !== date) onSelect(next);
@@ -71,22 +92,21 @@ export function DatePickSheet({
         </Text>
         <CalendarArrow direction={1} onPress={() => setMonth(adjacentMonthKey(month, 1))} />
       </View>
-      {todos.isError || goals.isError ? (
+      {failed ? (
         <Button
           label={t('common.tryAgain')}
           secondary
           onPress={() => {
-            void todos.refetch();
-            void goals.refetch();
+            for (const query of queries) void query.refetch();
           }}
         />
       ) : null}
-      {(todos.isPending || todos.isError || goals.isPending || goals.isError) && (
+      {(loading || failed) && (
         <Text
-          accessibilityRole={todos.isError || goals.isError ? 'alert' : undefined}
+          accessibilityRole={failed ? 'alert' : undefined}
           style={[styles.supporting, { color: colors.muted }]}
         >
-          {t(todos.isError || goals.isError ? 'mobile.calendar.failed' : 'mobile.calendar.loading')}
+          {t(failed ? 'mobile.calendar.failed' : 'mobile.calendar.loading')}
         </Text>
       )}
       <MonthGrid

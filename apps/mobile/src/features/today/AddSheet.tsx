@@ -40,6 +40,7 @@ export function AddSheet({
   today,
   goals,
   weekStart,
+  timeZone = 'UTC',
   isDateLocked = () => false,
   onClose,
 }: {
@@ -48,6 +49,7 @@ export function AddSheet({
   today: ISODate;
   goals: Goal[];
   weekStart: 0 | 1;
+  timeZone?: string;
   isDateLocked?: (date: ISODate) => boolean;
   onClose(): void;
 }) {
@@ -268,6 +270,7 @@ export function AddSheet({
           date={date}
           today={today}
           weekStart={weekStart}
+          timeZone={timeZone}
           onSelect={setDate}
           onClose={() => setPicking(false)}
         />

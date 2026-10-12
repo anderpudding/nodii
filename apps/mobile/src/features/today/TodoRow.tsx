@@ -17,6 +17,7 @@ export function TodoRow({
   goal,
   client,
   weekStart,
+  timeZone = 'UTC',
   dayLocked = false,
   isDateLocked,
 }: {
@@ -24,6 +25,7 @@ export function TodoRow({
   goal: Goal;
   client: NodiiClient;
   weekStart: 0 | 1;
+  timeZone?: string;
   dayLocked?: boolean;
   isDateLocked?: (date: ISODate) => boolean;
 }) {
@@ -105,6 +107,7 @@ export function TodoRow({
           date={todo.date}
           today={today}
           weekStart={weekStart}
+          timeZone={timeZone}
           onClose={() => setPicking(false)}
           onSelect={(date) => void actions.run('move', date)}
         />

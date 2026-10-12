@@ -5,9 +5,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   adjacentMonthKey,
   fetchProfile,
-  monthTodosOptions,
+  prefetchAdjacentMonths,
   useGoals,
   useMonthTodos,
+  useRoutines,
+  useMonthRoutineLogs,
+  type RoutineRecord,
   type NodiiClient,
 } from '@nodii/api';
 import { monthGridRange, monthKeyOf, type Profile } from '@nodii/core';
@@ -22,6 +25,10 @@ import { useUIStore } from '../stores/ui';
 import { AddSheet } from './today/AddSheet';
 import { GoalBadge } from './today/GoalBadge';
 import { TodoRow } from './today/TodoRow';
+import { RoutineRow } from './routines/RoutineRow';
+import { RoutineList } from './routines/RoutineList';
+import { RoutineEditor } from './routines/RoutineEditor';
+import { RoutineStop } from './routines/RoutineStop';
 import { DayMenu } from './today/DayMenu';
 import { useDayActions } from './today/useDayActions';
 import { MonthGrid } from './today/MonthGrid';
@@ -93,31 +100,46 @@ function TodayContent({
   const cache = useQueryClient();
   const dayActions = useDayActions(client, profile.weekStart);
   const [adding, setAdding] = useState(false);
+  const [managingRoutines, setManagingRoutines] = useState(false);
+  const [editingRoutine, setEditingRoutine] = useState<RoutineRecord | null>(null);
+  const [stoppingRoutine, setStoppingRoutine] = useState<RoutineRecord | null>(null);
   const [barFocused, setBarFocused] = useState(false);
   const [monthFocused, setMonthFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
   const goals = useGoals(client);
+  const routines = useRoutines(client);
+  const firstLogs = useMonthRoutineLogs(client, firstMonth, profile.weekStart);
+  const lastLogs = useMonthRoutineLogs(client, lastMonth, profile.weekStart);
+  const monthLogs = useMonthRoutineLogs(client, calendarMonth, profile.weekStart);
   const first = useMonthTodos(client, firstMonth, profile.weekStart);
   const last = useMonthTodos(client, lastMonth, profile.weekStart);
   const month = useMonthTodos(client, calendarMonth, profile.weekStart);
   const monthRange = monthGridRange(calendarMonth, profile.weekStart);
   useEffect(() => {
     if (!monthExpanded) return;
-    // M3는 할 일만 미리 읽는다. 루틴/로그 구독은 M4에서 붙인다.
-    for (const direction of [-1, 1] as const)
-      void cache.prefetchQuery(
-        monthTodosOptions(client, adjacentMonthKey(calendarMonth, direction), profile.weekStart),
-      );
+    void prefetchAdjacentMonths(cache, client, calendarMonth, profile.weekStart);
   }, [cache, client, calendarMonth, profile.weekStart, monthExpanded]);
   const rows = useMemo(
     () => mergeWeekTodos(from, to, first.data ?? [], last.data ?? []),
     [from, to, first.data, last.data],
   );
+  const logs = useMemo(
+    () => mergeWeekTodos(from, to, firstLogs.data ?? [], lastLogs.data ?? []),
+    [from, to, firstLogs.data, lastLogs.data],
+  );
   const sections = useMemo(
-    () => daySections(goals.data ?? [], rows, selectedDate, profile.timezone),
-    [goals.data, rows, selectedDate, profile.timezone],
+    () =>
+      daySections(
+        goals.data ?? [],
+        rows,
+        selectedDate,
+        profile.timezone,
+        routines.data ?? [],
+        logs,
+      ),
+    [goals.data, rows, selectedDate, profile.timezone, routines.data, logs],
   );
   const summary = useMemo(
     () =>
@@ -127,9 +149,14 @@ function TodayContent({
         monthExpanded ? monthRange.from : from,
         monthExpanded ? monthRange.to : to,
         profile.timezone,
+        routines.data ?? [],
+        monthExpanded ? (monthLogs.data ?? []) : logs,
       ),
     [
       goals.data,
+      routines.data,
+      logs,
+      monthLogs.data,
       rows,
       month.data,
       from,
@@ -143,7 +170,7 @@ function TodayContent({
   const items = sections.flatMap((section) => section.data);
   const done = items.filter((todo) => todo.isDone).length;
   const activeGoal = preferredGoal(goals.data ?? [], lastAddedGoalId);
-  const queries = [goals, first, last];
+  const queries = [goals, routines, first, last, firstLogs, lastLogs];
   const failed = queries.some((query) => query.isError);
   const loading = queries.some((query) => query.isPending);
   useEffect(
@@ -235,12 +262,19 @@ function TodayContent({
           onSelect={selectDate}
         />
       )}
-      {monthExpanded && month.isError && (
+      {monthExpanded && (month.isError || monthLogs.isError) && (
         <View style={styles.calendarError}>
           <Text accessibilityRole="alert" style={[styles.supporting, { color: colors.danger }]}>
             {t('mobile.calendar.failed')}
           </Text>
-          <Button label={t('common.tryAgain')} secondary onPress={() => void month.refetch()} />
+          <Button
+            label={t('common.tryAgain')}
+            secondary
+            onPress={() => {
+              void month.refetch();
+              void monthLogs.refetch();
+            }}
+          />
         </View>
       )}
       <View style={styles.dayHeader}>
@@ -254,9 +288,10 @@ function TodayContent({
             date={selectedDate}
             today={today}
             goals={goals.data ?? []}
-            items={items}
+            items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
             ready={!loading && !failed}
             weekStart={profile.weekStart}
+            timeZone={profile.timezone}
             actions={dayActions}
           />
         </View>
@@ -290,7 +325,7 @@ function TodayContent({
         <SectionList
           testID="day-list"
           sections={sections}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => `${item.kind}:${item.id}`}
           stickySectionHeadersEnabled={false}
           contentContainerStyle={[
             styles.list,
@@ -301,19 +336,38 @@ function TodayContent({
               <GoalBadge goal={section.goal} />
             </View>
           )}
-          renderItem={({ item, section }) => (
-            <TodoRow
-              todo={item}
-              goal={section.goal}
-              client={client}
-              weekStart={profile.weekStart}
-              dayLocked={dayActions.isDateLocked(selectedDate)}
-              isDateLocked={dayActions.isDateLocked}
-            />
-          )}
+          renderItem={({ item, section }) =>
+            item.kind === 'todo' ? (
+              <TodoRow
+                todo={item.todo}
+                goal={section.goal}
+                client={client}
+                weekStart={profile.weekStart}
+                timeZone={profile.timezone}
+                dayLocked={dayActions.isDateLocked(selectedDate)}
+                isDateLocked={dayActions.isDateLocked}
+              />
+            ) : (
+              <RoutineRow
+                routine={item.routine}
+                log={item.log}
+                goal={section.goal}
+                date={selectedDate}
+                client={client}
+                weekStart={profile.weekStart}
+                onEdit={() => setEditingRoutine(item.routine)}
+                onStop={() => setStoppingRoutine(item.routine)}
+              />
+            )
+          }
           // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
           ListFooterComponent={
             <View style={styles.footer}>
+              <Button
+                label={t('routine.manage')}
+                secondary
+                onPress={() => setManagingRoutines(true)}
+              />
               <Button
                 label={t('auth.logout')}
                 secondary
@@ -365,7 +419,39 @@ function TodayContent({
           goals={goals.data ?? []}
           isDateLocked={dayActions.isDateLocked}
           weekStart={profile.weekStart}
+          timeZone={profile.timezone}
           onClose={() => setAdding(false)}
+        />
+      )}
+      {managingRoutines && (
+        <RoutineList
+          timeZone={profile.timezone}
+          client={client}
+          date={selectedDate}
+          today={today}
+          weekStart={profile.weekStart}
+          onClose={() => setManagingRoutines(false)}
+        />
+      )}
+      {editingRoutine && (
+        <RoutineEditor
+          timeZone={profile.timezone}
+          client={client}
+          routine={editingRoutine}
+          routines={routines.data ?? []}
+          goals={goals.data ?? []}
+          date={selectedDate}
+          today={today}
+          weekStart={profile.weekStart}
+          onClose={() => setEditingRoutine(null)}
+        />
+      )}
+      {stoppingRoutine && (
+        <RoutineStop
+          client={client}
+          routine={stoppingRoutine}
+          today={today}
+          onClose={() => setStoppingRoutine(null)}
         />
       )}
     </View>
@@ -412,7 +498,7 @@ const styles = StyleSheet.create({
   dateTitle: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
   list: { paddingHorizontal: m.space.lg },
   section: { alignItems: 'flex-start', paddingTop: m.space.group, paddingBottom: m.space.sm },
-  footer: { alignItems: 'flex-start', marginTop: m.space.group },
+  footer: { alignItems: 'flex-start', gap: m.space.sm, marginTop: m.space.group },
   bar: {
     position: 'absolute',
     left: 0,

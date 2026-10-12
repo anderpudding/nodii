@@ -22,6 +22,11 @@ import { notifyManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import {
   fetchProfile,
   listGoals,
+  listRoutines,
+  listLogsInRange,
+  upsertLog,
+  deleteLog,
+  type RoutineRecord,
   listTodosInRange,
   listOverdue,
   moveTodos,
@@ -55,6 +60,14 @@ jest.mock('../../../../packages/api/src/repositories/todos', () => ({
   updateTodo: jest.fn(),
   softDeleteTodo: jest.fn(),
   moveTodo: jest.fn(),
+}));
+jest.mock('../../../../packages/api/src/repositories/routines', () => ({
+  listRoutines: jest.fn(),
+}));
+jest.mock('../../../../packages/api/src/repositories/routine-logs', () => ({
+  listLogsInRange: jest.fn(),
+  upsertLog: jest.fn(),
+  deleteLog: jest.fn(),
 }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => `uuid-${Math.random()}`) }));
 jest.mock('react-native-safe-area-context', () => ({
@@ -101,6 +114,10 @@ beforeEach(() => {
   for (const request of [
     fetchProfile,
     listGoals,
+    listRoutines,
+    listLogsInRange,
+    upsertLog,
+    deleteLog,
     listTodosInRange,
     listOverdue,
     moveTodos,
@@ -126,6 +143,15 @@ beforeEach(() => {
     weekStart: 0,
   });
   jest.mocked(listGoals).mockResolvedValue([goal]);
+  jest.mocked(listRoutines).mockResolvedValue([]);
+  jest.mocked(listLogsInRange).mockResolvedValue([]);
+  jest.mocked(upsertLog).mockImplementation(async (_client, routineId, date, status) => ({
+    routineId,
+    date,
+    status,
+    updatedAt: 'server',
+  }));
+  jest.mocked(deleteLog).mockResolvedValue(undefined);
   jest.mocked(listOverdue).mockResolvedValue([]);
   jest.mocked(listTodosInRange).mockResolvedValue([row('one', '장보기'), row('two', 'OS 과제')]);
   jest.mocked(createTodo).mockImplementation(async (_client, todo) => record(todo));
@@ -828,7 +854,7 @@ it('전체 삭제는 개수 확인을 거쳐 미완료만 지우고 완료·루�
     row('two', 'OS 과제'),
     { ...row('done', '완료'), isDone: true },
   ]);
-  const routine = { id: 'routine', title: '루틴' };
+  const routine = routineRow('routine', '루틴');
   cache.setQueryData(['routines'], [routine]);
   const alert = jest.spyOn(Alert, 'alert');
   await mount();
@@ -1087,4 +1113,111 @@ it('목적 월을 준비하는 동안 완료된 항목은 저장하지 않고 �
   expect(moveTodos).not.toHaveBeenCalled();
   expect(result.current.isDateLocked(original.date)).toBe(false);
   expect(cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))?.[0]?.isDone).toBe(true);
+});
+
+function routineRow(id = 'r', title = '영어 루틴'): RoutineRecord {
+  return {
+    id,
+    title,
+    goalId: 'goal',
+    sortKey: 'a2',
+    freq: 'daily',
+    repeatEvery: 1,
+    byWeekday: null,
+    byMonthday: null,
+    startDate: '2026-09-01',
+    endDate: null,
+    deletedAt: null,
+    updatedAt: '',
+  };
+}
+it('루틴을 같은 날짜에 전개하고 주·월 도장과 완료·실패 롤백을 함께 반영한다', async () => {
+  jest.mocked(listRoutines).mockResolvedValue([routineRow(), routineRow('r2', '수학 루틴')]);
+  let reject: (error: Error) => void = () => {};
+  jest.mocked(upsertLog).mockImplementationOnce(
+    () =>
+      new Promise((_resolve, fail) => {
+        reject = fail;
+      }),
+  );
+  await mount();
+  expect(await screen.findByRole('checkbox', { name: '영어 루틴 완료하기' })).toBeTruthy();
+  expect(screen.getByText('오늘, 4개 중 0개 끝냄')).toBeTruthy();
+  fireEvent.press(screen.getByRole('checkbox', { name: '영어 루틴 완료하기' }));
+  await screen.findByRole('checkbox', { name: '영어 루틴 완료 취소하기' });
+  expect(
+    screen.getByRole('checkbox', { name: '수학 루틴 완료하기' }).props.accessibilityState.disabled,
+  ).toBe(false);
+  expect(screen.getByText('오늘, 4개 중 1개 끝냄')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  expect(
+    within(screen.getByTestId('month-grid')).getByRole('button', { name: /10월 10일.*3개 남음/ }),
+  ).toBeTruthy();
+  await act(async () => reject(new Error('failed')));
+  await screen.findByText(t('todo.save.failed'));
+  expect(
+    screen.getByRole('checkbox', { name: '영어 루틴 완료하기' }).props.accessibilityState.checked,
+  ).toBe(false);
+  expect(
+    within(screen.getByTestId('month-grid')).getByRole('button', { name: /10월 10일.*4개 남음/ }),
+  ).toBeTruthy();
+});
+it.each(['import', 'move', 'delete'])(
+  '루틴이 실제 보이는 하루 메뉴 %s는 할 일만 처리하고 루틴·로그를 유지한다',
+  async (action) => {
+    const routine = routineRow();
+    const log = {
+      routineId: routine.id,
+      date: '2026-10-10',
+      status: 'done' as const,
+      updatedAt: '',
+    };
+    jest.mocked(listRoutines).mockResolvedValue([routine]);
+    jest.mocked(listLogsInRange).mockResolvedValue([log]);
+    installServer([row('one', '장보기'), { ...row('old', '지난 할 일'), date: '2026-10-09' }]);
+    const confirm = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    await mount();
+    expect(screen.getByRole('checkbox', { name: '영어 루틴 완료 취소하기' })).toBeTruthy();
+    const sheet = await openDayMenu();
+    if (action === 'import') {
+      fireEvent.press(
+        await within(sheet).findByRole('button', { name: t('day.menu.import', { count: 1 }) }),
+      );
+      await screen.findByText(t('day.menu.imported', { count: 1 }));
+    } else if (action === 'move') {
+      fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.move') }));
+      fireEvent.press(await screen.findByRole('button', { name: '내일' }));
+      await screen.findByText(t('day.menu.moved', { count: 1, date: '10월 11일' }));
+    } else {
+      fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.delete') }));
+      expect(confirm).toHaveBeenCalledWith(
+        t('day.menu.delete.confirm', { count: 1 }),
+        t('day.menu.delete.description'),
+        expect.any(Array),
+      );
+      act(() =>
+        confirm.mock.calls[0]![2]!.find((button) => button.style === 'destructive')!.onPress!(),
+      );
+      await screen.findByText(t('day.menu.deleted', { count: 1 }));
+    }
+    expect(cache.getQueryData(['routines'])).toEqual([routine]);
+    expect(cache.getQueryData(['routineLogs', '2026-10'])).toEqual([log]);
+    expect(screen.getByRole('checkbox', { name: '영어 루틴 완료 취소하기' })).toBeTruthy();
+    expect(upsertLog).not.toHaveBeenCalled();
+    expect(deleteLog).not.toHaveBeenCalled();
+  },
+);
+it('오늘 화면의 임시 버튼에서 루틴 관리와 만들기 시트로 들어간다', async () => {
+  jest
+    .mocked(listRoutines)
+    .mockResolvedValue([
+      routineRow(),
+      { ...routineRow('ended', '끝난 운동'), endDate: '2026-10-09' },
+    ]);
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('routine.manage') }));
+  await screen.findByText('돌고 있는 루틴 1개');
+  expect(screen.getByText('끝난 루틴 1개')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: t('routine.create') }));
+  expect(screen.getByTestId('routine-edit-sheet')).toBeTruthy();
 });

@@ -10,8 +10,9 @@ import {
   type Goal,
   type ISODate,
   type Todo,
+  type RoutineLog,
 } from '@nodii/core';
-import type { TodoRecord } from '@nodii/api';
+import type { RoutineRecord, TodoRecord } from '@nodii/api';
 
 export const quickAddHeight = 48; // MobileToday: 콘텐츠 48pt + 하단 safe area.
 /** MOB-04: 홈 인디케이터와 고정 바 아래로 마지막 행이 사라지지 않게 한다. */
@@ -41,28 +42,56 @@ export function mergeWeekTodos<T extends { date: ISODate }>(
     ...(firstMonth === lastMonth ? [] : last.filter((row) => monthKeyOf(row.date) === lastMonth)),
   ];
 }
-/** TODO-09/GOAL-05: core가 정한 표시·보관 규칙으로 SectionList와 요약을 함께 만든다. */
-export function daySections(goals: Goal[], todos: TodoRecord[], date: ISODate, timeZone: string) {
+export type MobileDayItem = (
+  | { kind: 'todo'; todo: TodoRecord }
+  | { kind: 'routine'; routine: RoutineRecord; log: RoutineLog | null }
+) & { id: string; isDone: boolean };
+/** TODO-09/ROUT-05: 공용 전개 순서를 보존하고 실제 서버 행을 메뉴에 전달한다. */
+export function daySections(
+  goals: Goal[],
+  todos: TodoRecord[],
+  date: ISODate,
+  timeZone: string,
+  routines: RoutineRecord[] = [],
+  logs: RoutineLog[] = [],
+) {
   const byId = new Map(todos.map((todo) => [todo.id, todo]));
-  return buildDay({ goals, todos, routines: [], logs: [], date, timeZone }).map((group) => ({
+  const routineById = new Map(routines.map((routine) => [routine.id, routine]));
+  return buildDay({ goals, todos, routines, logs, date, timeZone }).map((group) => ({
     key: group.goal.id,
     goal: group.goal,
     canAdd: group.canAdd,
-    data: group.items.flatMap((item) => {
-      const todo = item.kind === 'todo' ? byId.get(item.todo.id) : undefined;
-      return todo ? [todo] : [];
+    data: group.items.flatMap<MobileDayItem>((item) => {
+      if (item.kind === 'todo') {
+        const todo = byId.get(item.todo.id);
+        return todo ? [{ kind: 'todo', id: todo.id, isDone: todo.isDone, todo }] : [];
+      }
+      const routine = routineById.get(item.routine.id);
+      return routine
+        ? [
+            {
+              kind: 'routine',
+              id: routine.id,
+              isDone: item.log?.status === 'done',
+              routine,
+              log: item.log,
+            },
+          ]
+        : [];
     }),
   }));
 }
-/** 루틴은 M4까지 전개하지 않고 목록과 같은 core 집계를 사용한다. */
+/** CAL-02/ROUT-05: 주·월·날짜 시트가 같은 루틴·로그를 함께 집계한다. */
 export function weekSummary(
   goals: Goal[],
   todos: TodoRecord[],
   from: ISODate,
   to: ISODate,
   timeZone: string,
+  routines: RoutineRecord[] = [],
+  logs: RoutineLog[] = [],
 ) {
-  return summarizeMonth({ goals, todos, routines: [], logs: [], from, to, timeZone });
+  return summarizeMonth({ goals, todos, routines, logs, from, to, timeZone });
 }
 /** TODO-01: 선택 목표의 같은 날짜에만 마지막 키를 찾아 연속 입력 충돌을 막는다. */
 export function newTodo(
