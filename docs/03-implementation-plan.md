@@ -441,6 +441,14 @@
 - `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test` 모두 통과. 실제 출력은 core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **19파일·106개**, Jest/RNTL **5스위트·64개**다. 별도 `pnpm --filter @nodii/mobile test:native`도 **5 passed, 64 passed**를 직접 확인했다. 스위트는 `Today.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx`다. 기존 `act` 경고는 남아 있다.
 - 의존성·core·api·DB 변경 없음으로 DB reset/test/types는 미실행했다. 이번 후속의 iOS export/coverage/원격 Actions/실기기 확인도 미실행이며 기존 M4 수동 확인 항목은 유지한다. 실제 토스트 말투와 관리 줄의 밀기/길게 누르기/VoiceOver는 기기에서 확인한다.
 
+**M4 CI 데스크톱 드래그 검사 후속 (2026-10-12, TODO-06)**
+
+- 첨부 로그의 실제 실패는 lint가 아니라 desktop `test:coverage`의 `DayView.test.tsx` "메인 할 일은 손잡이와 앞 여백 없이 행 전체를 드래그 영역으로 쓴다" 검사다. 초기 `screen.findByRole('button', { name: '책 읽기 완료' })`가 기본 대기 시간 안에 행을 찾지 못했다.
+- 초기 버튼 대기와 드래그 group 조회를 `목표별 할 일 목록` region의 `within`으로 한정해 캘린더 42칸을 반복 검사하는 비용을 줄였다. 같은 접근성 역할/이름, 행 전체 드래그 group, 손잡이·앞 여백 부재, 목표 관리 시트의 목표 정렬 버튼 검증과 기본 대기/검사 시간 제한을 유지했다. 제품 코드·CI 설정·의존성은 바꾸지 않았다.
+- 수정 전 정상 응답의 단독 coverage 검사는 **1 passed, 28 skipped**로 통과했다. 임시 진단 파일에서 할 일 조회만 850ms 지연했을 때 수정 전은 같은 버튼 조회 오류로 **1 failed**, 수정 후는 같은 지연 조건에서 **1 passed**였다. 진단 파일은 제거했다. 이는 로컬 지연 응답에 대한 회귀 확인이며 CI의 전체 실행 환경을 재현한 것은 아니다.
+- `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test`와 CI의 `pnpm test:coverage`를 실행해 모두 통과했다. 두 전체 테스트 명령의 실제 출력은 core **156**, i18n **5**, api **80**, desktop **20파일·112개**, mobile Vitest **19파일·106개**, Jest/RNTL **5스위트·64개**다. coverage 로그에서도 `Today.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx` 실행과 통과를 확인했다. 기존 모바일 `act` 경고는 남아 있다.
+- DB·의존성 변경이 없어 DB reset/test/types는 미실행이다. 새 수동 UI 확인 항목은 없고 푸시 후 원격 Actions 결과 확인은 필요하다.
+
 ## 4. 작업 방식
 
 | 항목 | 규칙 |
@@ -548,3 +556,5 @@
 | 2026-10-12 | v2 M4 | ROUT-01~10·TODO-04·MOB-01/04: 루틴 혼합 목록·주월 집계, 행별 로그/건너뛰기 실행 취소, 관리·편집·범위·종료 시트 구현. 임시 진입점은 오늘 목록 하단. 필수4종 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 91, RNTL 5스위트·63개. iOS Hermes export 4.7MB 통과. core/api/DB·의존성 변경 없음. Simulator.app 부재로 네이티브 흐름·실기기/기기 간 검증은 대기. |
 
 | 2026-10-12 | v2 M4 후속 | ROUT-05/07/10·MOB-01: 할 일과 같은 withParticle 조사 적용, 완료/건너뛰기/취소 단위 검사, 관리 줄의 편집·종료 선언 공유 및 none 모드의 leading 0개 계약 추가. 필수4종 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 106, RNTL 5스위트·64개. 의존성·core/api/DB 변경 없음, 실기기 확인은 유지. |
+
+| 2026-10-12 | M4 CI 데스크톱 드래그 검사 후속 | TODO-06: DayView 드래그 검사의 초기 버튼/그룹 조회를 하루 목록 region으로 한정. 850ms 응답 지연 진단에서 수정 전 동일 조회 오류, 수정 후 통과(진단 파일 제거). 기본 대기·검증 조건 유지. 필수4종·루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 106, RNTL 5스위트·64개. 제품·CI·DB·의존성 변경 없음, 원격 Actions 확인 필요. |
