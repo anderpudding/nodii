@@ -31,6 +31,7 @@ vi.mock('react-native-safe-area-context', () => ({
 vi.mock('../features/Today', () => ({
   Today: ({ onLogout }: { onLogout(): void }) => (
     <View>
+      <ToastInset bottom={82} />
       <Text>{t('mobile.today.preparing')}</Text>
       <button onClick={onLogout}>{t('auth.logout')}</button>
     </View>
@@ -45,7 +46,7 @@ vi.mock('./UserData', () => ({
 vi.mock('../../lib/logout', () => ({ logout: vi.fn() }));
 import { hideAsync } from 'expo-splash-screen';
 import { logout } from '../../lib/logout';
-import { ToastProvider } from '../components/Toast';
+import { ToastInset, ToastProvider } from '../components/Toast';
 import { AppGate } from './AppGate';
 
 let listener: (event: string, session: Session | null) => void;

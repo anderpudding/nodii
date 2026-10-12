@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react-native';
+import { useEffect } from 'react';
 import { AppState, Text, type AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -28,7 +29,10 @@ let change: (state: AppStateStatus) => void;
 let parent: QueryClient;
 let child: QueryClient;
 function Probe() {
-  child = useQueryClient();
+  const cache = useQueryClient();
+  useEffect(() => {
+    child = cache;
+  }, [cache]);
   return <Text>복원 완료</Text>;
 }
 const stop = jest.fn();
@@ -98,6 +102,7 @@ it('오프라인 복원 뒤 로그아웃은 영속 캐시와 인증 저장소를
   );
   mount();
   await screen.findByText('복원 완료');
+  expect(child.getQueryData(['goals'])).toEqual([{ id: 'private' }]);
   const removeItem = jest.fn(async () => {});
   await act(async () => {
     await logout(client, parent, { getItem: () => null, setItem: () => {}, removeItem });

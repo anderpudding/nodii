@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AuthStorage } from '@nodii/api';
-import type { QueryClient } from '@tanstack/react-query';
+import type { Query, QueryClient } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { version } from '../package.json';
 
@@ -9,6 +9,11 @@ export const CACHE_BUSTER = `nodii-mobile:${version}:1`;
 const activeCaches = new WeakMap<QueryClient, ReturnType<typeof createUserCache>>();
 const deleting = new Map<string, Promise<void>>();
 const prefixes = ['profile', 'goals', 'todos', 'routines', 'routineLogs', 'overdue'];
+
+/** SYNC-04: 재조회 실패 뒤에도 마지막 성공 데이터를 보관하고 인증 쿼리는 제외한다. */
+export function shouldPersistQuery(query: Query): boolean {
+  return query.state.data !== undefined && prefixes.includes(String(query.queryKey[0]));
+}
 
 /** AUTH-03/SYNC-04: 사용자별로 분리하고 로그아웃과 늦은 저장의 경합을 직렬화한다. */
 export function createUserCache(
@@ -26,8 +31,9 @@ export function createUserCache(
     return result;
   };
   const persister: Persister = {
-    persistClient: (value) =>
-      enqueue(async () => {
+    persistClient: (value) => {
+      if (!live || cache.isMutating({ mutationKey: ['write'] })) return Promise.resolve();
+      return enqueue(async () => {
         if (!live || cache.isMutating({ mutationKey: ['write'] })) return;
         await deleting.get(userId);
         // 인증/임의 쿼리와 mutation은 저장하지 않는다.
@@ -45,7 +51,8 @@ export function createUserCache(
         } catch {
           onError();
         }
-      }),
+      });
+    },
     restoreClient: () =>
       enqueue(async () => {
         await deleting.get(userId);

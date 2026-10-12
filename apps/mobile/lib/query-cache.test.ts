@@ -8,6 +8,7 @@ import {
   CACHE_MAX_AGE,
   clearPersistedCache,
   createUserCache,
+  shouldPersistQuery,
 } from './query-cache';
 
 function setup() {
@@ -72,4 +73,32 @@ it('다른 사용자와 오래된 앱 버전 캐시는 복원하지 않는다', 
     buster: CACHE_BUSTER,
   });
   expect(restored.getQueryCache().getAll()).toHaveLength(0);
+});
+
+it('재조회 실패가 마지막 성공 데이터를 디스크에서 지우지 않는다', async () => {
+  const { cache, storage } = setup();
+  await expect(
+    cache.fetchQuery({
+      queryKey: ['goals'],
+      retry: false,
+      queryFn: async () => {
+        throw new Error('network');
+      },
+    }),
+  ).rejects.toThrow('network');
+  const entry = createUserCache(cache, 'alice', vi.fn(), storage);
+  await entry.persister.persistClient({
+    timestamp: Date.now(),
+    buster: CACHE_BUSTER,
+    clientState: dehydrate(cache, { shouldDehydrateQuery: shouldPersistQuery }),
+  });
+  const restored = new QueryClient();
+  await persistQueryClientRestore({
+    queryClient: restored,
+    persister: entry.persister,
+    buster: CACHE_BUSTER,
+  });
+  expect(restored.getQueryData(['goals'])).toEqual([{ id: 'mine' }]);
+  cache.clear();
+  restored.clear();
 });

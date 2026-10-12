@@ -111,6 +111,7 @@ function TodayContent({
   const [stoppingRoutine, setStoppingRoutine] = useState<RoutineRecord | null>(null);
   const [barFocused, setBarFocused] = useState(false);
   const [monthFocused, setMonthFocused] = useState(false);
+  const [settingsFocused, setSettingsFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
@@ -240,10 +241,18 @@ function TodayContent({
         ) : (
           <Pressable
             onPress={() => setSettings(true)}
+            onFocus={() => setSettingsFocused(true)}
+            onBlur={() => setSettingsFocused(false)}
             accessibilityRole="button"
             accessibilityLabel={t('settings.title')}
             accessibilityState={{ expanded: settings }}
-            style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
+            style={({ pressed }) => [
+              styles.settings,
+              {
+                opacity: pressed ? m.pressedOpacity : 1,
+                borderColor: settingsFocused ? colors.focus : colors.side,
+              },
+            ]}
           >
             <Text style={[styles.heading, { color: colors.ink2 }]}>☰</Text>
           </Pressable>
@@ -490,6 +499,8 @@ const styles = StyleSheet.create({
   },
   arrows: { flexDirection: 'row', gap: m.space.sm },
   settings: {
+    borderWidth: m.selectionRing,
+    borderRadius: m.radius.field,
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     alignItems: 'center',

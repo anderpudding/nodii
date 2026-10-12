@@ -126,16 +126,22 @@ export function ToastInset({ bottom }: { bottom: number }) {
   return null;
 }
 /** 네이티브 Modal은 별도 창이므로 같은 토스트를 그 창 안에 한 번만 그린다. */
-export function ToastPortal() {
+export function ToastPortal({ bottom = 0 }: { bottom?: number } = {}) {
   const { registerPortal, activePortal } = useContext(ToastViewContext);
   const [id] = useState(() => Symbol('toast-portal'));
   useLayoutEffect(() => {
     registerPortal(id, true);
     return () => registerPortal(id, false);
   }, [registerPortal, id]);
-  return activePortal === id ? <ToastView portal /> : null;
+  return activePortal === id ? <ToastView portal portalBottom={bottom} /> : null;
 }
-function ToastView({ portal = false }: { portal?: boolean }) {
+function ToastView({
+  portal = false,
+  portalBottom = 0,
+}: {
+  portal?: boolean;
+  portalBottom?: number;
+}) {
   const { entries, bottom, dismiss, restore } = useContext(ToastViewContext);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -158,7 +164,7 @@ function ToastView({ portal = false }: { portal?: boolean }) {
         {
           bottom:
             (portal
-              ? Math.max(insets.bottom, keyboardHeight)
+              ? Math.max(portalBottom, insets.bottom, keyboardHeight)
               : Math.max(bottom, insets.bottom, keyboardHeight)) + m.toastInset,
         },
       ]}

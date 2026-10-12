@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { readStoredSession, type NodiiClient, type Session } from '@nodii/api';
-import { t } from '@nodii/i18n';
+import { t, type MessageKey } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
 import { logout } from '../../lib/logout';
@@ -31,6 +31,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   const [attempt, setAttempt] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const logoutBusy = useRef(false);
+  const logoutNotice = useRef<MessageKey | null>(null);
   const refresh = useRef<ReturnType<typeof bindAuthRefresh> | null>(null);
   const query = useQueryClient();
   const toast = useToast();
@@ -106,6 +107,14 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     };
   }, [client, query, attempt, toast]);
 
+  useEffect(() => {
+    if (gate.status !== 'ready' || gate.session || !logoutNotice.current) return;
+    // 하루 화면의 실행 취소 정리가 끝난 뒤 로그인 화면에서 결과를 알린다.
+    const message = logoutNotice.current;
+    logoutNotice.current = null;
+    toast(t(message));
+  }, [gate, toast]);
+
   const ready = !client || gate.status !== 'loading';
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => toast(t('mobile.session.failed')));
@@ -118,13 +127,16 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     await refresh.current?.pause();
     try {
       const result = await logout(client, query, undefined, accountDeleted);
+      logoutNotice.current = accountDeleted
+        ? 'settings.deleted'
+        : result.localOnly
+          ? 'auth.logout.local'
+          : null;
       setGate({ status: 'ready', session: null });
-      if (accountDeleted) toast(t('settings.deleted'));
-      else if (result.localOnly) toast(t('auth.logout.local'));
     } catch {
       if (accountDeleted) {
+        logoutNotice.current = 'sync.cache.clearFailed';
         setGate({ status: 'ready', session: null });
-        toast(t('sync.cache.clearFailed'));
       } else {
         refresh.current?.setSignedIn(true);
         toast(t('auth.logout.failed'));

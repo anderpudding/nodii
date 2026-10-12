@@ -76,7 +76,11 @@ export function ManagementScreen({
             {footer}
           </View>
         )}
-        <ToastPortal />
+        <ToastPortal
+          bottom={
+            footer ? m.height.field + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg) : 0
+          }
+        />
       </View>
     </Modal>
   );

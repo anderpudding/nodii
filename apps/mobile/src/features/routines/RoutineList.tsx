@@ -1,6 +1,6 @@
 import { useOnline } from '../../../lib/connectivity';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useGoals,
@@ -48,6 +48,19 @@ export function RoutineList({
   const { colors } = useTheme();
   const online = useOnline();
   const insets = useSafeAreaInsets();
+  const edge = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gesture) =>
+          gesture.x0 <= m.height.touch &&
+          gesture.dx > m.space.md &&
+          Math.abs(gesture.dy) < m.space.sm,
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dx > m.height.touch) onClose();
+        },
+      }),
+    [onClose],
+  );
   const routines = useRoutines(client);
   const goals = useGoals(client);
   const [editing, setEditing] = useState<RoutineRecord | null | undefined>(undefined);
@@ -74,6 +87,7 @@ export function RoutineList({
     <Modal visible animationType="none" onRequestClose={onClose}>
       <View
         accessibilityViewIsModal
+        {...edge.panHandlers}
         style={[styles.screen, { backgroundColor: colors.side, paddingTop: insets.top }]}
       >
         <ToastInset bottom={barHeight} />

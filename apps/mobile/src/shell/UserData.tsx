@@ -11,6 +11,7 @@ import {
   CACHE_BUSTER,
   CACHE_MAX_AGE,
   createUserCache,
+  shouldPersistQuery,
 } from '../../lib/query-cache';
 import { bindUserSync } from '../../lib/user-sync';
 import { useTheme } from '../../lib/theme';
@@ -98,7 +99,10 @@ export function UserData({
         persister: entry.persister,
         buster: CACHE_BUSTER,
         maxAge: CACHE_MAX_AGE,
-        dehydrateOptions: { shouldDehydrateMutation: () => false },
+        dehydrateOptions: {
+          shouldDehydrateMutation: () => false,
+          shouldDehydrateQuery: shouldPersistQuery,
+        },
       }}
       onSuccess={() => {
         void entry.cache.invalidateQueries();
