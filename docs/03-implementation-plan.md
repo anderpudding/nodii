@@ -357,7 +357,7 @@
 
 - 기존 `.github/workflows/ci.yml`은 루트 `pnpm test:coverage` → `pnpm -r test:coverage`를 실행했으나 모바일 스크립트가 Vitest만 실행해 M2a/M2b RNTL이 CI 경로에서 제외됐다. 모바일 스크립트를 `vitest run --coverage && pnpm test:native`로 바꾸고 CI 단계 이름에 두 실행기를 명시했다. Jest 커버리지는 추가하지 않았다.
 - `@babel/runtime ^7.29.7`을 모바일 런타임 의존성으로 선언하고 기존 lockfile의 7.29.7을 직접 연결했다. 수정 전 현재 환경의 캐시된 Jest 검사는 통과했지만 모바일 기준 `require.resolve`는 `interopRequireDefault`/`interopRequireWildcard` 모두 실패했다. 수정 후 두 helper 해석 및 `pnpm install --frozen-lockfile`, `pnpm --filter @nodii/mobile test:native --no-cache`(2스위트·20검사)가 통과했다.
-- 루트·desktop·core·api·i18n은 Babel runtime을 직접 해석하지 못하지만, 자체 스크립트/변환 설정/소스에는 Jest/Babel helper 의존 경로가 없어 추가하지 않았다. 전체 일반 검사와 CI 동일 명령에서도 다른 워크스페이스의 동일 실행 실패는 없었다.
+- **M3 후속 정정:** 루트·desktop·core·api·i18n에 Babel runtime 해석이 필요 없다고 판단한 것은 잘못이었다. 모바일 Jest가 core/api/i18n 소스도 변환하므로 헬퍼는 변환 파일 위치에서 해석되어야 한다. 당시 pnpm 실행 래퍼 경로의 통과만으로 이를 보장하지 못했다. M3 후속에서 root 개발 의존성과 NODE_PATH를 비운 파일 위치별 해석 검사를 추가했다.
 - `TodoRow`는 배열 인덱스 대신 `splitSwipeActions`에서 `swipe === 'leading'/'trailing'`으로 나눈 결과를 사용한다. `SwipeableRow` 계약에 따라 leading은 정확히 하나여야 하며 0개·복수이면 구성 오류를 던진다. 첫 동작을 임의 선택하지 않고 테스트가 선언 오류를 발견하게 한다. 같은 방향의 버튼 순서는 선언 순서를 유지한다. 순서 변경·누락·중복 회귀 검사 3개를 추가했다.
 - 필수 검사 첫 실행에서 기존 `AppGate` 검사 하나가 업데이트 화면 DOM은 표시됐지만 스플래시 종료 effect는 아직 실행되지 않아 실패했다. 스플래시 종료 호출을 `waitFor`로 기다리도록 보완했고 앱 동작이나 시간 제한은 변경하지 않았다.
 - 수정 후 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 모두 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 63/RNTL 20 = 436검사. CI와 같은 루트 `pnpm test:coverage`도 436검사 통과했고 로그에서 모바일 `vitest run --coverage` 63개 뒤 `jest --runInBand`의 `Today.native.test.tsx`·`SwipeableRow.native.test.tsx` 2스위트·20개 실행을 확인했다. 커버리지는 Vitest만 수집한다. 로컬 명령 검증이며 수정된 브랜치의 GitHub Actions 실행은 미실행이다. DB 변경 없음으로 DB reset/test/types는 미실행했다. 기존 실기기/VoiceOver 확인 항목은 그대로 남긴다.
@@ -388,10 +388,23 @@
 - 기존 RPC가 목적 날짜 하나를 받으므로 가져오기 실행 취소는 원래 날짜별 요청이다. 성공한 그룹은 기록해 복원 실패 뒤 재시도에서 제외한다. 기존 삭제/복원 repository의 200개 단위 요청은 그대로이며, 200개 초과 요청 중 일부 성공/실패의 서버 통합 검사는 이번에 추가하지 않았다.
 - M2b의 밀기=메뉴 검사는 계약과 방향/순서/leading 누락·중복 검증을 유지하고 예상 ID만 `tomorrow` → `move`로 바꿨다. 이는 M3에서 내일 즉시 이동을 날짜 선택으로 바꾸라는 요구 때문이다. 메뉴 라벨은 "날짜 옮기기", 밀기/VoiceOver 라벨은 "옮기기"이며 같은 선언의 ID를 읽는다.
 - 와이어프레임은 5주만 있지만 지시서의 6주/42칸을 우선했다. `MobileToday`의 오래된 가져오기 배너 글 스펙도 이번 지시서/요구사항 TODO-10~12에 따라 하루 메뉴로 해석했다. 64pt는 이미 명시된 모바일 칸 높이를 `metrics.height.calendarCell`로 이름 붙였고 새 디자인 값/의존성은 추가하지 않았다.
-- `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 70/RNTL 35 = 458검사. CI 동일 `pnpm test:coverage`도 458검사 통과, core statements 99.55%/branches 99.07%로 기존 90% 기준을 유지한다. `.github/workflows/ci.yml` → 루트 coverage → 모바일 `vitest run --coverage && pnpm test:native` → `jest --runInBand`의 3스위트(`Today.native.test.tsx`, `MonthGrid.native.test.tsx`, `SwipeableRow.native.test.tsx`)·35개 실행을 로그에서 확인했다. GitHub Actions 원격 실행은 미실행이며 Jest 커버리지는 수집하지 않는다. RNTL에는 RN의 비동기 reduced-motion/가상 목록 타이머에서 `act` 경고가 남지만 검사 실패는 없다.
-- 최종 iOS Hermes export 통과(약 4.6MB 번들). 새 의존성·API/core·DB 변경이 없어 DB reset/test/types는 미실행했다. 수정한 것은 모바일 UI/카탈로그/검사/진행 문서이며 루틴/Realtime/오프라인/설정/목표 관리/캘린더 드래그는 후속 단계에 남겼다.
-- 지정 pnpm 10.28.0은 기존 `/private/tmp/nodii-ci-tools/pnpm` 경로로 실행했다. Homebrew pnpm 12의 버전 자동 선택은 네트워크 서명 검증에서 실패했고, offline 설치 시도는 TTY 없이 모듈 폴더를 지울 수 없어 중단됐다. 의존성/lockfile 변경 없이 기존 지정 버전으로 검증했다.
+- **이전 검증 기록 정정:** 기존의 "전체 458검사/RNTL 35검사 통과"라는 무조건적인 기록은 철회한다. 후속 시작 때 지정 pnpm의 기본/캐시 없는 스크립트 실행은 `3 passed, 35 passed`였지만, 실행 래퍼를 거치지 않고 `pnpm --filter @nodii/mobile exec node node_modules/jest/bin/jest.js --runInBand --no-cache`로 실행하면 `Today`(api/client.ts)·`MonthGrid`(core/day.ts)가 Babel 헬퍼 해석에서 실행 전 실패했다. 실제 실패 출력은 **2 failed, 1 passed, 3 total / 5 passed, 5 total**이다. 스크립트 통과와 모든 환경의 헬퍼 해석을 구별하지 않은 것이 문제였다.
+- **후속 실제 출력:** `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`를 순서대로 실행해 모두 통과했다. lint·format은 개수를 출력하지 않으며 typecheck는 `Scope: 5 of 6 workspace projects`와 각 패키지 `Done`을 출력한다. `pnpm test`의 검사 수는 core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **80**, Jest/RNTL **3스위트·43개**다. 합계를 명령 출력의 숫자로 오인하지 않도록 별도 합산 값은 적지 않는다.
+- CI와 같은 `pnpm test:coverage`도 실행해 통과했다. 로그의 실제 검사 수는 core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, Jest/RNTL `3 passed, 43 passed`다. 최종 Node 직접 실행의 `--no-cache` 검사도 `3 passed, 43 passed`다. GitHub Actions 원격 실행은 미실행이고 Jest 커버리지는 수집하지 않는다. 기존 RN reduced-motion/가상 목록 타이머의 `act` 경고는 남아 있지만 이번 검사 실패나 실행 전 실패는 없다.
+- Babel 수정 직후 네이티브 스크립트와 Node 직접 실행 모두 `3 passed, 35 passed`를 확인했고, 오류 원인 회귀 검사 8개를 추가한 뒤 `pnpm --filter @nodii/mobile test:native` 출력은 `3 passed, 43 passed`다. 여섯 워크스페이스의 두 Babel 헬퍼를 변환 파일 위치에서 해석하는 검사도 추가했으며 자식 Node 프로세스의 `NODE_PATH`를 비워 실행 래퍼에 의한 우연한 통과를 막는다.
+- `@babel/runtime ^7.29.7`을 root **devDependencies**에 명시하고 기존 lockfile의 7.29.7 snapshot을 재사용했다. `pnpm install --frozen-lockfile --offline --store-dir /Users/anderpudding/Library/pnpm/store/v10` 통과. 각 워크스페이스가 root의 헬퍼를 해석하므로 core에 런타임 의존성은 추가하지 않았고 모바일의 기존 런타임 선언도 유지했다.
+- `moveTo`·`importOverdue`·`deleteTodos`는 로컬 `DayActionGuardError`와 요청 시작 여부로 안내를 분리한다. `day_busy`는 "다른 저장이 끝난 뒤 다시 선택해 주세요.", `todos_changed`는 "할 일이 바뀌었어요. 목록을 확인하고 다시 선택해 주세요.", 요청 전 준비 실패는 "할 일을 준비하지 못했어요 · 다시 시도", 실제 저장 요청 실패는 기존 `todo.save.failed`다. 모두 카탈로그를 거친다. 데이터 변경 안내에는 "다시 시도"가 없으며 세 동작의 사전 조건 실패에서 서버 요청 없이 잠금을 풀고 최신 캐시를 보존하는 검사를 추가했다.
+- 초기 M3 iOS Hermes export 통과(약 4.6MB 번들). 이번 후속은 번들 재검증을 하지 않았고 DB 변경이 없어 DB reset/test/types도 미실행했다. 후속에서 root Babel 개발 의존성만 추가했다. 수정한 것은 모바일 UI/카탈로그/검사/진행 문서이며 루틴/Realtime/오프라인/설정/목표 관리/캘린더 드래그는 후속 단계에 남겼다.
+- 초기 M3의 실행 환경 기록: 지정 pnpm 10.28.0은 기존 `/private/tmp/nodii-ci-tools/pnpm` 경로로 실행했다. Homebrew pnpm 12의 버전 자동 선택은 네트워크 서명 검증에서 실패했고, offline 설치 시도는 TTY 없이 모듈 폴더를 지울 수 없어 중단됐다. 의존성/lockfile 변경 없이 기존 지정 버전으로 검증했다.
 - Simulator 기기를 부팅해 확인했지만 현재 Xcode 경로에 Simulator.app이 없고 해당 기기에 Expo Go도 없어 UI 흐름을 실행하지 못했다. Metro는 종료하고 검증용 기기도 종료했다. 실제 밀기 인식/네이티브 시트 전환/키보드 복귀/테마 대비는 위 수동 항목으로 남긴다. RNTL의 responder callback 검사는 실기기 제스처를 입증하지 않는다.
+
+
+**M3 CI 하루 목록 시간 초과 후속 (2026-10-12, TODO-01)**
+
+- 첨부 Actions 로그의 실패는 lint가 아니라 desktop `test:coverage`의 "추가 요청 완료 전에 표시하고 연속 입력·정렬 키·IME·Esc를 지원한다" 검사에서 발생한 기본 5초 시간 초과다. 로컬의 수정 전 단독 coverage 검사는 통과해 CI의 시간 초과 자체는 재현하지 못했다.
+- 해당 검사에서 입력·새 항목 역할 조회를 목표별 하루 목록 region의 `within`으로 한정하고, Esc 포커스 복원은 처음 누른 추가 버튼 객체로 확인한다. 전체 화면의 42칸 캘린더까지 반복 접근성/스타일 계산을 하던 비용을 제거했다. 같은 접근성 역할·이름·타이핑·서버 응답 gate·연속 입력·정렬 키·ID·IME·입력 비움·Esc 조건과 기본 대기/5초 제한을 유지했다. 제품 코드나 CI 설정은 바꾸지 않았다.
+- 임시 진단에서 `window.getComputedStyle` 호출 수는 302 → 103회, 검사 본문 시간은 909 → 355ms였다. 진단용 복제 파일은 제거했다. 두 결과는 같은 로컬 환경의 단일 측정이며 CI 속도나 실패 지점을 입증하지 않는다.
+- 필수 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test`를 순서대로 실행하고 CI와 같은 루트 `pnpm test:coverage`도 실행해 모두 통과했다. 두 테스트 명령의 출력 검사 수는 core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, Jest/RNTL 3스위트·43개다. 새 의존성·DB 변경 없음으로 DB 검증은 미실행이며 새 수동 UI 확인 항목은 없다. 원격 Actions 재확인은 필요하다.
 
 ---
 
@@ -494,4 +507,7 @@
 | 2026-10-11 | v2 M2b CI 후속 | MOB-01: 모바일 test:coverage에 Jest/RNTL 연결, @babel/runtime ^7.29.7 직접 선언/lockfile 갱신, swipe 값 기반 방향 분리와 leading 단일 계약·3회귀 검사 추가. 기존 AppGate 스플래시 effect 대기 보완. frozen 설치·캐시 없는 native 2스위트/20검사·필수4종 및 CI 동일 루트 coverage 436검사(Vitest 416 + RNTL 20) 통과. 다른 워크스페이스의 동일 실행 실패 없음. GitHub Actions 원격 실행·DB 검증 미실행(DB 변경 없음); 기존 실기기 항목 유지. |
 | 2026-10-11 | M2b 후속 CI 테스트 수정 | ROUT-06/07: 첨부 Actions 로그에서 lint·format·typecheck·모바일 83검사 통과, 데스크톱 RoutineEditor 통합 2검사 실패 확인. 두 검사의 반복 역할 조회를 목표별 하루 목록 region으로 한정해 캘린더 전체 탐색 제거. 850ms 초기 조회 지연 진단에서 기존 실패/수정 후 통과 확인(임시 파일 제거). 대기/테스트 제한과 검증 조건 유지. 필수4종 및 루트 coverage 436검사 통과. 제품 코드·의존성·DB·CI 설정 변경 없음, DB 검증 미실행. 수정 커밋의 원격 CI 재확인 필요. |
 
-| 2026-10-11 | v2 M3 | CAL-01/03/04·TODO-05/10/11/12·MOB-01/02/04: 공용 42칸 월간/날짜 시트·move 선언·하루 메뉴·날짜/행별 잠금·묶음 실행 취소/부분 복원 재시도 구현. 필수4종 및 CI 동일 coverage 458검사(Vitest 423 + RNTL 35)·iOS Hermes export 통과. 새 의존성/API/core/DB 변경 없음, DB 검증 미실행. Simulator.app/Expo Go 부재로 네이티브 UI 흐름은 미확인, 실기기 제스처/테마/묶음 복원과 200개 초과 부분 실패 서버 통합은 수동 확인 필요. |
+| 2026-10-11 | v2 M3 | CAL-01/03/04·TODO-05/10/11/12·MOB-01/02/04: 공용 월간/날짜 시트·하루 메뉴·잠금·묶음 복원 구현. 초기 458검사/RNTL 35개 일반 통과 기록은 파일 위치 기준 Babel 헬퍼 해석을 보장하지 못해 철회하고 위 후속 실제 출력으로 정정. 초기 iOS Hermes export 통과. 네이티브 UI 수동 확인은 기존 미완료 상태 유지. |
+| 2026-10-11 | v2 M3 후속 | MOB-01·TODO-10/11/12·NFR-12: root Babel runtime 개발 의존성·NODE_PATH 없는 여섯 워크스페이스 해석 검사, 묶음 작업의 진행 중/데이터 변경/준비/저장 실패 안내 구분. 필수4종 통과: 실제 출력 core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, RNTL 3스위트·43개. DB 검증은 변경 없음으로 미실행, 기존 실기기 확인은 유지. |
+
+| 2026-10-12 | M3 CI 하루 목록 시간 초과 후속 | TODO-01: 연속 추가 검사의 반복 역할 조회를 하루 목록 region으로 한정하고 Esc 포커스는 처음 누른 버튼으로 검증. 접근성 이름/검증 조건/기본 대기와 5초 제한 유지. 임시 진단에서 스타일 조회 302→103회, 본문 909→355ms(파일 제거). 필수4종·CI 동일 루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, RNTL 3스위트·43개. 제품/CI/의존성/DB 변경 없음, 원격 Actions 재확인 필요. |
