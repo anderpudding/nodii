@@ -4,10 +4,12 @@ import {
   cleanup,
   fireEvent,
   render,
+  renderHook,
   screen,
   waitFor,
   within,
 } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 import {
   Alert,
   Keyboard,
@@ -39,6 +41,7 @@ import { t } from '@nodii/i18n';
 import { ToastProvider } from '../components/Toast';
 import { useUIStore } from '../stores/ui';
 import { Today } from './Today';
+import { useDayActions } from './today/useDayActions';
 
 jest.mock('../../../../packages/api/src/profile', () => ({ fetchProfile: jest.fn() }));
 jest.mock('../../../../packages/api/src/repositories/goals', () => ({ listGoals: jest.fn() }));
@@ -972,4 +975,116 @@ it('월간에서 다른 달을 둘러봐도 선택한 날짜의 목록은 유지
   const month = screen.getByRole('button', { name: t('mobile.month.collapse') });
   fireEvent(month, 'focus');
   expect(StyleSheet.flatten(month.props.style).borderColor).toBe('#2A63C9');
+});
+
+function mountDayActions() {
+  return renderHook(() => useDayActions(client, 0), {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={cache}>
+        <ToastProvider>{children}</ToastProvider>
+      </QueryClientProvider>
+    ),
+  });
+}
+async function runDayAction(
+  actions: ReturnType<typeof useDayActions>,
+  action: 'move' | 'import' | 'delete',
+  original: TodoRecord,
+) {
+  if (action === 'move') await actions.moveTo([original], '2026-10-11');
+  else if (action === 'import')
+    await actions.importOverdue([original], [{ id: original.id, sort_key: 'a9' }], '2026-10-10');
+  else await actions.deleteTodos([original]);
+}
+it.each(['move', 'import', 'delete'] as const)(
+  '묶음 %s의 다른 쓰기 진행 중은 저장 실패로 안내하거나 요청하지 않는다',
+  async (action) => {
+    const original = {
+      ...row('one', '장보기'),
+      date: action === 'import' ? '2026-10-09' : '2026-10-10',
+    };
+    cache.setQueryData(queryKeys.todos('2026-10'), [original]);
+    const { result } = mountDayActions();
+    let finish: () => void = () => {};
+    const pending = cache.getMutationCache().build(cache, {
+      mutationKey: ['write', 'todo', original.id],
+      mutationFn: () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    });
+    let request: Promise<void>;
+    await act(async () => {
+      request = pending.execute(original);
+    });
+    await act(async () => runDayAction(result.current, action, original));
+    await screen.findByText(t('day.action.busy'));
+    expect(screen.queryByText(t('todo.save.failed'))).toBeNull();
+    expect(moveTodos).not.toHaveBeenCalled();
+    expect(softDeleteTodos).not.toHaveBeenCalled();
+    expect(result.current.isDateLocked('2026-10-10')).toBe(false);
+    await act(async () => {
+      finish();
+      await request!;
+    });
+  },
+);
+it.each(['move', 'import', 'delete'] as const)(
+  '묶음 %s의 변경된 스냅샷은 다시 시도 대신 목록 확인을 안내하고 요청하지 않는다',
+  async (action) => {
+    const original = {
+      ...row('one', '장보기'),
+      date: action === 'import' ? '2026-10-09' : '2026-10-10',
+    };
+    cache.setQueryData(queryKeys.todos('2026-10'), [{ ...original, sortKey: 'a8' }]);
+    const { result } = mountDayActions();
+    await act(async () => runDayAction(result.current, action, original));
+    const notice = await screen.findByText(t('day.action.changed'));
+    expect(notice.props.children).not.toContain('다시 시도');
+    expect(screen.queryByText(t('todo.save.failed'))).toBeNull();
+    expect(moveTodos).not.toHaveBeenCalled();
+    expect(softDeleteTodos).not.toHaveBeenCalled();
+    expect(result.current.isDateLocked(original.date)).toBe(false);
+    expect(cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))).toEqual([
+      { ...original, sortKey: 'a8' },
+    ]);
+  },
+);
+it('묶음 이동의 목적 월 조회 실패는 저장 실패와 구별하고 요청 없이 준비 잠금을 푼다', async () => {
+  const original = row('one', '장보기');
+  cache.setQueryData(queryKeys.todos('2026-10'), [original]);
+  jest.mocked(listTodosInRange).mockRejectedValueOnce(new Error('network'));
+  const { result } = mountDayActions();
+  await act(async () => result.current.moveTo([original], '2026-11-20'));
+  await screen.findByText(t('day.action.prepareFailed'));
+  expect(screen.queryByText(t('todo.save.failed'))).toBeNull();
+  expect(moveTodos).not.toHaveBeenCalled();
+  expect(result.current.isDateLocked(original.date)).toBe(false);
+  expect(cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))).toEqual([original]);
+});
+it('목적 월을 준비하는 동안 완료된 항목은 저장하지 않고 새 목록 확인을 안내한다', async () => {
+  const original = row('one', '장보기');
+  cache.setQueryData(queryKeys.todos('2026-10'), [original]);
+  let finish: (rows: TodoRecord[]) => void = () => {};
+  jest.mocked(listTodosInRange).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const { result } = mountDayActions();
+  let request: Promise<void>;
+  await act(async () => {
+    request = result.current.moveTo([original], '2026-11-20');
+  });
+  expect(result.current.isDateLocked(original.date)).toBe(true);
+  await act(async () => {
+    cache.setQueryData(queryKeys.todos('2026-10'), [{ ...original, isDone: true }]);
+    finish([]);
+    await request!;
+  });
+  await screen.findByText(t('day.action.changed'));
+  expect(moveTodos).not.toHaveBeenCalled();
+  expect(result.current.isDateLocked(original.date)).toBe(false);
+  expect(cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))?.[0]?.isDone).toBe(true);
 });

@@ -14,6 +14,7 @@ import { t } from '@nodii/i18n';
 import { useToast } from '../../components/Toast';
 import { formatMoveDate } from './calendar-model';
 import { planDayMove } from './day-menu-model';
+import { DayActionGuardError, dayActionErrorKey } from './day-action-error';
 
 /** TODO-10~12: 쓰기/복원은 기존 훅에 맡기고 날짜별 준비 잠금과 실패한 복원 그룹만 관리한다. */
 export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
@@ -62,7 +63,7 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
   }
   async function locked<T>(dates: ISODate[], request: () => Promise<T>): Promise<T> {
     if (dates.some((date) => locks.current.has(date) || rowWriting(date)))
-      throw new Error('day_busy');
+      throw new DayActionGuardError('day_busy');
     for (const date of dates) locks.current.add(date);
     setLockedDates(new Set(locks.current));
     try {
@@ -102,48 +103,55 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
   }
   async function moveTo(originals: TodoRecord[], date: ISODate) {
     if (!originals.length || originals.every((row) => row.date === date)) return;
+    let requestStarted = false;
     try {
       await locked([...new Set(originals.map((row) => row.date))], async () => {
         await cache.ensureQueryData(monthTodosOptions(client, monthKeyOf(date), weekStart));
         const target = cache.getQueryData<TodoRecord[]>(['todos', monthKeyOf(date)]) ?? [];
-        if (!originalsStillActive(originals)) throw new Error('todos_changed');
+        if (!originalsStillActive(originals)) throw new DayActionGuardError('todos_changed');
         const moves = planDayMove(originals, target, date);
+        requestStarted = true;
         await move.mutateAsync({ todos: originals, moves, date });
         toast(
           t('day.menu.moved', { count: originals.length, date: formatMoveDate(date) }),
           undoMove(originals, date),
         );
       });
-    } catch {
-      toast(t('todo.save.failed'));
+    } catch (error) {
+      toast(t(dayActionErrorKey(error, requestStarted)));
     }
   }
   async function importOverdue(originals: TodoRecord[], moves: TodoMove[], today: ISODate) {
     if (!moves.length) return;
+    let requestStarted = false;
     try {
       await locked([today], async () => {
-        if (originals.some((row) => rowWriting(row.date))) throw new Error('day_busy');
+        if (originals.some((row) => rowWriting(row.date)))
+          throw new DayActionGuardError('day_busy');
         for (const original of originals) {
           const active = latest(original.id);
           if (
             active &&
             (active.isDone || active.date !== original.date || active.sortKey !== original.sortKey)
           )
-            throw new Error('todos_changed');
+            throw new DayActionGuardError('todos_changed');
         }
+        requestStarted = true;
         await imports.mutateAsync({ overdue: originals, moves, today });
         toast(t('day.menu.imported', { count: originals.length }), undoMove(originals, today));
       });
-    } catch {
-      toast(t('todo.save.failed'));
+    } catch (error) {
+      toast(t(dayActionErrorKey(error, requestStarted)));
     }
   }
   async function deleteTodos(originals: TodoRecord[]) {
     if (!originals.length) return;
     const dates = [...new Set(originals.map((row) => row.date))];
+    let requestStarted = false;
     try {
       await locked(dates, async () => {
-        if (!originalsStillActive(originals)) throw new Error('todos_changed');
+        if (!originalsStillActive(originals)) throw new DayActionGuardError('todos_changed');
+        requestStarted = true;
         const saved = await remove.mutateAsync({ todos: originals });
         toast(t('day.menu.deleted', { count: originals.length }), () =>
           locked(dates, async () => {
@@ -151,8 +159,8 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
           }),
         );
       });
-    } catch {
-      toast(t('todo.save.failed'));
+    } catch (error) {
+      toast(t(dayActionErrorKey(error, requestStarted)));
     }
   }
   return {
