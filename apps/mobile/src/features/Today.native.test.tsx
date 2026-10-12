@@ -44,6 +44,7 @@ import {
 import { type Todo } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { ToastProvider } from '../components/Toast';
+import { SwipeableRow } from '../components/gestures/SwipeableRow';
 import { useUIStore } from '../stores/ui';
 import { Today } from './Today';
 import { useDayActions } from './today/useDayActions';
@@ -1219,5 +1220,40 @@ it('오늘 화면의 임시 버튼에서 루틴 관리와 만들기 시트로 �
   await screen.findByText('돌고 있는 루틴 1개');
   expect(screen.getByText('끝난 루틴 1개')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: t('routine.create') }));
+  expect(screen.getByTestId('routine-edit-sheet')).toBeTruthy();
+});
+
+it('관리 줄의 밀기·메뉴·VoiceOver는 편집·그만두기 선언을 따르고 오른쪽 동작은 없다', async () => {
+  jest.mocked(listRoutines).mockResolvedValue([routineRow()]);
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('routine.manage') }));
+  const management = await screen.findByRole('button', { name: /^영어 루틴 · 매일/ });
+  // 모션 감소 확인 effect가 끝난 뒤 네이티브 레이아웃/제스처 이벤트를 전달한다.
+  await act(async () => {});
+  expect(management.props.accessibilityActions).toEqual([
+    { name: 'edit', label: '루틴 편집' },
+    { name: 'stop', label: '그만두기' },
+  ]);
+  // 네이티브 거리 판정은 SwipeableRow 스위트에서 검사하고 여기서는 실제 전달된 동작의 연결을 검증한다.
+  const swipeRow = screen
+    .UNSAFE_getAllByType(SwipeableRow)
+    .find((row) => row.props.id === 'manage-r')!;
+  expect(swipeRow.props.leading).toBeUndefined();
+  expect(swipeRow.props.trailing.map((action: { id: string }) => action.id)).toEqual(['stop']);
+  act(() => swipeRow.props.trailing[0].run());
+  await screen.findByTestId('routine-stop-sheet');
+  fireEvent.press(screen.getByRole('button', { name: '취소' }));
+  fireEvent(management, 'longPress');
+  const menu = await screen.findByTestId('routine-menu-sheet');
+  expect(
+    within(menu)
+      .getAllByRole('button')
+      .map((button) => button.props.accessibilityLabel),
+  ).toEqual(['루틴 편집', '그만두기', '취소']);
+  fireEvent.press(within(menu).getByRole('button', { name: '취소' }));
+  fireEvent(management, 'accessibilityAction', { nativeEvent: { actionName: 'stop' } });
+  await screen.findByTestId('routine-stop-sheet');
+  fireEvent.press(screen.getByRole('button', { name: '취소' }));
+  fireEvent(management, 'accessibilityAction', { nativeEvent: { actionName: 'edit' } });
   expect(screen.getByTestId('routine-edit-sheet')).toBeTruthy();
 });

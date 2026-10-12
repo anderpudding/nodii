@@ -4,7 +4,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { GoalBadge } from '../today/GoalBadge';
-import { routineActions, routineActionLabel, type RoutineAction } from '../today/actions';
+import {
+  routineActions,
+  routineManagementActions,
+  routineActionLabel,
+  type RoutineAction,
+} from '../today/actions';
 
 /** MOB-01: 같은 선언의 동작을 할 일 메뉴와 같은 높이·글리프·구분선으로 노출한다. */
 export function RoutineMenu({
@@ -31,38 +36,36 @@ export function RoutineMenu({
   return (
     <BottomSheet title={routine.title} testID="routine-menu-sheet" bottomCancel onClose={onClose}>
       <GoalBadge goal={goal} />
-      {routineActions
-        .filter(({ id }) => !managing || id === 'edit' || id === 'stop')
-        .map(({ id }) => (
-          <View key={id}>
-            {id === 'stop' && <View style={[styles.divider, { backgroundColor: colors.line }]} />}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={routineActionLabel(id, isDone, skipped)}
-              accessibilityState={{ disabled: locked, busy: locked }}
-              disabled={locked}
-              onPress={() => {
-                onClose();
-                onAction(id);
-              }}
-              onFocus={() => setFocused(id)}
-              onBlur={() => setFocused(null)}
-              style={({ pressed }) => [
-                styles.item,
-                {
-                  borderColor: focused === id ? colors.focus : colors.surface,
-                  borderBottomColor: colors.line,
-                  opacity: pressed || locked ? m.pressedOpacity : 1,
-                },
-              ]}
-            >
-              <RoutineGlyph action={id} color={id === 'stop' ? colors.danger : colors.ink} />
-              <Text style={[styles.label, { color: id === 'stop' ? colors.danger : colors.ink }]}>
-                {routineActionLabel(id, isDone, skipped)}
-              </Text>
-            </Pressable>
-          </View>
-        ))}
+      {(managing ? routineManagementActions : routineActions).map(({ id }) => (
+        <View key={id}>
+          {id === 'stop' && <View style={[styles.divider, { backgroundColor: colors.line }]} />}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={routineActionLabel(id, isDone, skipped)}
+            accessibilityState={{ disabled: locked, busy: locked }}
+            disabled={locked}
+            onPress={() => {
+              onClose();
+              onAction(id);
+            }}
+            onFocus={() => setFocused(id)}
+            onBlur={() => setFocused(null)}
+            style={({ pressed }) => [
+              styles.item,
+              {
+                borderColor: focused === id ? colors.focus : colors.surface,
+                borderBottomColor: colors.line,
+                opacity: pressed || locked ? m.pressedOpacity : 1,
+              },
+            ]}
+          >
+            <RoutineGlyph action={id} color={id === 'stop' ? colors.danger : colors.ink} />
+            <Text style={[styles.label, { color: id === 'stop' ? colors.danger : colors.ink }]}>
+              {routineActionLabel(id, isDone, skipped)}
+            </Text>
+          </Pressable>
+        </View>
+      ))}
     </BottomSheet>
   );
 }

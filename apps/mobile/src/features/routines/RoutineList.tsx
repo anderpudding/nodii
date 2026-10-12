@@ -15,6 +15,12 @@ import { Button } from '../../components/Button';
 import { ToastInset, ToastPortal } from '../../components/Toast';
 import { SwipeableRow, SwipeRows } from '../../components/gestures/SwipeableRow';
 import { GoalBadge } from '../today/GoalBadge';
+import {
+  routineManagementActions,
+  routineActionLabel,
+  splitSwipeActions,
+  type RoutineManagementAction,
+} from '../today/actions';
 import { RoutineEditor } from './RoutineEditor';
 import { RoutineStop } from './RoutineStop';
 import { RoutineMenu } from './RoutineMenu';
@@ -184,20 +190,28 @@ function ManagementRow({
   const [menu, setMenu] = useState(false);
   const [focused, setFocused] = useState(false);
   const label = `${routine.title} · ${ruleLabel(routine)} · ${t(routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from', { date: routineDate(routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate) })}`;
+  function run(action: RoutineManagementAction) {
+    if (busy) return;
+    if (action === 'edit') onEdit();
+    else onStop();
+  }
+  const swipe = splitSwipeActions(
+    routineManagementActions.map(({ id, swipe }) => ({
+      id,
+      swipe,
+      label: routineActionLabel(id, false),
+      background: id === 'stop' ? lightColors.danger : colors.side,
+      color: id === 'stop' ? lightColors.bg : colors.ink,
+      run: () => run(id),
+    })),
+    'none',
+  );
   return (
     <>
       <SwipeableRow
         id={`manage-${routine.id}`}
         disabled={busy}
-        trailing={[
-          {
-            id: 'stop',
-            label: t('routine.stop'),
-            background: lightColors.danger,
-            color: lightColors.bg,
-            run: onStop,
-          },
-        ]}
+        trailing={swipe.trailing}
         onMenu={() => setMenu(true)}
       >
         <Pressable
@@ -205,18 +219,19 @@ function ManagementRow({
           accessibilityLabel={label}
           accessibilityState={{ disabled: busy }}
           disabled={busy}
-          onPress={onEdit}
+          onPress={() => run('edit')}
           onLongPress={() => setMenu(true)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          accessibilityActions={[
-            { name: 'edit', label: t('routine.edit') },
-            { name: 'stop', label: t('routine.stop') },
-          ]}
+          accessibilityActions={routineManagementActions.map(({ id }) => ({
+            name: id,
+            label: routineActionLabel(id, false),
+          }))}
           onAccessibilityAction={(event) => {
-            if (busy) return;
-            if (event.nativeEvent.actionName === 'edit') onEdit();
-            else if (event.nativeEvent.actionName === 'stop') onStop();
+            const action = routineManagementActions.find(
+              ({ id }) => id === event.nativeEvent.actionName,
+            );
+            if (action) run(action.id);
           }}
           style={({ pressed }) => [
             styles.row,
@@ -259,8 +274,8 @@ function ManagementRow({
           locked={busy}
           onClose={() => setMenu(false)}
           onAction={(action) => {
-            if (action === 'edit') onEdit();
-            else if (action === 'stop') onStop();
+            const entry = routineManagementActions.find(({ id }) => id === action);
+            if (entry) run(entry.id);
           }}
         />
       )}
