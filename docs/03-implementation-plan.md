@@ -363,6 +363,36 @@
 - 수정 후 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 모두 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 63/RNTL 20 = 436검사. CI와 같은 루트 `pnpm test:coverage`도 436검사 통과했고 로그에서 모바일 `vitest run --coverage` 63개 뒤 `jest --runInBand`의 `Today.native.test.tsx`·`SwipeableRow.native.test.tsx` 2스위트·20개 실행을 확인했다. 커버리지는 Vitest만 수집한다. 로컬 명령 검증이며 수정된 브랜치의 GitHub Actions 실행은 미실행이다. DB 변경 없음으로 DB reset/test/types는 미실행했다. 기존 실기기/VoiceOver 확인 항목은 그대로 남긴다.
 - 이후 제공받은 GitHub Actions 로그에서는 lint·format·typecheck와 모바일 Vitest 63/RNTL 20이 실제 통과했다. 실패는 데스크톱 `RoutineEditor.test.tsx`의 완료/건너뛰기/실행 취소 초기 버튼 조회와 서로 다른 루틴 연속 체크 2검사였다. 전체 화면의 캘린더까지 반복 조회하던 역할 검사를 하루 목록 region의 `within`으로 한정했다(ROUT-06/07). 임시 진단에서 초기 todos 조회를 850ms 지연하면 기존 검사는 같은 버튼 조회 오류로 실패하고 수정된 검사는 통과했으며 진단 파일은 제거했다. 접근성 역할·이름·클릭 경로·검증 조건·기본 1초 대기/5초 테스트 제한은 유지했다. 제품 코드·의존성·CI 설정 변경은 없다.
 
+
+### v2 · M3 · 월간 펼침 · 날짜 옮기기 · 하루 메뉴
+
+- [x] 42칸/64pt 월간 격자 · 주간과 공용 도장/날짜 알약 · 인접 월 할 일 prefetch (CAL-01/03/04, MOB-02)
+- [x] UI 스토어의 펼침/표시 월 · 날짜 선택 시 접힘 · 선택한 날 제목 고정/목록만 스크롤
+- [x] 공용 날짜 시트 · 오늘/내일/다음 주 즉시 선택 · 같은 날짜는 쓰지 않고 닫기
+- [x] 밀기/메뉴/VoiceOver 공용 `move` 선언 · 목적 날짜 토스트 · 원래 날짜/키 실행 취소 (TODO-05, MOB-01)
+- [x] 추가 시트의 날짜 줄도 같은 시트 사용 · 목적 월 조회 뒤 맨 아래에 추가 (MOB-03/05)
+- [x] 날짜 제목 오른쪽 하루 메뉴 · 세 항목 순서/비활성 이유 · 개수 삭제 확인 (TODO-10/11/12)
+- [x] 기존 가져오기/묶음 이동/삭제 훅 · 날짜별 준비/쓰기 잠금 · 모든 겹치는 월 캐시 패치
+- [x] 묶음 실행 취소 · 원래 날짜별 가져오기 복원 · 실패한 날짜 그룹만 재시도
+- [x] 월/주 도장 일치 · 날짜 계산 · 메뉴 판정 · 밀기=메뉴 계약 · RNTL 두 달 패치/복원/실패/다른 날짜 조작 검사
+- [x] 필수 4종 · CI 동일 루트 coverage(Jest/RNTL 포함) · iOS Hermes export 통과
+- [ ] Simulator 완료 흐름: 펼침 → 지난 날짜 → 밀기 옮기기 → 다음 달 → 실행 취소 → 오늘 → 가져오기
+- [ ] 실기기: 월/줄 밀기 분리 · 64pt 터치 · VoiceOver · Dynamic Type · 라이트/다크 대비 · 묶음 전체 복원
+
+**구현·검증 기록 (2026-10-11)**
+
+- `WeekStrip`과 `MonthGrid`가 `DayCell`을 공유하고 집계도 기존 `weekSummary` → `core.summarizeMonth`를 함께 사용한다. 월 격자는 `monthGridRange` 기준 42칸이다. `DatePickSheet` 안에서도 같은 `MonthGrid`를 사용하며, 줄 밀기·줄 메뉴·VoiceOver는 `TodoRow`의 같은 시트 상태로 연결되고 추가 시트와 하루 메뉴도 같은 날짜 시트를 사용한다. 새 쿼리 키/RPC/DB 변경은 없다.
+- 준비 중에는 원래 날짜의 전체 목록·추가만 잠근다. 이동된 행이 목적 날짜에서 보이면 해당 묶음 요청이 끝날 때까지 그 행만 잠그고 기존 목적 날짜 행은 조작할 수 있다. 다른 날짜의 묶음/행 쓰기는 계속 가능하다. 같은 날짜의 행 쓰기가 진행 중이면 하루 메뉴의 묶음 동작을 비활성으로 두어 스냅샷 충돌을 막는다. 날짜별 잠금은 화면 훅에만 있고 서버 행은 Query 캐시에만 둔다.
+- `useMoveTodo`/`useBulkMoveTodos`/`useImportOverdue`/`useBulkDeleteTodos`의 기존 `beginTodoMove`·`commitTodoMove`를 사용한다. API의 `cachedTodoKeys`가 `monthKeysContaining`으로 원래 날짜/목적 날짜를 포함하는 **모든 캐시된 42칸 월 범위**를 찾는다. RNTL에서 9월/10월의 10월 1일을 11월 1일로 이동해 10월/11월 반영과 9월 제거, 실행 취소 후 원래 날짜·정렬 키 복원을 확인했다.
+- 가져오기는 `planOverdueMove`로 최근 7일 활성 목표 미완료만 각 목표 아래로 붙인다. 완료/보관/범위 밖 항목은 제외한다. 묶음 이동·삭제는 목록의 미완료 **할 일**만 대상으로 한다. 루틴 전개는 M4이므로 이번 RNTL은 루틴 캐시를 건드리지 않는 것까지 검증하며 실제 루틴 표시와 함께하는 흐름은 검증하지 않았다.
+- 기존 RPC가 목적 날짜 하나를 받으므로 가져오기 실행 취소는 원래 날짜별 요청이다. 성공한 그룹은 기록해 복원 실패 뒤 재시도에서 제외한다. 기존 삭제/복원 repository의 200개 단위 요청은 그대로이며, 200개 초과 요청 중 일부 성공/실패의 서버 통합 검사는 이번에 추가하지 않았다.
+- M2b의 밀기=메뉴 검사는 계약과 방향/순서/leading 누락·중복 검증을 유지하고 예상 ID만 `tomorrow` → `move`로 바꿨다. 이는 M3에서 내일 즉시 이동을 날짜 선택으로 바꾸라는 요구 때문이다. 메뉴 라벨은 "날짜 옮기기", 밀기/VoiceOver 라벨은 "옮기기"이며 같은 선언의 ID를 읽는다.
+- 와이어프레임은 5주만 있지만 지시서의 6주/42칸을 우선했다. `MobileToday`의 오래된 가져오기 배너 글 스펙도 이번 지시서/요구사항 TODO-10~12에 따라 하루 메뉴로 해석했다. 64pt는 이미 명시된 모바일 칸 높이를 `metrics.height.calendarCell`로 이름 붙였고 새 디자인 값/의존성은 추가하지 않았다.
+- `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과: core 156 + i18n 5 + api 80 + desktop 112 + mobile Vitest 70/RNTL 35 = 458검사. CI 동일 `pnpm test:coverage`도 458검사 통과, core statements 99.55%/branches 99.07%로 기존 90% 기준을 유지한다. `.github/workflows/ci.yml` → 루트 coverage → 모바일 `vitest run --coverage && pnpm test:native` → `jest --runInBand`의 3스위트(`Today.native.test.tsx`, `MonthGrid.native.test.tsx`, `SwipeableRow.native.test.tsx`)·35개 실행을 로그에서 확인했다. GitHub Actions 원격 실행은 미실행이며 Jest 커버리지는 수집하지 않는다. RNTL에는 RN의 비동기 reduced-motion/가상 목록 타이머에서 `act` 경고가 남지만 검사 실패는 없다.
+- 최종 iOS Hermes export 통과(약 4.6MB 번들). 새 의존성·API/core·DB 변경이 없어 DB reset/test/types는 미실행했다. 수정한 것은 모바일 UI/카탈로그/검사/진행 문서이며 루틴/Realtime/오프라인/설정/목표 관리/캘린더 드래그는 후속 단계에 남겼다.
+- 지정 pnpm 10.28.0은 기존 `/private/tmp/nodii-ci-tools/pnpm` 경로로 실행했다. Homebrew pnpm 12의 버전 자동 선택은 네트워크 서명 검증에서 실패했고, offline 설치 시도는 TTY 없이 모듈 폴더를 지울 수 없어 중단됐다. 의존성/lockfile 변경 없이 기존 지정 버전으로 검증했다.
+- Simulator 기기를 부팅해 확인했지만 현재 Xcode 경로에 Simulator.app이 없고 해당 기기에 Expo Go도 없어 UI 흐름을 실행하지 못했다. Metro는 종료하고 검증용 기기도 종료했다. 실제 밀기 인식/네이티브 시트 전환/키보드 복귀/테마 대비는 위 수동 항목으로 남긴다. RNTL의 responder callback 검사는 실기기 제스처를 입증하지 않는다.
+
 ---
 
 ## 4. 작업 방식
@@ -463,3 +493,5 @@
 | 2026-10-10 | v2 M2b | TODO-02/03/04/05·MOB-01/04: 공통 SwipeableRow·400ms 햅틱/메뉴·이름 시트·내일 이동·행별 낙관적 잠금·5초 독립 복원 큐·VoiceOver actions 구현. 필수 4종 433검사(Vitest 413 + RNTL 20)·iOS Hermes export 통과. Simulator 길게 누르기/메뉴 이름 수정·이동/취소·삭제·라이트/다크 확인. 실제 밀기/삭제 복원은 CUA 드래그 반응 미확정으로 미완료, 실기기/VoiceOver/긴 스크롤/한국어 하드웨어 IME는 수동 확인 필요. expo-haptics만 추가; core/api·DB 변경 없음으로 DB 검증 미실행. 보수적 임계값/토큰 해석은 M2b 절 참조. |
 | 2026-10-11 | v2 M2b CI 후속 | MOB-01: 모바일 test:coverage에 Jest/RNTL 연결, @babel/runtime ^7.29.7 직접 선언/lockfile 갱신, swipe 값 기반 방향 분리와 leading 단일 계약·3회귀 검사 추가. 기존 AppGate 스플래시 effect 대기 보완. frozen 설치·캐시 없는 native 2스위트/20검사·필수4종 및 CI 동일 루트 coverage 436검사(Vitest 416 + RNTL 20) 통과. 다른 워크스페이스의 동일 실행 실패 없음. GitHub Actions 원격 실행·DB 검증 미실행(DB 변경 없음); 기존 실기기 항목 유지. |
 | 2026-10-11 | M2b 후속 CI 테스트 수정 | ROUT-06/07: 첨부 Actions 로그에서 lint·format·typecheck·모바일 83검사 통과, 데스크톱 RoutineEditor 통합 2검사 실패 확인. 두 검사의 반복 역할 조회를 목표별 하루 목록 region으로 한정해 캘린더 전체 탐색 제거. 850ms 초기 조회 지연 진단에서 기존 실패/수정 후 통과 확인(임시 파일 제거). 대기/테스트 제한과 검증 조건 유지. 필수4종 및 루트 coverage 436검사 통과. 제품 코드·의존성·DB·CI 설정 변경 없음, DB 검증 미실행. 수정 커밋의 원격 CI 재확인 필요. |
+
+| 2026-10-11 | v2 M3 | CAL-01/03/04·TODO-05/10/11/12·MOB-01/02/04: 공용 42칸 월간/날짜 시트·move 선언·하루 메뉴·날짜/행별 잠금·묶음 실행 취소/부분 복원 재시도 구현. 필수4종 및 CI 동일 coverage 458검사(Vitest 423 + RNTL 35)·iOS Hermes export 통과. 새 의존성/API/core/DB 변경 없음, DB 검증 미실행. Simulator.app/Expo Go 부재로 네이티브 UI 흐름은 미확인, 실기기 제스처/테마/묶음 복원과 200개 초과 부분 실패 서버 통합은 수동 확인 필요. |
