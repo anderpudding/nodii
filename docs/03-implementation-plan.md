@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
 > 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
-> 상태: **v1 8단계 완료, v2 M1 인증·앱 셸 구현 및 로컬 시뮬레이터 확인 완료 (실기기 후속 확인, 2026-10-09).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 상태: **v1 8단계 완료, v2 M4 루틴 구현·자동 검증 완료 (M4 시뮬레이터·실기기 확인 대기, 2026-10-12).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -408,6 +408,30 @@
 
 ---
 
+### v2 · M4 · 루틴
+
+- [x] 실제 루틴·월별 로그 구독 → `buildDay` 혼합 목록·`summarizeMonth` 주/월/날짜 시트 도장 집계 (ROUT-05/06)
+- [x] 공용 체크·제목 렌더러로 할 일과 같은 모양 · 루틴별 쓰기 잠금 · 실패 롤백/토스트
+- [x] 할 일·루틴 두 동작 선언의 밀기=메뉴 계약 · 루틴 건너뛰기/5초 실행 취소 · 하루 메뉴의 할 일만 처리 회귀 검사 (ROUT-07, TODO-04, MOB-01)
+- [x] 오늘 목록 하단 임시 [루틴 관리] · 목표별 진행/종료 목록 · 왼쪽 종료 밀기/줄 메뉴 · 고정 [루틴 만들기] (ROUT-10)
+- [x] 만들기/편집 시트 · core 규칙/제목 검증 · 간격/요일/월 날짜 · M3 날짜 시트 재사용 · 말일 안내 (ROUT-01~04)
+- [x] 규칙 변경/과거 시작일만 범위 선택 · 오늘부터 기본 · 두 14칸 미리보기/범례 · 기존 split RPC · 과거 기록 유지 (ROUT-08)
+- [x] 종료/전체 삭제 결과 설명 · 기존 종료/삭제 훅 · 분할 후 종료일 부분 실패는 새 행의 종료일만 재시도 (ROUT-09)
+- [x] 필수 lint/format:check/typecheck/test · 별도 test:native 실제 출력 확인 · iOS Hermes export
+- [ ] Simulator: Mac 루틴 → 같은 날짜 표시 → 완료 → 건너뛰기/실행 취소 → 오늘부터 규칙 적용 → 과거 보존 → 종료
+- [ ] 실기기: 루틴 10개 이상 스크롤/연속 체크 · 할 일과 같은 모양 · 작은 화면 미니 캘린더 · VoiceOver/Dynamic Type/키보드/safe area/라이트·다크
+- [ ] Mac↔iPhone 실제 Supabase 데이터의 규칙·기록 일치 확인
+
+**구현·검증 기록 (2026-10-12)**
+
+- `todoActions`(완료/이름/이동/삭제)와 `routineActions`(완료/건너뛰기/편집/그만두기)를 분리했다. 양쪽 모두 같은 `splitSwipeActions`와 메뉴/VoiceOver 선언을 사용하며 각각 계약을 검사한다. 관리 줄은 날짜별 완료가 없어 왼쪽 종료만 열고 메뉴에서도 같은 종료 선택을 제공한다. `SwipeableRow`의 leading 생략은 관리 줄에만 적용하며 하루 줄의 leading 1개 계약은 유지한다.
+- 루틴 관리의 임시 진입점은 오늘 화면의 목록 하단 [루틴 관리]다. M5에서 설정으로 옮긴다. 서버 데이터는 Query 캐시만 사용하고 화면 상태만 React에 둔다. 반복 전개/검증/RPC/캐시 롤백은 기존 core·api를 사용했으며 해당 패키지와 DB를 변경하지 않았다. 새 의존성 없음.
+- 범위 판정은 기존 core의 **수정 전 시작일** 기준이다. 과거 루틴의 시작일을 오늘 이후로 옮겨도 과거 표시가 바뀌므로 범위를 묻는다. 종료된 루틴 또는 과거 종료일 초안은 기존 RPC가 오늘 분할을 거부하므로 오늘부터 적용을 비활성화하고 모두 적용을 안내한다. 설계서 변경은 하지 않았다. 건너뛴 줄은 core 규칙대로 숨겨지고 5초 토스트에서 복원한다.
+- 미니 캘린더는 이번 주+다음 주 로그를 기존 월 옵션으로 읽고 `occursOn`/`buildDay`를 사용한다. 미래 완료 기록, 목표 보관일의 프로필 시간대, 기존/새 목표의 표시도 함께 유지한다. 제목·목표·종료일만 바꿀 때는 범위를 묻지 않는다. 다음 5회 미리보기는 없다.
+- `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 모두 통과. 최종 실제 출력은 core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **18파일·91개**, Jest/RNTL **5스위트·63개**다. 별도 `pnpm --filter @nodii/mobile test:native`도 **5 passed, 63 passed**를 확인했다. 출력된 스위트는 `Today.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx`다. 기존 reduced-motion/가상 목록의 `act` 경고는 남아 있으나 검사 실패는 없다.
+- `EXPO_OFFLINE=1 EXPO_NO_DOTENV=1 pnpm --filter @nodii/mobile exec expo export --platform ios --output-dir /private/tmp/nodii-m4-ios-final` 통과(Hermes 번들 **4.7MB**). 번들 생성이며 설치/실행 검증은 아니다. DB 변경 없음으로 `db:reset`/`db:test`/`db:types`는 미실행했다. 원격 Actions와 별도 coverage는 이번에 실행하지 않았다.
+- 390pt/320pt 고정 데이터 웹 프리뷰에서 관리/편집/범위 시트 배치를 확인하고 임시 route·Metro를 제거했다. 웹에는 기존 SecureStore 미지원 오류가 있어 이 확인은 인증·실제 저장 흐름을 입증하지 않는다. 현재 Xcode 개발자 경로에 Simulator.app이 없고 부팅된 기기도 없어 네이티브 완료 흐름은 미실행이다. 실제 제스처/햅틱/키보드 복귀/테마 대비/기기 간 동기화·DB 통합은 위 수동 확인 항목으로 남긴다.
+
 ## 4. 작업 방식
 
 | 항목 | 규칙 |
@@ -511,3 +535,5 @@
 | 2026-10-11 | v2 M3 후속 | MOB-01·TODO-10/11/12·NFR-12: root Babel runtime 개발 의존성·NODE_PATH 없는 여섯 워크스페이스 해석 검사, 묶음 작업의 진행 중/데이터 변경/준비/저장 실패 안내 구분. 필수4종 통과: 실제 출력 core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, RNTL 3스위트·43개. DB 검증은 변경 없음으로 미실행, 기존 실기기 확인은 유지. |
 
 | 2026-10-12 | M3 CI 하루 목록 시간 초과 후속 | TODO-01: 연속 추가 검사의 반복 역할 조회를 하루 목록 region으로 한정하고 Esc 포커스는 처음 누른 버튼으로 검증. 접근성 이름/검증 조건/기본 대기와 5초 제한 유지. 임시 진단에서 스타일 조회 302→103회, 본문 909→355ms(파일 제거). 필수4종·CI 동일 루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, RNTL 3스위트·43개. 제품/CI/의존성/DB 변경 없음, 원격 Actions 재확인 필요. |
+
+| 2026-10-12 | v2 M4 | ROUT-01~10·TODO-04·MOB-01/04: 루틴 혼합 목록·주월 집계, 행별 로그/건너뛰기 실행 취소, 관리·편집·범위·종료 시트 구현. 임시 진입점은 오늘 목록 하단. 필수4종 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 91, RNTL 5스위트·63개. iOS Hermes export 4.7MB 통과. core/api/DB·의존성 변경 없음. Simulator.app 부재로 네이티브 흐름·실기기/기기 간 검증은 대기. |
