@@ -1,5 +1,12 @@
 import { expect, it } from 'vitest';
-import { actionLabel, mutationTouchesTodo, splitSwipeActions, todoActions } from './actions';
+import {
+  actionLabel,
+  mutationTouchesTodo,
+  splitSwipeActions,
+  todoActions,
+  routineActions,
+  routineActionLabel,
+} from './actions';
 
 it('밀기로 할 수 있는 모든 일이 메뉴와 접근성 목록에도 있다 (MOB-01)', () => {
   const menu = todoActions.map((action) => action.id);
@@ -38,4 +45,19 @@ it('해당 행만 단건·묶음·가져오기 요청 진행 상태를 공유한
   }
   for (const variables of [undefined, null, 1, {}, { todos: false }, { overdue: [null] }])
     expect(mutationTouchesTodo(variables, 'a')).toBe(false);
+});
+
+it('루틴 밀기·메뉴·접근성 계약은 할 일과 별개이고 날짜 이동·삭제가 없다', () => {
+  const menu = routineActions.map(({ id }) => id);
+  expect(menu).toEqual(['toggle', 'skip', 'edit', 'stop']);
+  const swipe = splitSwipeActions(routineActions);
+  expect(swipe.leading.id).toBe('toggle');
+  expect(swipe.trailing.map(({ id }) => id)).toEqual(['skip', 'stop']);
+  for (const action of routineActions.filter(({ swipe }) => swipe))
+    expect(menu).toContain(action.id);
+  expect(routineActionLabel('skip', false)).toBe('오늘만 건너뛰기');
+  expect(routineActionLabel('skip', false, true)).toBe('건너뛰기 취소');
+  expect(routineActionLabel('toggle', true)).toBe('완료 취소');
+  expect(() => splitSwipeActions(routineActions.slice(1))).toThrow();
+  expect(() => splitSwipeActions([...routineActions, routineActions[0]])).toThrow();
 });

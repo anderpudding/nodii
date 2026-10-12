@@ -38,3 +38,18 @@ export function mutationTouchesTodo(value: unknown, id: string): boolean {
     (rows) => Array.isArray(rows) && rows.some((row: unknown) => mutationTouchesTodo(row, id)),
   );
 }
+
+// ROUT-07/MOB-01: 루틴에는 날짜 이동·삭제 대신 건너뛰기·종료 선택을 제공한다.
+export const routineActions = [
+  { id: 'toggle', swipe: 'leading' },
+  { id: 'skip', swipe: 'trailing' },
+  { id: 'edit', swipe: null },
+  { id: 'stop', swipe: 'trailing' },
+] as const;
+export type RoutineAction = (typeof routineActions)[number]['id'];
+/** 밀기·메뉴·VoiceOver가 같은 상태별 루틴 문구를 사용한다. */
+export function routineActionLabel(action: RoutineAction, isDone: boolean, skipped = false) {
+  if (action === 'toggle') return actionLabel('toggle', isDone);
+  if (action === 'skip') return t(skipped ? 'routine.unskip' : 'routine.skip');
+  return t(action === 'edit' ? 'routine.edit' : 'routine.stop');
+}
