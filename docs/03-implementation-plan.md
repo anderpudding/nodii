@@ -593,3 +593,5 @@
 | 2026-10-12 | M4 CI 인라인 수정 검사 후속 | TODO-03: 첨부 Actions 로그에서 lint·format·typecheck 통과와 DayView 인라인 제목 수정 검사의 5초 시간 초과 확인. 반복 역할·레이블 탐색을 하루 목록 region으로 한정하고 Esc·빈 제목 취소, Enter 저장 및 기본 대기·5초 제한 유지. 캐시된 pnpm 10.28.0으로 필수4종·CI 동일 루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 106, RNTL 5스위트·64개. 제품·CI·DB·의존성 변경 없음으로 DB 검증 미실행, 원격 Actions 확인 필요. |
 
 | 2026-10-12 | v2 M5 | SYNC-03/04·AUTH-03/06·SET-01/02/07·GOAL-01~07·MOB-01/04: 기존 실시간 구독/AppState 복귀·NetInfo 쓰기 차단·사용자별 AsyncStorage 캐시/만료 토큰 오프라인 읽기·설정/기기 테마/계정 삭제·목표 관리/보관/HEX/단일 행 정렬 구현. 필수4종·루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 121, RNTL 8스위트·77개. iOS Hermes export 4.8MB. 직접 의존성 3개 추가, core/api/DB 변경 없음. Simulator 경로 부재로 기기 간 동기화·비행기 모드 재실행·실제 삭제/제스처 검증은 대기. 문서 차이/URL 설정은 M5 기록 참조. |
+
+| 2026-10-12 | M5 죽은 코드 정리 | SYNC-04: (b)를 선택해 실제 화면에서 쓰이지 않는 writeDisabled와 전용 3검사를 삭제하고 각 화면의 기존 !online 및 쓰기 잠금 판정을 유지. NetInfo 연결/복구/해제 검사는 유지. 필수4종 통과: 실제 출력 core 156·i18n 5·api 80·desktop 112·mobile Vitest 118, RNTL 8스위트·77개. 새 의존성·DB·화면 동작 변경 없음. 추가 결정·수동 확인 사항 없음. |

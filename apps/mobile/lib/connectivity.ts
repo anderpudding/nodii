@@ -18,7 +18,3 @@ const snapshot = () => onlineManager.isOnline();
 export function useOnline() {
   return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
-/** 메뉴에서도 이유를 표시할 수 있도록 쓰기 차단 판정을 공유한다. */
-export function writeDisabled(online: boolean, busy = false) {
-  return !online || busy;
-}

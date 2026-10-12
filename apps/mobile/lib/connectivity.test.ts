@@ -10,7 +10,7 @@ vi.mock('@react-native-community/netinfo', () => ({
     },
   },
 }));
-import { bindConnectivity, writeDisabled } from './connectivity';
+import { bindConnectivity } from './connectivity';
 afterEach(() => onlineManager.setOnline(true));
 it('NetInfo 연결/복구만 onlineManager에 전달하고 해제 시 리스너를 정리한다', () => {
   const stop = bindConnectivity();
@@ -20,11 +20,4 @@ it('NetInfo 연결/복구만 onlineManager에 전달하고 해제 시 리스너�
   expect(onlineManager.isOnline()).toBe(true);
   stop();
   expect(source.remove).toHaveBeenCalledOnce();
-});
-it.each([
-  [false, false, true],
-  [true, false, false],
-  [true, true, true],
-])('쓰기 비활성 판정 online=%s busy=%s', (online, busy, disabled) => {
-  expect(writeDisabled(online, busy)).toBe(disabled);
 });
