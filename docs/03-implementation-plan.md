@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
 > 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
-> 상태: **v1 8단계 완료, v2 M4 루틴 구현·자동 검증 완료 (M4 시뮬레이터·실기기 확인 대기, 2026-10-12).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 상태: **v1 8단계 완료, v2 M5 동기화·설정·목표 관리 구현·자동 검증 완료 (M4/M5 실기기 확인 대기, 2026-10-12).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -450,6 +450,37 @@
 - `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test`와 CI의 `pnpm test:coverage`를 실행해 모두 통과했다. 두 전체 테스트 명령의 실제 출력은 core **156**, i18n **5**, api **80**, desktop **20파일·112개**, mobile Vitest **19파일·106개**, Jest/RNTL **5스위트·64개**다. coverage 로그에서도 `Today.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx` 실행과 통과를 확인했다. 기존 모바일 `act` 경고는 남아 있다.
 - DB·의존성 변경이 없어 DB reset/test/types는 미실행이다. 새 수동 UI 확인 항목은 없고 푸시 후 원격 Actions 결과 확인은 필요하다.
 
+---
+
+### v2 · M5 · 동기화·설정·목표 관리
+
+- [x] 기존 `subscribeUserChanges`/`applyRealtimeEvent` 재사용 · 사용자별 단일 채널 · AppState 백그라운드 해제/복귀 재구독 + 캐시 무효화 (SYNC-03)
+- [x] NetInfo → onlineManager · 기기 네트워크만 근거로 오프라인 띠 · 체크/추가/밀기/메뉴/편집 쓰기 비활성 + 이유 (SYNC-04, MOB-01)
+- [x] 사용자별 AsyncStorage 서버 캐시 · 버전 buster/7일 maxAge · 토큰/mutation 제외 · 낙관적 저장 제외 · 재조회 실패 뒤 마지막 성공 데이터 유지 · 로그아웃/계정 변경 시 영속 캐시 삭제
+- [x] SecureStore의 기존 `readStoredSession`으로 오프라인 만료 토큰 갱신 대기 없이 읽기 계정 복원 · 세션은 캐시에 저장하지 않음 (AUTH-03, SYNC-04)
+- [x] 설정 네 그룹 카드 · 서버 주 시작 요일/월 캐시 무효화 · 기기별 자동/라이트/다크 저장 · 오늘 하단 임시 루틴 관리/로그아웃 제거 (SET-01/02)
+- [x] 계정 삭제 개수 + 이해 체크 · 기존 delete_my_account RPC · 삭제 후 로그인/로컬 세션·캐시 정리 · 정보 링크/버전 (AUTH-06, SET-07)
+- [x] 목표 목록/추가/편집/보관함 · 공용 개수 조회 · 11색/HEX/대비 계산 · 보관/해제 5초 실행 취소 · 기존 delete_goal RPC 한 번 (GOAL-01~03/05~07)
+- [x] 목표용 edit/reorder/archive/delete 선언 · leading 없음 · 밀기=메뉴/VoiceOver 계약 · 마지막 활성 목표 밀기 시 칸 없이 토스트 (MOB-01, GOAL-07)
+- [x] 공용 SwipeableRow의 400ms 길게 누르기 드래그 · 실측 높이 기반 위치 · 기존 정렬 키로 한 행만 UPDATE · 메뉴/VoiceOver 대체 경로 (GOAL-04)
+- [x] 관리 화면 safe area/가장자리 뒤로 가기 · 중첩 모달 최상단 토스트 · 고정 추가 버튼 위 토스트 (MOB-04)
+- [x] 필수 lint/format:check/typecheck/test · 루트 test:coverage · iOS Hermes export
+- [ ] 실기기 Mac↔iPhone 추가/체크 양방향 반영 속도 · 오래 백그라운드에 둔 뒤 변경 복구
+- [ ] 비행기 모드에서 완전 종료/재실행 후 마지막 캐시 읽기 · 재연결 후 쓰기
+- [ ] 목표 드래그/마지막 목표 밀기/보관함 실행 취소 · 가장자리 뒤로 가기 · VoiceOver/Dynamic Type · 자동/라이트/다크 확인
+- [ ] 테스트 계정으로 계정 삭제 완료 확인 · 새 네이티브 모듈을 포함한 개발 빌드 · 법적 고지 URL 배포 설정
+
+**구현·검증 기록 (2026-10-12)**
+
+- 저장소는 AsyncStorage를 선택했다. 필요한 계약이 비동기 문자열 읽기/저장/삭제뿐이고 Expo 호환 버전을 사용할 수 있어 MMKV 구성을 추가하지 않는다. 모바일 직접 의존성은 NetInfo `12.0.1`, AsyncStorage `2.2.0`, `@tanstack/react-query-persist-client`(기존 데스크톱과 같은 TanStack Query 계열) 세 개를 추가했다. 세션은 SecureStore에만 남고 영속화 허용 목록은 profile/goals/todos/routines/routineLogs/overdue다.
+- AppState가 active를 떠나면 기존 API 구독을 해제하고 다시 active가 되면 같은 함수를 재호출한 뒤 전체 서버 캐시를 한 번 무효화한다. 구독 함수의 onReconnect도 무효화하며 이벤트는 최신 weekStart를 캐시에서 읽는다. 채널 상태와 HTTP 요청 실패를 NetInfo의 쓰기 가능 상태에 섞지 않는다. 요청 실패는 기존 롤백/토스트로 알린다.
+- 목표 동작은 `goalActions` 한 선언을 밀기/메뉴/VoiceOver가 공유한다. 마지막 활성 목표는 trailing archive를 제외하고 밀기 종료 때 안내만 한다. 순서 변경은 실측 행 높이와 기존 keyBetween으로 계산하고 한 행만 갱신한다. 스크롤은 공용 SwipeRows와 협조하며 움직이지 않은 길게 누르기는 메뉴를 연다. 기존 M4 관리 줄은 이미 routineManagementActions 기반이라 선언을 다시 만들지 않았다.
+- 실제 명령 출력: core **9파일·156개**, i18n **2파일·5개**, api **11파일·80개**, desktop **20파일·112개**, mobile Vitest **23파일·121개**, RNTL **8스위트·77개**. RNTL 스위트는 `Today.native.test.tsx`, `Goals.native.test.tsx`, `Settings.native.test.tsx`, `UserData.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx`다. 루트 coverage도 통과했고 core statements **99.55%**, branches **99.07%**다. 기존 모바일 act 경고는 남아 있다. 검증은 캐시된 pnpm 10.28.0을 임시 PATH로 사용했다.
+- iOS Hermes export는 **4.8MB**로 성공했다. 로컬 Xcode.app의 Developer/Applications 경로가 없어 Simulator UI 확인은 하지 못했다. 모의 RNTL은 실제 소켓·서버 RPC·기기 저장소·스크롤 감각을 증명하지 않으므로 위 실기기 항목은 미완료로 남긴다. 원격 CI 실행도 하지 않았다.
+- 지시서/문서 차이: 지시서는 캐시 영속화가 packages/api에 있다고 했지만 실제 기존 어댑터는 apps/desktop/lib에 있다. 모바일 저장소 어댑터와 사용자별 persister는 apps/mobile/lib에 두고 API/도메인은 그대로 재사용했다. §14.2의 요청 실패 결합보다 이번 MobileOffline 지시의 **기기 네트워크만** 규칙을 우선했다. 계정 삭제 확인은 최신 모바일 지시의 개수+이해 체크를 적용한다(데스크톱 7단계의 이메일 재입력은 추가하지 않았다).
+- 관리 화면은 기존 M4의 전체 화면 Modal 구조를 유지하면서 가장자리 뒤로 가기를 추가했다. 문서의 push 흐름은 별도 화면/뒤로 가기로 구현하지만 Expo Router push 경로를 새로 구성하지 않았다. 실제 iOS 전환 감각은 사람 확인 사항이다. 와이어프레임에 없는 법적 링크는 SET-07 문서를 따라 정보 카드에 넣었으며 URL이 비어 있으면 준비 중이다. 새 EXPO_PUBLIC_PRIVACY_URL/TERMS_URL/SUPPORT_URL 이름만 .env.example에 추가했다.
+- core/api 코드·기존 테스트·DB 변경 없음. DB reset/test/types는 변경이 없어 미실행했다. 출시 스크린샷/TestFlight/심사 준비(M6)는 진행하지 않았다.
+
 ## 4. 작업 방식
 
 | 항목 | 규칙 |
@@ -560,3 +591,5 @@
 
 | 2026-10-12 | M4 CI 데스크톱 드래그 검사 후속 | TODO-06: DayView 드래그 검사의 초기 버튼/그룹 조회를 하루 목록 region으로 한정. 850ms 응답 지연 진단에서 수정 전 동일 조회 오류, 수정 후 통과(진단 파일 제거). 기본 대기·검증 조건 유지. 필수4종·루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 106, RNTL 5스위트·64개. 제품·CI·DB·의존성 변경 없음, 원격 Actions 확인 필요. |
 | 2026-10-12 | M4 CI 인라인 수정 검사 후속 | TODO-03: 첨부 Actions 로그에서 lint·format·typecheck 통과와 DayView 인라인 제목 수정 검사의 5초 시간 초과 확인. 반복 역할·레이블 탐색을 하루 목록 region으로 한정하고 Esc·빈 제목 취소, Enter 저장 및 기본 대기·5초 제한 유지. 캐시된 pnpm 10.28.0으로 필수4종·CI 동일 루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 106, RNTL 5스위트·64개. 제품·CI·DB·의존성 변경 없음으로 DB 검증 미실행, 원격 Actions 확인 필요. |
+
+| 2026-10-12 | v2 M5 | SYNC-03/04·AUTH-03/06·SET-01/02/07·GOAL-01~07·MOB-01/04: 기존 실시간 구독/AppState 복귀·NetInfo 쓰기 차단·사용자별 AsyncStorage 캐시/만료 토큰 오프라인 읽기·설정/기기 테마/계정 삭제·목표 관리/보관/HEX/단일 행 정렬 구현. 필수4종·루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 121, RNTL 8스위트·77개. iOS Hermes export 4.8MB. 직접 의존성 3개 추가, core/api/DB 변경 없음. Simulator 경로 부재로 기기 간 동기화·비행기 모드 재실행·실제 삭제/제스처 검증은 대기. 문서 차이/URL 설정은 M5 기록 참조. |
