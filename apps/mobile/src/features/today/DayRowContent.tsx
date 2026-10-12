@@ -101,14 +101,14 @@ export function DayRowContent({
         >
           {title}
         </Text>
+        {!online && (
+          <Text
+            style={{ color: colors.muted, fontFamily: m.fontMedium, fontSize: m.type.supporting }}
+          >
+            {t('sync.writeDisabled')}
+          </Text>
+        )}
       </Pressable>
-      {!online && (
-        <Text
-          style={{ color: colors.muted, fontFamily: m.fontMedium, fontSize: m.type.supporting }}
-        >
-          {t('sync.writeDisabled')}
-        </Text>
-      )}
     </View>
   );
 }

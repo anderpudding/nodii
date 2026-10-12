@@ -62,3 +62,18 @@ it('네트워크 이외 오류와 저장소 삭제 실패는 성공으로 처리
   vi.mocked(signOut).mockResolvedValueOnce();
   await expect(logout(client, query, storage)).rejects.toThrow('keychain');
 });
+
+it('계정 삭제 뒤 서버 로그아웃 오류는 로컬 인증·캐시 정리를 막지 않는다', async () => {
+  vi.mocked(signOut).mockRejectedValueOnce({ code: 'unknown' });
+  const query = new QueryClient();
+  query.setQueryData(['goals'], [{ id: 'deleted' }]);
+  const removeItem = vi.fn();
+  await logout(
+    { auth: { stopAutoRefresh: vi.fn() } } as unknown as NodiiClient,
+    query,
+    { getItem: () => null, setItem: () => {}, removeItem },
+    true,
+  );
+  expect(removeItem).toHaveBeenCalledTimes(3);
+  expect(query.getQueryCache().getAll()).toHaveLength(0);
+});

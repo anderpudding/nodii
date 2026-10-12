@@ -18,7 +18,12 @@ import {
   TextInput,
   type KeyboardEvent,
 } from 'react-native';
-import { notifyManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  notifyManager,
+  onlineManager,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 import {
   fetchProfile,
   listGoals,
@@ -112,6 +117,7 @@ beforeAll(() =>
 afterAll(() => notifyManager.setNotifyFunction((notify) => notify()));
 beforeEach(() => {
   jest.clearAllMocks();
+  onlineManager.setOnline(true);
   for (const request of [
     fetchProfile,
     listGoals,
@@ -172,6 +178,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  onlineManager.setOnline(true);
   cache.clear();
   jest.restoreAllMocks();
 });
@@ -1208,7 +1215,7 @@ it.each(['import', 'move', 'delete'])(
     expect(deleteLog).not.toHaveBeenCalled();
   },
 );
-it('오늘 화면의 임시 버튼에서 루틴 관리와 만들기 시트로 들어간다', async () => {
+it('설정 화면에서 루틴 관리와 만들기 시트로 들어간다', async () => {
   jest
     .mocked(listRoutines)
     .mockResolvedValue([
@@ -1216,6 +1223,7 @@ it('오늘 화면의 임시 버튼에서 루틴 관리와 만들기 시트로 �
       { ...routineRow('ended', '끝난 운동'), endDate: '2026-10-09' },
     ]);
   await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('settings.title') }));
   fireEvent.press(screen.getByRole('button', { name: t('routine.manage') }));
   await screen.findByText('돌고 있는 루틴 1개');
   expect(screen.getByText('끝난 루틴 1개')).toBeTruthy();
@@ -1226,6 +1234,7 @@ it('오늘 화면의 임시 버튼에서 루틴 관리와 만들기 시트로 �
 it('관리 줄의 밀기·메뉴·VoiceOver는 편집·그만두기 선언을 따르고 오른쪽 동작은 없다', async () => {
   jest.mocked(listRoutines).mockResolvedValue([routineRow()]);
   await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('settings.title') }));
   fireEvent.press(screen.getByRole('button', { name: t('routine.manage') }));
   const management = await screen.findByRole('button', { name: /^영어 루틴 · 매일/ });
   // 모션 감소 확인 effect가 끝난 뒤 네이티브 레이아웃/제스처 이벤트를 전달한다.
@@ -1256,4 +1265,26 @@ it('관리 줄의 밀기·메뉴·VoiceOver는 편집·그만두기 선언을 �
   fireEvent.press(screen.getByRole('button', { name: '취소' }));
   fireEvent(management, 'accessibilityAction', { nativeEvent: { actionName: 'edit' } });
   expect(screen.getByTestId('routine-edit-sheet')).toBeTruthy();
+});
+
+it('기기 오프라인 띠와 쓰기 비활성이 재연결 때 해제되고 메뉴에는 이유가 남는다', async () => {
+  await mount();
+  act(() => onlineManager.setOnline(false));
+  expect(screen.getByText(t('sync.offline'))).toBeTruthy();
+  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  const check = screen.getByRole('checkbox', { name: '장보기 완료하기' });
+  expect(check.props.accessibilityState.disabled).toBe(true);
+  fireEvent.press(screen.getByTestId('todo-menu-one'));
+  const menu = await screen.findByTestId('todo-menu-sheet');
+  expect(within(menu).getByText(t('sync.writeDisabled'))).toBeTruthy();
+  expect(within(menu).getByRole('button', { name: '완료' }).props.accessibilityState.disabled).toBe(
+    true,
+  );
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.cancel') }));
+  act(() => onlineManager.setOnline(true));
+  expect(screen.queryByText(t('sync.offline'))).toBeNull();
+  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(false);
+  expect(
+    screen.getByRole('checkbox', { name: '장보기 완료하기' }).props.accessibilityState.disabled,
+  ).toBe(false);
 });

@@ -233,7 +233,7 @@ export function RoutineEditor({
         logs={logs}
         goals={goals}
         timeZone={timeZone}
-        busy={blocked}
+        busy={!online || blocked}
         previewLoading={previewFirst.isPending || previewLast.isPending}
         previewError={previewFirst.isError || previewLast.isError}
         onRetry={() => {

@@ -1,9 +1,10 @@
 import type * as Api from '@nodii/api';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   fetchMinAppVersion,
+  readStoredSession,
   syncProfileTimezone,
   type NodiiClient,
   type Session,
@@ -13,6 +14,7 @@ import { Text, View } from 'react-native';
 vi.mock('@nodii/api', async (original) => ({
   ...(await original<typeof Api>()),
   fetchMinAppVersion: vi.fn(),
+  readStoredSession: vi.fn(),
   syncProfileTimezone: vi.fn(),
 }));
 vi.mock('../../lib/supabase', () => ({
@@ -53,6 +55,8 @@ const session = { user: { id: 'user-id' } } as Session;
 const getSession = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
+  onlineManager.setOnline(true);
+  vi.mocked(readStoredSession).mockResolvedValue(null);
   vi.mocked(fetchMinAppVersion).mockResolvedValue(null);
   vi.mocked(syncProfileTimezone).mockResolvedValue(
     {} as Awaited<ReturnType<typeof syncProfileTimezone>>,
@@ -73,6 +77,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  onlineManager.setOnline(true);
   query.clear();
 });
 function mount() {
@@ -135,4 +140,14 @@ it('세션 저장소 실패는 빈 화면 대신 재시도 화면을 보여준�
   await screen.findByText(t('mobile.session.failed'));
   fireEvent.click(screen.getByRole('button', { name: t('common.tryAgain') }));
   await screen.findByLabelText(t('auth.email'));
+});
+
+it('오프라인 재실행은 SecureStore 계정으로 읽기 화면을 열고 토큰 갱신을 기다리지 않는다', async () => {
+  onlineManager.setOnline(false);
+  vi.mocked(readStoredSession).mockResolvedValueOnce({ ...session, expires_at: 1 });
+  getSession.mockImplementationOnce(() => new Promise(() => {}));
+  mount();
+  await screen.findByText(t('mobile.today.preparing'));
+  expect(getSession).not.toHaveBeenCalled();
+  expect(fetchMinAppVersion).not.toHaveBeenCalled();
 });

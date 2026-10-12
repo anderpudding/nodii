@@ -35,6 +35,7 @@ export function RoutineList({
   weekStart,
   timeZone = 'UTC',
   onClose,
+  backLabel = t('day.today'),
 }: {
   client: NodiiClient;
   date: ISODate;
@@ -42,6 +43,7 @@ export function RoutineList({
   weekStart: 0 | 1;
   timeZone?: string;
   onClose(): void;
+  backLabel?: string;
 }) {
   const { colors } = useTheme();
   const online = useOnline();
@@ -76,7 +78,7 @@ export function RoutineList({
       >
         <ToastInset bottom={barHeight} />
         <View style={styles.header}>
-          <Button label={t('day.today')} secondary onPress={onClose} />
+          <Button label={backLabel} secondary onPress={onClose} />
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             {t('routine.manage')}
           </Text>
@@ -177,7 +179,7 @@ export function RoutineList({
           />
         )}
       </View>
-      <ToastPortal />
+      <ToastPortal bottom={barHeight} />
     </Modal>
   );
 }

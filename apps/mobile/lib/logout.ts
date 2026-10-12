@@ -14,15 +14,21 @@ export async function logout(
   client: NodiiClient,
   query: QueryClient,
   storage: AuthStorage = secureStoreAuthStorage,
+  accountDeleted = false,
 ): Promise<{ localOnly: boolean }> {
   let localOnly = false;
   try {
     await signOut(client);
   } catch (error) {
-    if (normalizeAuthError(error).code !== 'network') throw error;
+    if (!accountDeleted && normalizeAuthError(error).code !== 'network') throw error;
     localOnly = true;
   }
-  await clearPersistedCache(query);
+  let cleanupError: unknown;
+  try {
+    await clearPersistedCache(query);
+  } catch (error) {
+    cleanupError = error;
+  }
   await query.cancelQueries();
   query.clear();
   for (const key of [
@@ -30,8 +36,13 @@ export async function logout(
     `${AUTH_STORAGE_KEY}-code-verifier`,
     `${AUTH_STORAGE_KEY}-user`,
   ]) {
-    await storage.removeItem(key);
+    try {
+      await storage.removeItem(key);
+    } catch (error) {
+      cleanupError ??= error;
+    }
   }
   await client.auth.stopAutoRefresh();
+  if (cleanupError) throw cleanupError;
   return { localOnly };
 }

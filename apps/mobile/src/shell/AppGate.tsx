@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
-import { useQueryClient } from '@tanstack/react-query';
-import { type NodiiClient, type Session } from '@nodii/api';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import { readStoredSession, type NodiiClient, type Session } from '@nodii/api';
 import { t } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
@@ -65,7 +65,9 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
       setGate({ status: 'ready', session });
     }
     async function restore() {
-      const info = await checkMobileVersion(client!, Constants.expoConfig?.version ?? '0.1.0');
+      const info = onlineManager.isOnline()
+        ? await checkMobileVersion(client!, Constants.expoConfig?.version ?? '0.1.0')
+        : null;
       if (!live) return;
       if (info) {
         setGate({ status: 'update', info });
@@ -81,6 +83,14 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
       });
       unsubscribe = () => subscription.unsubscribe();
       try {
+        // SYNC-04: 만료 토큰의 HTTP 갱신을 기다리지 않고 오프라인 읽기 계정만 복원한다.
+        if (!onlineManager.isOnline()) {
+          const stored = await readStoredSession(client!);
+          if (stored && live && !eventReceived) {
+            applySession(stored);
+            return;
+          }
+        }
         const { data, error } = await client!.auth.getSession();
         if (!live || eventReceived) return;
         if (error) setGate({ status: 'error' });
@@ -101,18 +111,24 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     if (ready) void SplashScreen.hideAsync().catch(() => toast(t('mobile.session.failed')));
   }, [ready, toast]);
 
-  async function signOut() {
+  async function signOut(accountDeleted = false) {
     if (!client || logoutBusy.current) return;
     logoutBusy.current = true;
     setLoggingOut(true);
     await refresh.current?.pause();
     try {
-      const result = await logout(client, query);
+      const result = await logout(client, query, undefined, accountDeleted);
       setGate({ status: 'ready', session: null });
-      if (result.localOnly) toast(t('auth.logout.local'));
+      if (accountDeleted) toast(t('settings.deleted'));
+      else if (result.localOnly) toast(t('auth.logout.local'));
     } catch {
-      refresh.current?.setSignedIn(true);
-      toast(t('auth.logout.failed'));
+      if (accountDeleted) {
+        setGate({ status: 'ready', session: null });
+        toast(t('sync.cache.clearFailed'));
+      } else {
+        refresh.current?.setSignedIn(true);
+        toast(t('auth.logout.failed'));
+      }
     } finally {
       logoutBusy.current = false;
       setLoggingOut(false);
@@ -185,6 +201,8 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
             userId={gate.session.user.id}
             onLogout={() => void signOut()}
             loggingOut={loggingOut}
+            email={gate.session.user.email ?? ''}
+            onAccountDeleted={() => signOut(true)}
           />
         </UserData>
       ) : (
