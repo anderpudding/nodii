@@ -418,6 +418,7 @@
 - [x] 규칙 변경/과거 시작일만 범위 선택 · 오늘부터 기본 · 두 14칸 미리보기/범례 · 기존 split RPC · 과거 기록 유지 (ROUT-08)
 - [x] 종료/전체 삭제 결과 설명 · 기존 종료/삭제 훅 · 분할 후 종료일 부분 실패는 새 행의 종료일만 재시도 (ROUT-09)
 - [x] 필수 lint/format:check/typecheck/test · 별도 test:native 실제 출력 확인 · iOS Hermes export
+- [x] 루틴 토스트의 받침/비한글 조사 통일 · 관리 줄 동작 선언과 명시적 leading 없음 계약 회귀 검사 (ROUT-05/07/10, MOB-01)
 - [ ] Simulator: Mac 루틴 → 같은 날짜 표시 → 완료 → 건너뛰기/실행 취소 → 오늘부터 규칙 적용 → 과거 보존 → 종료
 - [ ] 실기기: 루틴 10개 이상 스크롤/연속 체크 · 할 일과 같은 모양 · 작은 화면 미니 캘린더 · VoiceOver/Dynamic Type/키보드/safe area/라이트·다크
 - [ ] Mac↔iPhone 실제 Supabase 데이터의 규칙·기록 일치 확인
@@ -431,6 +432,14 @@
 - `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 모두 통과. 최종 실제 출력은 core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **18파일·91개**, Jest/RNTL **5스위트·63개**다. 별도 `pnpm --filter @nodii/mobile test:native`도 **5 passed, 63 passed**를 확인했다. 출력된 스위트는 `Today.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx`다. 기존 reduced-motion/가상 목록의 `act` 경고는 남아 있으나 검사 실패는 없다.
 - `EXPO_OFFLINE=1 EXPO_NO_DOTENV=1 pnpm --filter @nodii/mobile exec expo export --platform ios --output-dir /private/tmp/nodii-m4-ios-final` 통과(Hermes 번들 **4.7MB**). 번들 생성이며 설치/실행 검증은 아니다. DB 변경 없음으로 `db:reset`/`db:test`/`db:types`는 미실행했다. 원격 Actions와 별도 coverage는 이번에 실행하지 않았다.
 - 390pt/320pt 고정 데이터 웹 프리뷰에서 관리/편집/범위 시트 배치를 확인하고 임시 route·Metro를 제거했다. 웹에는 기존 SecureStore 미지원 오류가 있어 이 확인은 인증·실제 저장 흐름을 입증하지 않는다. 현재 Xcode 개발자 경로에 Simulator.app이 없고 부팅된 기기도 없어 네이티브 완료 흐름은 미실행이다. 실제 제스처/햅틱/키보드 복귀/테마 대비/기기 간 동기화·DB 통합은 위 수동 확인 항목으로 남긴다.
+
+**M4 토스트·관리 동작 선언 후속 (2026-10-12, ROUT-05/07/10, MOB-01)**
+
+- `routineToastMessage`가 할 일과 같은 `withParticle(title, '을/를').slice(title.length)`를 사용한다. 완료는 "'러닝 5km'를 완료했어요", 건너뛰기는 "'운동'을 오늘은 건너뛰었어요", 건너뛰기 취소는 "'운동'을 다시 하기로 했어요"로 안내한다. 받침 있음/없음/비한글 끝과 완료 취소 문구를 단위 검사 10개로 확인하고 실제 완료·건너뛰기 네이티브 검사에서도 조사 포함 문장을 단언했다.
+- `routineManagementActions`는 편집(`swipe: null`)과 그만두기(`swipe: trailing`)를 선언한다. 관리 줄의 밀기·메뉴·VoiceOver가 모두 이 선언을 읽고 `splitSwipeActions(..., 'none')`으로 방향을 분리한다. 기본 모드는 기존대로 leading이 정확히 1개여야 하고, 명시적인 `none` 모드는 정확히 0개여야 한다. 잘못된 leading 선언을 조용히 숨기지 않고 거부하며 반환 타입도 `undefined`로 구분한다. 할 일/하루 루틴/관리 루틴 세 선언에 같은 밀기=메뉴 계약 검사를 적용한다.
+- 단위 `actions.test.ts` 실제 출력 **12개** 통과. 관리 화면 RNTL은 실제 `SwipeableRow`에 전달된 trailing이 그만두기 하나이며 leading이 없음을 확인하고 종료 콜백·줄 메뉴 두 항목·VoiceOver 편집/종료 연결을 검증한다. 처음 시도한 화면 전체의 제스처 이벤트 검사는 Reanimated의 shared-value mock이 렌더마다 새 값을 만드는 한계가 있어, 거리 판정은 기존 `SwipeableRow.native.test.tsx`(leading 없는 줄의 오른쪽 무동작/왼쪽 종료 포함)에 맡기고 관리 화면에서는 실제 전달된 동작의 연결을 검사했다. 실기기 제스처를 검증했다는 뜻은 아니다.
+- `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test` 모두 통과. 실제 출력은 core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **19파일·106개**, Jest/RNTL **5스위트·64개**다. 별도 `pnpm --filter @nodii/mobile test:native`도 **5 passed, 64 passed**를 직접 확인했다. 스위트는 `Today.native.test.tsx`, `RoutineEditor.native.test.tsx`, `RoutineRow.native.test.tsx`, `SwipeableRow.native.test.tsx`, `MonthGrid.native.test.tsx`다. 기존 `act` 경고는 남아 있다.
+- 의존성·core·api·DB 변경 없음으로 DB reset/test/types는 미실행했다. 이번 후속의 iOS export/coverage/원격 Actions/실기기 확인도 미실행이며 기존 M4 수동 확인 항목은 유지한다. 실제 토스트 말투와 관리 줄의 밀기/길게 누르기/VoiceOver는 기기에서 확인한다.
 
 ## 4. 작업 방식
 
@@ -537,3 +546,5 @@
 | 2026-10-12 | M3 CI 하루 목록 시간 초과 후속 | TODO-01: 연속 추가 검사의 반복 역할 조회를 하루 목록 region으로 한정하고 Esc 포커스는 처음 누른 버튼으로 검증. 접근성 이름/검증 조건/기본 대기와 5초 제한 유지. 임시 진단에서 스타일 조회 302→103회, 본문 909→355ms(파일 제거). 필수4종·CI 동일 루트 coverage 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 80, RNTL 3스위트·43개. 제품/CI/의존성/DB 변경 없음, 원격 Actions 재확인 필요. |
 
 | 2026-10-12 | v2 M4 | ROUT-01~10·TODO-04·MOB-01/04: 루틴 혼합 목록·주월 집계, 행별 로그/건너뛰기 실행 취소, 관리·편집·범위·종료 시트 구현. 임시 진입점은 오늘 목록 하단. 필수4종 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 91, RNTL 5스위트·63개. iOS Hermes export 4.7MB 통과. core/api/DB·의존성 변경 없음. Simulator.app 부재로 네이티브 흐름·실기기/기기 간 검증은 대기. |
+
+| 2026-10-12 | v2 M4 후속 | ROUT-05/07/10·MOB-01: 할 일과 같은 withParticle 조사 적용, 완료/건너뛰기/취소 단위 검사, 관리 줄의 편집·종료 선언 공유 및 none 모드의 leading 0개 계약 추가. 필수4종 통과: core 156·i18n 5·api 80·desktop 112·mobile Vitest 106, RNTL 5스위트·64개. 의존성·core/api/DB 변경 없음, 실기기 확인은 유지. |
