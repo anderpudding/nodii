@@ -1,6 +1,8 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import type { Goal, Routine } from '@nodii/core';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { GoalBadge } from '../today/GoalBadge';
@@ -32,18 +34,21 @@ export function RoutineMenu({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const [focused, setFocused] = useState<string | null>(null);
   return (
     <BottomSheet title={routine.title} testID="routine-menu-sheet" bottomCancel onClose={onClose}>
       <GoalBadge goal={goal} />
+      {!online && <Text style={{ color: colors.muted }}>{t('sync.writeDisabled')}</Text>}
       {(managing ? routineManagementActions : routineActions).map(({ id }) => (
         <View key={id}>
           {id === 'stop' && <View style={[styles.divider, { backgroundColor: colors.line }]} />}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={routineActionLabel(id, isDone, skipped)}
-            accessibilityState={{ disabled: locked, busy: locked }}
-            disabled={locked}
+            accessibilityState={{ disabled: !online || locked, busy: locked }}
+            accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
+            disabled={!online || locked}
             onPress={() => {
               onClose();
               onAction(id);

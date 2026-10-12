@@ -1,5 +1,5 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react-native';
-import { AppState, Text } from 'react-native';
+import { AppState, Text, type AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   dehydrate,
@@ -24,7 +24,7 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }),
 }));
 jest.mock('expo-secure-store', () => ({}));
-let change: (state: string) => void;
+let change: (state: AppStateStatus) => void;
 let parent: QueryClient;
 let child: QueryClient;
 function Probe() {

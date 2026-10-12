@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useOverdueTodos, type NodiiClient, type TodoRecord } from '@nodii/api';
@@ -33,6 +34,7 @@ export function DayMenu({
   actions: ReturnType<typeof useDayActions>;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function DayMenu({
       id: 'import',
       glyph: 'import',
       label: t('day.menu.import', { count: moves.length }),
-      reason: reasons.import,
+      reason: !online ? 'sync.writeDisabled' : reasons.import,
       run: () => {
         setOpen(false);
         void actions.importOverdue(originals, moves, today);
@@ -69,7 +71,7 @@ export function DayMenu({
       id: 'move',
       glyph: 'move',
       label: t('day.menu.move'),
-      reason: reasons.targets,
+      reason: !online ? 'sync.writeDisabled' : reasons.targets,
       run: () => {
         setOpen(false);
         setPicking(true);
@@ -79,7 +81,7 @@ export function DayMenu({
       id: 'delete',
       glyph: 'delete',
       label: t('day.menu.delete'),
-      reason: reasons.targets,
+      reason: !online ? 'sync.writeDisabled' : reasons.targets,
       run: () => {
         setOpen(false);
         const snapshot = targets;

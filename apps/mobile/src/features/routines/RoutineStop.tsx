@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useRef, useState } from 'react';
 import { Text } from 'react-native';
 import {
@@ -28,6 +29,7 @@ export function RoutineStop({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const guard = useRef(false);
@@ -37,7 +39,7 @@ export function RoutineStop({
   const pending = useRoutineWritePending(routine.id);
   const busy = saving || pending;
   async function save(action: 'end' | 'delete') {
-    if (guard.current || busy) return;
+    if (!online || guard.current || busy) return;
     guard.current = true;
     setSaving(true);
     try {
@@ -60,18 +62,21 @@ export function RoutineStop({
         if (!guard.current && !busy) onClose();
       }}
     >
+      {!online && (
+        <Text style={[s.supporting, { color: colors.muted }]}>{t('sync.writeDisabled')}</Text>
+      )}
       <Text style={[s.label, { color: colors.ink }]}>{routine.title}</Text>
       <RoutineOption
         label={t('routine.endToday')}
         description={t('routine.endDescription')}
-        disabled={busy}
+        disabled={!online || busy}
         onPress={() => void save('end')}
       />
       <RoutineOption
         label={t('routine.delete')}
         description={t('routine.deleteDescription')}
         danger
-        disabled={busy}
+        disabled={!online || busy}
         onPress={() => void save('delete')}
       />
       <Text style={[s.supporting, { color: colors.danger }]}>{t('routine.deleteWarning')}</Text>

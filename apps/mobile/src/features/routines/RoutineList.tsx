@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,6 +44,7 @@ export function RoutineList({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const insets = useSafeAreaInsets();
   const routines = useRoutines(client);
   const goals = useGoals(client);
@@ -130,6 +132,11 @@ export function RoutineList({
             ))}
           </ScrollView>
         </SwipeRows>
+        {!online && (
+          <Text style={[styles.supporting, { color: colors.muted }]}>
+            {t('sync.writeDisabled')}
+          </Text>
+        )}
         <View
           style={[
             styles.bar,
@@ -142,7 +149,9 @@ export function RoutineList({
         >
           <Button
             label={t('routine.create')}
-            disabled={loading || failed || !allGoals.some((goal) => goal.archivedAt === null)}
+            disabled={
+              !online || loading || failed || !allGoals.some((goal) => goal.archivedAt === null)
+            }
             onPress={() => setEditing(null)}
           />
         </View>
@@ -186,12 +195,13 @@ function ManagementRow({
   onStop(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const busy = useRoutineWritePending(routine.id);
   const [menu, setMenu] = useState(false);
   const [focused, setFocused] = useState(false);
   const label = `${routine.title} · ${ruleLabel(routine)} · ${t(routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from', { date: routineDate(routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate) })}`;
   function run(action: RoutineManagementAction) {
-    if (busy) return;
+    if (busy || !online) return;
     if (action === 'edit') onEdit();
     else onStop();
   }
@@ -210,7 +220,7 @@ function ManagementRow({
     <>
       <SwipeableRow
         id={`manage-${routine.id}`}
-        disabled={busy}
+        disabled={busy || !online}
         trailing={swipe.trailing}
         onMenu={() => setMenu(true)}
       >
@@ -219,7 +229,11 @@ function ManagementRow({
           accessibilityLabel={label}
           accessibilityState={{ disabled: busy }}
           disabled={busy}
-          onPress={() => run('edit')}
+          accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
+          onPress={() => {
+            if (online) run('edit');
+            else setMenu(true);
+          }}
           onLongPress={() => setMenu(true)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}

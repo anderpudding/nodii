@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -54,6 +55,7 @@ export function AddSheet({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const cache = useQueryClient();
@@ -84,7 +86,7 @@ export function AddSheet({
   });
   async function submit(event?: unknown) {
     const value = submissionTitle(title, event);
-    if (!value || !goal || busy.current || isDateLocked(date)) return;
+    if (!online || !value || !goal || busy.current || isDateLocked(date)) return;
     busy.current = true;
     let rows: TodoRecord[];
     try {
@@ -177,6 +179,7 @@ export function AddSheet({
           <View {...pan.panHandlers} style={styles.handleTouch}>
             <View style={[styles.handle, { backgroundColor: colors.ink, opacity: 0.2 }]} />
           </View>
+          {!online && <Text style={{ color: colors.muted }}>{t('sync.writeDisabled')}</Text>}
           <View style={styles.header}>
             <Text accessibilityRole="header" style={[styles.heading, { color: colors.ink }]}>
               {t('todo.add')}
@@ -256,7 +259,9 @@ export function AddSheet({
             <Button
               label={t('mobile.add.action')}
               busy={create.isPending}
-              disabled={!goal || !normalizeTitle(title) || create.isPending || isDateLocked(date)}
+              disabled={
+                !online || !goal || !normalizeTitle(title) || create.isPending || isDateLocked(date)
+              }
               onPress={() => void submit()}
             />
           </ScrollView>

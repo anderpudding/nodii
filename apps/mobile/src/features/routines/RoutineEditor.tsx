@@ -1,3 +1,4 @@
+import { useOnline } from '../../../lib/connectivity';
 import { useRef, useState } from 'react';
 import { Alert, Keyboard, Text, TextInput, View } from 'react-native';
 import { randomUUID } from 'expo-crypto';
@@ -58,6 +59,7 @@ export function RoutineEditor({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const online = useOnline();
   const toast = useToast();
   const active = goals.filter((goal) => goal.archivedAt === null);
   const [newId] = useState(randomUUID);
@@ -144,7 +146,7 @@ export function RoutineEditor({
     });
   }
   async function save(range?: 'today' | 'all') {
-    if (guard.current || blocked || !validation.valid) return;
+    if (!online || guard.current || blocked || !validation.valid) return;
     if (routine && !range && shouldAskScope(routine, draft, today)) {
       Keyboard.dismiss();
       setScope(true);
@@ -261,7 +263,7 @@ export function RoutineEditor({
             <Button
               label={t('mobile.rename.save')}
               secondary
-              disabled={blocked || !validation.valid}
+              disabled={!online || blocked || !validation.valid}
               busy={blocked}
               onPress={() => void save()}
             />
@@ -270,6 +272,9 @@ export function RoutineEditor({
       >
         <View style={s.group}>
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.titleLabel')}</Text>
+          {!online && (
+            <Text style={[s.supporting, { color: colors.muted }]}>{t('sync.writeDisabled')}</Text>
+          )}
           <TextInput
             accessibilityLabel={t('routine.title')}
             value={draft.title}
