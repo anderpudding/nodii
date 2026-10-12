@@ -145,7 +145,7 @@ it('건너뛰기로 사라진 줄도 토스트에서 실행 취소하고 완료 
   mount();
   fireEvent.press(screen.getByTestId('routine-menu-r1'));
   fireEvent.press(await screen.findByRole('button', { name: t('routine.skip') }));
-  await screen.findByText(t('routine.skipped', { title: '영어' }));
+  await screen.findByText("'영어'를 오늘은 건너뛰었어요");
   expect(screen.queryByTestId('routine-menu-r1')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
   await screen.findByRole('checkbox', { name: '영어 완료 취소하기' });
@@ -154,7 +154,7 @@ it('건너뛰기로 사라진 줄도 토스트에서 실행 취소하고 완료 
 it('완료 취소는 날짜 하나의 로그 삭제 경로를 쓴다', async () => {
   mount();
   fireEvent.press(screen.getByRole('checkbox', { name: '영어 완료하기' }));
-  await screen.findByText(t('todo.toggled', { title: '영어', particle: '' }));
+  await screen.findByText("'영어'를 완료했어요");
   fireEvent.press(screen.getByRole('checkbox', { name: '영어 완료 취소하기' }));
   await waitFor(() => expect(deleteLog).toHaveBeenCalledWith(client, 'r1', '2026-10-01'));
 });

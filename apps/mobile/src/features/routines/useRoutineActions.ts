@@ -12,6 +12,7 @@ import {
 import type { ISODate, Routine, RoutineLogStatus } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { useToast } from '../../components/Toast';
+import { routineToastMessage } from './messages';
 
 /** ROUT-06~07: 사라진 행의 복원도 Provider에 남고 다른 루틴의 체크를 막지 않는다. */
 export function useRoutineActions(
@@ -70,7 +71,7 @@ export function useRoutineActions(
     try {
       await write(after);
       toast(
-        t(
+        routineToastMessage(
           action === 'skip'
             ? after === 'skipped'
               ? 'routine.skipped'
@@ -78,7 +79,7 @@ export function useRoutineActions(
             : after === 'done'
               ? 'todo.toggled'
               : 'todo.untoggled',
-          { title: routine.title, particle: '' },
+          routine.title,
         ),
         async () => {
           // 이후의 편집·삭제·체크를 이전 실행 취소로 덮지 않는다.
