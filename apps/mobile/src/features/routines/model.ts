@@ -1,11 +1,13 @@
 import {
   addDays,
+  buildDay,
   needsScopePrompt,
   normalizeTitle,
   occursOn,
   validateRoutineRule,
   weekdayOf,
   type ISODate,
+  type Goal,
   type Routine,
   type RoutineLog,
 } from '@nodii/core';
@@ -55,6 +57,8 @@ export function scopePreview(
   weekStart: 0 | 1,
   logs: readonly RoutineLog[],
   scope: 'today' | 'all',
+  goals?: Goal[],
+  timeZone = 'UTC',
 ) {
   const from = addDays(today, -((weekdayOf(today) - weekStart + 7) % 7));
   return Array.from({ length: 14 }, (_, i) => {
@@ -62,15 +66,19 @@ export function scopePreview(
     const rule =
       scope === 'today' ? (date < today ? before : { ...after, startDate: today }) : after;
     const log = logs.find((row) => row.routineId === before.id && row.date === date);
-    const occurs = occursOn(rule, date) && log?.status !== 'skipped';
+    const occurs = goals
+      ? buildDay({ goals, todos: [], routines: [rule], logs: [...logs], date, timeZone }).some(
+          (group) => group.items.length > 0,
+        )
+      : occursOn(rule, date) && log?.status !== 'skipped';
     return {
       date,
       state: !occurs
         ? 'empty'
-        : date > today
-          ? 'planned'
-          : log?.status === 'done'
-            ? 'done'
+        : log?.status === 'done'
+          ? 'done'
+          : date > today
+            ? 'planned'
             : 'missing',
     } as const;
   });

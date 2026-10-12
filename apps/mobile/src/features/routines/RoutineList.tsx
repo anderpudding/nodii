@@ -189,13 +189,6 @@ function ManagementRow({
       <SwipeableRow
         id={`manage-${routine.id}`}
         disabled={busy}
-        leading={{
-          id: 'edit',
-          label: t('routine.edit'),
-          background: colors.side,
-          color: colors.ink,
-          run: onEdit,
-        }}
         trailing={[
           {
             id: 'stop',

@@ -14,6 +14,9 @@ export function RoutineOption({
   compact = false,
   accessibilityLabel = label,
   multiple = false,
+  filled = false,
+  segment = false,
+  inline = false,
 }: {
   label: string;
   description?: string;
@@ -25,6 +28,9 @@ export function RoutineOption({
   compact?: boolean;
   accessibilityLabel?: string;
   multiple?: boolean;
+  filled?: boolean;
+  segment?: boolean;
+  inline?: boolean;
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -40,9 +46,25 @@ export function RoutineOption({
       style={({ pressed }) => [
         styles.option,
         compact && styles.compact,
+        segment && styles.segment,
+        inline && styles.inline,
         {
-          backgroundColor: selected ? colors.ink : colors.surface,
-          borderColor: focused ? colors.focus : selected ? colors.ink : colors.field,
+          backgroundColor:
+            selected && filled
+              ? colors.ink
+              : segment && !selected
+                ? colors.boxFill
+                : colors.surface,
+          borderColor:
+            focused || (selected && !filled)
+              ? colors.focus
+              : selected
+                ? colors.ink
+                : segment
+                  ? colors.boxFill
+                  : inline
+                    ? colors.surface
+                    : colors.field,
           opacity: pressed || disabled ? m.pressedOpacity : 1,
         },
       ]}
@@ -51,14 +73,14 @@ export function RoutineOption({
         <Text
           style={[
             styles.label,
-            { color: selected ? colors.bg : danger ? colors.danger : colors.ink },
+            { color: selected && filled ? colors.bg : danger ? colors.danger : colors.ink },
           ]}
         >
           {label}
         </Text>
       )}
       {description && (
-        <Text style={[styles.supporting, { color: selected ? colors.bg : colors.ink2 }]}>
+        <Text style={[styles.supporting, { color: selected && filled ? colors.bg : colors.ink2 }]}>
           {description}
         </Text>
       )}
@@ -81,6 +103,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: m.space.xs,
     borderRadius: m.radius.pill,
+  },
+  segment: { flex: 1, borderRadius: m.radius.field },
+  inline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: m.height.field,
   },
   label: { fontFamily: m.fontBold, fontSize: m.type.button },
   supporting: {

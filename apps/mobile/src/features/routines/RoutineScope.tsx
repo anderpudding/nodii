@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import type { ISODate, Routine, RoutineLog } from '@nodii/core';
+import type { Goal, ISODate, Routine, RoutineLog } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
@@ -16,6 +16,8 @@ export function RoutineScope({
   today,
   weekStart,
   logs,
+  goals,
+  timeZone,
   busy,
   onApply,
   previewLoading,
@@ -28,6 +30,8 @@ export function RoutineScope({
   today: ISODate;
   weekStart: 0 | 1;
   logs: readonly RoutineLog[];
+  goals: Goal[];
+  timeZone: string;
   busy: boolean;
   previewLoading: boolean;
   previewError: boolean;
@@ -70,46 +74,48 @@ export function RoutineScope({
             accessibilityLabel={t(value === 'today' ? 'routine.scope.today' : 'routine.scope.all')}
             style={styles.calendar}
           >
-            {scopePreview(before, after, today, weekStart, logs, value).map(({ date, state }) => (
-              <View
-                key={date}
-                accessible
-                accessibilityLabel={t('routine.scope.cell', {
-                  date: routineDate(date),
-                  state: t(`routine.scope.${state}`),
-                })}
-                style={[
-                  styles.cell,
-                  {
-                    borderColor: state === 'planned' ? colors.line2 : colors.surface,
-                    backgroundColor:
-                      state === 'done'
-                        ? colors.ink
-                        : state === 'missing'
-                          ? colors.stamp
-                          : colors.surface,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.number, { color: state === 'done' ? colors.bg : colors.ink2 }]}
+            {scopePreview(before, after, today, weekStart, logs, value, goals, timeZone).map(
+              ({ date, state }) => (
+                <View
+                  key={date}
+                  accessible
+                  accessibilityLabel={t('routine.scope.cell', {
+                    date: routineDate(date),
+                    state: t(`routine.scope.${state}`),
+                  })}
+                  style={[
+                    styles.cell,
+                    {
+                      borderColor: state === 'planned' ? colors.line2 : colors.surface,
+                      backgroundColor:
+                        state === 'done'
+                          ? colors.ink
+                          : state === 'missing'
+                            ? colors.stamp
+                            : colors.surface,
+                    },
+                  ]}
                 >
-                  {Number(date.slice(-2))}
-                </Text>
-                <Text
-                  accessible={false}
-                  style={[styles.number, { color: state === 'done' ? colors.bg : colors.ink2 }]}
-                >
-                  {state === 'done'
-                    ? '✓'
-                    : state === 'missing'
-                      ? '—'
-                      : state === 'planned'
-                        ? '○'
-                        : ''}
-                </Text>
-              </View>
-            ))}
+                  <Text
+                    style={[styles.number, { color: state === 'done' ? colors.bg : colors.ink2 }]}
+                  >
+                    {Number(date.slice(-2))}
+                  </Text>
+                  <Text
+                    accessible={false}
+                    style={[styles.number, { color: state === 'done' ? colors.bg : colors.ink2 }]}
+                  >
+                    {state === 'done'
+                      ? '✓'
+                      : state === 'missing'
+                        ? '—'
+                        : state === 'planned'
+                          ? '○'
+                          : ''}
+                  </Text>
+                </View>
+              ),
+            )}
           </View>
         </View>
       ))}

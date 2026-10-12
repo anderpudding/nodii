@@ -33,5 +33,6 @@ export const routineStyles = StyleSheet.create({
     padding: m.space.xs,
     borderRadius: m.radius.field,
   },
+  period: { borderWidth: m.border, borderRadius: m.radius.field, overflow: 'hidden' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: m.space.lg },
 });

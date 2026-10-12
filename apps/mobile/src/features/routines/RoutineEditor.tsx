@@ -229,6 +229,8 @@ export function RoutineEditor({
         today={today}
         weekStart={weekStart}
         logs={logs}
+        goals={goals}
+        timeZone={timeZone}
         busy={blocked}
         previewLoading={previewFirst.isPending || previewLast.isPending}
         previewError={previewFirst.isError || previewLast.isError}
@@ -315,7 +317,10 @@ export function RoutineEditor({
         </View>
         <View style={s.group}>
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.repeat')}</Text>
-          <View style={[s.segment, { backgroundColor: colors.side }]}>
+          <View
+            accessibilityRole="radiogroup"
+            style={[s.segment, { backgroundColor: colors.boxFill }]}
+          >
             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
               <RoutineOption
                 key={freq}
@@ -323,6 +328,7 @@ export function RoutineEditor({
                 selected={draft.freq === freq}
                 disabled={blocked}
                 onPress={() => changeFreq(freq)}
+                segment
                 compact
               />
             ))}
@@ -375,6 +381,7 @@ export function RoutineEditor({
                   key={day}
                   label={draft.freq === 'weekly' ? weekdays[day]! : `${day}`}
                   multiple
+                  filled
                   accessibilityLabel={t(
                     draft.freq === 'weekly' ? 'routine.weekdaySelect' : 'routine.monthdaySelect',
                     { day: draft.freq === 'weekly' ? weekdays[day]! : day },
@@ -401,24 +408,28 @@ export function RoutineEditor({
         )}
         <View style={s.group}>
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.period')}</Text>
-          <RoutineOption
-            label={t('routine.start')}
-            description={routineDate(draft.startDate)}
-            disabled={blocked}
-            onPress={() => {
-              Keyboard.dismiss();
-              setPicking('startDate');
-            }}
-          />
-          <RoutineOption
-            label={t('routine.end')}
-            description={draft.endDate ? routineDate(draft.endDate) : t('routine.noEnd')}
-            disabled={blocked}
-            onPress={() => {
-              Keyboard.dismiss();
-              setPicking('endDate');
-            }}
-          />
+          <View style={[s.period, { borderColor: colors.line }]}>
+            <RoutineOption
+              inline
+              label={t('routine.start')}
+              description={routineDate(draft.startDate)}
+              disabled={blocked}
+              onPress={() => {
+                Keyboard.dismiss();
+                setPicking('startDate');
+              }}
+            />
+            <RoutineOption
+              inline
+              label={t('routine.end')}
+              description={draft.endDate ? routineDate(draft.endDate) : t('routine.noEnd')}
+              disabled={blocked}
+              onPress={() => {
+                Keyboard.dismiss();
+                setPicking('endDate');
+              }}
+            />
+          </View>
           {draft.endDate && (
             <Button
               label={t('routine.clearEnd')}

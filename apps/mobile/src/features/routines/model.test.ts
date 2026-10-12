@@ -81,3 +81,25 @@ it('규칙 요약은 일·주·월 간격과 여러 선택을 설명한다', () 
     '2개월마다 1·31일',
   );
 });
+
+it('미니 캘린더도 미래 완료 기록과 목표 보관일의 사용자 시간대를 보존한다', () => {
+  const rule = { ...before, freq: 'daily' as const, byWeekday: null };
+  const goals = [
+    { id: 'g', name: '공부', color: '#4F7CFF', sortKey: 'a0', archivedAt: '2026-10-13T01:00:00Z' },
+  ];
+  const logs = [{ routineId: 'r', date: '2026-10-13', status: 'done' as const }];
+  const active = scopePreview(rule, rule, '2026-10-12', 0, logs, 'all');
+  expect(active.find(({ date }) => date === '2026-10-13')?.state).toBe('done');
+  const archived = scopePreview(
+    rule,
+    rule,
+    '2026-10-12',
+    0,
+    logs,
+    'all',
+    goals,
+    'America/Vancouver',
+  );
+  expect(archived.find(({ date }) => date === '2026-10-13')?.state).toBe('empty');
+  expect(archived.find(({ date }) => date === '2026-10-12')?.state).toBe('missing');
+});

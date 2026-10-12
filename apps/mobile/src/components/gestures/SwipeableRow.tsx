@@ -47,7 +47,7 @@ export function SwipeableRow({
 }: {
   id: string;
   disabled: boolean;
-  leading: RowAction;
+  leading?: RowAction;
   trailing: RowAction[];
   onMenu(): void;
   children: ReactNode;
@@ -63,6 +63,7 @@ export function SwipeableRow({
   const [opened, setOpened] = useState(false);
   const actionWidth = m.height.chip * 2;
   const railWidth = trailing.length * actionWidth;
+  const hasLeading = leading !== undefined;
   const duration = reduced ? 0 : m.motion.state;
   const close = useCallback(() => {
     offset.set(withTiming(0, { duration }));
@@ -81,7 +82,7 @@ export function SwipeableRow({
   }
   function settle(outcome: ReturnType<typeof swipeOutcome>) {
     setOpened(outcome === 'open');
-    if (outcome === 'leading') leading.run();
+    if (outcome === 'leading') leading?.run();
     if (outcome === 'trailing') trailing[trailing.length - 1]?.run();
     if (outcome !== 'open') coordinator?.release(id);
   }
@@ -99,11 +100,20 @@ export function SwipeableRow({
       scheduleOnRN(activate);
     })
     .onUpdate((event) => {
-      offset.set(Math.max(-width.get(), Math.min(width.get(), start.get() + event.translationX)));
+      offset.set(
+        Math.max(
+          -width.get(),
+          Math.min(hasLeading ? width.get() : 0, start.get() + event.translationX),
+        ),
+      );
     })
     .onEnd((event) => {
       // 빠른 밀기는 update 없이 끝날 수 있으므로 최종 네이티브 이동 거리로 판정한다.
-      const result = swipeOutcome(start.get() + event.translationX, width.get(), railWidth);
+      const result = swipeOutcome(
+        Math.min(hasLeading ? width.get() : 0, start.get() + event.translationX),
+        width.get(),
+        railWidth,
+      );
       offset.set(withTiming(result === 'open' ? -railWidth : 0, { duration }));
       scheduleOnRN(settle, result);
     })
@@ -149,15 +159,17 @@ export function SwipeableRow({
         width.set(event.nativeEvent.layout.width);
       }}
     >
-      <Animated.View
-        pointerEvents="none"
-        accessible={false}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={[styles.leading, leadingStyle, { backgroundColor: leading.background }]}
-      >
-        <Text style={[styles.label, { color: leading.color }]}>{leading.label}</Text>
-      </Animated.View>
+      {leading && (
+        <Animated.View
+          pointerEvents="none"
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.leading, leadingStyle, { backgroundColor: leading.background }]}
+        >
+          <Text style={[styles.label, { color: leading.color }]}>{leading.label}</Text>
+        </Animated.View>
+      )}
       <Animated.View
         accessibilityElementsHidden={disabled || !opened}
         importantForAccessibility={!disabled && opened ? 'auto' : 'no-hide-descendants'}
