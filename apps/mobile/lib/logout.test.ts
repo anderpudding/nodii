@@ -6,6 +6,7 @@ vi.mock('@nodii/api', async (original) => ({
   ...(await original<typeof Api>()),
   signOut: vi.fn(),
 }));
+vi.mock('@react-native-async-storage/async-storage', () => ({ default: {} }));
 vi.mock('expo-secure-store', () => ({}));
 import { logout } from './logout';
 beforeEach(() => vi.clearAllMocks());

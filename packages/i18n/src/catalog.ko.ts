@@ -1,4 +1,10 @@
 export const ko = {
+  'sync.offline': '오프라인이라 보기만 할 수 있어요',
+  'sync.writeDisabled': '오프라인이라 저장할 수 없어요',
+  'sync.cache.saveFailed': '이 기기에 데이터를 보관하지 못했어요',
+  'sync.cache.restoreFailed': '보관된 데이터를 불러오지 못했어요. 연결되면 다시 불러올게요.',
+  'sync.cache.clearFailed': '보관된 데이터를 지우지 못했어요. 다시 시도해 주세요.',
+
   'auth.brand': 'Nodii',
   'auth.title': '같은 하루를, 어디서나',
   'auth.description': '이메일로 간편하게 시작해 보세요.',

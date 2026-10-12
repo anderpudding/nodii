@@ -34,6 +34,12 @@ vi.mock('../features/Today', () => ({
     </View>
   ),
 }));
+vi.mock('../../lib/query-cache', () => ({
+  clearPersistedCache: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./UserData', () => ({
+  UserData: ({ children }: { children: React.ReactNode }) => children,
+}));
 vi.mock('../../lib/logout', () => ({ logout: vi.fn() }));
 import { hideAsync } from 'expo-splash-screen';
 import { logout } from '../../lib/logout';
@@ -102,15 +108,13 @@ it('버전 조회 실패는 통과하며 세션 복원을 마칠 때까지 스�
   await act(async () => restore({ data: { session }, error: null }));
   await screen.findByText(t('mobile.today.preparing'));
   await waitFor(() => expect(hideAsync).toHaveBeenCalled());
-  expect(syncProfileTimezone).toHaveBeenCalled();
 });
-it('로그인 이벤트로 오늘 화면을 열고 시간대 실패도 진입을 막지 않는다', async () => {
+it('로그인 이벤트로 오늘 화면을 연다', async () => {
   vi.mocked(syncProfileTimezone).mockRejectedValueOnce(new Error('network'));
   mount();
   await screen.findByLabelText(t('auth.email'));
   await act(async () => listener('SIGNED_IN', session));
   await screen.findByText(t('mobile.today.preparing'));
-  await screen.findByText(t('mobile.profile.failed'));
 });
 it('오프라인 로그아웃 완료 후 로그인 화면과 로컬 안내를 표시한다', async () => {
   getSession.mockResolvedValueOnce({ data: { session }, error: null });

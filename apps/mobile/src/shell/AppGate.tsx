@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { useQueryClient } from '@tanstack/react-query';
-import { syncProfileTimezone, type NodiiClient, type Session } from '@nodii/api';
+import { type NodiiClient, type Session } from '@nodii/api';
 import { t } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
@@ -15,6 +15,8 @@ import { mobileClient, mobileEnv } from '../../lib/supabase';
 import { useToast } from '../components/Toast';
 import { Button } from '../components/Button';
 import { Login } from '../features/auth/Login';
+import { clearPersistedCache } from '../../lib/query-cache';
+import { UserData } from './UserData';
 import { Today } from '../features/Today';
 
 type Gate =
@@ -54,7 +56,10 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     let previousUser: string | undefined;
     function applySession(session: Session | null) {
       if (!live) return;
-      if (previousUser && previousUser !== session?.user.id) query.clear();
+      if (previousUser && previousUser !== session?.user.id) {
+        void clearPersistedCache(query).catch(() => toast(t('sync.cache.clearFailed')));
+        query.clear();
+      }
       previousUser = session?.user.id;
       refresh.current?.setSignedIn(!!session);
       setGate({ status: 'ready', session });
@@ -89,25 +94,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
       live = false;
       unsubscribe?.();
     };
-  }, [client, query, attempt]);
-
-  const userId = gate.status === 'ready' ? gate.session?.user.id : undefined;
-  useEffect(() => {
-    if (!client || !userId) return;
-    const controller = new AbortController();
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    void syncProfileTimezone(client, userId, timezone, controller.signal)
-      .then(async (profile) => {
-        if (controller.signal.aborted) return;
-        // 동시에 시작한 이전 프로필 조회가 동기화 결과를 덮지 않게 한다.
-        await query.cancelQueries({ queryKey: ['profile', userId], exact: true });
-        if (!controller.signal.aborted) query.setQueryData(['profile', userId], profile);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) toast(t('mobile.profile.failed'));
-      });
-    return () => controller.abort();
-  }, [client, userId, toast, query]);
+  }, [client, query, attempt, toast]);
 
   const ready = !client || gate.status !== 'loading';
   useEffect(() => {
@@ -191,13 +178,15 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
           <Button label={t('mobile.update.action')} onPress={() => void openStore()} />
         </View>
       ) : gate.session ? (
-        <Today
-          key={gate.session.user.id}
-          client={client}
-          userId={gate.session.user.id}
-          onLogout={() => void signOut()}
-          loggingOut={loggingOut}
-        />
+        <UserData key={gate.session.user.id} client={client} userId={gate.session.user.id}>
+          <Today
+            key={gate.session.user.id}
+            client={client}
+            userId={gate.session.user.id}
+            onLogout={() => void signOut()}
+            loggingOut={loggingOut}
+          />
+        </UserData>
       ) : (
         <Login client={client} reviewAccountEmail={mobileEnv.reviewAccountEmail} />
       )}
