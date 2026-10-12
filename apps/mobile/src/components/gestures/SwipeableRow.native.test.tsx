@@ -109,3 +109,29 @@ it('열린 행을 잠근 뒤 다시 풀어도 보이지 않는 동작 버튼이 
   await act(async () => result.rerender(content(false)));
   expect(screen.queryByRole('button', { name: '내일로' })).toBeNull();
 });
+
+it('관리 줄은 leading 없이 왼쪽 종료와 메뉴만 제공한다', async () => {
+  render(
+    <SwipeRows>
+      <SwipeableRow
+        id="one"
+        disabled={false}
+        trailing={[
+          { id: 'stop', label: '그만두기', background: '#C4332C', color: '#FFFFFF', run: remove },
+        ]}
+        onMenu={menu}
+      >
+        <Text>루틴</Text>
+      </SwipeableRow>
+    </SwipeRows>,
+  );
+  await act(async () => {});
+  fireEvent(screen.getByTestId('swipe-layout-one'), 'layout', {
+    nativeEvent: { layout: { width: 360, height: 52 } },
+  });
+  swipe(240);
+  expect(leading).not.toHaveBeenCalled();
+  expect(remove).not.toHaveBeenCalled();
+  swipe(-240);
+  expect(remove).toHaveBeenCalledTimes(1);
+});

@@ -19,6 +19,7 @@ export function DayMenu({
   items,
   ready,
   weekStart,
+  timeZone = 'UTC',
   actions,
 }: {
   client: NodiiClient;
@@ -28,6 +29,7 @@ export function DayMenu({
   items: TodoRecord[];
   ready: boolean;
   weekStart: 0 | 1;
+  timeZone?: string;
   actions: ReturnType<typeof useDayActions>;
 }) {
   const { colors } = useTheme();
@@ -188,6 +190,7 @@ export function DayMenu({
           date={date}
           today={today}
           weekStart={weekStart}
+          timeZone={timeZone}
           onClose={() => setPicking(false)}
           onSelect={(next) => void actions.moveTo(targets, next)}
         />

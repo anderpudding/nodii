@@ -9,15 +9,32 @@ export const todoActions = [
 ] as const;
 export type TodoAction = (typeof todoActions)[number]['id'];
 
-/** MOB-01: 선언 순서와 방향을 분리하고 단일 leading 계약 위반은 개발 오류로 드러낸다. */
-export function splitSwipeActions<T extends { swipe: 'leading' | 'trailing' | null }>(
+type SwipeDeclaration = { swipe: 'leading' | 'trailing' | null };
+
+/** MOB-01: 하루 줄은 leading 1개, 관리 줄은 명시적인 none 모드에서만 0개를 허용한다. */
+export function splitSwipeActions<T extends SwipeDeclaration>(
   actions: readonly T[],
+): {
+  leading: T;
+  trailing: T[];
+};
+export function splitSwipeActions<T extends SwipeDeclaration>(
+  actions: readonly T[],
+  leadingMode: 'none',
+): { leading: undefined; trailing: T[] };
+export function splitSwipeActions<T extends SwipeDeclaration>(
+  actions: readonly T[],
+  leadingMode: 'required' | 'none' = 'required',
 ) {
   const leading = actions.filter((action) => action.swipe === 'leading');
-  // SwipeableRow는 오른쪽 동작 하나만 지원한다. 여러 개를 임의로 고르지 않는다.
-  if (leading.length !== 1) throw new Error('SwipeableRow requires exactly one leading action');
+  // 관리 줄의 누락과 하루 줄의 선언 실수를 혼동하지 않도록 모드를 명시한다.
+  if (leadingMode === 'none') {
+    if (leading.length !== 0) throw new Error('SwipeableRow does not allow a leading action');
+  } else if (leading.length !== 1) {
+    throw new Error('SwipeableRow requires exactly one leading action');
+  }
   return {
-    leading: leading[0]!,
+    leading: leadingMode === 'none' ? undefined : leading[0]!,
     trailing: actions.filter((action) => action.swipe === 'trailing'),
   };
 }
@@ -38,3 +55,25 @@ export function mutationTouchesTodo(value: unknown, id: string): boolean {
     (rows) => Array.isArray(rows) && rows.some((row: unknown) => mutationTouchesTodo(row, id)),
   );
 }
+
+// ROUT-07/MOB-01: 루틴에는 날짜 이동·삭제 대신 건너뛰기·종료 선택을 제공한다.
+export const routineActions = [
+  { id: 'toggle', swipe: 'leading' },
+  { id: 'skip', swipe: 'trailing' },
+  { id: 'edit', swipe: null },
+  { id: 'stop', swipe: 'trailing' },
+] as const;
+export type RoutineAction = (typeof routineActions)[number]['id'];
+/** 밀기·메뉴·VoiceOver가 같은 상태별 루틴 문구를 사용한다. */
+export function routineActionLabel(action: RoutineAction, isDone: boolean, skipped = false) {
+  if (action === 'toggle') return actionLabel('toggle', isDone);
+  if (action === 'skip') return t(skipped ? 'routine.unskip' : 'routine.skip');
+  return t(action === 'edit' ? 'routine.edit' : 'routine.stop');
+}
+
+// ROUT-10/MOB-01: 관리 줄은 날짜별 완료 없이 편집과 왼쪽 종료만 제공한다.
+export const routineManagementActions = [
+  { id: 'edit', swipe: null },
+  { id: 'stop', swipe: 'trailing' },
+] as const;
+export type RoutineManagementAction = (typeof routineManagementActions)[number]['id'];

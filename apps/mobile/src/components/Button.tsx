@@ -10,6 +10,7 @@ export function Button({
   busy = false,
   secondary = false,
   pill = false,
+  accessibilityLabel = label,
 }: {
   label: string;
   onPress(): void;
@@ -17,13 +18,14 @@ export function Button({
   busy?: boolean;
   secondary?: boolean;
   pill?: boolean;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled, busy }}
       disabled={disabled}
       onPress={onPress}
@@ -50,6 +52,7 @@ export function Button({
 }
 const styles = StyleSheet.create({
   button: {
+    minWidth: m.height.touch,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: m.radius.button,

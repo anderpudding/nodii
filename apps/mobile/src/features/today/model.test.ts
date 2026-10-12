@@ -111,3 +111,52 @@ it('고정 바 48pt에 34pt 이상의 safe area를 더한다', () => {
   expect(quickAddInset(34)).toBe(82);
   expect(quickAddInset(44)).toBe(92);
 });
+
+it('루틴 전개·건너뛰기·보관일은 core 규칙을 사용하고 할 일과 같은 순서로 집계한다', () => {
+  const routine = {
+    id: 'r',
+    goalId: 'active',
+    title: '운동',
+    freq: 'daily' as const,
+    repeatEvery: 1,
+    byWeekday: null,
+    byMonthday: null,
+    startDate: '2026-08-01',
+    endDate: null,
+    sortKey: 'a0',
+    deletedAt: null,
+    updatedAt: '',
+  };
+  const archived = { ...routine, id: 'archived-r', goalId: 'archived' };
+  const todos = [row('todo')];
+  expect(
+    daySections(goals, todos, '2026-10-01', 'UTC', [routine, archived], [])[0]?.data.map(
+      ({ kind }) => kind,
+    ),
+  ).toEqual(['todo', 'routine']);
+  const logs = [{ routineId: 'r', date: '2026-10-01', status: 'done' as const }];
+  expect(
+    weekSummary(goals, todos, '2026-10-01', '2026-10-01', 'UTC', [routine, archived], logs).get(
+      '2026-10-01',
+    ),
+  ).toEqual({ total: 2, remaining: 1 });
+  expect(
+    daySections(goals, [], '2026-10-01', 'UTC', [routine], [{ ...logs[0]!, status: 'skipped' }])[0]
+      ?.data,
+  ).toEqual([]);
+  expect(
+    daySections(goals, [], '2026-09-01', 'UTC', [archived], []).find(
+      ({ key }) => key === 'archived',
+    )?.data,
+  ).toHaveLength(1);
+  expect(
+    daySections(goals, [], '2026-09-02', 'UTC', [archived], []).find(
+      ({ key }) => key === 'archived',
+    ),
+  ).toBeUndefined();
+});
+it('월 경계 로그도 날짜가 속한 캐시를 택해 한 번만 읽는다', () => {
+  const old = { routineId: 'r', date: '2026-09-30', status: 'done' as const };
+  const next = { routineId: 'r', date: '2026-10-01', status: 'skipped' as const };
+  expect(mergeWeekTodos('2026-09-27', '2026-10-03', [old, next], [old, next])).toEqual([old, next]);
+});

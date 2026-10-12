@@ -1,5 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@nodii/i18n';
 import { metrics as m, useReducedMotion, useTheme } from '../../lib/theme';
@@ -13,12 +23,16 @@ export function BottomSheet({
   children,
   onClose,
   bottomCancel = false,
+  header,
+  keyboard = false,
 }: {
   title: string;
   testID: string;
   children: ReactNode;
   onClose(): void;
   bottomCancel?: boolean;
+  header?: ReactNode;
+  keyboard?: boolean;
 }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
@@ -37,7 +51,10 @@ export function BottomSheet({
   );
   return (
     <Modal transparent visible animationType={reduced ? 'none' : 'slide'} onRequestClose={onClose}>
-      <View style={[styles.overlay, { backgroundColor: colors.scrim, paddingTop: insets.top }]}>
+      <KeyboardAvoidingView
+        behavior={keyboard ? (Platform.OS === 'ios' ? 'padding' : 'height') : undefined}
+        style={[styles.overlay, { backgroundColor: colors.scrim, paddingTop: insets.top }]}
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('common.dismiss')}
@@ -58,12 +75,16 @@ export function BottomSheet({
           <View {...pan.panHandlers} style={styles.handleTouch}>
             <View style={[styles.handle, { backgroundColor: colors.ink, opacity: 0.2 }]} />
           </View>
-          <View style={styles.header}>
-            <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-              {title}
-            </Text>
-            {!bottomCancel && <Button label={t('mobile.add.cancel')} secondary onPress={onClose} />}
-          </View>
+          {header ?? (
+            <View style={styles.header}>
+              <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+                {title}
+              </Text>
+              {!bottomCancel && (
+                <Button label={t('mobile.add.cancel')} secondary onPress={onClose} />
+              )}
+            </View>
+          )}
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="always"
@@ -92,7 +113,7 @@ export function BottomSheet({
             )}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
       <ToastPortal />
     </Modal>
   );
