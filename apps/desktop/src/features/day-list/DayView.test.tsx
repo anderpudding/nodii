@@ -291,20 +291,22 @@ it('인라인 수정 Esc와 빈 제목은 취소하고 Enter는 저장한다', a
     http.patch(`${baseUrl}/rest/v1/todos`, patch),
   );
   const { user } = setup();
-  await user.dblClick(await screen.findByRole('button', { name: '책 읽기' }));
-  await user.clear(screen.getByLabelText('할 일 제목 수정'));
-  await user.type(screen.getByLabelText('할 일 제목 수정'), '취소할 수정{Escape}');
-  expect(screen.getByRole('button', { name: '책 읽기' })).toBeTruthy();
+  // TODO-03: 반복 역할 조회를 목록으로 한정해 캘린더 스타일 계산 비용을 줄인다.
+  const list = within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
+  await user.dblClick(await list.findByRole('button', { name: '책 읽기' }));
+  await user.clear(list.getByLabelText('할 일 제목 수정'));
+  await user.type(list.getByLabelText('할 일 제목 수정'), '취소할 수정{Escape}');
+  expect(list.getByRole('button', { name: '책 읽기' })).toBeTruthy();
   expect(patch).not.toHaveBeenCalled();
-  await user.click(screen.getByRole('button', { name: '책 읽기' }));
+  await user.click(list.getByRole('button', { name: '책 읽기' }));
   await user.keyboard('{Enter}');
-  await user.clear(screen.getByLabelText('할 일 제목 수정'));
+  await user.clear(list.getByLabelText('할 일 제목 수정'));
   await user.keyboard('{Enter}');
   expect(patch).not.toHaveBeenCalled();
-  await user.dblClick(screen.getByRole('button', { name: '책 읽기' }));
-  await user.clear(screen.getByLabelText('할 일 제목 수정'));
-  await user.type(screen.getByLabelText('할 일 제목 수정'), '책 두 권 읽기{Enter}');
-  expect(await screen.findByRole('button', { name: '책 두 권 읽기' })).toBeTruthy();
+  await user.dblClick(list.getByRole('button', { name: '책 읽기' }));
+  await user.clear(list.getByLabelText('할 일 제목 수정'));
+  await user.type(list.getByLabelText('할 일 제목 수정'), '책 두 권 읽기{Enter}');
+  expect(await list.findByRole('button', { name: '책 두 권 읽기' })).toBeTruthy();
   await waitFor(() => expect(patch).toHaveBeenCalledOnce());
 });
 it('마지막 활성 목표의 보관 버튼은 이유와 함께 비활성이다', async () => {
