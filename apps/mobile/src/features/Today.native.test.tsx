@@ -263,9 +263,9 @@ it('빈 날 문구와 고정 바 safe area 여백, 44pt 체크 영역을 제공�
   const bar = screen.getByTestId('quick-add');
   expect(StyleSheet.flatten(bar.props.style).minHeight).toBe(82);
   expect(
-    screen.getByRole('button', { name: t('mobile.month.unavailable') }).props.accessibilityState
-      .disabled,
-  ).toBe(true);
+    screen.getByRole('button', { name: t('mobile.month.expand') }).props.accessibilityState
+      .expanded,
+  ).toBe(false);
 });
 
 it('시트를 요청 중 닫아도 추가 실패를 토스트로 알리고 행을 롤백한다', async () => {
@@ -534,4 +534,27 @@ it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 �
   expect(
     cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))?.some((row) => row.id === 'one'),
   ).toBe(false);
+});
+
+it('월 제목으로 42칸을 펼치고 이전·다음 달과 VoiceOver로 이동한 뒤 선택하면 접힌다', async () => {
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  const grid = await screen.findByTestId('month-grid');
+  expect(within(grid).getAllByRole('button')).toHaveLength(42);
+  fireEvent.press(screen.getByRole('button', { name: t('calendar.nextMonth') }));
+  expect(useUIStore.getState().calendarMonth).toBe('2026-11');
+  act(() =>
+    screen.getByTestId('month-grid').props.onAccessibilityAction({
+      nativeEvent: { actionName: 'decrement' },
+    }),
+  );
+  expect(useUIStore.getState().calendarMonth).toBe('2026-10');
+  const day = within(screen.getByTestId('month-grid')).getAllByRole('button')[0]!;
+  expect(StyleSheet.flatten(day.props.style).height).toBe(64);
+  expect(StyleSheet.flatten(day.props.style).opacity).toBe(0.4);
+  fireEvent.press(day);
+  expect(useUIStore.getState().selectedDate).toBe('2026-09-27');
+  expect(screen.queryByTestId('month-grid')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: t('day.today') }));
+  expect(useUIStore.getState().selectedDate).toBe(useUIStore.getState().today);
 });

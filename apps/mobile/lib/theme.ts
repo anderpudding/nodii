@@ -54,7 +54,7 @@ export const metrics = {
   fontBold: 'Pretendard-Bold',
   space: { xs: 4, sm: 8, md: 12, lg: 16, group: 26, page: 48 },
   radius: { field: 12, button: 14, card: 14, mark: 7, stamp: 8, sheet: 22, pill: 999 },
-  height: { touch: 44, field: 52, chip: 36, menu: 56 },
+  height: { touch: 44, field: 52, chip: 36, menu: 56, calendarCell: 64 },
   glyph: { check: 24, icon: 20 },
   handle: { width: 36, height: 5 },
   selectionRing: 2,

@@ -1,10 +1,14 @@
-import { todayISO, type ISODate } from '@nodii/core';
+import { todayISO, monthKeyOf, type ISODate } from '@nodii/core';
 import { create } from 'zustand';
 
 const today = todayISO(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', new Date());
 interface UIState {
   today: ISODate;
   selectedDate: ISODate;
+  monthExpanded: boolean;
+  calendarMonth: string;
+  toggleMonth(): void;
+  showMonth(month: string): void;
   lastAddedGoalId: string | null;
   selectDate(date: ISODate): void;
   updateToday(date: ISODate): void;
@@ -16,7 +20,16 @@ export const useUIStore = create<UIState>((set) => ({
   today,
   selectedDate: today,
   lastAddedGoalId: null,
-  selectDate: (selectedDate) => set({ selectedDate }),
+  monthExpanded: false,
+  calendarMonth: monthKeyOf(today),
+  toggleMonth: () =>
+    set((state) => ({
+      monthExpanded: !state.monthExpanded,
+      calendarMonth: monthKeyOf(state.selectedDate),
+    })),
+  showMonth: (calendarMonth) => set({ calendarMonth }),
+  selectDate: (selectedDate) =>
+    set({ selectedDate, calendarMonth: monthKeyOf(selectedDate), monthExpanded: false }),
   updateToday: (next) =>
     set((state) => ({
       today: next,
@@ -25,6 +38,12 @@ export const useUIStore = create<UIState>((set) => ({
   rememberAddedGoal: (lastAddedGoalId) => set({ lastAddedGoalId }),
   reset: () => {
     const next = todayISO(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', new Date());
-    set({ today: next, selectedDate: next, lastAddedGoalId: null });
+    set({
+      today: next,
+      selectedDate: next,
+      lastAddedGoalId: null,
+      monthExpanded: false,
+      calendarMonth: monthKeyOf(next),
+    });
   },
 }));
