@@ -4,7 +4,7 @@ import { t } from '@nodii/i18n';
 export const todoActions = [
   { id: 'toggle', swipe: 'leading' },
   { id: 'rename', swipe: null },
-  { id: 'tomorrow', swipe: 'trailing' },
+  { id: 'move', swipe: 'trailing' },
   { id: 'delete', swipe: 'trailing' },
 ] as const;
 export type TodoAction = (typeof todoActions)[number]['id'];

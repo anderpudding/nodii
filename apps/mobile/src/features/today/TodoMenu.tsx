@@ -191,7 +191,9 @@ export function TodoMenu({
                 <Pressable
                   key={id}
                   accessibilityRole="button"
-                  accessibilityLabel={actionLabel(id, todo.isDone)}
+                  accessibilityLabel={
+                    id === 'move' ? t('todo.action.move.menu') : actionLabel(id, todo.isDone)
+                  }
                   accessibilityState={{ disabled: locked, busy: locked }}
                   disabled={locked}
                   onPress={() => {
@@ -213,14 +215,21 @@ export function TodoMenu({
                   ]}
                 >
                   <ActionGlyph action={id} color={id === 'delete' ? colors.danger : colors.ink} />
-                  <Text
-                    style={[
-                      styles.itemText,
-                      { color: id === 'delete' ? colors.danger : colors.ink },
-                    ]}
-                  >
-                    {actionLabel(id, todo.isDone)}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.itemText,
+                        { color: id === 'delete' ? colors.danger : colors.ink },
+                      ]}
+                    >
+                      {id === 'move' ? t('todo.action.move.menu') : actionLabel(id, todo.isDone)}
+                    </Text>
+                    {id === 'move' && (
+                      <Text style={[styles.supporting, { color: colors.muted }]}>
+                        {t('todo.action.move.description')}
+                      </Text>
+                    )}
+                  </View>
                 </Pressable>
               ))}
               <Pressable
@@ -261,9 +270,7 @@ function ActionGlyph({ action, color }: { action: TodoAction; color: string }) {
         <>
           <View style={[styles.outline, { borderColor: color, borderRadius: m.selectionRing }]} />
           <View style={[styles.topLine, { backgroundColor: color }]} />
-          {action === 'tomorrow' && (
-            <View style={[styles.calendarLine, { backgroundColor: color }]} />
-          )}
+          {action === 'move' && <View style={[styles.calendarLine, { backgroundColor: color }]} />}
         </>
       )}
     </View>

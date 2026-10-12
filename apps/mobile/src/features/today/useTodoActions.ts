@@ -10,13 +10,19 @@ import {
   type NodiiClient,
   type TodoRecord,
 } from '@nodii/api';
-import { addDays, keyBetween, lastSortKey, monthKeyOf } from '@nodii/core';
+import { keyBetween, lastSortKey, monthKeyOf, type ISODate } from '@nodii/core';
 import { t, withParticle, type MessageKey } from '@nodii/i18n';
 import { useToast } from '../../components/Toast';
+import { formatMoveDate } from './calendar-model';
 import type { TodoAction } from './actions';
 
 /** TODO-02~05: 네 경로는 기존 API 훅을 사용하고 실행 취소도 같은 낙관적 경로로 쓴다. */
-export function useTodoActions(client: NodiiClient, weekStart: 0 | 1, todo: TodoRecord) {
+export function useTodoActions(
+  client: NodiiClient,
+  weekStart: 0 | 1,
+  todo: TodoRecord,
+  isDateLocked: (date: ISODate) => boolean = () => false,
+) {
   const cache = useQueryClient();
   const toast = useToast();
   const busy = useRef(false);
@@ -53,7 +59,11 @@ export function useTodoActions(client: NodiiClient, weekStart: 0 | 1, todo: Todo
     });
   }
   async function locked<T>(request: () => Promise<T>, undo = false): Promise<T> {
-    if (busy.current || cache.isMutating({ mutationKey: todoWriteKey(todo.id) }))
+    if (
+      isDateLocked(current(todo).date) ||
+      busy.current ||
+      cache.isMutating({ mutationKey: todoWriteKey(todo.id) })
+    )
       throw new Error('todo_busy');
     busy.current = true;
     setPending(true);
@@ -66,9 +76,11 @@ export function useTodoActions(client: NodiiClient, weekStart: 0 | 1, todo: Todo
       undoing.current = false;
     }
   }
-  async function run(action: Exclude<TodoAction, 'rename'>) {
+  async function run(action: Exclude<TodoAction, 'rename'>, destination?: ISODate) {
     if (busy.current || cache.isMutating({ mutationKey: todoWriteKey(todo.id) })) return;
     const before = current(todo);
+    if (isDateLocked(before.date)) return;
+    if (action === 'move' && (!destination || destination === before.date)) return;
     let preparationFailed = false;
     try {
       await locked(async () => {
@@ -88,14 +100,15 @@ export function useTodoActions(client: NodiiClient, weekStart: 0 | 1, todo: Todo
             }, true),
           );
         } else {
-          const date = addDays(before.date, 1);
-          // 다음 달이 아직 캐시되지 않았으면 그 달을 먼저 읽어 목적 목표의 맨 아래 키를 만든다.
-          const rows = await cache
+          const date = destination!;
+          // 목적 달이 아직 캐시되지 않았으면 그 달을 먼저 읽어 목적 목표의 맨 아래 키를 만든다.
+          await cache
             .ensureQueryData(monthTodosOptions(client, monthKeyOf(date), weekStart))
             .catch((error: unknown) => {
               preparationFailed = true;
               throw error;
             });
+          const rows = cache.getQueryData<TodoRecord[]>(['todos', monthKeyOf(date)]) ?? [];
           const sortKey = keyBetween(
             lastSortKey(
               rows.filter(
@@ -109,14 +122,20 @@ export function useTodoActions(client: NodiiClient, weekStart: 0 | 1, todo: Todo
             null,
           );
           await move.mutateAsync({ todo: before, date, sortKey });
-          toast(message('todo.moved', before), () =>
-            locked(async () => {
-              await move.mutateAsync({
-                todo: currentForUndo(),
-                date: before.date,
-                sortKey: before.sortKey,
-              });
-            }, true),
+          toast(
+            t('todo.moved', {
+              title: before.title,
+              particle: withParticle(before.title, '을/를').slice(before.title.length),
+              date: formatMoveDate(date),
+            }),
+            () =>
+              locked(async () => {
+                await move.mutateAsync({
+                  todo: currentForUndo(),
+                  date: before.date,
+                  sortKey: before.sortKey,
+                });
+              }, true),
           );
         }
       });

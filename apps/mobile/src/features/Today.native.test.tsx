@@ -21,6 +21,10 @@ import {
   fetchProfile,
   listGoals,
   listTodosInRange,
+  listOverdue,
+  moveTodos,
+  softDeleteTodos,
+  restoreTodos,
   createTodo,
   updateTodo,
   softDeleteTodo,
@@ -40,6 +44,10 @@ jest.mock('../../../../packages/api/src/profile', () => ({ fetchProfile: jest.fn
 jest.mock('../../../../packages/api/src/repositories/goals', () => ({ listGoals: jest.fn() }));
 jest.mock('../../../../packages/api/src/repositories/todos', () => ({
   listTodosInRange: jest.fn(),
+  listOverdue: jest.fn(),
+  moveTodos: jest.fn(),
+  softDeleteTodos: jest.fn(),
+  restoreTodos: jest.fn(),
   createTodo: jest.fn(),
   updateTodo: jest.fn(),
   softDeleteTodo: jest.fn(),
@@ -91,6 +99,10 @@ beforeEach(() => {
     fetchProfile,
     listGoals,
     listTodosInRange,
+    listOverdue,
+    moveTodos,
+    softDeleteTodos,
+    restoreTodos,
     createTodo,
     updateTodo,
     softDeleteTodo,
@@ -111,6 +123,7 @@ beforeEach(() => {
     weekStart: 0,
   });
   jest.mocked(listGoals).mockResolvedValue([goal]);
+  jest.mocked(listOverdue).mockResolvedValue([]);
   jest.mocked(listTodosInRange).mockResolvedValue([row('one', '장보기'), row('two', 'OS 과제')]);
   jest.mocked(createTodo).mockImplementation(async (_client, todo) => record(todo));
   jest.mocked(softDeleteTodo).mockImplementation(async (_client, id) => ({
@@ -143,7 +156,10 @@ async function mount() {
   await screen.findByRole('button', { name: t('todo.add') });
   await waitFor(() => expect(screen.queryByText(t('mobile.today.loading'))).toBeNull());
   // 현재 실행 날짜와 무관한 선택 날짜. 오늘 시계 자체는 단위 테스트로 검증한다.
-  act(() => useUIStore.getState().selectDate('2026-10-10'));
+  act(() => {
+    useUIStore.getState().updateToday('2026-10-10');
+    useUIStore.getState().selectDate('2026-10-10');
+  });
 }
 it('체크를 즉시 반영하고 그 행만 잠그며 실패를 롤백·토스트로 알린다', async () => {
   let reject: (error: Error) => void = () => {};
@@ -335,12 +351,13 @@ it('메뉴와 접근성 로터가 밀기 동작을 모두 제공하고 완료 �
   expect(row.props.accessibilityActions.map((action: { name: string }) => action.name)).toEqual([
     'toggle',
     'rename',
-    'tomorrow',
+    'move',
     'delete',
   ]);
   await openMenu();
-  for (const key of ['complete', 'rename', 'tomorrow', 'delete'] as const)
+  for (const key of ['complete', 'rename', 'delete'] as const)
     expect(screen.getByRole('button', { name: t(`todo.action.${key}`) })).toBeTruthy();
+  expect(screen.getByRole('button', { name: t('todo.action.move.menu') })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: t('todo.action.complete') }));
   await screen.findByRole('checkbox', { name: t('todo.uncomplete', { title: '장보기' }) });
   fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
@@ -398,7 +415,7 @@ it('이름 시트는 IME를 무시하고 제목을 낙관적으로 반영하며 
   fireEvent.press(screen.getByRole('button', { name: t('mobile.rename.save') }));
   await screen.findByRole('checkbox', { name: t('todo.complete', { title: '우유 사기' }) });
 });
-it('내일로는 선택 날짜의 다음 날·목표 맨 아래로 옮기며 실행 취소로 날짜와 키를 복원한다', async () => {
+it('옮기기 시트에서 날짜를 고르면 목표 맨 아래로 옮기며 실행 취소로 날짜와 키를 복원한다', async () => {
   jest
     .mocked(listTodosInRange)
     .mockResolvedValue([
@@ -408,11 +425,12 @@ it('내일로는 선택 날짜의 다음 날·목표 맨 아래로 옮기며 실
     ]);
   await mount();
   await openMenu();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.action.tomorrow') }));
+  fireEvent.press(screen.getByRole('button', { name: t('todo.action.move.menu') }));
+  fireEvent.press(await screen.findByRole('button', { name: t('date.tomorrow') }));
   await waitFor(() => expect(moveTodo).toHaveBeenCalled());
   expect(jest.mocked(moveTodo).mock.calls[0]![2]).toBe('2026-10-11');
   expect(jest.mocked(moveTodo).mock.calls[0]![3] > 'a9').toBe(true);
-  await screen.findByText(t('todo.moved', { title: '장보기', particle: '를' }));
+  await screen.findByText(t('todo.moved', { title: '장보기', particle: '를', date: '10월 11일' }));
   expect(
     screen.queryByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }),
   ).toBeNull();
@@ -420,11 +438,11 @@ it('내일로는 선택 날짜의 다음 날·목표 맨 아래로 옮기며 실
   await screen.findByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) });
   expect(jest.mocked(moveTodo).mock.calls[1]!.slice(2)).toEqual(['2026-10-10', 'a0']);
 });
-it.each(['tomorrow', 'delete'] as const)(
+it.each(['move', 'delete'] as const)(
   '%s 실패는 사라진 행을 롤백하고 토스트로 알린다',
   async (action) => {
     let reject: (error: Error) => void = () => {};
-    const request = action === 'tomorrow' ? jest.mocked(moveTodo) : jest.mocked(softDeleteTodo);
+    const request = action === 'move' ? jest.mocked(moveTodo) : jest.mocked(softDeleteTodo);
     request.mockImplementationOnce(
       () =>
         new Promise((_resolve, fail) => {
@@ -433,7 +451,13 @@ it.each(['tomorrow', 'delete'] as const)(
     );
     await mount();
     await openMenu();
-    fireEvent.press(screen.getByRole('button', { name: t(`todo.action.${action}`) }));
+    fireEvent.press(
+      screen.getByRole('button', {
+        name: t(action === 'move' ? 'todo.action.move.menu' : 'todo.action.delete'),
+      }),
+    );
+    if (action === 'move')
+      fireEvent.press(await screen.findByRole('button', { name: t('date.tomorrow') }));
     await waitFor(() => expect(request).toHaveBeenCalled());
     expect(
       screen.queryByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }),

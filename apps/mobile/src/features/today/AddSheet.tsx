@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   PanResponder,
@@ -15,23 +16,31 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as crypto from 'expo-crypto';
 import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys, useCreateTodo, type NodiiClient, type TodoRecord } from '@nodii/api';
+import {
+  monthTodosOptions,
+  queryKeys,
+  useCreateTodo,
+  type NodiiClient,
+  type TodoRecord,
+} from '@nodii/api';
 import { monthKeyOf, normalizeTitle, type Goal, type ISODate } from '@nodii/core';
 import { t, withParticle } from '@nodii/i18n';
 import { metrics as m, useReducedMotion, useTheme } from '../../../lib/theme';
 import { useUIStore } from '../../stores/ui';
 import { ToastPortal, useToast } from '../../components/Toast';
 import { Button } from '../../components/Button';
+import { DatePickSheet } from './DatePickSheet';
 import { GoalBadge } from './GoalBadge';
 import { newTodo, preferredGoal, submissionTitle } from './model';
 
 /** MOB-03/05: 입력·추가 버튼을 키보드 위에 두고 저장 뒤 다음 입력을 계속 받는다. */
 export function AddSheet({
   client,
-  date,
+  date: initialDate,
   today,
   goals,
   weekStart,
+  isDateLocked = () => false,
   onClose,
 }: {
   client: NodiiClient;
@@ -39,6 +48,7 @@ export function AddSheet({
   today: ISODate;
   goals: Goal[];
   weekStart: 0 | 1;
+  isDateLocked?: (date: ISODate) => boolean;
   onClose(): void;
 }) {
   const { colors } = useTheme();
@@ -49,6 +59,9 @@ export function AddSheet({
   const lastAddedGoalId = useUIStore((state) => state.lastAddedGoalId);
   const [goalId, setGoalId] = useState(() => preferredGoal(goals, lastAddedGoalId)?.id ?? null);
   const [title, setTitle] = useState('');
+  const [date, setDate] = useState(initialDate);
+  const [picking, setPicking] = useState(false);
+  const [dateFocused, setDateFocused] = useState(false);
   const [focused, setFocused] = useState(false);
   const input = useRef<TextInput>(null);
   const busy = useRef(false);
@@ -69,12 +82,22 @@ export function AddSheet({
   });
   async function submit(event?: unknown) {
     const value = submissionTitle(title, event);
-    if (!value || !goal || busy.current) return;
-    // 렌더 시점 배열 대신 최신 낙관적 월 캐시를 읽어 연속 입력 키를 계산한다.
-    const rows = cache.getQueryData<TodoRecord[]>(queryKeys.todos(monthKeyOf(date))) ?? [];
-    const todo = newTodo(crypto.randomUUID(), goal.id, date, value, rows);
-    if (!todo) return;
+    if (!value || !goal || busy.current || isDateLocked(date)) return;
     busy.current = true;
+    let rows: TodoRecord[];
+    try {
+      await cache.ensureQueryData(monthTodosOptions(client, monthKeyOf(date), weekStart));
+      rows = cache.getQueryData<TodoRecord[]>(queryKeys.todos(monthKeyOf(date))) ?? [];
+    } catch {
+      busy.current = false;
+      toast(t('todo.save.failed'));
+      return;
+    }
+    const todo = newTodo(crypto.randomUUID(), goal.id, date, value, rows);
+    if (!todo) {
+      busy.current = false;
+      return;
+    }
     submittedTitle.current = todo.title;
     setTitle('');
     input.current?.focus();
@@ -201,24 +224,54 @@ export function AddSheet({
                 },
               ]}
             />
-            <View style={[styles.date, { borderTopColor: colors.line }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('mobile.add.date.pick')}
+              onPress={() => {
+                Keyboard.dismiss();
+                setPicking(true);
+              }}
+              onFocus={() => setDateFocused(true)}
+              onBlur={() => setDateFocused(false)}
+              style={({ pressed }) => [
+                styles.date,
+                {
+                  borderTopColor: dateFocused ? colors.focus : colors.line,
+                  opacity: pressed ? m.pressedOpacity : 1,
+                },
+              ]}
+            >
               <Text style={[styles.supporting, { color: colors.muted }]}>
                 {t('mobile.add.date')}
               </Text>
               <Text style={[styles.supporting, { color: colors.ink2 }]}>
                 {date === today ? t('mobile.add.date.today', { date: dateLabel }) : dateLabel}
               </Text>
-            </View>
+              <Text accessible={false} style={[styles.supporting, { color: colors.ink2 }]}>
+                ›
+              </Text>
+            </Pressable>
             <Button
               label={t('mobile.add.action')}
               busy={create.isPending}
-              disabled={!goal || !normalizeTitle(title) || create.isPending}
+              disabled={!goal || !normalizeTitle(title) || create.isPending || isDateLocked(date)}
               onPress={() => void submit()}
             />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
       <ToastPortal />
+      {picking && (
+        <DatePickSheet
+          client={client}
+          title={title || t('todo.add')}
+          date={date}
+          today={today}
+          weekStart={weekStart}
+          onSelect={setDate}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </Modal>
   );
 }

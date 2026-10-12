@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { todoWriteKey, type NodiiClient, type TodoRecord } from '@nodii/api';
-import { checkColor, goalTint, goalInk, type Goal } from '@nodii/core';
+import { checkColor, goalTint, goalInk, type Goal, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { lightColors, metrics as m, useTheme } from '../../../lib/theme';
 import { SwipeableRow } from '../../components/gestures/SwipeableRow';
 import { actionLabel, splitSwipeActions, todoActions } from './actions';
 import { useTodoActions } from './useTodoActions';
+import { useUIStore } from '../../stores/ui';
+import { DatePickSheet } from './DatePickSheet';
 import { TodoMenu } from './TodoMenu';
 
 /** TODO-02: 각 행이 독립된 요청을 가져 다른 행의 체크를 막지 않는다. */
@@ -16,15 +18,21 @@ export function TodoRow({
   goal,
   client,
   weekStart,
+  dayLocked = false,
+  isDateLocked,
 }: {
   todo: TodoRecord;
   goal: Goal;
   client: NodiiClient;
   weekStart: 0 | 1;
+  dayLocked?: boolean;
+  isDateLocked?: (date: ISODate) => boolean;
 }) {
   const { colors, isDark } = useTheme();
   const [menu, setMenu] = useState(false);
-  const actions = useTodoActions(client, weekStart, todo);
+  const [picking, setPicking] = useState(false);
+  const today = useUIStore((state) => state.today);
+  const actions = useTodoActions(client, weekStart, todo, isDateLocked);
   const [focused, setFocused] = useState(false);
   const creating =
     useIsMutating({
@@ -40,7 +48,7 @@ export function TodoRow({
       },
     }) > 0;
   const updating = useIsMutating({ mutationKey: todoWriteKey(todo.id) }) > 0;
-  const locked = updating || creating || actions.pending;
+  const locked = dayLocked || updating || creating || actions.pending;
   function check() {
     if (!locked) void actions.run('toggle');
   }
@@ -65,7 +73,9 @@ export function TodoRow({
             ? lightColors.bg
             : colors.ink,
       run: () => {
-        if (!locked && id !== 'rename') void actions.run(id);
+        if (locked || id === 'rename') return;
+        if (id === 'move') setPicking(true);
+        else void actions.run(id);
       },
     })),
   );
@@ -130,6 +140,7 @@ export function TodoRow({
               const action = todoActions.find(({ id }) => id === event.nativeEvent.actionName);
               if (!action || locked) return;
               if (action.id === 'rename') openMenu();
+              else if (action.id === 'move') setPicking(true);
               else void actions.run(action.id);
             }}
             disabled={locked}
@@ -158,12 +169,26 @@ export function TodoRow({
           </Pressable>
         </View>
       </SwipeableRow>
+      {picking && (
+        <DatePickSheet
+          client={client}
+          title={todo.title}
+          date={todo.date}
+          today={today}
+          weekStart={weekStart}
+          onClose={() => setPicking(false)}
+          onSelect={(date) => void actions.run('move', date)}
+        />
+      )}
       {menu && (
         <TodoMenu
           todo={todo}
           goal={goal}
           locked={locked}
-          onAction={(action) => void actions.run(action)}
+          onAction={(action) => {
+            if (action === 'move') setPicking(true);
+            else void actions.run(action);
+          }}
           onSave={actions.saveTitle}
           onClose={() => setMenu(false)}
         />
