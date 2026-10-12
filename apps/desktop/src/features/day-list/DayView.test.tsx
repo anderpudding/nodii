@@ -167,9 +167,11 @@ it('빈 할 일에서 Enter를 누르면 저장하지 않고 입력을 닫는다
 it('메인 할 일은 손잡이와 앞 여백 없이 행 전체를 드래그 영역으로 쓴다', async () => {
   server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
   const { user } = setup();
-  await screen.findByRole('button', { name: '책 읽기 완료' });
+  // 반복 대기 중 캘린더 42칸의 접근성·스타일까지 검사하지 않도록 하루 목록으로 한정한다.
+  const list = within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
+  await list.findByRole('button', { name: '책 읽기 완료' });
 
-  expect(screen.getByRole('group', { name: '책 읽기 순서 변경' })).toBeTruthy();
+  expect(list.getByRole('group', { name: '책 읽기 순서 변경' })).toBeTruthy();
   expect(document.querySelector('.todo-rows .drag-handle')).toBeNull();
   expect(document.querySelector('.todo-rows .drag-spacer')).toBeNull();
 
