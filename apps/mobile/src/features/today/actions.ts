@@ -4,7 +4,7 @@ import { t } from '@nodii/i18n';
 export const todoActions = [
   { id: 'toggle', swipe: 'leading' },
   { id: 'rename', swipe: null },
-  { id: 'tomorrow', swipe: 'trailing' },
+  { id: 'move', swipe: 'trailing' },
   { id: 'delete', swipe: 'trailing' },
 ] as const;
 export type TodoAction = (typeof todoActions)[number]['id'];
@@ -26,4 +26,15 @@ export function splitSwipeActions<T extends { swipe: 'leading' | 'trailing' | nu
 export function actionLabel(action: TodoAction, isDone: boolean) {
   if (action === 'toggle') return t(isDone ? 'todo.action.uncomplete' : 'todo.action.complete');
   return t(`todo.action.${action}`);
+}
+
+/** 묶음 이동 중 목적 날짜에서 다시 만난 행도 해당 요청이 끝날 때까지 보호한다 (TODO-11). */
+export function mutationTouchesTodo(value: unknown, id: string): boolean {
+  if (!value || typeof value !== 'object') return false;
+  if ('id' in value && value.id === id) return true;
+  if ('todo' in value && mutationTouchesTodo(value.todo, id)) return true;
+  const groups = ['todos' in value ? value.todos : null, 'overdue' in value ? value.overdue : null];
+  return groups.some(
+    (rows) => Array.isArray(rows) && rows.some((row: unknown) => mutationTouchesTodo(row, id)),
+  );
 }

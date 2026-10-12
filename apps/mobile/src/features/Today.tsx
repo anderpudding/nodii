@@ -1,19 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppState, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
-import { fetchProfile, useGoals, useMonthTodos, type NodiiClient } from '@nodii/api';
-import { monthKeyOf, type Profile } from '@nodii/core';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  adjacentMonthKey,
+  fetchProfile,
+  monthTodosOptions,
+  useGoals,
+  useMonthTodos,
+  type NodiiClient,
+} from '@nodii/api';
+import { monthGridRange, monthKeyOf, type Profile } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
+import { CalendarArrow } from '../components/CalendarArrow';
 import { Button } from '../components/Button';
 import { useUIStore } from '../stores/ui';
 import { AddSheet } from './today/AddSheet';
 import { GoalBadge } from './today/GoalBadge';
 import { TodoRow } from './today/TodoRow';
+import { DayMenu } from './today/DayMenu';
+import { useDayActions } from './today/useDayActions';
+import { MonthGrid } from './today/MonthGrid';
 import { WeekStrip } from './today/WeekStrip';
 import {
   daySections,
@@ -69,15 +80,37 @@ function TodayContent({
 }: TodayProps & { profile: Profile }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { selectedDate, today, selectDate, lastAddedGoalId } = useUIStore();
+  const {
+    selectedDate,
+    today,
+    selectDate,
+    lastAddedGoalId,
+    monthExpanded,
+    calendarMonth,
+    toggleMonth,
+    showMonth,
+  } = useUIStore();
+  const cache = useQueryClient();
+  const dayActions = useDayActions(client, profile.weekStart);
   const [adding, setAdding] = useState(false);
   const [barFocused, setBarFocused] = useState(false);
+  const [monthFocused, setMonthFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
   const goals = useGoals(client);
   const first = useMonthTodos(client, firstMonth, profile.weekStart);
   const last = useMonthTodos(client, lastMonth, profile.weekStart);
+  const month = useMonthTodos(client, calendarMonth, profile.weekStart);
+  const monthRange = monthGridRange(calendarMonth, profile.weekStart);
+  useEffect(() => {
+    if (!monthExpanded) return;
+    // M3는 할 일만 미리 읽는다. 루틴/로그 구독은 M4에서 붙인다.
+    for (const direction of [-1, 1] as const)
+      void cache.prefetchQuery(
+        monthTodosOptions(client, adjacentMonthKey(calendarMonth, direction), profile.weekStart),
+      );
+  }, [cache, client, calendarMonth, profile.weekStart, monthExpanded]);
   const rows = useMemo(
     () => mergeWeekTodos(from, to, first.data ?? [], last.data ?? []),
     [from, to, first.data, last.data],
@@ -87,14 +120,32 @@ function TodayContent({
     [goals.data, rows, selectedDate, profile.timezone],
   );
   const summary = useMemo(
-    () => weekSummary(goals.data ?? [], rows, from, to, profile.timezone),
-    [goals.data, rows, from, to, profile.timezone],
+    () =>
+      weekSummary(
+        goals.data ?? [],
+        monthExpanded ? (month.data ?? []) : rows,
+        monthExpanded ? monthRange.from : from,
+        monthExpanded ? monthRange.to : to,
+        profile.timezone,
+      ),
+    [
+      goals.data,
+      rows,
+      month.data,
+      from,
+      to,
+      monthExpanded,
+      monthRange.from,
+      monthRange.to,
+      profile.timezone,
+    ],
   );
   const items = sections.flatMap((section) => section.data);
   const done = items.filter((todo) => todo.isDone).length;
   const activeGoal = preferredGoal(goals.data ?? [], lastAddedGoalId);
-  const failed = [goals, first, last].some((query) => query.isError);
-  const loading = [goals, first, last].some((query) => query.isPending);
+  const queries = [goals, first, last];
+  const failed = queries.some((query) => query.isError);
+  const loading = queries.some((query) => query.isPending);
   useEffect(
     () =>
       bindTodayClock(
@@ -115,40 +166,125 @@ function TodayContent({
     year: 'numeric',
     month: 'long',
     timeZone: 'UTC',
-  }).format(dateObject);
+  }).format(monthExpanded ? new Date(`${calendarMonth}-01T00:00:00Z`) : dateObject);
   function retry() {
-    for (const query of [goals, first, last]) void query.refetch();
+    for (const query of queries) void query.refetch();
   }
   return (
     <View style={styles.root}>
       <View style={[styles.top, { backgroundColor: colors.side }]}>
         <Pressable
-          disabled
           accessibilityRole="button"
-          accessibilityLabel={t('mobile.month.unavailable')}
-          accessibilityState={{ disabled: true }}
-          style={styles.month}
+          accessibilityLabel={t(monthExpanded ? 'mobile.month.collapse' : 'mobile.month.expand')}
+          accessibilityState={{ expanded: monthExpanded }}
+          onPress={toggleMonth}
+          onFocus={() => setMonthFocused(true)}
+          onBlur={() => setMonthFocused(false)}
+          style={({ pressed }) => [
+            styles.month,
+            {
+              borderColor: monthFocused ? colors.focus : colors.side,
+              opacity: pressed ? m.pressedOpacity : 1,
+            },
+          ]}
         >
-          <Text style={[styles.heading, { color: colors.ink }]}>{monthLabel} ⌄</Text>
+          <Text style={[styles.heading, { color: colors.ink }]}>
+            {monthLabel} {monthExpanded ? '⌃' : '⌄'}
+          </Text>
         </Pressable>
         <Button label={t('day.today')} secondary onPress={() => selectDate(today)} />
-        <Pressable
-          disabled
-          accessibilityRole="button"
-          accessibilityLabel={t('mobile.settings.unavailable')}
-          accessibilityState={{ disabled: true }}
-          style={styles.settings}
-        >
-          <Text style={[styles.heading, { color: colors.muted }]}>☰</Text>
-        </Pressable>
+        {monthExpanded ? (
+          <View style={styles.arrows}>
+            <CalendarArrow
+              direction={-1}
+              onPress={() => showMonth(adjacentMonthKey(calendarMonth, -1))}
+            />
+            <CalendarArrow
+              direction={1}
+              onPress={() => showMonth(adjacentMonthKey(calendarMonth, 1))}
+            />
+          </View>
+        ) : (
+          <Pressable
+            disabled
+            accessibilityRole="button"
+            accessibilityLabel={t('mobile.settings.unavailable')}
+            accessibilityState={{ disabled: true }}
+            style={styles.settings}
+          >
+            <Text style={[styles.heading, { color: colors.muted }]}>☰</Text>
+          </Pressable>
+        )}
       </View>
-      <WeekStrip
-        dates={dates}
-        today={today}
-        selectedDate={selectedDate}
-        summary={summary}
-        onSelect={selectDate}
-      />
+      {monthExpanded ? (
+        <MonthGrid
+          month={calendarMonth}
+          weekStart={profile.weekStart}
+          today={today}
+          selectedDate={selectedDate}
+          summary={summary}
+          onSelect={selectDate}
+          onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
+        />
+      ) : (
+        <WeekStrip
+          dates={dates}
+          today={today}
+          selectedDate={selectedDate}
+          summary={summary}
+          onSelect={selectDate}
+        />
+      )}
+      {monthExpanded && month.isError && (
+        <View style={styles.calendarError}>
+          <Text accessibilityRole="alert" style={[styles.supporting, { color: colors.danger }]}>
+            {t('mobile.calendar.failed')}
+          </Text>
+          <Button label={t('common.tryAgain')} secondary onPress={() => void month.refetch()} />
+        </View>
+      )}
+      <View style={styles.dayHeader}>
+        <View style={styles.dateTitle}>
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+            {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
+          </Text>
+          <DayMenu
+            key={selectedDate}
+            client={client}
+            date={selectedDate}
+            today={today}
+            goals={goals.data ?? []}
+            items={items}
+            ready={!loading && !failed}
+            weekStart={profile.weekStart}
+            actions={dayActions}
+          />
+        </View>
+        <Text style={[styles.supporting, { color: colors.muted }]}>
+          {items.length
+            ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
+                total: items.length,
+                done,
+              })
+            : t('day.empty')}
+        </Text>
+        {failed ? (
+          <View>
+            <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+              {t('mobile.today.failed')}
+            </Text>
+            <Button label={t('common.tryAgain')} secondary onPress={retry} />
+          </View>
+        ) : loading ? (
+          <Text style={[styles.supporting, { color: colors.muted }]}>
+            {t('mobile.today.loading')}
+          </Text>
+        ) : !items.length ? (
+          <Text style={[styles.supporting, { color: colors.muted }]}>
+            {t('mobile.today.empty')}
+          </Text>
+        ) : null}
+      </View>
       <ToastInset bottom={quickAddInset(insets.bottom)} />
       <SwipeRows>
         <SectionList
@@ -160,37 +296,6 @@ function TodayContent({
             styles.list,
             { paddingBottom: quickAddInset(insets.bottom) + m.space.lg },
           ]}
-          ListHeaderComponent={
-            <View style={styles.dayHeader}>
-              <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-                {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
-              </Text>
-              <Text style={[styles.supporting, { color: colors.muted }]}>
-                {items.length
-                  ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
-                      total: items.length,
-                      done,
-                    })
-                  : t('day.empty')}
-              </Text>
-              {failed ? (
-                <View>
-                  <Text accessibilityRole="alert" style={{ color: colors.danger }}>
-                    {t('mobile.today.failed')}
-                  </Text>
-                  <Button label={t('common.tryAgain')} secondary onPress={retry} />
-                </View>
-              ) : loading ? (
-                <Text style={[styles.supporting, { color: colors.muted }]}>
-                  {t('mobile.today.loading')}
-                </Text>
-              ) : !items.length ? (
-                <Text style={[styles.supporting, { color: colors.muted }]}>
-                  {t('mobile.today.empty')}
-                </Text>
-              ) : null}
-            </View>
-          }
           renderSectionHeader={({ section }) => (
             <View style={styles.section}>
               <GoalBadge goal={section.goal} />
@@ -202,6 +307,8 @@ function TodayContent({
               goal={section.goal}
               client={client}
               weekStart={profile.weekStart}
+              dayLocked={dayActions.isDateLocked(selectedDate)}
+              isDateLocked={dayActions.isDateLocked}
             />
           )}
           // M1의 로그아웃 경로는 M5 설정 화면으로 옮길 때까지 유지한다.
@@ -222,8 +329,10 @@ function TodayContent({
         testID="quick-add"
         accessibilityRole="button"
         accessibilityLabel={t('todo.add')}
-        accessibilityState={{ disabled: !activeGoal || loading || failed }}
-        disabled={!activeGoal || loading || failed}
+        accessibilityState={{
+          disabled: !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate),
+        }}
+        disabled={!activeGoal || loading || failed || dayActions.isDateLocked(selectedDate)}
         onPress={() => setAdding(true)}
         onFocus={() => setBarFocused(true)}
         onBlur={() => setBarFocused(false)}
@@ -254,6 +363,7 @@ function TodayContent({
           date={selectedDate}
           today={today}
           goals={goals.data ?? []}
+          isDateLocked={dayActions.isDateLocked}
           weekStart={profile.weekStart}
           onClose={() => setAdding(false)}
         />
@@ -270,7 +380,14 @@ const styles = StyleSheet.create({
     gap: m.space.sm,
     paddingHorizontal: m.space.lg,
   },
-  month: { flex: 1, minHeight: m.height.touch, justifyContent: 'center' },
+  month: {
+    flex: 1,
+    minHeight: m.height.touch,
+    justifyContent: 'center',
+    borderWidth: m.selectionRing,
+    borderRadius: m.radius.field,
+  },
+  arrows: { flexDirection: 'row', gap: m.space.sm },
   settings: {
     minHeight: m.height.touch,
     minWidth: m.height.touch,
@@ -279,6 +396,7 @@ const styles = StyleSheet.create({
   },
   heading: { fontFamily: m.fontBold, fontWeight: '700', fontSize: m.type.heading },
   title: {
+    flex: 1,
     fontFamily: m.fontBold,
     fontWeight: '700',
     fontSize: m.type.title,
@@ -289,7 +407,9 @@ const styles = StyleSheet.create({
     fontSize: m.type.supporting,
     lineHeight: m.type.supporting * m.lineHeight.body,
   },
-  dayHeader: { gap: m.space.sm, paddingTop: m.space.group },
+  dayHeader: { gap: m.space.sm, paddingTop: m.space.lg, paddingHorizontal: m.space.lg },
+  calendarError: { paddingHorizontal: m.space.lg },
+  dateTitle: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
   list: { paddingHorizontal: m.space.lg },
   section: { alignItems: 'flex-start', paddingTop: m.space.group, paddingBottom: m.space.sm },
   footer: { alignItems: 'flex-start', marginTop: m.space.group },

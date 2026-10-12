@@ -21,6 +21,10 @@ import {
   fetchProfile,
   listGoals,
   listTodosInRange,
+  listOverdue,
+  moveTodos,
+  softDeleteTodos,
+  restoreTodos,
   createTodo,
   updateTodo,
   softDeleteTodo,
@@ -40,6 +44,10 @@ jest.mock('../../../../packages/api/src/profile', () => ({ fetchProfile: jest.fn
 jest.mock('../../../../packages/api/src/repositories/goals', () => ({ listGoals: jest.fn() }));
 jest.mock('../../../../packages/api/src/repositories/todos', () => ({
   listTodosInRange: jest.fn(),
+  listOverdue: jest.fn(),
+  moveTodos: jest.fn(),
+  softDeleteTodos: jest.fn(),
+  restoreTodos: jest.fn(),
   createTodo: jest.fn(),
   updateTodo: jest.fn(),
   softDeleteTodo: jest.fn(),
@@ -91,6 +99,10 @@ beforeEach(() => {
     fetchProfile,
     listGoals,
     listTodosInRange,
+    listOverdue,
+    moveTodos,
+    softDeleteTodos,
+    restoreTodos,
     createTodo,
     updateTodo,
     softDeleteTodo,
@@ -111,6 +123,7 @@ beforeEach(() => {
     weekStart: 0,
   });
   jest.mocked(listGoals).mockResolvedValue([goal]);
+  jest.mocked(listOverdue).mockResolvedValue([]);
   jest.mocked(listTodosInRange).mockResolvedValue([row('one', '장보기'), row('two', 'OS 과제')]);
   jest.mocked(createTodo).mockImplementation(async (_client, todo) => record(todo));
   jest.mocked(softDeleteTodo).mockImplementation(async (_client, id) => ({
@@ -143,7 +156,10 @@ async function mount() {
   await screen.findByRole('button', { name: t('todo.add') });
   await waitFor(() => expect(screen.queryByText(t('mobile.today.loading'))).toBeNull());
   // 현재 실행 날짜와 무관한 선택 날짜. 오늘 시계 자체는 단위 테스트로 검증한다.
-  act(() => useUIStore.getState().selectDate('2026-10-10'));
+  act(() => {
+    useUIStore.getState().updateToday('2026-10-10');
+    useUIStore.getState().selectDate('2026-10-10');
+  });
 }
 it('체크를 즉시 반영하고 그 행만 잠그며 실패를 롤백·토스트로 알린다', async () => {
   let reject: (error: Error) => void = () => {};
@@ -263,9 +279,9 @@ it('빈 날 문구와 고정 바 safe area 여백, 44pt 체크 영역을 제공�
   const bar = screen.getByTestId('quick-add');
   expect(StyleSheet.flatten(bar.props.style).minHeight).toBe(82);
   expect(
-    screen.getByRole('button', { name: t('mobile.month.unavailable') }).props.accessibilityState
-      .disabled,
-  ).toBe(true);
+    screen.getByRole('button', { name: t('mobile.month.expand') }).props.accessibilityState
+      .expanded,
+  ).toBe(false);
 });
 
 it('시트를 요청 중 닫아도 추가 실패를 토스트로 알리고 행을 롤백한다', async () => {
@@ -335,12 +351,13 @@ it('메뉴와 접근성 로터가 밀기 동작을 모두 제공하고 완료 �
   expect(row.props.accessibilityActions.map((action: { name: string }) => action.name)).toEqual([
     'toggle',
     'rename',
-    'tomorrow',
+    'move',
     'delete',
   ]);
   await openMenu();
-  for (const key of ['complete', 'rename', 'tomorrow', 'delete'] as const)
+  for (const key of ['complete', 'rename', 'delete'] as const)
     expect(screen.getByRole('button', { name: t(`todo.action.${key}`) })).toBeTruthy();
+  expect(screen.getByRole('button', { name: t('todo.action.move.menu') })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: t('todo.action.complete') }));
   await screen.findByRole('checkbox', { name: t('todo.uncomplete', { title: '장보기' }) });
   fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
@@ -398,7 +415,7 @@ it('이름 시트는 IME를 무시하고 제목을 낙관적으로 반영하며 
   fireEvent.press(screen.getByRole('button', { name: t('mobile.rename.save') }));
   await screen.findByRole('checkbox', { name: t('todo.complete', { title: '우유 사기' }) });
 });
-it('내일로는 선택 날짜의 다음 날·목표 맨 아래로 옮기며 실행 취소로 날짜와 키를 복원한다', async () => {
+it('옮기기 시트에서 날짜를 고르면 목표 맨 아래로 옮기며 실행 취소로 날짜와 키를 복원한다', async () => {
   jest
     .mocked(listTodosInRange)
     .mockResolvedValue([
@@ -408,11 +425,12 @@ it('내일로는 선택 날짜의 다음 날·목표 맨 아래로 옮기며 실
     ]);
   await mount();
   await openMenu();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.action.tomorrow') }));
+  fireEvent.press(screen.getByRole('button', { name: t('todo.action.move.menu') }));
+  fireEvent.press(await screen.findByRole('button', { name: t('date.tomorrow') }));
   await waitFor(() => expect(moveTodo).toHaveBeenCalled());
   expect(jest.mocked(moveTodo).mock.calls[0]![2]).toBe('2026-10-11');
   expect(jest.mocked(moveTodo).mock.calls[0]![3] > 'a9').toBe(true);
-  await screen.findByText(t('todo.moved', { title: '장보기', particle: '를' }));
+  await screen.findByText(t('todo.moved', { title: '장보기', particle: '를', date: '10월 11일' }));
   expect(
     screen.queryByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }),
   ).toBeNull();
@@ -420,11 +438,11 @@ it('내일로는 선택 날짜의 다음 날·목표 맨 아래로 옮기며 실
   await screen.findByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) });
   expect(jest.mocked(moveTodo).mock.calls[1]!.slice(2)).toEqual(['2026-10-10', 'a0']);
 });
-it.each(['tomorrow', 'delete'] as const)(
+it.each(['move', 'delete'] as const)(
   '%s 실패는 사라진 행을 롤백하고 토스트로 알린다',
   async (action) => {
     let reject: (error: Error) => void = () => {};
-    const request = action === 'tomorrow' ? jest.mocked(moveTodo) : jest.mocked(softDeleteTodo);
+    const request = action === 'move' ? jest.mocked(moveTodo) : jest.mocked(softDeleteTodo);
     request.mockImplementationOnce(
       () =>
         new Promise((_resolve, fail) => {
@@ -433,7 +451,13 @@ it.each(['tomorrow', 'delete'] as const)(
     );
     await mount();
     await openMenu();
-    fireEvent.press(screen.getByRole('button', { name: t(`todo.action.${action}`) }));
+    fireEvent.press(
+      screen.getByRole('button', {
+        name: t(action === 'move' ? 'todo.action.move.menu' : 'todo.action.delete'),
+      }),
+    );
+    if (action === 'move')
+      fireEvent.press(await screen.findByRole('button', { name: t('date.tomorrow') }));
     await waitFor(() => expect(request).toHaveBeenCalled());
     expect(
       screen.queryByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }),
@@ -534,4 +558,418 @@ it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 �
   expect(
     cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))?.some((row) => row.id === 'one'),
   ).toBe(false);
+});
+
+it('월 제목으로 42칸을 펼치고 이전·다음 달과 VoiceOver로 이동한 뒤 선택하면 접힌다', async () => {
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  const grid = await screen.findByTestId('month-grid');
+  expect(within(grid).getAllByRole('button')).toHaveLength(42);
+  fireEvent.press(screen.getByRole('button', { name: t('calendar.nextMonth') }));
+  expect(useUIStore.getState().calendarMonth).toBe('2026-11');
+  act(() =>
+    screen.getByTestId('month-grid').props.onAccessibilityAction({
+      nativeEvent: { actionName: 'decrement' },
+    }),
+  );
+  expect(useUIStore.getState().calendarMonth).toBe('2026-10');
+  const day = within(screen.getByTestId('month-grid')).getAllByRole('button')[0]!;
+  expect(StyleSheet.flatten(day.props.style).height).toBe(64);
+  expect(StyleSheet.flatten(day.props.style).opacity).toBe(0.4);
+  fireEvent.press(day);
+  expect(useUIStore.getState().selectedDate).toBe('2026-09-27');
+  expect(screen.queryByTestId('month-grid')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: t('day.today') }));
+  expect(useUIStore.getState().selectedDate).toBe(useUIStore.getState().today);
+});
+
+it('VoiceOver 옮기기에서 다음 달을 고르면 겹치는 모든 캐시를 패치하고 원래 키로 복원한다', async () => {
+  const original = { ...row('one', '장보기'), date: '2026-10-01' };
+  jest
+    .mocked(listTodosInRange)
+    .mockResolvedValue([
+      original,
+      { ...row('tail', '앞날 항목'), date: '2026-11-01', sortKey: 'a9' },
+    ]);
+  await mount();
+  act(() => useUIStore.getState().selectDate('2026-10-01'));
+  const rowButton = await screen.findByTestId('todo-menu-one');
+  fireEvent(rowButton, 'accessibilityAction', { nativeEvent: { actionName: 'move' } });
+  const sheet = await screen.findByTestId('date-pick-sheet');
+  expect(moveTodo).not.toHaveBeenCalled();
+  fireEvent.press(within(sheet).getByRole('button', { name: t('calendar.nextMonth') }));
+  await within(sheet).findByText('2026년 11월');
+  const grid = within(sheet).getByTestId('month-grid');
+  fireEvent.press(within(grid).getAllByRole('button')[0]!);
+  await waitFor(() => expect(moveTodo).toHaveBeenCalled());
+  expect(jest.mocked(moveTodo).mock.calls[0]!.slice(2)[0]).toBe('2026-11-01');
+  expect(jest.mocked(moveTodo).mock.calls[0]![3] > 'a9').toBe(true);
+  await screen.findByText(t('todo.moved', { title: '장보기', particle: '를', date: '11월 1일' }));
+  for (const month of ['2026-10', '2026-11'])
+    expect(
+      cache.getQueryData<TodoRecord[]>(queryKeys.todos(month))?.find((row) => row.id === 'one')
+        ?.date,
+    ).toBe('2026-11-01');
+  expect(
+    cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-09'))?.some((row) => row.id === 'one'),
+  ).toBe(false);
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByTestId('todo-menu-one');
+  expect(jest.mocked(moveTodo).mock.calls[1]!.slice(2)).toEqual(['2026-10-01', 'a0']);
+  for (const month of ['2026-09', '2026-10'])
+    expect(
+      cache.getQueryData<TodoRecord[]>(queryKeys.todos(month))?.find((row) => row.id === 'one'),
+    ).toMatchObject({ date: '2026-10-01', sortKey: 'a0' });
+  expect(
+    cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-11'))?.some((row) => row.id === 'one'),
+  ).toBe(false);
+});
+it('같은 날짜는 쓰지 않고 닫으며 추가 시트도 같은 날짜 시트로 다음 달에 추가한다', async () => {
+  await mount();
+  await openMenu();
+  fireEvent.press(screen.getByRole('button', { name: t('todo.action.move.menu') }));
+  fireEvent.press(
+    within(await screen.findByTestId('date-pick-sheet')).getByRole('button', {
+      name: t('day.today'),
+    }),
+  );
+  expect(moveTodo).not.toHaveBeenCalled();
+  expect(screen.queryByTestId('date-pick-sheet')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  fireEvent.changeText(await screen.findByLabelText(t('todo.title')), '다음 달 준비');
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.date.pick') }));
+  const sheet = await screen.findByTestId('date-pick-sheet');
+  fireEvent.press(within(sheet).getByRole('button', { name: t('calendar.nextMonth') }));
+  fireEvent.press(within(within(sheet).getByTestId('month-grid')).getAllByRole('button')[0]!);
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.action') }));
+  await waitFor(() => expect(createTodo).toHaveBeenCalled());
+  expect(jest.mocked(createTodo).mock.calls[0]![1]).toMatchObject({
+    title: '다음 달 준비',
+    date: '2026-11-01',
+  });
+  await waitFor(() =>
+    expect(
+      cache
+        .getQueryData<TodoRecord[]>(queryKeys.todos('2026-11'))
+        ?.some((row) => row.title === '다음 달 준비'),
+    ).toBe(true),
+  );
+});
+
+function installServer(rows: TodoRecord[]) {
+  const server = new Map(rows.map((row) => [row.id, row]));
+  const active = () => [...server.values()].filter((row) => !row.deletedAt);
+  jest
+    .mocked(listTodosInRange)
+    .mockImplementation(async (_client, from, to) =>
+      active().filter((row) => row.date >= from && row.date <= to),
+    );
+  jest
+    .mocked(listOverdue)
+    .mockImplementation(async () =>
+      active().filter((row) => !row.isDone && row.date >= '2026-10-03' && row.date < '2026-10-10'),
+    );
+  jest.mocked(moveTodos).mockImplementation(async (_client, moves, date) => {
+    for (const move of moves)
+      server.set(move.id, { ...server.get(move.id)!, date, sortKey: move.sort_key });
+  });
+  jest.mocked(softDeleteTodos).mockImplementation(async (_client, ids) =>
+    ids.map((id) => {
+      const deleted = { ...server.get(id)!, deletedAt: '2026-10-10T13:00:00Z' };
+      server.set(id, deleted);
+      return deleted;
+    }),
+  );
+  jest.mocked(restoreTodos).mockImplementation(async (_client, ids) =>
+    ids.map((id) => {
+      const restored = { ...server.get(id)!, deletedAt: null };
+      server.set(id, restored);
+      return restored;
+    }),
+  );
+  jest.mocked(updateTodo).mockImplementation(async (_client, id, changes) => {
+    const next = { ...server.get(id)!, ...changes };
+    server.set(id, next);
+    return next;
+  });
+  return server;
+}
+async function openDayMenu() {
+  fireEvent.press(screen.getByRole('button', { name: t('day.menu.open') }));
+  return screen.findByTestId('day-menu-sheet');
+}
+it('지난 날짜에도 하루 메뉴 세 항목을 유지하고 가져오기 비활성 이유를 보여준다', async () => {
+  await mount();
+  act(() => useUIStore.getState().selectDate('2026-10-09'));
+  const sheet = await openDayMenu();
+  expect(
+    within(sheet).getByRole('button', { name: t('day.menu.import', { count: 0 }) }).props
+      .accessibilityState.disabled,
+  ).toBe(true);
+  expect(within(sheet).getByText(t('day.menu.todayOnly'))).toBeTruthy();
+  expect(
+    within(sheet).getByRole('button', { name: t('day.menu.move') }).props.accessibilityState
+      .disabled,
+  ).toBe(true);
+  expect(
+    within(sheet).getByRole('button', { name: t('day.menu.delete') }).props.accessibilityState
+      .disabled,
+  ).toBe(true);
+});
+it('가져오기는 최근 7일 활성 목표 미완료만 각 목표 맨 아래에 붙이고 원래 날짜별로 모두 복원한다', async () => {
+  const secondGoal = { ...goal, id: 'second', name: '운동', sortKey: 'a1' };
+  const archivedGoal = { ...goal, id: 'archive', archivedAt: '2026-10-01T00:00:00Z' };
+  jest.mocked(listGoals).mockResolvedValue([goal, secondGoal, archivedGoal]);
+  const first = { ...row('old-one', '어제 공부'), date: '2026-10-09' };
+  const second = { ...row('old-two', '지난 운동'), date: '2026-10-03', goalId: 'second' };
+  const server = installServer([
+    row('one', '오늘 공부'),
+    { ...row('two', '오늘 운동'), goalId: 'second', sortKey: 'a8' },
+    first,
+    second,
+    { ...row('done', '끝낸 것'), date: '2026-10-09', isDone: true },
+    { ...row('archived', '보관 것'), date: '2026-10-09', goalId: 'archive' },
+    { ...row('too-old', '오래된 것'), date: '2026-10-02' },
+  ]);
+  await mount();
+  const sheet = await openDayMenu();
+  fireEvent.press(
+    await within(sheet).findByRole('button', { name: t('day.menu.import', { count: 2 }) }),
+  );
+  await screen.findByText(t('day.menu.imported', { count: 2 }));
+  expect(server.get(first.id)).toMatchObject({ date: '2026-10-10' });
+  expect(server.get(first.id)!.sortKey > 'a0').toBe(true);
+  expect(server.get(second.id)!.sortKey > 'a8').toBe(true);
+  expect(server.get('done')!.date).toBe('2026-10-09');
+  expect(server.get('archived')!.date).toBe('2026-10-09');
+  expect(server.get('too-old')!.date).toBe('2026-10-02');
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await waitFor(() =>
+    expect(server.get(first.id)).toMatchObject({ date: first.date, sortKey: first.sortKey }),
+  );
+  await waitFor(() =>
+    expect(server.get(second.id)).toMatchObject({ date: second.date, sortKey: second.sortKey }),
+  );
+  expect(moveTodos).toHaveBeenCalledTimes(3);
+});
+it('묶음 옮기기는 두 달 캐시를 낙관적으로 패치하고 원래 날짜만 잠그며 실행 취소한다', async () => {
+  const server = installServer([
+    row('one', '장보기'),
+    row('two', 'OS 과제'),
+    { ...row('done', '완료'), isDone: true },
+    { ...row('elsewhere', '다른 날'), date: '2026-10-11' },
+    { ...row('tail', '다음 달'), date: '2026-11-01', sortKey: 'a9' },
+  ]);
+  let finish: () => void = () => {};
+  const actualMove = jest.mocked(moveTodos).getMockImplementation()!;
+  jest.mocked(moveTodos).mockImplementationOnce(
+    (...args) =>
+      new Promise((resolve) => {
+        finish = () => {
+          void actualMove(...args).then(resolve);
+        };
+      }),
+  );
+  await mount();
+  const sheet = await openDayMenu();
+  fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.move') }));
+  const picker = await screen.findByTestId('date-pick-sheet');
+  expect(within(picker).getByText(t('day.menu.targets', { count: 2 }))).toBeTruthy();
+  fireEvent.press(within(picker).getByRole('button', { name: t('calendar.nextMonth') }));
+  await within(picker).findByText('2026년 11월');
+  fireEvent.press(within(within(picker).getByTestId('month-grid')).getAllByRole('button')[0]!);
+  await waitFor(() => expect(moveTodos).toHaveBeenCalled());
+  for (const month of ['2026-10', '2026-11'])
+    expect(
+      cache.getQueryData<TodoRecord[]>(queryKeys.todos(month))?.find((row) => row.id === 'one')
+        ?.date,
+    ).toBe('2026-11-01');
+  expect(
+    screen.getByRole('checkbox', { name: t('todo.uncomplete', { title: '완료' }) }).props
+      .accessibilityState.disabled,
+  ).toBe(true);
+  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  act(() => useUIStore.getState().selectDate('2026-11-01'));
+  const moved = await screen.findByRole('checkbox', {
+    name: t('todo.complete', { title: '장보기' }),
+  });
+  expect(moved.props.accessibilityState.disabled).toBe(true);
+  expect(
+    screen.getByRole('checkbox', { name: t('todo.complete', { title: '다음 달' }) }).props
+      .accessibilityState.disabled,
+  ).toBe(false);
+  fireEvent.press(moved);
+  expect(updateTodo).not.toHaveBeenCalled();
+  act(() => useUIStore.getState().selectDate('2026-10-11'));
+  const other = await screen.findByRole('checkbox', {
+    name: t('todo.complete', { title: '다른 날' }),
+  });
+  expect(other.props.accessibilityState.disabled).toBe(false);
+  fireEvent.press(other);
+  await screen.findByRole('checkbox', { name: t('todo.uncomplete', { title: '다른 날' }) });
+  await act(async () => finish());
+  await screen.findByText(t('day.menu.moved', { count: 2, date: '11월 1일' }));
+  expect(server.get('one')!.sortKey > 'a9').toBe(true);
+  expect(server.get('two')!.sortKey > server.get('one')!.sortKey).toBe(true);
+  fireEvent.press(screen.getAllByRole('button', { name: t('todo.undo') }).at(-1)!);
+  await waitFor(() =>
+    expect(server.get('one')).toMatchObject({ date: '2026-10-10', sortKey: 'a0' }),
+  );
+  expect(server.get('two')).toMatchObject({ date: '2026-10-10', sortKey: 'a1' });
+  expect(server.get('done')!.date).toBe('2026-10-10');
+  expect(server.get('elsewhere')!.isDone).toBe(true);
+});
+it('전체 삭제는 개수 확인을 거쳐 미완료만 지우고 완료·루틴 캐시는 남기며 모두 복원한다', async () => {
+  const server = installServer([
+    row('one', '장보기'),
+    row('two', 'OS 과제'),
+    { ...row('done', '완료'), isDone: true },
+  ]);
+  const routine = { id: 'routine', title: '루틴' };
+  cache.setQueryData(['routines'], [routine]);
+  const alert = jest.spyOn(Alert, 'alert');
+  await mount();
+  const sheet = await openDayMenu();
+  fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.delete') }));
+  expect(alert).toHaveBeenCalledWith(
+    t('day.menu.delete.confirm', { count: 2 }),
+    t('day.menu.delete.description'),
+    expect.any(Array),
+  );
+  expect(softDeleteTodos).not.toHaveBeenCalled();
+  await act(async () => alert.mock.calls[0]![2]![1]!.onPress?.());
+  await screen.findByText(t('day.menu.deleted', { count: 2 }));
+  expect(server.get('one')!.deletedAt).not.toBeNull();
+  expect(server.get('two')!.deletedAt).not.toBeNull();
+  expect(server.get('done')!.deletedAt).toBeNull();
+  expect(cache.getQueryData(['routines'])).toEqual([routine]);
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByTestId('todo-menu-one');
+  await screen.findByTestId('todo-menu-two');
+  expect(restoreTodos).toHaveBeenCalledWith(client, ['one', 'two']);
+});
+it('가져오기 복원 일부가 실패하면 성공한 날짜 그룹을 반복하지 않고 실패한 그룹만 재시도한다', async () => {
+  const original1 = { ...row('one', '어제'), date: '2026-10-09' };
+  const original2 = { ...row('two', '지난주'), date: '2026-10-03' };
+  const server = installServer([original1, original2]);
+  await mount();
+  const sheet = await openDayMenu();
+  fireEvent.press(
+    await within(sheet).findByRole('button', { name: t('day.menu.import', { count: 2 }) }),
+  );
+  await screen.findByText(t('day.menu.imported', { count: 2 }));
+  const implementation = jest.mocked(moveTodos).getMockImplementation()!;
+  jest
+    .mocked(moveTodos)
+    .mockImplementationOnce(implementation)
+    .mockRejectedValueOnce(new Error('network'));
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByText(t('todo.undo.failed'));
+  expect(server.get('one')!.date).toBe('2026-10-09');
+  expect(server.get('two')!.date).toBe('2026-10-10');
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await waitFor(() => expect(server.get('two')!.date).toBe('2026-10-03'));
+  expect(jest.mocked(moveTodos).mock.calls.map((call) => call[2])).toEqual([
+    '2026-10-10',
+    '2026-10-09',
+    '2026-10-03',
+    '2026-10-03',
+  ]);
+});
+
+it.each(['import', 'move', 'delete'] as const)(
+  '묶음 %s 실패는 대상만 롤백하고 다른 날짜의 완료 변경을 보존한다',
+  async (action) => {
+    const original = {
+      ...row('one', '장보기'),
+      date: action === 'import' ? '2026-10-09' : '2026-10-10',
+    };
+    const server = installServer([
+      original,
+      { ...row('elsewhere', '다른 날'), date: '2026-10-12' },
+    ]);
+    let reject: (error: Error) => void = () => {};
+    const request = action === 'delete' ? jest.mocked(softDeleteTodos) : jest.mocked(moveTodos);
+    request.mockImplementationOnce(
+      () =>
+        new Promise<never>((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    const alert = jest.spyOn(Alert, 'alert');
+    await mount();
+    const sheet = await openDayMenu();
+    if (action === 'import')
+      fireEvent.press(
+        await within(sheet).findByRole('button', { name: t('day.menu.import', { count: 1 }) }),
+      );
+    else if (action === 'move') {
+      fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.move') }));
+      fireEvent.press(
+        within(await screen.findByTestId('date-pick-sheet')).getByRole('button', {
+          name: t('date.tomorrow'),
+        }),
+      );
+    } else {
+      fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.delete') }));
+      await act(async () => alert.mock.calls[0]![2]![1]!.onPress?.());
+    }
+    await waitFor(() => expect(request).toHaveBeenCalled());
+    const optimistic = cache
+      .getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))
+      ?.find((row) => row.id === 'one');
+    if (action === 'delete') expect(optimistic).toBeUndefined();
+    else expect(optimistic?.date).toBe(action === 'import' ? '2026-10-10' : '2026-10-11');
+    act(() => useUIStore.getState().selectDate('2026-10-12'));
+    fireEvent.press(
+      await screen.findByRole('checkbox', { name: t('todo.complete', { title: '다른 날' }) }),
+    );
+    await screen.findByRole('checkbox', { name: t('todo.uncomplete', { title: '다른 날' }) });
+    await act(async () => reject(new Error('network')));
+    await screen.findByText(t('todo.save.failed'));
+    await waitFor(() =>
+      expect(
+        cache
+          .getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))
+          ?.find((row) => row.id === 'one'),
+      ).toMatchObject({ date: original.date, sortKey: original.sortKey, deletedAt: null }),
+    );
+    expect(server.get('elsewhere')!.isDone).toBe(true);
+    expect(
+      screen.getByRole('checkbox', { name: t('todo.uncomplete', { title: '다른 날' }) }).props
+        .accessibilityState.checked,
+    ).toBe(true);
+  },
+);
+it('묶음 삭제 복원 실패도 전부 롤백하고 같은 실행 취소를 재시도할 수 있다', async () => {
+  const server = installServer([row('one', '장보기'), row('two', 'OS 과제')]);
+  const alert = jest.spyOn(Alert, 'alert');
+  await mount();
+  const sheet = await openDayMenu();
+  fireEvent.press(within(sheet).getByRole('button', { name: t('day.menu.delete') }));
+  await act(async () => alert.mock.calls[0]![2]![1]!.onPress?.());
+  await screen.findByText(t('day.menu.deleted', { count: 2 }));
+  jest.mocked(restoreTodos).mockRejectedValueOnce(new Error('network'));
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByText(t('todo.undo.failed'));
+  expect(screen.queryByTestId('todo-menu-one')).toBeNull();
+  expect(screen.queryByTestId('todo-menu-two')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByTestId('todo-menu-one');
+  await screen.findByTestId('todo-menu-two');
+  expect(server.get('one')!.deletedAt).toBeNull();
+  expect(server.get('two')!.deletedAt).toBeNull();
+});
+
+it('월간에서 다른 달을 둘러봐도 선택한 날짜의 목록은 유지한다', async () => {
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  fireEvent.press(screen.getByRole('button', { name: t('calendar.nextMonth') }));
+  expect(useUIStore.getState().selectedDate).toBe('2026-10-10');
+  expect(useUIStore.getState().calendarMonth).toBe('2026-11');
+  expect(screen.getByTestId('todo-menu-one')).toBeTruthy();
+  expect(screen.getByTestId('day-list').props.ListHeaderComponent).toBeUndefined();
+  const month = screen.getByRole('button', { name: t('mobile.month.collapse') });
+  fireEvent(month, 'focus');
+  expect(StyleSheet.flatten(month.props.style).borderColor).toBe('#2A63C9');
 });

@@ -9,12 +9,14 @@ export function Button({
   disabled = false,
   busy = false,
   secondary = false,
+  pill = false,
 }: {
   label: string;
   onPress(): void;
   disabled?: boolean;
   busy?: boolean;
   secondary?: boolean;
+  pill?: boolean;
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -30,6 +32,7 @@ export function Button({
       style={({ pressed }) => [
         styles.button,
         {
+          borderRadius: pill ? m.radius.pill : m.radius.button,
           minHeight: secondary ? m.height.touch : m.height.field,
           backgroundColor: secondary ? colors.bg : colors.ink,
           borderColor: focused ? colors.focus : secondary ? colors.bg : colors.ink,
