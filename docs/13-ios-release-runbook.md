@@ -4,7 +4,7 @@
 > Mac과 iPhone은 **같은 번들 ID `com.sungjunlee.Nodii`, 같은 App Store 앱 레코드(Apple ID `6812983213`)**를 사용합니다. 인증서·계정 비밀번호·API 개인 키를 이 문서나 저장소에 적지 않습니다.
 > M6 코드 완료와 실제 출시 완료는 다릅니다. M6 소스의 EAS production 빌드 요청/업로드는 완료했고, TestFlight 제출·기기 설치·설치 크기·실기기 성능·심사 계정 확인은 아직 수행하지 않았습니다.
 
-현재 M6 EAS 빌드: [b596dcb1-7fef-4d84-8885-b12e5b5e568b](https://expo.dev/accounts/anderpudding/projects/nodii/builds/b596dcb1-7fef-4d84-8885-b12e5b5e568b) · 표시 버전 **0.1.0**, 원격 빌드 번호 **5** · 업로드 후 빌드 진행 중. CLI **24.12.1**과 기존 EAS 인증서를 사용했으며 새 인증서/비밀번호 파일은 만들지 않았습니다. 이 빌드의 TestFlight 제출은 §1 명령을 사람이 실행합니다.
+현재 M6 EAS 빌드: [b596dcb1-7fef-4d84-8885-b12e5b5e568b](https://expo.dev/accounts/anderpudding/projects/nodii/builds/b596dcb1-7fef-4d84-8885-b12e5b5e568b) · 표시 버전 **0.1.0**, 원격 빌드 번호 **5** · **네이티브 빌드 성공**(Vancouver 2026-10-12 17:12). IPA에서 번들 ID/최소 iOS 16.4도 확인했습니다. CLI **24.12.1**과 기존 EAS 인증서를 사용했으며 새 인증서/비밀번호 파일은 만들지 않았습니다. 이 빌드의 TestFlight 제출은 §1 명령을 사람이 실행합니다.
 
 ## 1. 빌드 환경과 EAS 프로필
 
@@ -202,7 +202,8 @@ select key, value from public.app_config where key = 'min_ios_app_version';
 | production Hermes JS | **4,800,268 bytes (4.80MB)** | `expo export --platform ios`, M5와 비슷한 4.8MB |
 | Pretendard 정적 OTF 4개 | **6,318,784 bytes (6.32MB)** | M1의 400/500/600/700 파일. 지시서의 가변 폰트 2MB 예상과 다름 |
 | export 전체 | **11,144,030 bytes (11.14MB)** | JS+에셋+metadata, 네이티브 실행 파일·서명·압축·기기 thinning은 제외 |
-| EAS production IPA | **미측정** | [[TODO: 빌드 ID, 다운로드/업로드 용량]] |
+| EAS production IPA | **20,388,201 bytes (20.39MB)** | M6 0.1.0(5) 서명된 실제 IPA 파일 |
+| IPA의 앱 페이로드(압축 해제 기준) | **42,698,061 bytes (42.70MB)** | Payload 안 파일 81개 합계. 기기 thinning/설치 크기는 미포함 |
 | iPhone 설치 앱 크기 | **미측정** | [[TODO: 기종/iOS/버전/빌드, 설치 직후 앱 크기·문서 및 데이터 각각]] |
 
 재현(환경 파일 없이 JS/에셋만 측정):
@@ -243,4 +244,4 @@ EXPO_NO_DOTENV=1 pnpm exec expo export --platform ios --output-dir /tmp/nodii-io
 - 설계서 §14.6은 별도 앱 레코드/번들 ID 가능성을 적었으나 M6는 유니버설 구매를 확정했습니다. **M6를 우선**했고 설계서 수정 제안만 남깁니다.
 - M6의 "목표도 할 일도 없는 첫 로그인"은 정상 가입에 기본 목표 1개가 생기는 AUTH-04와 다릅니다. 기본 목표를 없애지 않고 목표 0개 응답도 보수적으로 안내했습니다.
 - 글꼴은 M1부터 정적 4개이며 M6 예상 2MB와 다릅니다. 변경 없이 실측만 남깁니다.
-- 버전 정책·출시 번호·법적 시행일/EULA·개인정보 라벨의 미결정 항목·아이콘 변형 판단은 사람이 확정해야 합니다. EAS/TestFlight·설치 크기·실기기 성능·실 계정 로그인 확인도 미완료입니다.
+- 버전 정책·출시 번호·법적 시행일/EULA·개인정보 라벨의 미결정 항목·아이콘 변형 판단은 사람이 확정해야 합니다. TestFlight 제출/기기 설치·실제 설치 크기·실기기 성능·실 계정 로그인 확인도 미완료입니다. EAS production 빌드와 IPA 측정은 위 기록대로 완료했습니다.

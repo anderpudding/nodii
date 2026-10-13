@@ -1,7 +1,7 @@
 # Nodii 구현 계획서 (MVP)
 
 > 버전 1.0 · 2026-09-17 · 근거 문서: `01-requirements.md` v1.1, `02-system-design.md` v1.2
-> 상태: **v1 8단계 완료, v2 M5 동기화·설정·목표 관리 구현·자동 검증 완료 (M4/M5 실기기 확인 대기, 2026-10-12).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
+> 상태: **v1 8단계 완료, v2 M6 출시 준비 코드·자동 검증 완료 (M4~M6 실기기 확인/TestFlight·설치 크기 대기, 2026-10-12).** 단계가 끝날 때마다 체크박스와 §6 진행 기록을 갱신합니다.
 
 ---
 
@@ -481,6 +481,33 @@
 - 관리 화면은 기존 M4의 전체 화면 Modal 구조를 유지하면서 가장자리 뒤로 가기를 추가했다. 문서의 push 흐름은 별도 화면/뒤로 가기로 구현하지만 Expo Router push 경로를 새로 구성하지 않았다. 실제 iOS 전환 감각은 사람 확인 사항이다. 와이어프레임에 없는 법적 링크는 SET-07 문서를 따라 정보 카드에 넣었으며 URL이 비어 있으면 준비 중이다. 새 EXPO_PUBLIC_PRIVACY_URL/TERMS_URL/SUPPORT_URL 이름만 .env.example에 추가했다.
 - core/api 코드·기존 테스트·DB 변경 없음. DB reset/test/types는 변경이 없어 미실행했다. 출시 스크린샷/TestFlight/심사 준비(M6)는 진행하지 않았다.
 
+### v2 · M6 · iOS 출시 준비
+
+- [x] Mac 체크와 같은 디자인 언어의 iOS 1024×1024 불투명·바깥 모서리 없는 아이콘, 벡터 원본/스플래시 정리 (MOB-04)
+- [x] 첫 로그인 기기별 AsyncStorage 안내 · 밀기/길게 누르기 두 가지 · 건너뛰기/닫기/완료 저장 · 저장 오류 토스트 · 메뉴 대체 경로 검사 (MOB-01)
+- [x] 기본 목표만 있는 빈 하루·활성 목표 0개 안내/설정 진입 · 글 스펙 추가/미작성 목록 정리
+- [x] URL/키 누락·세션 실패·오프라인 빈 캐시·손상 캐시 안내, 최상위 Error Boundary/재시도, 폰트·테마·버전·세션/캐시 초기 대기 제한, 개인정보가 포함될 수 있는 캐시 파싱 오류 정규화 (NFR-12)
+- [x] 실제 법적 URL 3개 기본 연결/.env.example 공개 값 · site/ 개인정보/약관 iOS 포함 · 지원 FAQ · 법적 시행일/EULA 확인 TODO (SET-07)
+- [x] 버전 도우미 `--platform desktop|ios|all` · EAS remote buildNumber 유지 · 버전 정책 두 선택지/근거 보고 (SET-05)
+- [x] `docs/13-ios-release-runbook.md` · iOS 심사 답장/기기 녹화 초안 · 최소 지원 버전은 출시 후 갱신하도록 안내 · 서버 변경 없음 (AUTH-06/08, NFR-09/16)
+- [x] 필수 lint/format:check/typecheck/test · 버전 도우미 4검사 · bash -n · iOS production Hermes export · 앱 작성 코드 console 호출 0개 확인
+- [x] 기존 EAS 프로젝트/인증서로 production 소스 업로드 요청: 표시 버전 0.1.0, 원격 빌드 번호 5
+- [x] EAS 네이티브 빌드 성공/실제 IPA 20,388,201 bytes · 압축 해제 페이로드 42,698,061 bytes · 최소 iOS 16.4/번들 ID 확인
+- [ ] TestFlight 제출·개발에 쓰지 않은 기기 설치 · 첫 안내/빈 화면/법적 링크/맥↔폰 동기화/오프라인/삭제/최소 버전 안내 수동 E2E
+- [ ] 실제 iPhone 설치 크기·50~100개 목록 프레임 측정 · VoiceOver/Dynamic Type/키보드/다크·틴티드 아이콘 확인
+- [ ] 출시 버전 정책/번호·법적 시행일/EULA·개인정보 라벨 확정 · 사이트 iOS 변경 게시 · 심사 계정 실제 로그인/심사 제출
+
+**M6 검증·결정·사람 확인 기록 (2026-10-12)**
+
+- 실제 필수 검증 출력: core **9파일·156개**, i18n **2파일·5개**, api **11파일·80개**, desktop **20파일·112개**, mobile Vitest **24파일·123개**, RNTL **10스위트·87개**, 총 **563개** 통과. `node --test scripts/bump-version.test.js` **4개**, `bash -n scripts/*.sh`도 통과. 기존 RNTL act 경고는 남아 있으며 테스트 실패는 없다.
+- 처음 검증에서 신규 테스트의 잘못된 레이블/손상 캐시 폐기 후 새 프로필 저장을 무시한 단언, 미초기화 getSession mock 큐, ErrorBoundary override/포맷 문제를 수정했다. 최종 통과 출력은 `/tmp/nodii-m6-tests.log`에 확인했다. 검증 때문에 제품 동작/기본 대기 시간을 완화하지 않았다.
+- Hermes **4,800,268 bytes**, 정적 Pretendard 4파일 **6,318,784 bytes**, export 전체 **11,144,030 bytes**다. 실제 설치 크기와 다르며 Simulator.app 경로/실기기 실행 경로가 없어 50개 이상 목록 프레임/설치 크기는 미측정이다. 폰트 subset은 제안만 했다. 앱 작성 코드에는 console 호출이 없지만 Hermes에 라이브러리 console 관련 심볼 **4개**가 남음을 확인했다. 기기 로그에서 실제 개인정보 출력 여부는 수동 확인이 필요하다.
+- URL 3개는 실제 `nodii.app`에서 HTTP 200을 확인했다. iOS 지원 문구 변경의 게시/설정에서 실제 Safari 진입은 사람이 확인한다. 심사 계정은 같은 프로젝트·AUTH-08 코드로 재사용할 수 있으나 실제 비밀번호 로그인/샘플 데이터는 이번에 조회하지 않았다. iOS 답장 초안은 실제 라벨 확인 후 UTF-8 **2,698 bytes**다.
+- [M6 EAS production 빌드](https://expo.dev/accounts/anderpudding/projects/nodii/builds/b596dcb1-7fef-4d84-8885-b12e5b5e568b): 기존 CLI 24.12.1/원격 인증서 사용, **네이티브 빌드 성공**(Vancouver 2026-10-12 17:12), 표시 버전 **0.1.0**, 원격 buildNumber **5**. 실제 IPA **20,388,201 bytes**, 압축 해제 앱 페이로드 **42,698,061 bytes**, Info.plist에서 최소 iOS **16.4**·기존 번들 ID 확인. EAS Submit/TestFlight 설치/App Store Connect 메타데이터·심사는 실행하지 않았다. 새 인증서/비밀번호 파일을 만들지 않았다.
+- 문서 차이: 설계서 §14.6의 별도 앱 레코드 가능성보다 M6의 **같은 번들 ID/유니버설 구매 확정**을 우선했다. AUTH-04 기본 목표를 없애지 않고 목표 0개 응답도 안내했다. M1 정적 폰트 4개는 M6의 가변 폰트 2MB 예상과 다르다. 설계서 수정은 제안만 남긴다.
+- 버전 정책은 같은 번호/플랫폼별 번호 둘 다 Apple이 허용한다. 지원 기록 단순화와 플랫폼별 출시 독립성의 선택을 런북 §3에 남겼으며 현재 버전/최소 지원 버전을 임의로 올리지 않았다. 별도 다크/틴티드 아이콘은 선택 지원이고 기본 체크 아이콘의 시스템 변환을 실기기에서 확인한 뒤 필요성을 결정한다.
+- 새 의존성·core/api 코드·DB 변경 없음. `pnpm db:reset/db:test/db:types`는 DB 변경이 없어 미실행했다. CI EAS 추가·서버 변경·min_ios_app_version 변경 없음. 남은 사람 작업은 런북 §1~10을 따른다.
+
 ## 4. 작업 방식
 
 | 항목 | 규칙 |
@@ -597,3 +624,5 @@
 | 2026-10-12 | M5 죽은 코드 정리 | SYNC-04: (b)를 선택해 실제 화면에서 쓰이지 않는 writeDisabled와 전용 3검사를 삭제하고 각 화면의 기존 !online 및 쓰기 잠금 판정을 유지. NetInfo 연결/복구/해제 검사는 유지. 필수4종 통과: 실제 출력 core 156·i18n 5·api 80·desktop 112·mobile Vitest 118, RNTL 8스위트·77개. 새 의존성·DB·화면 동작 변경 없음. 추가 결정·수동 확인 사항 없음. |
 
 | 2026-10-12 | M5 CI 체크/가져오기 검사 후속 | TODO-02/10/12·SYNC-02: 첨부 Actions 로그에서 lint·format·typecheck 통과와 DayView.test.tsx의 초기 체크 버튼 조회 실패/하루 가져오기 5초 시간 초과 확인. 두 검사의 조회를 목록·main·실제 menu 영역에 한정하고 가져오기 활성 상태에서 원본 캐시를 캡처하도록 보완. 초기 월 요청 850ms 지연 진단에서 기존 체크 조회 실패를 재현했고 수정 후 두 검사 통과(2 passed, 27 skipped; 임시 파일 제거). 기본 대기·5초 제한과 롤백/재시도/보관·완료·8일 전 제외 검증 유지. 필수4종·루트 coverage 통과: 실제 출력 core 156·i18n 5·api 80·desktop 112·mobile Vitest 118, RNTL 8스위트·77개. 제품·CI·의존성·core/api·DB 변경 없음으로 DB 검증 미실행. 푸시 후 원격 CI 재확인 필요. |
+
+| 2026-10-12 | v2 M6 | MOB-01/04·NFR-09/12/16·SET-05/07·AUTH-06/08: 불투명 iOS 아이콘/스플래시·기기별 첫 안내/빈 상태·ErrorBoundary/초기 대기 제한·캐시 오류 정규화·실제 법적 링크/iOS FAQ·양 버전 정책 도우미·iOS 런북/심사 초안 구현. 필수4종 563검사(core156·i18n5·api80·desktop112·mobile Vitest123·RNTL87), 버전 스크립트4검사·bash -n·Hermes export(4,800,268bytes) 통과. 폰트4개 6,318,784bytes, export11,144,030bytes; 실제 설치/프레임 미측정. EAS production 0.1.0(5) 빌드 성공·IPA20,388,201bytes/앱 페이로드42,698,061bytes·최소iOS16.4/기존번들ID 확인. TestFlight 제출/설치·실기기 E2E·법적/버전 결정은 대기. 새 의존성·DB 변경 없음으로 DB 검증 미실행. |
