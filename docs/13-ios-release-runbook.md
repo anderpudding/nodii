@@ -195,15 +195,15 @@ select key, value from public.app_config where key = 'min_ios_app_version';
 
 ## 8. 설치 크기·긴 목록·아이콘
 
-2026-10-12 M6 로컬 측정(실제 파일 바이트):
+2026-10-12 M6 폰트 서브셋 후속 로컬 측정(실제 파일 바이트). 아래 EAS IPA/페이로드는 **서브셋 적용 전 0.1.0(5)** 측정이며 새 폰트가 포함된 네이티브 빌드는 아직 만들지 않았습니다:
 
 | 대상 | 크기 | 의미 |
 | --- | --- | --- |
-| production Hermes JS | **4,800,268 bytes (4.80MB)** | `expo export --platform ios`, M5와 비슷한 4.8MB |
-| Pretendard 정적 OTF 4개 | **6,318,784 bytes (6.32MB)** | M1의 400/500/600/700 파일. 지시서의 가변 폰트 2MB 예상과 다름 |
-| export 전체 | **11,144,030 bytes (11.14MB)** | JS+에셋+metadata, 네이티브 실행 파일·서명·압축·기기 thinning은 제외 |
-| EAS production IPA | **20,388,201 bytes (20.39MB)** | M6 0.1.0(5) 서명된 실제 IPA 파일 |
-| IPA의 앱 페이로드(압축 해제 기준) | **42,698,061 bytes (42.70MB)** | Payload 안 파일 81개 합계. 기기 thinning/설치 크기는 미포함 |
+| production Hermes JS | **4,800,223 bytes (4.80MB)** | `expo export --platform ios`, M5와 비슷한 4.8MB |
+| Pretendard 정적 OTF 4개 | **3,011,192 bytes (3.01MB)** | 정적 400/500/600/700 유지, 서브셋 전 6,318,784 bytes에서 52.35% 감소 |
+| export 전체 | **7,836,393 bytes (7.84MB)** | JS+에셋+metadata, 네이티브 실행 파일·서명·압축·기기 thinning은 제외 |
+| EAS production IPA | **20,388,201 bytes (20.39MB)** | 서브셋 전 M6 0.1.0(5)의 실제 IPA 파일 |
+| IPA의 앱 페이로드(압축 해제 기준) | **42,698,061 bytes (42.70MB)** | 서브셋 전 0.1.0(5), Payload 안 파일 81개 합계. 기기 thinning/설치 크기는 미포함 |
 | iPhone 설치 앱 크기 | **미측정** | [[TODO: 기종/iOS/버전/빌드, 설치 직후 앱 크기·문서 및 데이터 각각]] |
 
 재현(환경 파일 없이 JS/에셋만 측정):
@@ -214,7 +214,8 @@ EXPO_NO_DOTENV=1 pnpm exec expo export --platform ios --output-dir /tmp/nodii-io
 ```
 
 - [ ] TestFlight 설치 직후 **설정 → 일반 → iPhone 저장 공간 → Nodii**에서 앱 크기와 문서/데이터 크기를 나눠 기록합니다. EAS IPA 압축 크기·App Store thinning 다운로드 크기·설치 앱 크기를 서로 대신 쓰지 않습니다. 실제 iOS 설치 크기를 Mac 설치 파일 15MB 기준과 동일하다고 판정하지 않습니다.
-- [ ] 크기가 문제라면 tokens.md §7의 `subset.js`로 한글 상용 글리프만 남기는 방안을 **제안**합니다. M6에서는 폰트/글리프/두 플랫폼 렌더링을 바꾸지 않았습니다.
+- [x] 사용자 후속 지시로 tokens.md §7의 실제 정적 4벌 서브셋을 적용했습니다. 상용 한글 2,780자·원본 비한글 3,164자·앱 문자와 윤곽/폭을 검사했고 새 누락은 없습니다. 자세한 기준/바이트/재현은 tokens.md §7과 scripts/font-subset/README.md를 따릅니다.
+- [ ] 새 production 빌드에서 정적 네 벌 로딩·자모/숫자/기호/요일·사용자 입력 fallback을 확인하고 IPA/설치 크기를 다시 측정합니다.
 - [ ] 테스트 계정에 한 날짜 **50~100개** 할 일과 루틴을 입력하고 같은 목록을 Mac에서도 확인합니다. 개인정보 없는 제목을 씁니다.
 - [ ] production 설치본에서 빠른 상하 스크롤, 체크 연속 입력, 밀기 도중 세로 스크롤, 길게 누르기, 월 이동을 측정합니다. Xcode Instruments의 Animation Hitches/Time Profiler로 끊김·메인 스레드 시간을 기록하고 기종/OS/행 수/재현 동작을 함께 남깁니다.
 - [ ] SectionList 가상화는 유지했습니다. 실기기 프레임 드랍 측정은 이번 환경의 Simulator.app/실기기 실행 경로 부재로 못 했습니다. 프레임 드랍이 없다고 판정하지 않습니다.
