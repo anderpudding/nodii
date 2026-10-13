@@ -123,5 +123,7 @@ it('손상된 디스크 캐시를 버리고 복원 실패 안내와 온라인 �
   expect(screen.getByText(t('sync.cache.restoreFailed'))).toBeTruthy();
   expect(AsyncStorage.removeItem).toHaveBeenCalledWith('nodii.query-cache:alice');
   expect(child.getQueryData(['goals'])).toBeUndefined();
-  expect(await AsyncStorage.getItem('nodii.query-cache:alice')).not.toContain('private@example.com');
+  expect(await AsyncStorage.getItem('nodii.query-cache:alice')).not.toContain(
+    'private@example.com',
+  );
 });
