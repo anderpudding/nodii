@@ -491,7 +491,9 @@
 - [x] 버전 도우미 `--platform desktop|ios|all` · EAS remote buildNumber 유지 · 버전 정책 두 선택지/근거 보고 (SET-05)
 - [x] `docs/13-ios-release-runbook.md` · iOS 심사 답장/기기 녹화 초안 · 최소 지원 버전은 출시 후 갱신하도록 안내 · 서버 변경 없음 (AUTH-06/08, NFR-09/16)
 - [x] 필수 lint/format:check/typecheck/test · 버전 도우미 4검사 · bash -n · iOS production Hermes export · 앱 작성 코드 console 호출 0개 확인
-- [x] 기존 EAS 프로젝트/인증서로 production 소스 업로드 요청: 표시 버전 0.1.0, 원격 빌드 번호 5
+- [x] M6 후속: 정적 4벌 상용 한글 subset·전체 기존 비한글/앱 문자 보존·윤곽/폭 검증·tokens.md §7 실제 적용 기록 (NFR-04)
+- [x] M6 후속: mobile/desktop .env.example의 심사 이메일·Store ID·법적 URL 3개를 빈 값 + 주석 규칙으로 통일 (SET-07)
+- [x] 기존 EAS 프로젝트/인증서로 production 소스 업로드 요청: 표시 버전 0.1.0, 원격 빌드 번호 5 (폰트 서브셋 적용 전 빌드)
 - [x] EAS 네이티브 빌드 성공/실제 IPA 20,388,201 bytes · 압축 해제 페이로드 42,698,061 bytes · 최소 iOS 16.4/번들 ID 확인
 - [ ] TestFlight 제출·개발에 쓰지 않은 기기 설치 · 첫 안내/빈 화면/법적 링크/맥↔폰 동기화/오프라인/삭제/최소 버전 안내 수동 E2E
 - [ ] 실제 iPhone 설치 크기·50~100개 목록 프레임 측정 · VoiceOver/Dynamic Type/키보드/다크·틴티드 아이콘 확인
@@ -626,3 +628,5 @@
 | 2026-10-12 | M5 CI 체크/가져오기 검사 후속 | TODO-02/10/12·SYNC-02: 첨부 Actions 로그에서 lint·format·typecheck 통과와 DayView.test.tsx의 초기 체크 버튼 조회 실패/하루 가져오기 5초 시간 초과 확인. 두 검사의 조회를 목록·main·실제 menu 영역에 한정하고 가져오기 활성 상태에서 원본 캐시를 캡처하도록 보완. 초기 월 요청 850ms 지연 진단에서 기존 체크 조회 실패를 재현했고 수정 후 두 검사 통과(2 passed, 27 skipped; 임시 파일 제거). 기본 대기·5초 제한과 롤백/재시도/보관·완료·8일 전 제외 검증 유지. 필수4종·루트 coverage 통과: 실제 출력 core 156·i18n 5·api 80·desktop 112·mobile Vitest 118, RNTL 8스위트·77개. 제품·CI·의존성·core/api·DB 변경 없음으로 DB 검증 미실행. 푸시 후 원격 CI 재확인 필요. |
 
 | 2026-10-12 | v2 M6 | MOB-01/04·NFR-09/12/16·SET-05/07·AUTH-06/08: 불투명 iOS 아이콘/스플래시·기기별 첫 안내/빈 상태·ErrorBoundary/초기 대기 제한·캐시 오류 정규화·실제 법적 링크/iOS FAQ·양 버전 정책 도우미·iOS 런북/심사 초안 구현. 필수4종 563검사(core156·i18n5·api80·desktop112·mobile Vitest123·RNTL87), 버전 스크립트4검사·bash -n·Hermes export(4,800,268bytes) 통과. 폰트4개 6,318,784bytes, export11,144,030bytes; 실제 설치/프레임 미측정. EAS production 0.1.0(5) 빌드 성공·IPA20,388,201bytes/앱 페이로드42,698,061bytes·최소iOS16.4/기존번들ID 확인. TestFlight 제출/설치·실기기 E2E·법적/버전 결정은 대기. 새 의존성·DB 변경 없음으로 DB 검증 미실행. |
+
+| 2026-10-12 | M6 폰트·환경 예시 후속 | NFR-04·SET-07: 사용자 지시로 Pretendard 정적 400/500/600/700 네 벌을 Adobe-KR-9 상용 한글2,780자+원본 비한글3,164자 기준으로 subset. 합계6,318,784→3,011,192bytes(52.35% 감소), 앱/공유168파일의 AST/원문·Intl615문자 검사 신규 누락0·기존 ⌄/☰ fallback 유지, 5,944코드포인트/네 벌의 윤곽·폭 해시·정적weight 검증. 재현 scripts/subset.js·FontTools4.61.1 임시 venv 도구·tokens.md §7/런북 갱신. export11,144,030→7,836,393bytes, Hermes4,800,223bytes. mobile .env.example의 배포5항목을 desktop처럼 빈 값+주석으로 통일(배포별 값은 local/EAS에서 설정), 앱 기본 링크 동작 유지. 필수4종 실제 출력 core156·i18n5·api80·desktop112·mobile Vitest123·RNTL10스위트87=563검사 통과, 신규음절 누락 거부/예시5항목 빈 값 검사 통과. 앱/프로젝트 의존성·DB 변경 없음으로 DB검증 미실행. 기존 EAS0.1.0(5) IPA는 서브셋 전 결과이며 새 네이티브 빌드/정적폰트·fallback 실기기 확인은 미실행. |
