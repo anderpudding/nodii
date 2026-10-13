@@ -20,9 +20,12 @@
     <main>
       <h1>Privacy Policy</h1>
       <p class="meta">Effective date: September 25, 2026 · Last updated: September 25, 2026</p>
+      <p class="meta">
+        [[TODO: Confirm the effective and last-updated dates for the iOS release.]]
+      </p>
       <p>
-        This policy explains how Sungjun Lee (“we”, “us”), the developer of the Mac app Nodii (the
-        “App”) and its related online service (together, the “Service”), handles personal
+        This policy explains how Sungjun Lee (“we”, “us”), the developer of Nodii for macOS and iOS
+        (the “App”) and its related online service (together, the “Service”), handles personal
         information. We handle personal information in accordance with applicable Canadian privacy
         law, including the Personal Information Protection and Electronic Documents Act (PIPEDA)
         and, where it applies, British Columbia’s Personal Information Protection Act (PIPA).
@@ -47,12 +50,13 @@
             <tr>
               <td>Goals, to-dos, routines and completion records</td>
               <td>You enter them in the App</td>
-              <td>To store your data and sync it between your Macs</td>
+              <td>To store your data and sync it between your devices</td>
             </tr>
             <tr>
               <td>Time zone and first day of the week</td>
               <td>
-                Time zone is read from your Mac’s settings; first day of the week is chosen by you
+                Time zone is read from your device’s settings; first day of the week is chosen by
+                you
               </td>
               <td>To calculate dates correctly and display the calendar</td>
             </tr>
@@ -74,7 +78,7 @@
       <h2>2. How we use information</h2>
       <ul>
         <li>To create your account and let you sign in</li>
-        <li>To store what you enter and sync it across Macs signed in to the same account</li>
+        <li>To store what you enter and sync it across devices signed in to the same account</li>
         <li>To respond to your support requests</li>
       </ul>
       <p>We do not use your information for advertising, marketing or profiling.</p>
@@ -111,7 +115,7 @@
         <li>
           When you delete a single goal, to-do or routine, it disappears from the App right away but
           is kept on our server, marked as deleted, until you delete your account. This lets the
-          deletion sync to your other Macs and be undone.
+          deletion sync to your other devices and be undone.
         </li>
         <li>
           We do not currently keep separate database backups, so data deleted with your account
@@ -124,8 +128,13 @@
         </li>
       </ul>
       <p>
-        Sign-in information and cached data stored on your Mac are removed from that Mac when you
-        sign out or delete your account.
+        Sign-in information and cached data stored on your device are removed from that device when
+        you sign out or delete your account.
+      </p>
+      <p>
+        On iOS, sign-in tokens are stored in the device’s Keychain, and the last loaded records are
+        cached in local app storage for offline viewing. Offline changes are not supported. Theme
+        and gesture-guide preferences are stored on the device, separately from account data.
       </p>
 
       <h2>6. Service providers and storage outside Canada</h2>
@@ -181,8 +190,12 @@
         <li>All communication between the App and our server is encrypted with HTTPS.</li>
         <li>Row-level access control in the database lets each user access only their own data.</li>
         <li>
-          The App runs inside the macOS App Sandbox and uses only the permission to make outgoing
-          network connections.
+          On macOS, the App runs inside the App Sandbox and uses only the permission to make
+          outgoing network connections.
+        </li>
+        <li>
+          On iOS, the App connects to the same service and does not request access to your camera,
+          location, contacts or photos.
         </li>
       </ul>
 

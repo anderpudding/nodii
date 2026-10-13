@@ -10,6 +10,8 @@ import {
   within,
 } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GUIDE_KEY } from './onboarding/FirstRunGuide';
 import {
   Alert,
   Keyboard,
@@ -115,8 +117,9 @@ beforeAll(() =>
   }),
 );
 afterAll(() => notifyManager.setNotifyFunction((notify) => notify()));
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
+  await AsyncStorage.setItem(GUIDE_KEY, 'seen');
   onlineManager.setOnline(true);
   for (const request of [
     fetchProfile,
@@ -1287,4 +1290,47 @@ it('기기 오프라인 띠와 쓰기 비활성이 재연결 때 해제되고 �
   expect(
     screen.getByRole('checkbox', { name: '장보기 완료하기' }).props.accessibilityState.disabled,
   ).toBe(false);
+});
+
+it('빈 하루는 첫 할 일 추가를 안내하고 활성 목표가 없어도 설정으로 진입한다', async () => {
+  jest.mocked(listTodosInRange).mockResolvedValue([]);
+  jest.mocked(listGoals).mockResolvedValue([]);
+  await mount();
+  expect(screen.getByText(t('mobile.today.noGoals'))).toBeTruthy();
+  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  fireEvent.press(screen.getAllByRole('button', { name: t('settings.title') })[1]!);
+  expect(screen.getByRole('button', { name: t('goal.manage') })).toBeTruthy();
+});
+it('기본 목표만 있는 첫 하루에서도 할 일을 추가할 수 있다', async () => {
+  jest.mocked(listTodosInRange).mockResolvedValue([]);
+  await mount();
+  expect(screen.getByText(t('mobile.today.empty'))).toBeTruthy();
+  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(false);
+  fireEvent.press(screen.getByTestId('quick-add'));
+  expect(screen.getByLabelText(t('todo.title'))).toBeTruthy();
+});
+it('첫 안내를 건너뛴 뒤에도 줄 메뉴에 밀기와 같은 동작이 모두 있다', async () => {
+  await AsyncStorage.removeItem(GUIDE_KEY);
+  await mount();
+  await screen.findByTestId('first-run-guide');
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.guide.skip') }));
+  fireEvent.press(screen.getByTestId('todo-menu-one'));
+  const menu = await screen.findByTestId('todo-menu-sheet');
+  for (const name of ['완료', /날짜 옮기기/, '삭제'])
+    expect(within(menu).getByRole('button', { name })).toBeTruthy();
+});
+
+it('오프라인에 캐시도 없으면 로딩 대신 인터넷 연결과 로그아웃을 안내한다', async () => {
+  onlineManager.setOnline(false);
+  render(
+    <QueryClientProvider client={cache}>
+      <ToastProvider>
+        <Today client={client} userId="user" onLogout={() => {}} loggingOut={false} />
+      </ToastProvider>
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText(t('mobile.offline.noCache'))).toBeTruthy();
+  expect(screen.getByRole('button', { name: t('auth.logout') })).toBeTruthy();
+  expect(screen.queryByText(t('mobile.today.loading'))).toBeNull();
+  expect(fetchProfile).not.toHaveBeenCalled();
 });

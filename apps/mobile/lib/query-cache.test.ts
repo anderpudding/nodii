@@ -102,3 +102,19 @@ it('재조회 실패가 마지막 성공 데이터를 디스크에서 지우지 
   cache.clear();
   restored.clear();
 });
+
+it('손상된 캐시 오류에서 개인정보 원문을 제거하고 복원 실패로 알린다', async () => {
+  const { storage, cache } = setup();
+  await storage.setItem('nodii.query-cache:alice', 'private@example.com malformed');
+  const entry = createUserCache(cache, 'alice', vi.fn(), storage);
+  await expect(entry.persister.restoreClient()).rejects.toThrow(/^cache_restore_failed$/);
+  await entry.persister.removeClient();
+  expect(await storage.getItem('nodii.query-cache:alice')).toBeNull();
+});
+it('객체 구조가 잘못된 캐시도 정상 데이터로 복원하지 않는다', async () => {
+  const { storage, cache } = setup();
+  await storage.setItem('nodii.query-cache:alice', JSON.stringify({ userId: 'alice', client: {} }));
+  await expect(
+    createUserCache(cache, 'alice', vi.fn(), storage).persister.restoreClient(),
+  ).rejects.toThrow(/^cache_restore_failed$/);
+});

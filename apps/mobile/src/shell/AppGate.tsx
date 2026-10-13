@@ -18,6 +18,7 @@ import { Login } from '../features/auth/Login';
 import { clearPersistedCache } from '../../lib/query-cache';
 import { UserData } from './UserData';
 import { Today } from '../features/Today';
+import { withStartupTimeout } from '../../lib/startup-timeout';
 
 type Gate =
   | { status: 'loading' }
@@ -86,13 +87,13 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
       try {
         // SYNC-04: 만료 토큰의 HTTP 갱신을 기다리지 않고 오프라인 읽기 계정만 복원한다.
         if (!onlineManager.isOnline()) {
-          const stored = await readStoredSession(client!);
+          const stored = await withStartupTimeout(readStoredSession(client!));
           if (stored && live && !eventReceived) {
             applySession(stored);
             return;
           }
         }
-        const { data, error } = await client!.auth.getSession();
+        const { data, error } = await withStartupTimeout(client!.auth.getSession());
         if (!live || eventReceived) return;
         if (error) setGate({ status: 'error' });
         else applySession(data.session);
@@ -100,7 +101,9 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
         if (live && !eventReceived) setGate({ status: 'error' });
       }
     }
-    void restore();
+    void restore().catch(() => {
+      if (live && !eventReceived) setGate({ status: 'error' });
+    });
     return () => {
       live = false;
       unsubscribe?.();

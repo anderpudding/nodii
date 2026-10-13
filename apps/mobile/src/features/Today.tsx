@@ -34,6 +34,7 @@ import { DayMenu } from './today/DayMenu';
 import { useDayActions } from './today/useDayActions';
 import { MonthGrid } from './today/MonthGrid';
 import { WeekStrip } from './today/WeekStrip';
+import { FirstRunGuide } from './onboarding/FirstRunGuide';
 import {
   daySections,
   mergeWeekTodos,
@@ -55,6 +56,7 @@ interface TodayProps {
 /** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
 export function Today(props: TodayProps) {
   const { colors } = useTheme();
+  const online = useOnline();
   const profile = useQuery({
     queryKey: ['profile', props.userId],
     queryFn: ({ signal }) => fetchProfile(props.client, props.userId, signal),
@@ -67,9 +69,15 @@ export function Today(props: TodayProps) {
     return (
       <View style={styles.center}>
         <Text style={[styles.supporting, { color: colors.muted }]}>
-          {t(profile.isError ? 'mobile.today.failed' : 'mobile.today.loading')}
+          {t(
+            !online
+              ? 'mobile.offline.noCache'
+              : profile.isError
+                ? 'mobile.today.failed'
+                : 'mobile.today.loading',
+          )}
         </Text>
-        {profile.isError && (
+        {profile.isError && online && (
           <Button label={t('common.tryAgain')} onPress={() => void profile.refetch()} />
         )}
         <Button
@@ -80,7 +88,12 @@ export function Today(props: TodayProps) {
         />
       </View>
     );
-  return <TodayContent {...props} profile={profile.data} />;
+  return (
+    <>
+      <TodayContent {...props} profile={profile.data} />
+      <FirstRunGuide />
+    </>
+  );
 }
 function TodayContent({
   client,
@@ -338,12 +351,17 @@ function TodayContent({
           </View>
         ) : loading ? (
           <Text style={[styles.supporting, { color: colors.muted }]}>
-            {t('mobile.today.loading')}
+            {t(online ? 'mobile.today.loading' : 'mobile.offline.noCache')}
           </Text>
         ) : !items.length ? (
-          <Text style={[styles.supporting, { color: colors.muted }]}>
-            {t('mobile.today.empty')}
-          </Text>
+          <View style={{ gap: m.space.sm }}>
+            <Text style={[styles.supporting, { color: colors.muted }]}>
+              {t(activeGoal ? 'mobile.today.empty' : 'mobile.today.noGoals')}
+            </Text>
+            {!activeGoal && (
+              <Button label={t('settings.title')} secondary onPress={() => setSettings(true)} />
+            )}
+          </View>
         ) : null}
       </View>
       <ToastInset bottom={quickAddInset(insets.bottom)} />

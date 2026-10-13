@@ -143,6 +143,30 @@ import "pretendard/dist/web/variable/pretendardvariable.css";
 - `pretendardvariable-dynamic-subset.css`는 네트워크에서 조각을 받아오므로 **쓰지 않습니다**(오프라인 읽기 SYNC-04).
 - 변수 폰트 woff2 약 2MB. 설치 파일 15MB 제한(NFR-04) 안에서 확인하고, 넘치면 `subset.js`로 한글 상용 글리프만 남깁니다.
 
+### 모바일 정적 OTF 서브셋 적용 (M6 후속, 2026-10-12)
+
+모바일은 M1의 **Regular/Medium/SemiBold/Bold 정적 4벌(400/500/600/700)**을 유지하며, 가변 폰트로 바꾸지 않습니다. `scripts/subset.js` + FontTools **4.61.1**로 실제 서브셋을 적용했습니다. 앱 런타임/프로젝트 의존성은 추가하지 않았으며 작업용 Python venv에만 FontTools를 설치했습니다.
+
+| 파일 | 적용 전 bytes | 적용 후 bytes |
+| --- | ---: | ---: |
+| `Pretendard-Regular.otf` | 1,574,352 | 753,700 |
+| `Pretendard-Medium.otf` | 1,584,068 | 754,572 |
+| `Pretendard-SemiBold.otf` | 1,583,704 | 753,148 |
+| `Pretendard-Bold.otf` | 1,576,660 | 749,772 |
+| **합계** | **6,318,784** | **3,011,192** |
+
+- **3,307,592 bytes(52.35%) 감소**. 기준은 Pretendard v1.3.9의 공개 `subset_glyphs.txt`(Adobe-KR-9 상용 한글 **2,780자**)입니다. 숫자·영문·기호·자모를 잃지 않도록 원본의 **비한글 3,164자 전체**를 보존합니다. 필요한 앱 문자가 상용 목록 밖에 있으면 추가하도록 설계했습니다.
+- 앱/공유 소스 **168파일**의 원문 및 TypeScript AST의 문자열·템플릿 escape·JSX 텍스트, `Intl`의 요일 7개/월 12개/날짜/숫자 출력에서 **615문자**를 확인했습니다. 원본에서 지원하던 문자의 새 누락 **0개**, 네 벌의 보존 코드포인트 **5,944개** 모두 cmap에서 실제 글리프로 연결됨을 검증했습니다.
+- 네 벌을 직렬화한 뒤 다시 열어 원본과 보존 글리프의 **윤곽 및 글자 폭/side bearing 해시**가 같은지 검사했습니다. weight 400/500/600/700, 정적 OTF(`fvar` 없음), 기존 OpenType layout feature(`tnum` 등)도 유지합니다.
+- `⌄`·`☰`는 원본에도 없는 문자로 기존 시스템 fallback을 유지합니다. 상용 범위 밖 사용자 입력 한글도 입력을 제한하지 않고 시스템 fallback으로 표시됩니다. UI 문구에 새 음절이 추가되면 `--check`가 실패하므로 원본에서 다시 생성합니다.
+- OFL/저작권 파일은 유지하고 파생 폰트 바이너리의 내부 family/PostScript 이름만 `NodiiUISubset`으로 변경했습니다. 파일명·Expo 등록 별칭 `Pretendard-*`·앱 타이포그래피 값은 그대로입니다. 근거와 재현 명령은 `scripts/font-subset/README.md`, 원본 SHA/보존 문자/윤곽 해시는 `scripts/font-subset/report.json`에 있습니다.
+- 같은 iOS export 명령으로 전체 **11,144,030 → 7,836,393 bytes**, Hermes **4,800,268 → 4,800,223 bytes**를 측정했습니다. 기존 EAS 0.1.0(5)의 IPA/42.7MB 페이로드는 적용 전 빌드이므로 새 설치 크기로 보고하지 않습니다. 이후 production 재빌드/실기기 로딩·fallback 확인이 필요합니다.
+
+```bash
+FONT_SUBSET_PYTHON=/path/to/fonttools-python node scripts/subset.js --source-dir /path/to/original-otfs
+FONT_SUBSET_PYTHON=/path/to/fonttools-python node scripts/subset.js --check
+```
+
 ## 8. 모바일 M2b 상호작용 보완
 
 - `MobileMenu` 메뉴 줄 최소 높이 56pt, 왼쪽 글리프 20pt (`mobile-screens.md`).

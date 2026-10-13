@@ -1,5 +1,6 @@
 import { fetchMinAppVersion, type NodiiClient } from '@nodii/api';
 import { compareVersion } from '@nodii/core';
+import { withStartupTimeout } from './startup-timeout';
 
 export interface UpdateInfo {
   current: string;
@@ -11,7 +12,7 @@ export async function checkMobileVersion(
   current: string,
 ): Promise<UpdateInfo | null> {
   try {
-    const minimum = await fetchMinAppVersion(client, 'min_ios_app_version');
+    const minimum = await withStartupTimeout(fetchMinAppVersion(client, 'min_ios_app_version'));
     return minimum && compareVersion(current, minimum) < 0 ? { current, minimum } : null;
   } catch {
     return null;

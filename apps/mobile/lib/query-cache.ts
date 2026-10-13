@@ -3,6 +3,7 @@ import type { AuthStorage } from '@nodii/api';
 import type { Query, QueryClient } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { version } from '../package.json';
+import { withStartupTimeout } from './startup-timeout';
 
 export const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 export const CACHE_BUSTER = `nodii-mobile:${version}:1`;
@@ -56,14 +57,24 @@ export function createUserCache(
     restoreClient: () =>
       enqueue(async () => {
         await deleting.get(userId);
-        const value = await storage.getItem(key);
-        if (!live || !value) return undefined;
-        const saved = JSON.parse(value) as { userId?: string; client?: PersistedClient };
-        return saved.userId === userId ? saved.client : undefined;
+        try {
+          const value = await withStartupTimeout(Promise.resolve(storage.getItem(key)));
+          if (!live || !value) return undefined;
+          const saved: unknown = JSON.parse(value);
+          if (!saved || typeof saved !== 'object' || !('userId' in saved))
+            throw new Error('invalid_cache');
+          if (saved.userId !== userId) return undefined;
+          if (!('client' in saved) || !isPersistedClient(saved.client))
+            throw new Error('invalid_cache');
+          return saved.client;
+        } catch {
+          // JSON 파싱 오류에 사용자 콘텐츠가 포함될 수 있어 라이브러리에도 원문을 넘기지 않는다.
+          throw new Error('cache_restore_failed');
+        }
       }),
     removeClient: () =>
       enqueue(async () => {
-        await storage.removeItem(key);
+        await withStartupTimeout(Promise.resolve(storage.removeItem(key)));
       }),
   };
   return {
@@ -82,6 +93,19 @@ export function createUserCache(
       return removal;
     },
   };
+}
+function isPersistedClient(value: unknown): value is PersistedClient {
+  if (!value || typeof value !== 'object') return false;
+  if (!('timestamp' in value) || typeof value.timestamp !== 'number') return false;
+  if (!('buster' in value) || typeof value.buster !== 'string') return false;
+  if (!('clientState' in value) || !value.clientState || typeof value.clientState !== 'object')
+    return false;
+  return (
+    'queries' in value.clientState &&
+    Array.isArray(value.clientState.queries) &&
+    'mutations' in value.clientState &&
+    Array.isArray(value.clientState.mutations)
+  );
 }
 /** 게이트의 로그아웃도 사용자 전용 QueryClient를 함께 정리한다. */
 export function attachUserCache(parent: QueryClient, entry: ReturnType<typeof createUserCache>) {
