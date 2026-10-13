@@ -1,6 +1,15 @@
-// SET-07: 배포 주소가 없으면 준비 중으로 표시하고 임의 주소로 보내지 않는다.
+// SET-07: 환경별 주소를 우선하되 비어 있으면 실제 공개된 Nodii 페이지를 사용한다.
 export const mobileLinks = [
-  { label: 'settings.privacy', url: process.env.EXPO_PUBLIC_PRIVACY_URL ?? '' },
-  { label: 'settings.terms', url: process.env.EXPO_PUBLIC_TERMS_URL ?? '' },
-  { label: 'settings.support', url: process.env.EXPO_PUBLIC_SUPPORT_URL ?? '' },
+  {
+    label: 'settings.privacy',
+    url: process.env.EXPO_PUBLIC_PRIVACY_URL?.trim() || 'https://nodii.app/privacy.html',
+  },
+  {
+    label: 'settings.terms',
+    url: process.env.EXPO_PUBLIC_TERMS_URL?.trim() || 'https://nodii.app/terms.html',
+  },
+  {
+    label: 'settings.support',
+    url: process.env.EXPO_PUBLIC_SUPPORT_URL?.trim() || 'https://nodii.app/support.html',
+  },
 ] as const;
