@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import { t } from '@nodii/i18n';
 import regular from '../assets/fonts/Pretendard-Regular.otf';
@@ -11,10 +11,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { metrics as m, useTheme } from '../lib/theme';
+import { useTheme } from '../lib/theme';
 import { restoreTheme } from '../lib/theme-preference';
 import { bindConnectivity } from '../lib/connectivity';
 import { ToastProvider } from '../src/components/Toast';
+import { ErrorBoundary } from '../src/shell/ErrorBoundary';
+import { STARTUP_TIMEOUT_MS, withStartupTimeout } from '../lib/startup-timeout';
 
 // AUTH-02: 세션 복원이 끝나기 전에 네이티브 스플래시가 사라지지 않게 한다.
 void SplashScreen.preventAutoHideAsync().catch(() => {
@@ -23,11 +25,18 @@ void SplashScreen.preventAutoHideAsync().catch(() => {
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  return (
+    <ErrorBoundary>
+      <RootContent />
+    </ErrorBoundary>
+  );
+}
+function RootContent() {
   const { colors } = useTheme();
   const [themeLoaded, setThemeLoaded] = useState(false);
   const [themeError, setThemeError] = useState(false);
   useEffect(() => {
-    void restoreTheme()
+    void withStartupTimeout(restoreTheme())
       .catch(() => setThemeError(true))
       .finally(() => setThemeLoaded(true));
   }, []);
@@ -38,22 +47,13 @@ export default function RootLayout() {
     'Pretendard-SemiBold': semiBold,
     'Pretendard-Bold': bold,
   });
+  const [fontTimedOut, setFontTimedOut] = useState(false);
   useEffect(() => {
-    if (fontError) void SplashScreen.hideAsync();
-  }, [fontError]);
-  if (fontError)
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          padding: m.space.group,
-          backgroundColor: colors.bg,
-        }}
-      >
-        <Text style={{ color: colors.ink }}>{t('mobile.font.failed')}</Text>
-      </View>
-    );
+    if (fontsLoaded || fontError) return;
+    const timer = setTimeout(() => setFontTimedOut(true), STARTUP_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded, fontError]);
+  if (fontError || fontTimedOut) throw new Error('font_load_failed');
   if (!fontsLoaded || !themeLoaded) return null; // 네이티브 스플래시가 계속 표시된다.
 
   return (

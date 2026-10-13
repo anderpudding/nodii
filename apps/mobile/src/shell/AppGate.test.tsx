@@ -62,7 +62,7 @@ beforeEach(() => {
   vi.mocked(syncProfileTimezone).mockResolvedValue(
     {} as Awaited<ReturnType<typeof syncProfileTimezone>>,
   );
-  getSession.mockResolvedValue({ data: { session: null }, error: null });
+  getSession.mockReset().mockResolvedValue({ data: { session: null }, error: null });
   client = {
     auth: {
       getSession,
@@ -139,6 +139,7 @@ it('세션 저장소 실패는 빈 화면 대신 재시도 화면을 보여준�
   getSession.mockRejectedValueOnce(new Error('keychain'));
   mount();
   await screen.findByText(t('mobile.session.failed'));
+  await waitFor(() => expect(hideAsync).toHaveBeenCalled());
   fireEvent.click(screen.getByRole('button', { name: t('common.tryAgain') }));
   await screen.findByLabelText(t('auth.email'));
 });
@@ -151,4 +152,16 @@ it('오프라인 재실행은 SecureStore 계정으로 읽기 화면을 열고 �
   await screen.findByText(t('mobile.today.preparing'));
   expect(getSession).not.toHaveBeenCalled();
   expect(fetchMinAppVersion).not.toHaveBeenCalled();
+});
+
+it('연결 설정이 없을 때 스플래시를 닫고 안내를 보여 준다', async () => {
+  render(
+    <QueryClientProvider client={query}>
+      <ToastProvider>
+        <AppGate client={null} />
+      </ToastProvider>
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText(t('mobile.config.missing'))).toBeTruthy();
+  await waitFor(() => expect(hideAsync).toHaveBeenCalled());
 });

@@ -14,6 +14,7 @@ import { UserData } from './UserData';
 import { ToastProvider } from '../components/Toast';
 import { CACHE_BUSTER } from '../../lib/query-cache';
 import { logout } from '../../lib/logout';
+import { t } from '@nodii/i18n';
 
 jest.mock('../../../../packages/api/src/realtime', () => ({
   subscribeUserChanges: jest.fn(),
@@ -111,4 +112,16 @@ it('오프라인 복원 뒤 로그아웃은 영속 캐시와 인증 저장소를
   expect(removeItem).toHaveBeenCalledTimes(3);
   expect(syncProfileTimezone).not.toHaveBeenCalled();
   saved.clear();
+});
+
+it('손상된 디스크 캐시를 버리고 복원 실패 안내와 온라인 화면을 유지한다', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  await AsyncStorage.setItem('nodii.query-cache:alice', 'private@example.com malformed');
+  mount();
+  await screen.findByText('복원 완료');
+  expect(screen.getByText(t('sync.cache.restoreFailed'))).toBeTruthy();
+  expect(AsyncStorage.removeItem).toHaveBeenCalledWith('nodii.query-cache:alice');
+  expect(child.getQueryData(['goals'])).toBeUndefined();
+  expect(await AsyncStorage.getItem('nodii.query-cache:alice')).not.toContain('private@example.com');
 });

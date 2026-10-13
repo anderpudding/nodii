@@ -1319,3 +1319,18 @@ it('첫 안내를 건너뛴 뒤에도 줄 메뉴에 밀기와 같은 동작이 �
   for (const name of ['완료', /날짜 옮기기/, '삭제'])
     expect(within(menu).getByRole('button', { name })).toBeTruthy();
 });
+
+it('오프라인에 캐시도 없으면 로딩 대신 인터넷 연결과 로그아웃을 안내한다', async () => {
+  onlineManager.setOnline(false);
+  render(
+    <QueryClientProvider client={cache}>
+      <ToastProvider>
+        <Today client={client} userId="user" onLogout={() => {}} loggingOut={false} />
+      </ToastProvider>
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText(t('mobile.offline.noCache'))).toBeTruthy();
+  expect(screen.getByRole('button', { name: t('auth.logout') })).toBeTruthy();
+  expect(screen.queryByText(t('mobile.today.loading'))).toBeNull();
+  expect(fetchProfile).not.toHaveBeenCalled();
+});
