@@ -61,7 +61,7 @@ eas submit --platform ios --profile production --id <확인한_BUILD_ID>
 - [ ] 실제 iPhone에서 `127.0.0.1`은 Mac이 아닙니다. 내부 개발은 Mac의 LAN 주소를 사용하고, production은 HTTPS 클라우드 주소를 사용합니다.
 - [ ] `development`/`preview`/`production` environment의 URL·키·심사 이메일·Apple ID를 확인합니다. 키를 화면 캡처·로그에 남기지 않습니다.
 - [ ] URL 세 개는 M6 점검에서 HTTP 200을 반환했습니다. **iOS 문구 변경분의 게시까지 확인한 것은 아닙니다.**
-- [ ] `site/privacy.html`·`terms.html`의 `[[TODO: …]]`(iOS 적용 시행일/최종 수정일·EULA 검토)를 사람이 확정합니다. 기존 운영자/연락처/보관 규칙은 유지했으며 새 법적 판단은 넣지 않았습니다.
+- [x] `site/privacy.html`·`terms.html`의 iOS 시행일/최종 수정일을 **2026-10-12**로 확정하고, EULA는 Apple 표준 EULA 문구를 유지했습니다(2026-10-12). 기존 운영자/연락처/보관 규칙은 그대로입니다.
 - [ ] main 병합 뒤 기존 Pages 배포로 iOS 문구와 support FAQ가 실제 도메인에 올라왔는지 확인합니다. 배포 후 세 링크를 Safari와 앱 설정에서 직접 엽니다.
 - [ ] 개인정보 링크를 바꾸면 유니버설 구매의 macOS 쪽에도 영향을 주므로 Mac 설정과 App Store 정보도 함께 점검합니다.
 
@@ -74,8 +74,8 @@ eas submit --platform ios --profile production --id <확인한_BUILD_ID>
 | 같은 표시 번호 | 지원/변경 기록에서 하나의 제품 버전을 설명하기 쉬움 | iOS 전용 수정에도 Mac 버전을 함께 관리하거나 다음 공동 출시까지 기다려야 함. 심사/배포 시점은 플랫폼별 확인 | `bash scripts/bump-version.sh X.Y.Z --platform all` |
 | 플랫폼별 표시 번호 | iOS와 Mac의 수정·심사를 각자 진행할 수 있음 | 문의/릴리스 기록에 플랫폼을 반드시 적고 두 최소 지원 버전을 따로 관리 | `--platform ios` 또는 `--platform desktop` |
 
-- [ ] **정책 선택: [[TODO: 같은 표시 번호 / 플랫폼별 표시 번호]]**. 이 작업에서 결정하거나 실제 버전을 올리지 않았습니다.
-- [ ] 출시 표시 버전: **[[TODO: X.Y.Z]]**. 저장소의 현재 앱 표시 버전은 모두 `0.1.0`입니다.
+- [x] **정책 선택: 같은 표시 번호** (2026-10-12 결정).
+- [x] 출시 표시 버전: **0.1.0** (Mac과 같음, 첫 iOS 출시라 버전을 올리지 않음).
 - [ ] 도우미는 선택된 앱 설정·package.json만 함께 바꿉니다. `all`은 Tauri 설정/desktop package + Expo `expo.version`/mobile package를 맞춥니다. core/api/i18n 라이브러리 버전은 앱 배포 번호로 올리지 않습니다.
 - [ ] 변경 후 기본 검증·diff 확인·영어 커밋을 합니다. 스크립트는 커밋/태그/업로드를 실행하지 않습니다.
 - [ ] iOS 전용 출시에서는 `v*` 태그를 푸시하지 않습니다. 기존 `release.yml`이 Mac을 빌드하기 때문입니다. 공동/macOS 출시 때만 도우미의 태그 안내와 `docs/05-release-runbook.md`를 따릅니다.
