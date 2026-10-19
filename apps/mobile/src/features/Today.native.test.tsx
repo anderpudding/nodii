@@ -1174,12 +1174,19 @@ it('루틴을 같은 날짜에 전개하고 주·월 도장과 완료·실패 �
   ).toBeTruthy();
   await act(async () => reject(new Error('failed')));
   await screen.findByText(t('todo.save.failed'));
+  // 오류 토스트와 Query observer의 목록 반영은 별개이므로 복원된 행을 기다린다.
   expect(
-    screen.getByRole('checkbox', { name: '영어 루틴 완료하기' }).props.accessibilityState.checked,
+    (
+      await within(screen.getByTestId('day-list')).findByRole('checkbox', {
+        name: '영어 루틴 완료하기',
+      })
+    ).props.accessibilityState.checked,
   ).toBe(false);
-  expect(
-    within(screen.getByTestId('month-grid')).getByRole('button', { name: /10월 10일.*4개 남음/ }),
-  ).toBeTruthy();
+  await waitFor(() =>
+    expect(
+      within(screen.getByTestId('month-grid')).getByRole('button', { name: /10월 10일.*4개 남음/ }),
+    ).toBeTruthy(),
+  );
 });
 it.each(['import', 'move', 'delete'])(
   '루틴이 실제 보이는 하루 메뉴 %s는 할 일만 처리하고 루틴·로그를 유지한다',

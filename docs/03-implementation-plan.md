@@ -526,11 +526,13 @@
 **M7 검증·문서 차이 (2026-10-19)**
 
 - `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` 통과. 실제 출력: core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **122**, Jest/RNTL **10스위트·89개**, 합계 **564개**. 삭제한 하단 바 전용 단위 검사 1개 대신 기존 흐름을 갱신하고 네이티브 통합 검사 2개를 추가했다. 기존 비동기 `act` 경고는 남아 있다.
-- `pnpm --filter @nodii/mobile exec expo export --platform ios --output-dir /tmp/nodii-m7-ios` 통과(1,799 모듈, Hermes 약 4.8MB). 네이티브 설치/실기기 동작을 입증하는 검증은 아니다. 로컬 `simctl` 서비스 확인 후에도 부팅된 기기가 없고 Simulator.app 경로가 없어 화면 실행은 미실행했다.
+- `pnpm --filter @nodii/mobile exec expo export --platform ios --output-dir /tmp/nodii-m7-final-ios` 통과(1,799 모듈, Hermes 약 4.8MB). 네이티브 설치/실기기 동작을 입증하는 검증은 아니다. 로컬 `simctl` 서비스 확인 후에도 부팅된 기기가 없고 Simulator.app 경로가 없어 화면 실행은 미실행했다.
 - `mobile-designs/`의 오늘·다크·월간·목표 + 입력과 로그인·목표·루틴·설정 PNG를 열어 배치와 여백을 참고했다. 루틴 편집 시안에 남아 있는 파란 선택 링은 M7 §6을 우선해 먹색으로 표시한다.
 - 요구사항 MOB-02의 월 제목 탭과 MOB-03의 하단 고정 추가, DESIGN.md §7의 공통 포커스 링 규정은 이번 단계 지시서/개정 모바일 스펙보다 이전 내용이다. M7을 우선해 W/M·목표 이름표 +·모바일 먹색 입력 표시로 구현했다. 설계서 직접 수정 없이 해당 요구사항 설명의 후속 정합성 정리를 제안한다.
 - `segBg`는 tokens.md §8의 기존 side 역할, `inputBg`는 tokens.md §1의 입력 중인 줄 side 역할을 쓴다. 1.5px 입력 테두리는 개정 mobile-screens.md §1의 값이며 새 토큰/HEX는 추가하지 않았다. `colors.focus` 토큰은 유지한다. 데스크톱은 수정하지 않았다.
 - `CalendarArrow`는 날짜 선택 시트에서 계속 사용하므로 유지하고, 추가 시트와 고정 바 전용 높이 계산만 제거했다. 날짜/요약 카탈로그 키는 데스크톱을 포함한 실제 사용처가 없어 삭제했고, 다른 편집 시트가 사용하는 입력 폐기 확인 문구는 유지했다.
+- 최종 반복 검증에서 루틴 실패 토스트가 Query observer의 목록 롤백보다 먼저 표시되는 타이밍 차이로 기존 동기 단언 1개가 실패했다. 복원된 체크박스를 목록 안에서 `findByRole`로 기다리고 월간 도장도 `waitFor`로 검증하도록 고쳐, 같은 복원 조건과 기본 대기 제한을 유지했다.
+- iOS export와 동시에 실행한 검사에서 기존 데스크톱 `UserCache.test.tsx`의 초기 버튼 조회 1개가 기본 대기 제한 안에 끝나지 않았다. 데스크톱 코드·검사 제한을 바꾸지 않고 export 종료 뒤 `pnpm test`를 단독 재실행해 전체 **564개**가 통과했다. 최종 소스의 iOS export도 다시 통과했다.
 - 새 의존성·core/api·DB 변경 없음. DB reset/test/types는 변경이 없어 미실행했다. 기기 검증·원격 CI·TestFlight/배포는 실행하지 않았다.
 
 ## 4. 작업 방식
