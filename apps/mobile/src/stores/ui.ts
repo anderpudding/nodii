@@ -7,7 +7,7 @@ interface UIState {
   selectedDate: ISODate;
   monthExpanded: boolean;
   calendarMonth: string;
-  toggleMonth(): void;
+  setMonthExpanded(expanded: boolean): void;
   showMonth(month: string): void;
   lastAddedGoalId: string | null;
   selectDate(date: ISODate): void;
@@ -22,9 +22,9 @@ export const useUIStore = create<UIState>((set) => ({
   lastAddedGoalId: null,
   monthExpanded: false,
   calendarMonth: monthKeyOf(today),
-  toggleMonth: () =>
+  setMonthExpanded: (expanded) =>
     set((state) => ({
-      monthExpanded: !state.monthExpanded,
+      monthExpanded: expanded,
       calendarMonth: monthKeyOf(state.selectedDate),
     })),
   showMonth: (calendarMonth) => set({ calendarMonth }),

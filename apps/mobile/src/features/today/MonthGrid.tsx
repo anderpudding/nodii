@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { PanResponder, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { StyleSheet, Text, View } from 'react-native';
 import { addDays, monthGridRange, monthKeyOf, type DaySummary, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
@@ -25,72 +25,68 @@ export function MonthGrid({
 }) {
   const { colors } = useTheme();
   const { from } = monthGridRange(month, weekStart);
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gesture) =>
-          Math.abs(gesture.dx) > m.height.touch && Math.abs(gesture.dx) > Math.abs(gesture.dy),
-        onPanResponderRelease: (_event, gesture) => {
-          if (Math.abs(gesture.dx) > m.height.touch && Math.abs(gesture.dx) > Math.abs(gesture.dy))
-            onMove(gesture.dx < 0 ? 1 : -1);
-        },
-      }),
-    [onMove],
-  );
+  const pan = Gesture.Pan()
+    .activeOffsetX([-m.space.md, m.space.md])
+    .failOffsetY([-m.space.sm, m.space.sm])
+    .runOnJS(true)
+    .onEnd((event) => {
+      if (Math.abs(event.translationX) > m.height.touch) onMove(event.translationX < 0 ? 1 : -1);
+    });
   return (
-    <View
-      testID="month-grid"
-      accessibilityLabel={t('calendar.month')}
-      accessibilityActions={[
-        { name: 'decrement', label: t('calendar.previousMonth') },
-        { name: 'increment', label: t('calendar.nextMonth') },
-      ]}
-      onAccessibilityAction={(event) => {
-        if (event.nativeEvent.actionName === 'decrement') onMove(-1);
-        if (event.nativeEvent.actionName === 'increment') onMove(1);
-      }}
-      style={[styles.grid, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
-      {...pan.panHandlers}
-    >
-      <View style={styles.week}>
-        {Array.from({ length: 7 }, (_, i) => addDays(from, i)).map((date, i) => (
-          <Text
-            key={date}
-            style={[
-              styles.weekday,
-              {
-                color:
-                  (i + weekStart) % 7 === 0
-                    ? colors.sun
-                    : (i + weekStart) % 7 === 6
-                      ? colors.sat
-                      : colors.muted,
-              },
-            ]}
-          >
-            {new Intl.DateTimeFormat('ko-KR', { weekday: 'short', timeZone: 'UTC' }).format(
-              new Date(`${date}T00:00:00Z`),
-            )}
-          </Text>
-        ))}
-      </View>
-      {Array.from({ length: 6 }, (_, week) => (
-        <View key={week} style={styles.week}>
-          {Array.from({ length: 7 }, (_, day) => addDays(from, week * 7 + day)).map((date) => (
-            <DayCell
+    <GestureDetector gesture={pan}>
+      <View
+        testID="month-grid"
+        accessibilityLabel={t('calendar.month')}
+        accessibilityActions={[
+          { name: 'decrement', label: t('calendar.previousMonth') },
+          { name: 'increment', label: t('calendar.nextMonth') },
+        ]}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'decrement') onMove(-1);
+          if (event.nativeEvent.actionName === 'increment') onMove(1);
+        }}
+        style={[styles.grid, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
+      >
+        <View style={styles.week}>
+          {Array.from({ length: 7 }, (_, i) => addDays(from, i)).map((date, i) => (
+            <Text
               key={date}
-              date={date}
-              today={today}
-              selected={date === selectedDate}
-              summary={summary.get(date)}
-              monthly
-              outside={monthKeyOf(date) !== month}
-              onPress={() => onSelect(date)}
-            />
+              style={[
+                styles.weekday,
+                {
+                  color:
+                    (i + weekStart) % 7 === 0
+                      ? colors.sun
+                      : (i + weekStart) % 7 === 6
+                        ? colors.sat
+                        : colors.muted,
+                },
+              ]}
+            >
+              {new Intl.DateTimeFormat('ko-KR', { weekday: 'short', timeZone: 'UTC' }).format(
+                new Date(`${date}T00:00:00Z`),
+              )}
+            </Text>
           ))}
         </View>
-      ))}
-    </View>
+        {Array.from({ length: 6 }, (_, week) => (
+          <View key={week} style={styles.week}>
+            {Array.from({ length: 7 }, (_, day) => addDays(from, week * 7 + day)).map((date) => (
+              <DayCell
+                key={date}
+                date={date}
+                today={today}
+                selected={date === selectedDate}
+                summary={summary.get(date)}
+                monthly
+                outside={monthKeyOf(date) !== month}
+                onPress={() => onSelect(date)}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
+    </GestureDetector>
   );
 }
 const styles = StyleSheet.create({
