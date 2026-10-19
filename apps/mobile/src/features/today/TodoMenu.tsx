@@ -212,8 +212,7 @@ export function TodoMenu({
                       onAction(id);
                     }
                   }}
-                  onFocus={() => setFocused(id)}
-                  onBlur={() => setFocused(null)}
+
                   style={({ pressed }) => [
                     styles.item,
                     {
@@ -245,8 +244,6 @@ export function TodoMenu({
                 accessibilityRole="button"
                 accessibilityLabel={t('mobile.add.cancel')}
                 onPress={close}
-                onFocus={() => setFocused('cancel')}
-                onBlur={() => setFocused(null)}
                 style={({ pressed }) => [
                   styles.cancel,
                   {

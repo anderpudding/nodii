@@ -6,7 +6,6 @@ import {
   mergeWeekTodos,
   newTodo,
   preferredGoal,
-  quickAddInset,
   submissionTitle,
   weekRange,
   weekSummary,
@@ -105,11 +104,6 @@ it('빈 제목·200자 초과·IME 확인 Enter는 제출하지 않는다', () =
 it('직전 추가 목표를 쓰되 보관되면 첫 활성 목표로 돌아간다', () => {
   expect(preferredGoal(goals, 'archived')?.id).toBe('active');
   expect(preferredGoal([...goals, { ...goals[0]!, id: 'last' }], 'last')?.id).toBe('last');
-});
-it('고정 바 48pt에 34pt 이상의 safe area를 더한다', () => {
-  expect(quickAddInset(0)).toBe(82);
-  expect(quickAddInset(34)).toBe(82);
-  expect(quickAddInset(44)).toBe(92);
 });
 
 it('루틴 전개·건너뛰기·보관일은 core 규칙을 사용하고 할 일과 같은 순서로 집계한다', () => {

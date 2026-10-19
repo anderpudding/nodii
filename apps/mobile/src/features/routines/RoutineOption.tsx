@@ -40,7 +40,6 @@ export function RoutineOption({
       accessibilityState={{ disabled, selected, checked: selected }}
       disabled={disabled}
       onPress={onPress}
-
       style={({ pressed }) => [
         styles.option,
         compact && styles.compact,

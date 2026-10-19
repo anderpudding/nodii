@@ -95,7 +95,6 @@ export function BottomSheet({
                 accessibilityRole="button"
                 accessibilityLabel={t('mobile.add.cancel')}
                 onPress={onClose}
-
                 style={({ pressed }) => [
                   styles.cancel,
                   {

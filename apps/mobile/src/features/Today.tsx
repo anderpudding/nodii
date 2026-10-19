@@ -1,6 +1,15 @@
 import { useOnline } from '../../lib/connectivity';
-import { useEffect, useMemo, useState } from 'react';
-import { AppState, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AppState,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -20,10 +29,9 @@ import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
-import { CalendarArrow } from '../components/CalendarArrow';
 import { Button } from '../components/Button';
 import { useUIStore } from '../stores/ui';
-import { AddSheet } from './today/AddSheet';
+import { InlineAdd } from './today/InlineAdd';
 import { GoalBadge } from './today/GoalBadge';
 import { TodoRow } from './today/TodoRow';
 import { RoutineRow } from './routines/RoutineRow';
@@ -37,10 +45,9 @@ import { WeekStrip } from './today/WeekStrip';
 import { FirstRunGuide } from './onboarding/FirstRunGuide';
 import {
   daySections,
+  type MobileDayItem,
   mergeWeekTodos,
   preferredGoal,
-  quickAddHeight,
-  quickAddInset,
   weekRange,
   weekSummary,
 } from './today/model';
@@ -110,21 +117,22 @@ function TodayContent({
     selectedDate,
     today,
     selectDate,
-    lastAddedGoalId,
     monthExpanded,
     calendarMonth,
-    toggleMonth,
+    setMonthExpanded,
     showMonth,
   } = useUIStore();
   const cache = useQueryClient();
   const dayActions = useDayActions(client, profile.weekStart);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
+  const list = useRef<SectionList<MobileDayItem, ReturnType<typeof daySections>[number]>>(null);
+  const inputLocation = useRef<{ sectionIndex: number; itemIndex: number } | null>(null);
+  const scrollAttempts = useRef(0);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(scrollTimer.current), []);
   const [settings, setSettings] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<RoutineRecord | null>(null);
   const [stoppingRoutine, setStoppingRoutine] = useState<RoutineRecord | null>(null);
-  const [barFocused, setBarFocused] = useState(false);
-  const [monthFocused, setMonthFocused] = useState(false);
-  const [settingsFocused, setSettingsFocused] = useState(false);
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
@@ -188,8 +196,7 @@ function TodayContent({
     ],
   );
   const items = sections.flatMap((section) => section.data);
-  const done = items.filter((todo) => todo.isDone).length;
-  const activeGoal = preferredGoal(goals.data ?? [], lastAddedGoalId);
+  const activeGoal = preferredGoal(goals.data ?? [], null);
   const queries = [goals, routines, first, last, firstLogs, lastLogs];
   const failed = queries.some((query) => query.isError);
   const loading = queries.some((query) => query.isPending);
@@ -203,73 +210,98 @@ function TodayContent({
     [profile.timezone],
   );
   const dateObject = new Date(`${selectedDate}T00:00:00Z`);
-  const dateLabel = new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-    timeZone: 'UTC',
-  }).format(dateObject);
   const monthLabel = new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
     month: 'long',
     timeZone: 'UTC',
   }).format(monthExpanded ? new Date(`${calendarMonth}-01T00:00:00Z`) : dateObject);
+  function revealInput(goalId: string) {
+    const sectionIndex = sections.findIndex((section) => section.goal.id === goalId);
+    const section = sections[sectionIndex];
+    if (!section) return;
+    inputLocation.current = { sectionIndex, itemIndex: section.data.length };
+    scrollAttempts.current = 0;
+    list.current?.scrollToLocation({ ...inputLocation.current, viewPosition: 1, animated: false });
+  }
   function retry() {
     for (const query of queries) void query.refetch();
   }
   return (
-    <View style={styles.root}>
-      <View style={[styles.top, { backgroundColor: colors.side }]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.root}
+    >
+      <View
+        testID="today-top"
+        style={[styles.top, { backgroundColor: colors.side, paddingTop: insets.top }]}
+      >
+        <Text
+          accessibilityRole="header"
+          style={[styles.month, styles.heading, { color: colors.ink }]}
+        >
+          {monthLabel}
+        </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t(monthExpanded ? 'mobile.month.collapse' : 'mobile.month.expand')}
-          accessibilityState={{ expanded: monthExpanded }}
-          onPress={toggleMonth}
-          onFocus={() => setMonthFocused(true)}
-          onBlur={() => setMonthFocused(false)}
-          style={({ pressed }) => [
-            styles.month,
-            {
-              borderColor: monthFocused ? colors.focus : colors.side,
-              opacity: pressed ? m.pressedOpacity : 1,
-            },
-          ]}
+          accessibilityLabel={t('day.today')}
+          hitSlop={m.space.xs}
+          onPress={() => selectDate(today)}
+          style={({ pressed }) => [styles.today, { opacity: pressed ? m.pressedOpacity : 1 }]}
         >
-          <Text style={[styles.heading, { color: colors.ink }]}>
-            {monthLabel} {monthExpanded ? '⌃' : '⌄'}
-          </Text>
+          <Text style={[styles.label, { color: colors.ink }]}>{t('day.today')}</Text>
         </Pressable>
-        <Button label={t('day.today')} secondary onPress={() => selectDate(today)} />
-        {monthExpanded ? (
-          <View style={styles.arrows}>
-            <CalendarArrow
-              direction={-1}
-              onPress={() => showMonth(adjacentMonthKey(calendarMonth, -1))}
-            />
-            <CalendarArrow
-              direction={1}
-              onPress={() => showMonth(adjacentMonthKey(calendarMonth, 1))}
-            />
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setSettings(true)}
-            onFocus={() => setSettingsFocused(true)}
-            onBlur={() => setSettingsFocused(false)}
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.title')}
-            accessibilityState={{ expanded: settings }}
-            style={({ pressed }) => [
-              styles.settings,
-              {
-                opacity: pressed ? m.pressedOpacity : 1,
-                borderColor: settingsFocused ? colors.focus : colors.side,
-              },
-            ]}
-          >
-            <Text style={[styles.heading, { color: colors.ink2 }]}>☰</Text>
-          </Pressable>
-        )}
+        <View
+          accessibilityRole="radiogroup"
+          style={[styles.segment, { backgroundColor: colors.side }]}
+        >
+          {([false, true] as const).map((expanded) => (
+            <Pressable
+              key={String(expanded)}
+              hitSlop={{ top: m.space.xs, bottom: m.space.xs }}
+              accessibilityRole="radio"
+              accessibilityLabel={t(expanded ? 'mobile.view.month' : 'mobile.view.week')}
+              accessibilityState={{ checked: monthExpanded === expanded }}
+              onPress={() => setMonthExpanded(expanded)}
+              style={({ pressed }) => [
+                styles.option,
+                {
+                  backgroundColor: monthExpanded === expanded ? colors.bg : colors.side,
+                  opacity: pressed ? m.pressedOpacity : 1,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.label,
+                  { color: monthExpanded === expanded ? colors.ink : colors.muted },
+                ]}
+              >
+                {expanded ? 'M' : 'W'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <DayMenu
+          key={selectedDate}
+          client={client}
+          date={selectedDate}
+          today={today}
+          goals={goals.data ?? []}
+          items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
+          ready={!loading && !failed}
+          weekStart={profile.weekStart}
+          timeZone={profile.timezone}
+          actions={dayActions}
+        />
+        <Pressable
+          onPress={() => setSettings(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.title')}
+          accessibilityState={{ expanded: settings }}
+          style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
+        >
+          <Text style={[styles.heading, { color: colors.ink2 }]}>☰</Text>
+        </Pressable>
       </View>
       {!online && (
         <Text
@@ -282,180 +314,181 @@ function TodayContent({
           {t('sync.offline')}
         </Text>
       )}
-      {monthExpanded ? (
-        <MonthGrid
-          month={calendarMonth}
-          weekStart={profile.weekStart}
-          today={today}
-          selectedDate={selectedDate}
-          summary={summary}
-          onSelect={selectDate}
-          onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
-        />
-      ) : (
-        <WeekStrip
-          dates={dates}
-          today={today}
-          selectedDate={selectedDate}
-          summary={summary}
-          onSelect={selectDate}
-        />
-      )}
-      {monthExpanded && (month.isError || monthLogs.isError) && (
-        <View style={styles.calendarError}>
-          <Text accessibilityRole="alert" style={[styles.supporting, { color: colors.danger }]}>
-            {t('mobile.calendar.failed')}
-          </Text>
-          <Button
-            label={t('common.tryAgain')}
-            secondary
-            onPress={() => {
-              void month.refetch();
-              void monthLogs.refetch();
-            }}
-          />
-        </View>
-      )}
-      <View style={styles.dayHeader}>
-        <View style={styles.dateTitle}>
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-            {selectedDate === today ? t('day.title.today', { date: dateLabel }) : dateLabel}
-          </Text>
-          <DayMenu
-            key={selectedDate}
-            client={client}
-            date={selectedDate}
-            today={today}
-            goals={goals.data ?? []}
-            items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
-            ready={!loading && !failed}
-            weekStart={profile.weekStart}
-            timeZone={profile.timezone}
-            actions={dayActions}
-          />
-        </View>
-        <Text style={[styles.supporting, { color: colors.muted }]}>
-          {items.length
-            ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', {
-                total: items.length,
-                done,
-              })
-            : t('day.empty')}
-        </Text>
-        {failed ? (
-          <View>
-            <Text accessibilityRole="alert" style={{ color: colors.danger }}>
-              {t('mobile.today.failed')}
-            </Text>
-            <Button label={t('common.tryAgain')} secondary onPress={retry} />
-          </View>
-        ) : loading ? (
-          <Text style={[styles.supporting, { color: colors.muted }]}>
-            {t(online ? 'mobile.today.loading' : 'mobile.offline.noCache')}
-          </Text>
-        ) : !items.length ? (
-          <View style={{ gap: m.space.sm }}>
-            <Text style={[styles.supporting, { color: colors.muted }]}>
-              {t(activeGoal ? 'mobile.today.empty' : 'mobile.today.noGoals')}
-            </Text>
-            {!activeGoal && (
-              <Button label={t('settings.title')} secondary onPress={() => setSettings(true)} />
-            )}
-          </View>
-        ) : null}
-      </View>
-      <ToastInset bottom={quickAddInset(insets.bottom)} />
+      <ToastInset bottom={0} />
       <SwipeRows>
         <SectionList
+          ref={list}
           testID="day-list"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          onContentSizeChange={() => {
+            if (adding) revealInput(adding);
+          }}
+          onScrollToIndexFailed={({ index, averageItemLength }) => {
+            // 아직 가상화된 긴 섹션의 끝을 측정하지 못했으면 근처를 먼저 렌더한다.
+            list.current
+              ?.getScrollResponder()
+              ?.scrollTo({ y: index * averageItemLength, animated: false });
+            if (++scrollAttempts.current > 2) return;
+            clearTimeout(scrollTimer.current);
+            scrollTimer.current = setTimeout(() => {
+              if (inputLocation.current)
+                list.current?.scrollToLocation({
+                  ...inputLocation.current,
+                  viewPosition: 1,
+                  animated: false,
+                });
+            }, m.motion.state);
+          }}
+          removeClippedSubviews={false}
+          ListHeaderComponent={
+            <View>
+              {monthExpanded ? (
+                <MonthGrid
+                  month={calendarMonth}
+                  weekStart={profile.weekStart}
+                  today={today}
+                  selectedDate={selectedDate}
+                  summary={summary}
+                  onSelect={selectDate}
+                  onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
+                />
+              ) : (
+                <WeekStrip
+                  dates={dates}
+                  today={today}
+                  selectedDate={selectedDate}
+                  summary={summary}
+                  onSelect={selectDate}
+                />
+              )}
+              {monthExpanded && (month.isError || monthLogs.isError) && (
+                <View style={styles.calendarError}>
+                  <Text
+                    accessibilityRole="alert"
+                    style={[styles.supporting, { color: colors.danger }]}
+                  >
+                    {t('mobile.calendar.failed')}
+                  </Text>
+                  <Button
+                    label={t('common.tryAgain')}
+                    secondary
+                    onPress={() => {
+                      void month.refetch();
+                      void monthLogs.refetch();
+                    }}
+                  />
+                </View>
+              )}
+              <View style={styles.feedback}>
+                {failed ? (
+                  <View>
+                    <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+                      {t('mobile.today.failed')}
+                    </Text>
+                    <Button label={t('common.tryAgain')} secondary onPress={retry} />
+                  </View>
+                ) : loading ? (
+                  <Text style={[styles.supporting, { color: colors.muted }]}>
+                    {t(online ? 'mobile.today.loading' : 'mobile.offline.noCache')}
+                  </Text>
+                ) : !items.length ? (
+                  <View style={{ gap: m.space.sm }}>
+                    <Text style={[styles.supporting, { color: colors.muted }]}>
+                      {t(activeGoal ? 'mobile.today.empty' : 'mobile.today.noGoals')}
+                    </Text>
+                    {!activeGoal && (
+                      <Button
+                        label={t('settings.title')}
+                        secondary
+                        onPress={() => setSettings(true)}
+                      />
+                    )}
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          }
           sections={sections}
           keyExtractor={(item) => `${item.kind}:${item.id}`}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: quickAddInset(insets.bottom) + m.space.lg },
-          ]}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, m.space.lg) }}
           renderSectionHeader={({ section }) => (
             <View style={styles.section}>
-              <GoalBadge goal={section.goal} />
+              <GoalBadge
+                goal={section.goal}
+                add
+                disabled={
+                  !section.canAdd ||
+                  !online ||
+                  loading ||
+                  failed ||
+                  dayActions.isDateLocked(selectedDate)
+                }
+                hint={
+                  !online
+                    ? t('sync.writeDisabled')
+                    : !section.canAdd
+                      ? t('mobile.add.unavailable')
+                      : loading || failed
+                        ? t('day.menu.loading')
+                        : dayActions.isDateLocked(selectedDate)
+                          ? t('day.menu.busy')
+                          : undefined
+                }
+                onPress={() => {
+                  setAdding(section.goal.id);
+                  requestAnimationFrame(() => revealInput(section.goal.id));
+                }}
+              />
             </View>
           )}
-          renderItem={({ item, section }) =>
-            item.kind === 'todo' ? (
-              <TodoRow
-                todo={item.todo}
-                goal={section.goal}
+          renderSectionFooter={({ section }) =>
+            adding === section.goal.id && section.canAdd ? (
+              <InlineAdd
+                key={`${selectedDate}:${section.goal.id}`}
                 client={client}
-                weekStart={profile.weekStart}
-                timeZone={profile.timezone}
-                dayLocked={dayActions.isDateLocked(selectedDate)}
-                isDateLocked={dayActions.isDateLocked}
-              />
-            ) : (
-              <RoutineRow
-                routine={item.routine}
-                log={item.log}
                 goal={section.goal}
                 date={selectedDate}
-                client={client}
+                today={today}
                 weekStart={profile.weekStart}
-                onEdit={() => setEditingRoutine(item.routine)}
-                onStop={() => setStoppingRoutine(item.routine)}
+                timeZone={profile.timezone}
+                isDateLocked={dayActions.isDateLocked}
+                onClose={() =>
+                  setAdding((current) => (current === section.goal.id ? null : current))
+                }
+                onFocus={() => revealInput(section.goal.id)}
               />
-            )
+            ) : null
           }
+          renderItem={({ item, section }) => (
+            <View style={{ paddingHorizontal: m.space.lg }}>
+              {item.kind === 'todo' ? (
+                <TodoRow
+                  todo={item.todo}
+                  goal={section.goal}
+                  client={client}
+                  weekStart={profile.weekStart}
+                  timeZone={profile.timezone}
+                  dayLocked={dayActions.isDateLocked(selectedDate)}
+                  isDateLocked={dayActions.isDateLocked}
+                />
+              ) : (
+                <RoutineRow
+                  routine={item.routine}
+                  log={item.log}
+                  goal={section.goal}
+                  date={selectedDate}
+                  client={client}
+                  weekStart={profile.weekStart}
+                  onEdit={() => setEditingRoutine(item.routine)}
+                  onStop={() => setStoppingRoutine(item.routine)}
+                />
+              )}
+            </View>
+          )}
         />
       </SwipeRows>
-      <Pressable
-        testID="quick-add"
-        accessibilityRole="button"
-        accessibilityLabel={t('todo.add')}
-        accessibilityState={{
-          disabled:
-            !online || !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate),
-        }}
-        accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
-        disabled={
-          !online || !activeGoal || loading || failed || dayActions.isDateLocked(selectedDate)
-        }
-        onPress={() => setAdding(true)}
-        onFocus={() => setBarFocused(true)}
-        onBlur={() => setBarFocused(false)}
-        style={({ pressed }) => [
-          styles.bar,
-          {
-            minHeight: quickAddInset(insets.bottom),
-            paddingBottom: Math.max(insets.bottom, 34),
-            backgroundColor: colors.surface,
-            borderTopColor: barFocused ? colors.focus : colors.line,
-            opacity: pressed ? m.pressedOpacity : 1,
-          },
-        ]}
-      >
-        <View style={styles.barContent}>
-          {activeGoal && <GoalBadge goal={activeGoal} />}
-          <Text style={[styles.addLabel, { color: colors.muted }]}>
-            {t(online ? 'todo.add' : 'sync.writeDisabled')}
-          </Text>
-          <View style={[styles.plus, { backgroundColor: colors.ink }]}>
-            <Text accessible={false} style={[styles.heading, { color: colors.bg }]}>
-              +
-            </Text>
-          </View>
-        </View>
-      </Pressable>
-      {adding && (
-        <AddSheet
-          client={client}
-          date={selectedDate}
-          today={today}
-          goals={goals.data ?? []}
-          isDateLocked={dayActions.isDateLocked}
-          weekStart={profile.weekStart}
-          timeZone={profile.timezone}
-          onClose={() => setAdding(false)}
-        />
-      )}
       {settings && (
         <Settings
           client={client}
@@ -488,7 +521,7 @@ function TodayContent({
           onClose={() => setStoppingRoutine(null)}
         />
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 const styles = StyleSheet.create({
@@ -505,64 +538,38 @@ const styles = StyleSheet.create({
   top: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: m.space.sm,
-    paddingHorizontal: m.space.lg,
+    gap: m.space.xs,
+    paddingHorizontal: m.space.sm,
   },
-  month: {
-    flex: 1,
-    minHeight: m.height.touch,
+  month: { flex: 1, flexShrink: 1 },
+  today: { minHeight: m.height.chip, paddingHorizontal: m.space.sm, justifyContent: 'center' },
+  segment: { flexDirection: 'row', padding: m.space.xs, borderRadius: m.radius.pill },
+  option: {
+    minWidth: m.height.touch,
+    minHeight: m.height.chip,
+    alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: m.selectionRing,
-    borderRadius: m.radius.field,
+    borderRadius: m.radius.pill,
   },
-  arrows: { flexDirection: 'row', gap: m.space.sm },
+  label: { fontFamily: m.fontBold, fontSize: m.type.button },
   settings: {
-    borderWidth: m.selectionRing,
-    borderRadius: m.radius.field,
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heading: { fontFamily: m.fontBold, fontWeight: '700', fontSize: m.type.heading },
-  title: {
-    flex: 1,
-    fontFamily: m.fontBold,
-    fontWeight: '700',
-    fontSize: m.type.title,
-    letterSpacing: m.letterSpacing.title,
-  },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,
     lineHeight: m.type.supporting * m.lineHeight.body,
   },
-  dayHeader: { gap: m.space.sm, paddingTop: m.space.lg, paddingHorizontal: m.space.lg },
+  feedback: { gap: m.space.sm, paddingTop: m.space.lg, paddingHorizontal: m.space.lg },
   calendarError: { paddingHorizontal: m.space.lg },
-  dateTitle: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
-  list: { paddingHorizontal: m.space.lg },
-  section: { alignItems: 'flex-start', paddingTop: m.space.group, paddingBottom: m.space.sm },
-  footer: { alignItems: 'flex-start', gap: m.space.sm, marginTop: m.space.group },
-  bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopWidth: m.border,
+  section: {
     paddingHorizontal: m.space.lg,
-  },
-  barContent: {
-    minHeight: quickAddHeight,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: m.space.md,
-  },
-  addLabel: { flex: 1, fontFamily: m.fontFamily, fontSize: m.type.body },
-  plus: {
-    width: m.height.touch,
-    height: m.height.touch,
-    borderRadius: m.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingTop: m.space.group,
+    paddingBottom: m.space.sm,
   },
 });

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { goalInk, goalTint, type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
@@ -9,13 +8,18 @@ export function GoalBadge({
   goal,
   onPress,
   selected = false,
+  add = false,
+  disabled = false,
+  hint,
 }: {
   goal: Goal;
   onPress?(): void;
   selected?: boolean;
+  add?: boolean;
+  disabled?: boolean;
+  hint?: string;
 }) {
   const { colors, isDark } = useTheme();
-  const [focused, setFocused] = useState(false);
   const badge = (
     <View
       style={[
@@ -28,6 +32,7 @@ export function GoalBadge({
     >
       <Text style={[styles.text, { color: goalInk(goal.color, colors.bg, isDark) }]}>
         {goal.name}
+        {add ? ' +' : ''}
       </Text>
     </View>
   );
@@ -35,16 +40,16 @@ export function GoalBadge({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={t('mobile.goal.select', { name: goal.name })}
-      accessibilityState={{ selected }}
+      accessibilityLabel={t(add ? 'mobile.goal.add' : 'mobile.goal.select', { name: goal.name })}
+      accessibilityHint={hint}
+      disabled={disabled}
+      accessibilityState={{ selected, disabled }}
       onPress={onPress}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
       style={({ pressed }) => [
         styles.touch,
         {
           opacity: pressed ? m.pressedOpacity : 1,
-          borderColor: focused ? colors.focus : selected ? goal.color : colors.surface,
+          borderColor: selected ? colors.ink : 'transparent',
         },
       ]}
     >

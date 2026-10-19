@@ -11,7 +11,7 @@ import { DatePickSheet } from './DatePickSheet';
 import { dayMenuReasons } from './day-menu-model';
 import type { useDayActions } from './useDayActions';
 
-/** TODO-10~12: 날짜 헤더에서 동일한 순서로 세 동작과 비활성 이유를 제공한다. */
+/** TODO-10~12: 상단 줄에서 동일한 순서로 세 동작과 비활성 이유를 제공한다. */
 export function DayMenu({
   client,
   date,
@@ -37,7 +37,6 @@ export function DayMenu({
   const online = useOnline();
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [focused, setFocused] = useState<string | null>(null);
   const overdue = useOverdueTodos(client, today, date === today);
   const targets = items.filter((row) => row.date === date && !row.isDone && !row.deletedAt);
   const moves = planOverdueMove({
@@ -107,12 +106,10 @@ export function DayMenu({
         accessibilityLabel={t('day.menu.open')}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(true)}
-        onFocus={() => setFocused('trigger')}
-        onBlur={() => setFocused(null)}
         style={({ pressed }) => [
           styles.trigger,
           {
-            borderColor: focused === 'trigger' ? colors.focus : colors.bg,
+            borderColor: 'transparent',
             opacity: pressed ? m.pressedOpacity : 1,
           },
         ]}
@@ -140,12 +137,10 @@ export function DayMenu({
                 disabled={!!entry.reason}
                 accessibilityState={{ disabled: !!entry.reason }}
                 onPress={entry.run}
-                onFocus={() => setFocused(entry.id)}
-                onBlur={() => setFocused(null)}
                 style={({ pressed }) => [
                   styles.item,
                   {
-                    borderColor: focused === entry.id ? colors.focus : colors.surface,
+                    borderColor: colors.surface,
                     opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}

@@ -43,7 +43,6 @@ export function DayCell({
       accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
-
       style={({ pressed }) => [
         styles.cell,
         monthly && styles.monthCell,

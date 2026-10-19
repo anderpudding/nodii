@@ -16,8 +16,8 @@ import {
   Alert,
   Keyboard,
   ScrollView,
+  SectionList,
   StyleSheet,
-  TextInput,
   type KeyboardEvent,
 } from 'react-native';
 import {
@@ -193,7 +193,7 @@ async function mount() {
       </ToastProvider>
     </QueryClientProvider>,
   );
-  await screen.findByRole('button', { name: t('todo.add') });
+  await screen.findByRole('radio', { name: t('mobile.view.week') });
   await waitFor(() => expect(screen.queryByText(t('mobile.today.loading'))).toBeNull());
   // 현재 실행 날짜와 무관한 선택 날짜. 오늘 시계 자체는 단위 테스트로 검증한다.
   act(() => {
@@ -232,9 +232,9 @@ it('체크를 즉시 반영하고 그 행만 잠그며 실패를 롤백·토스�
       .accessibilityState.checked,
   ).toBe(true);
 });
-it('추가는 즉시 월 캐시에 나타나고 입력을 비운 채 시트를 유지하며 3개 키가 다르다', async () => {
+it('추가는 즉시 월 캐시에 나타나고 입력을 비운 채 인라인 입력을 유지하며 3개 키가 다르다', async () => {
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }));
   const input = await screen.findByLabelText(t('todo.title'));
   expect(input.props.submitBehavior).toBe('submit');
   expect(
@@ -259,7 +259,7 @@ it('추가는 즉시 월 캐시에 나타나고 입력을 비운 채 시트를 �
   expect(
     cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))?.map((todo) => todo.title),
   ).toEqual(expect.arrayContaining(['영어', '수학', '독서']));
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.cancel') }));
+  fireEvent(screen.getByLabelText(t('todo.title')), 'blur');
   await screen.findByRole('checkbox', { name: t('todo.complete', { title: '독서' }) });
 });
 it('요청을 기다리지 않고 새 행을 표시하며 추가 실패 후 캐시와 입력을 복원한다', async () => {
@@ -271,7 +271,7 @@ it('요청을 기다리지 않고 새 행을 표시하며 추가 실패 후 캐�
       }),
   );
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }));
   const input = await screen.findByLabelText(t('todo.title'));
   fireEvent.changeText(input, '우유');
   fireEvent.press(screen.getByRole('button', { name: t('mobile.add.action') }));
@@ -291,40 +291,38 @@ it('요청을 기다리지 않고 새 행을 표시하며 추가 실패 후 캐�
   await waitFor(() => expect(input.props.value).toBe('우유'));
   await screen.findByText(t('todo.add.failed', { title: '우유', particle: '를' }));
 });
-it('IME 확인 Enter와 빈 제목은 무시하고 시트 닫기에 입력 폐기 확인을 붙인다', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
+it('IME 확인 Enter는 무시하고 바깥 누르기나 빈 제출은 인라인 입력을 닫는다', async () => {
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  const add = screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) });
+  fireEvent.press(add);
   const input = await screen.findByLabelText(t('todo.title'));
   fireEvent.changeText(input, '장보기');
   fireEvent(input, 'submitEditing', { nativeEvent: { text: '장보기', isComposing: true } });
   expect(createTodo).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.cancel') }));
-  expect(alert).toHaveBeenCalledWith(
-    t('mobile.add.discard.title'),
-    t('mobile.add.discard.description'),
-    expect.any(Array),
-  );
-  fireEvent.changeText(input, '   ');
-  fireEvent(input, 'submitEditing', { nativeEvent: { text: '   ' } });
+  fireEvent(input, 'blur');
+  expect(screen.queryByLabelText(t('todo.title'))).toBeNull();
+  fireEvent.press(add);
+  const next = screen.getByLabelText(t('todo.title'));
+  fireEvent.changeText(next, '   ');
+  fireEvent(next, 'submitEditing', { nativeEvent: { text: '   ' } });
   expect(createTodo).not.toHaveBeenCalled();
-  expect(screen.UNSAFE_getByType(TextInput).props.value).toBe('   ');
+  expect(screen.queryByLabelText(t('todo.title'))).toBeNull();
 });
-it('빈 날 문구와 고정 바 safe area 여백, 44pt 체크 영역을 제공한다', async () => {
+it('빈 날 안내와 safe area 아래 여백을 유지하고 캘린더를 목록 헤더에 둔다', async () => {
   jest.mocked(listTodosInRange).mockResolvedValue([]);
   await mount();
   await screen.findByText(t('mobile.today.empty'));
   const list = screen.getByTestId('day-list');
-  expect(StyleSheet.flatten(list.props.contentContainerStyle).paddingBottom).toBe(98);
-  const bar = screen.getByTestId('quick-add');
-  expect(StyleSheet.flatten(bar.props.style).minHeight).toBe(82);
+  expect(StyleSheet.flatten(list.props.contentContainerStyle).paddingBottom).toBe(34);
+  expect(list.props.ListHeaderComponent).toBeTruthy();
+  expect(typeof list.props.ListHeaderComponent).not.toBe('function');
+  expect(screen.queryByTestId('quick-add')).toBeNull();
   expect(
-    screen.getByRole('button', { name: t('mobile.month.expand') }).props.accessibilityState
-      .expanded,
-  ).toBe(false);
+    screen.getByRole('radio', { name: t('mobile.view.week') }).props.accessibilityState.checked,
+  ).toBe(true);
 });
 
-it('시트를 요청 중 닫아도 추가 실패를 토스트로 알리고 행을 롤백한다', async () => {
+it('입력을 요청 중 닫아도 추가 실패를 토스트로 알리고 행을 롤백한다', async () => {
   let reject: (error: Error) => void = () => {};
   jest.mocked(createTodo).mockImplementationOnce(
     () =>
@@ -333,11 +331,11 @@ it('시트를 요청 중 닫아도 추가 실패를 토스트로 알리고 행�
       }),
   );
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }));
   fireEvent.changeText(await screen.findByLabelText(t('todo.title')), 'OS 과제 새 항목');
   fireEvent.press(screen.getByRole('button', { name: t('mobile.add.action') }));
   await waitFor(() => expect(createTodo).toHaveBeenCalled());
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.cancel') }));
+  fireEvent(screen.getByLabelText(t('todo.title')), 'blur');
   await act(async () => reject(new Error('network')));
   await screen.findByText(t('todo.add.failed', { title: 'OS 과제 새 항목', particle: '을' }));
   expect(
@@ -350,7 +348,7 @@ it('월 경계에서 두 기존 월 캐시를 구독하고 추가와 체크를 �
   await mount();
   act(() => useUIStore.getState().selectDate('2026-10-01'));
   await waitFor(() => expect(cache.getQueryData(queryKeys.todos('2026-09'))).toBeDefined());
-  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }));
   fireEvent.changeText(await screen.findByLabelText(t('todo.title')), '월 경계');
   fireEvent.press(screen.getByRole('button', { name: t('mobile.add.action') }));
   await waitFor(() => expect(createTodo).toHaveBeenCalled());
@@ -369,7 +367,7 @@ it('월 경계에서 두 기존 월 캐시를 구독하고 추가와 체크를 �
   jest
     .mocked(updateTodo)
     .mockImplementationOnce(async (_client, _id, changes) => record({ ...todo, ...changes }));
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.add.cancel') }));
+  fireEvent(screen.getByLabelText(t('todo.title')), 'blur');
   fireEvent.press(
     await screen.findByRole('checkbox', { name: t('todo.complete', { title: '월 경계' }) }),
   );
@@ -602,10 +600,12 @@ it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 �
 
 it('월 제목으로 42칸을 펼치고 이전·다음 달과 VoiceOver로 이동한 뒤 선택하면 접힌다', async () => {
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
   const grid = await screen.findByTestId('month-grid');
   expect(within(grid).getAllByRole('button')).toHaveLength(42);
-  fireEvent.press(screen.getByRole('button', { name: t('calendar.nextMonth') }));
+  fireEvent(screen.getByTestId('month-grid'), 'accessibilityAction', {
+    nativeEvent: { actionName: 'increment' },
+  });
   expect(useUIStore.getState().calendarMonth).toBe('2026-11');
   act(() =>
     screen.getByTestId('month-grid').props.onAccessibilityAction({
@@ -664,7 +664,7 @@ it('VoiceOver 옮기기에서 다음 달을 고르면 겹치는 모든 캐시를
     cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-11'))?.some((row) => row.id === 'one'),
   ).toBe(false);
 });
-it('같은 날짜는 쓰지 않고 닫으며 추가 시트도 같은 날짜 시트로 다음 달에 추가한다', async () => {
+it('같은 날짜는 쓰지 않고 닫으며 인라인 입력도 같은 날짜 시트로 다음 달에 추가한다', async () => {
   await mount();
   await openMenu();
   fireEvent.press(screen.getByRole('button', { name: t('todo.action.move.menu') }));
@@ -675,10 +675,11 @@ it('같은 날짜는 쓰지 않고 닫으며 추가 시트도 같은 날짜 시�
   );
   expect(moveTodo).not.toHaveBeenCalled();
   expect(screen.queryByTestId('date-pick-sheet')).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: t('todo.add') }));
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }));
   fireEvent.changeText(await screen.findByLabelText(t('todo.title')), '다음 달 준비');
   fireEvent.press(screen.getByRole('button', { name: t('mobile.add.date.pick') }));
   const sheet = await screen.findByTestId('date-pick-sheet');
+  fireEvent(screen.getByLabelText(t('todo.title'), { includeHiddenElements: true }), 'blur');
   fireEvent.press(within(sheet).getByRole('button', { name: t('calendar.nextMonth') }));
   fireEvent.press(within(within(sheet).getByTestId('month-grid')).getAllByRole('button')[0]!);
   fireEvent.press(screen.getByRole('button', { name: t('mobile.add.action') }));
@@ -828,7 +829,10 @@ it('묶음 옮기기는 두 달 캐시를 낙관적으로 패치하고 원래 �
     screen.getByRole('checkbox', { name: t('todo.uncomplete', { title: '완료' }) }).props
       .accessibilityState.disabled,
   ).toBe(true);
-  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  expect(
+    screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }).props
+      .accessibilityState.disabled,
+  ).toBe(true);
   act(() => useUIStore.getState().selectDate('2026-11-01'));
   const moved = await screen.findByRole('checkbox', {
     name: t('todo.complete', { title: '장보기' }),
@@ -1003,15 +1007,19 @@ it('묶음 삭제 복원 실패도 전부 롤백하고 같은 실행 취소를 �
 
 it('월간에서 다른 달을 둘러봐도 선택한 날짜의 목록은 유지한다', async () => {
   await mount();
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
-  fireEvent.press(screen.getByRole('button', { name: t('calendar.nextMonth') }));
+  fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
+  fireEvent(screen.getByTestId('month-grid'), 'accessibilityAction', {
+    nativeEvent: { actionName: 'increment' },
+  });
   expect(useUIStore.getState().selectedDate).toBe('2026-10-10');
   expect(useUIStore.getState().calendarMonth).toBe('2026-11');
   expect(screen.getByTestId('todo-menu-one')).toBeTruthy();
-  expect(screen.getByTestId('day-list').props.ListHeaderComponent).toBeUndefined();
-  const month = screen.getByRole('button', { name: t('mobile.month.collapse') });
-  fireEvent(month, 'focus');
-  expect(StyleSheet.flatten(month.props.style).borderColor).toBe('#2A63C9');
+  expect(screen.getByTestId('day-list').props.ListHeaderComponent).toBeTruthy();
+  const month = screen.getByRole('radio', { name: t('mobile.view.week') });
+  fireEvent.press(month);
+  expect(useUIStore.getState().monthExpanded).toBe(false);
+  fireEvent.press(month);
+  expect(useUIStore.getState().monthExpanded).toBe(false);
 });
 
 function mountDayActions() {
@@ -1153,14 +1161,14 @@ it('루틴을 같은 날짜에 전개하고 주·월 도장과 완료·실패 �
   );
   await mount();
   expect(await screen.findByRole('checkbox', { name: '영어 루틴 완료하기' })).toBeTruthy();
-  expect(screen.getByText('오늘, 4개 중 0개 끝냄')).toBeTruthy();
+  expect(screen.queryByText('오늘, 4개 중 0개 끝냄')).toBeNull();
   fireEvent.press(screen.getByRole('checkbox', { name: '영어 루틴 완료하기' }));
   await screen.findByRole('checkbox', { name: '영어 루틴 완료 취소하기' });
   expect(
     screen.getByRole('checkbox', { name: '수학 루틴 완료하기' }).props.accessibilityState.disabled,
   ).toBe(false);
-  expect(screen.getByText('오늘, 4개 중 1개 끝냄')).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: t('mobile.month.expand') }));
+  expect(screen.getByRole('button', { name: /10월 10일.*3개 남음/ })).toBeTruthy();
+  fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
   expect(
     within(screen.getByTestId('month-grid')).getByRole('button', { name: /10월 10일.*3개 남음/ }),
   ).toBeTruthy();
@@ -1274,7 +1282,10 @@ it('기기 오프라인 띠와 쓰기 비활성이 재연결 때 해제되고 �
   await mount();
   act(() => onlineManager.setOnline(false));
   expect(screen.getByText(t('sync.offline'))).toBeTruthy();
-  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  expect(
+    screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }).props
+      .accessibilityState.disabled,
+  ).toBe(true);
   const check = screen.getByRole('checkbox', { name: '장보기 완료하기' });
   expect(check.props.accessibilityState.disabled).toBe(true);
   fireEvent.press(screen.getByTestId('todo-menu-one'));
@@ -1286,7 +1297,10 @@ it('기기 오프라인 띠와 쓰기 비활성이 재연결 때 해제되고 �
   fireEvent.press(screen.getByRole('button', { name: t('mobile.add.cancel') }));
   act(() => onlineManager.setOnline(true));
   expect(screen.queryByText(t('sync.offline'))).toBeNull();
-  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(false);
+  expect(
+    screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }).props
+      .accessibilityState.disabled,
+  ).toBe(false);
   expect(
     screen.getByRole('checkbox', { name: '장보기 완료하기' }).props.accessibilityState.disabled,
   ).toBe(false);
@@ -1297,7 +1311,9 @@ it('빈 하루는 첫 할 일 추가를 안내하고 활성 목표가 없어도 
   jest.mocked(listGoals).mockResolvedValue([]);
   await mount();
   expect(screen.getByText(t('mobile.today.noGoals'))).toBeTruthy();
-  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(true);
+  expect(
+    screen.queryByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }),
+  ).toBeNull();
   fireEvent.press(screen.getAllByRole('button', { name: t('settings.title') })[1]!);
   expect(screen.getByRole('button', { name: t('goal.manage') })).toBeTruthy();
 });
@@ -1305,8 +1321,11 @@ it('기본 목표만 있는 첫 하루에서도 할 일을 추가할 수 있다'
   jest.mocked(listTodosInRange).mockResolvedValue([]);
   await mount();
   expect(screen.getByText(t('mobile.today.empty'))).toBeTruthy();
-  expect(screen.getByTestId('quick-add').props.accessibilityState.disabled).toBe(false);
-  fireEvent.press(screen.getByTestId('quick-add'));
+  expect(
+    screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }).props
+      .accessibilityState.disabled,
+  ).toBe(false);
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }));
   expect(screen.getByLabelText(t('todo.title'))).toBeTruthy();
 });
 it('첫 안내를 건너뛴 뒤에도 줄 메뉴에 밀기와 같은 동작이 모두 있다', async () => {
@@ -1333,4 +1352,60 @@ it('오프라인에 캐시도 없으면 로딩 대신 인터넷 연결과 로그
   expect(screen.getByRole('button', { name: t('auth.logout') })).toBeTruthy();
   expect(screen.queryByText(t('mobile.today.loading'))).toBeNull();
   expect(fetchProfile).not.toHaveBeenCalled();
+});
+
+it('W/M은 직접 선택하고 월간에서도 상단 하루 메뉴와 설정을 제공한다', async () => {
+  await mount();
+  const top = screen.getByTestId('today-top');
+  expect(StyleSheet.flatten(top.props.style)).toMatchObject({
+    backgroundColor: '#F7F8FA',
+    paddingTop: 47,
+  });
+  expect(within(top).getAllByRole('header')).toHaveLength(1);
+  expect(within(top).UNSAFE_getByProps({ accessibilityRole: 'radiogroup' })).toBeTruthy();
+  const monthly = within(top).getByRole('radio', { name: t('mobile.view.month') });
+  fireEvent.press(monthly);
+  fireEvent.press(monthly);
+  expect(monthly.props.accessibilityState.checked).toBe(true);
+  expect(screen.getByTestId('month-grid')).toBeTruthy();
+  expect(within(top).getByRole('button', { name: t('settings.title') })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: t('calendar.nextMonth') })).toBeNull();
+  fireEvent.press(within(top).getByRole('button', { name: t('day.menu.open') }));
+  expect(await screen.findByTestId('day-menu-sheet')).toBeTruthy();
+});
+it('다른 목표의 +는 그 목표 맨 아래에 입력을 열고 Enter로 연속 추가한다', async () => {
+  const scroll = jest.spyOn(SectionList.prototype, 'scrollToLocation').mockImplementation(() => {});
+  jest
+    .mocked(listGoals)
+    .mockResolvedValue([
+      goal,
+      { ...goal, id: 'exercise', name: '운동', sortKey: 'a1', color: '#3FB28A' },
+    ]);
+  await mount();
+  fireEvent.press(screen.getByRole('button', { name: t('mobile.goal.add', { name: '운동' }) }));
+  const input = screen.getByLabelText(t('todo.title'));
+  fireEvent(input, 'focus');
+  expect(scroll).toHaveBeenCalledWith(
+    expect.objectContaining({ sectionIndex: 1, itemIndex: 0, viewPosition: 1 }),
+  );
+  expect(input.props.selectionColor).toBe('#3FB28A');
+  expect(input.props.autoFocus).toBe(true);
+  expect(input.props.blurOnSubmit).toBe(false);
+  for (const title of ['러닝', '스트레칭']) {
+    fireEvent.changeText(input, title);
+    fireEvent(input, 'submitEditing', { nativeEvent: { text: title } });
+    await waitFor(() =>
+      expect(createTodo).toHaveBeenCalledWith(
+        client,
+        expect.objectContaining({ title, goalId: 'exercise' }),
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: t('mobile.add.action') }).props.accessibilityState.busy,
+      ).toBe(false),
+    );
+    expect(screen.getByLabelText(t('todo.title'))).toBe(input);
+    expect(input.props.value).toBe('');
+  }
 });

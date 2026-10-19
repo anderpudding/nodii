@@ -10,7 +10,6 @@ export function CalendarArrow({ direction, onPress }: { direction: -1 | 1; onPre
       accessibilityRole="button"
       accessibilityLabel={t(direction === -1 ? 'calendar.previousMonth' : 'calendar.nextMonth')}
       onPress={onPress}
-
       style={({ pressed }) => [
         styles.button,
         {

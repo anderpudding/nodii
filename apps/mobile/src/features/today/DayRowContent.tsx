@@ -43,7 +43,6 @@ export function DayRowContent({
         accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
         disabled={locked || !online}
         onPress={onToggle}
-
         style={({ pressed }) => [
           styles.touch,
           {
@@ -77,7 +76,6 @@ export function DayRowContent({
         onAccessibilityAction={(event) => onAction(event.nativeEvent.actionName)}
         disabled={locked}
         onPress={onMenu}
-
         style={({ pressed }) => [
           styles.titleTouch,
           {

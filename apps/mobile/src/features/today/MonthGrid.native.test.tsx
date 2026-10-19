@@ -1,6 +1,8 @@
+import { GestureDetector } from 'react-native-gesture-handler';
+import { fireGestureHandler } from 'react-native-gesture-handler/jest-utils';
 /// <reference types="jest" />
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { type DaySummary, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { MonthGrid } from './MonthGrid';
@@ -52,8 +54,7 @@ it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴
   );
   expect(decorations[0]).toEqual(decorations[1]);
 });
-it('달 밀기 responder는 격자에만 있고 수직 스크롤에는 달을 넘기지 않는다', async () => {
-  const create = jest.spyOn(PanResponder, 'create');
+it('달 밀기 제스처는 격자에만 있고 수직 스크롤에는 달을 넘기지 않는다', async () => {
   const move = jest.fn();
   render(
     <MonthGrid
@@ -67,29 +68,18 @@ it('달 밀기 responder는 격자에만 있고 수직 스크롤에는 달을 �
     />,
   );
   await act(async () => {});
-  const callbacks = create.mock.calls[0]![0];
-  // 네이티브 responder 판정은 RN이 주는 두 인자를 받는다. 물리 인식은 실기기 확인 항목이다.
-  const event = {} as Parameters<NonNullable<typeof callbacks.onMoveShouldSetPanResponder>>[0];
-  const state = (dx: number, dy: number) => ({
-    dx,
-    dy,
-    moveX: dx,
-    moveY: dy,
-    x0: 0,
-    y0: 0,
-    vx: 0,
-    vy: 0,
-    stateID: 1,
-    numberActiveTouches: 1,
-    _accountsForMovesUpTo: 0,
+  const gesture = screen.UNSAFE_getByType(GestureDetector).props.gesture;
+  expect(gesture.config).toMatchObject({
+    activeOffsetXStart: -12,
+    activeOffsetXEnd: 12,
+    failOffsetYStart: -8,
+    failOffsetYEnd: 8,
   });
-  expect(callbacks.onMoveShouldSetPanResponder?.(event, state(20, 0))).toBe(false);
-  expect(callbacks.onMoveShouldSetPanResponder?.(event, state(50, 90))).toBe(false);
-  expect(callbacks.onMoveShouldSetPanResponder?.(event, state(-60, 2))).toBe(true);
+  // Native axis recognition is verified by its configuration; simulate completed horizontal pans.
   act(() => {
-    callbacks.onPanResponderRelease?.(event, state(-60, 2));
-    callbacks.onPanResponderRelease?.(event, state(60, 2));
-    callbacks.onPanResponderRelease?.(event, state(60, 90));
+    fireGestureHandler(gesture, [{ translationX: -60, translationY: 2 }]);
+    fireGestureHandler(gesture, [{ translationX: 60, translationY: 2 }]);
+    fireGestureHandler(gesture, [{ translationX: 20, translationY: 0 }]);
   });
   expect(move.mock.calls).toEqual([[1], [-1]]);
   fireEvent.press(within(screen.getByTestId('month-grid')).getAllByRole('button')[0]!);

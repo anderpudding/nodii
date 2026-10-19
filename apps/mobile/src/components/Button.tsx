@@ -27,7 +27,6 @@ export function Button({
       accessibilityState={{ disabled, busy }}
       disabled={disabled}
       onPress={onPress}
-
       style={({ pressed }) => [
         styles.button,
         {

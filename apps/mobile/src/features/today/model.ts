@@ -14,11 +14,6 @@ import {
 } from '@nodii/core';
 import type { RoutineRecord, TodoRecord } from '@nodii/api';
 
-export const quickAddHeight = 48; // MobileToday: 콘텐츠 48pt + 하단 safe area.
-/** MOB-04: 홈 인디케이터와 고정 바 아래로 마지막 행이 사라지지 않게 한다. */
-export function quickAddInset(bottom: number) {
-  return quickAddHeight + Math.max(bottom, 34);
-}
 /** CAL-05: 일/월 시작 설정을 UTC 달력 연산으로 적용한다. */
 export function weekRange(date: ISODate, weekStart: 0 | 1) {
   const from = addDays(date, -((weekdayOf(date) - weekStart + 7) % 7));
