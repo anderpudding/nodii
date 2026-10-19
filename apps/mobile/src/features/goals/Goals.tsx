@@ -154,7 +154,6 @@ function GoalRow({
   const remove = useDeleteGoal(client, { onError: () => toast(t('todo.save.failed')) });
   const [menu, setMenu] = useState(false);
   const [ordering, setOrdering] = useState(false);
-  const [focused, setFocused] = useState(false);
   const archived = !!goal.archivedAt;
   const labels = {
     edit: t('goal.edit'),
@@ -218,7 +217,7 @@ function GoalRow({
         s.horizontal,
         {
           backgroundColor: colors.surface,
-          borderColor: focused ? colors.focus : colors.line,
+          borderColor: colors.line,
           borderWidth: m.selectionRing,
         },
       ]}
@@ -243,8 +242,7 @@ function GoalRow({
           const action = goalActions.find(({ id }) => id === event.nativeEvent.actionName);
           if (action) run(action.id);
         }}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+
         style={({ pressed }) => [
           {
             flex: 1,

@@ -282,13 +282,14 @@ export function RoutineEditor({
             onChangeText={(title) => setDraft((value) => ({ ...value, title }))}
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
-            selectionColor={colors.focus}
+            selectionColor={goals.find((goal) => goal.id === draft.goalId)?.color ?? colors.ink}
             style={[
               s.input,
+              { borderWidth: 1.5 },
               {
                 color: colors.ink,
                 backgroundColor: colors.bg,
-                borderColor: inputFocused ? colors.focus : colors.field,
+                borderColor: inputFocused ? colors.ink : colors.field,
               },
             ]}
           />

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { metrics as m, useTheme } from '../../../lib/theme';
 
@@ -33,7 +33,6 @@ export function RoutineOption({
   inline?: boolean;
 }) {
   const { colors } = useTheme();
-  const [focused, setFocused] = useState(false);
   return (
     <Pressable
       accessibilityRole={selected === undefined ? 'button' : multiple ? 'checkbox' : 'radio'}
@@ -41,8 +40,7 @@ export function RoutineOption({
       accessibilityState={{ disabled, selected, checked: selected }}
       disabled={disabled}
       onPress={onPress}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+
       style={({ pressed }) => [
         styles.option,
         compact && styles.compact,
@@ -56,8 +54,8 @@ export function RoutineOption({
                 ? colors.boxFill
                 : colors.surface,
           borderColor:
-            focused || (selected && !filled)
-              ? colors.focus
+            selected && !filled
+              ? colors.ink
               : selected
                 ? colors.ink
                 : segment

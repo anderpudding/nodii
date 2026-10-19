@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar';
 import { useMemo, type ReactNode } from 'react';
 import { Modal, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +25,7 @@ export function ManagementScreen({
   testID: string;
   swipeRows?: boolean;
 }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const edge = useMemo(
     () =>
@@ -46,6 +47,7 @@ export function ManagementScreen({
   );
   return (
     <Modal visible animationType="none" onRequestClose={onClose}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <View
         testID={testID}
         accessibilityViewIsModal

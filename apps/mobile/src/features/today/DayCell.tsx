@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { weekdayOf, type DaySummary, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
@@ -23,7 +22,6 @@ export function DayCell({
   outside?: boolean;
 }) {
   const { colors } = useTheme();
-  const [focused, setFocused] = useState(false);
   const weekday = weekdayOf(date);
   const done = !!summary?.total && summary.remaining === 0;
   const empty = !summary?.total;
@@ -45,14 +43,13 @@ export function DayCell({
       accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+
       style={({ pressed }) => [
         styles.cell,
         monthly && styles.monthCell,
         {
           opacity: (pressed ? m.pressedOpacity : 1) * (outside ? 0.4 : 1),
-          borderColor: focused ? colors.focus : colors.side,
+          borderColor: colors.side,
         },
       ]}
     >
