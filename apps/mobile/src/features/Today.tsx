@@ -380,7 +380,7 @@ function TodayContent({
                   />
                 </View>
               )}
-              <View style={styles.feedback}>
+              <View style={failed || loading || !items.length ? styles.feedback : undefined}>
                 {failed ? (
                   <View>
                     <Text accessibilityRole="alert" style={{ color: colors.danger }}>
