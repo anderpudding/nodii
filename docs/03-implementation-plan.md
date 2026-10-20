@@ -261,6 +261,8 @@
 - [x] Expo Router 단일 스택·safe area·44·라이트/다크 스파이크 화면 (MOB-04)
 - [x] EAS development·preview·production 프로필, 동일 번들 ID, iOS 16.4 최소 지원
 - [x] 시뮬레이터/실기기에서 Supabase 헬스·2KB SecureStore·재실행 유지 확인
+- [x] iOS Simulator 실행 명령의 개발 서버 주소를 localhost로 고정하고 ATS 연결 오류 재시작 안내 추가
+- [x] `ios` 명령에 IPv4 우선·Expo Go·캐시 초기화 옵션을 포함해 시뮬레이터 실행 단일 명령으로 통일
 - [x] EAS production 빌드 → TestFlight 설치 및 두 항목 성공 확인
 
 **완료 기준:** TestFlight 설치본에서 Supabase 헬스 체크와 SecureStore 읽기/쓰기·재실행 유지를 확인한다. → ✅ **통과 (2026-10-09)**
@@ -657,3 +659,7 @@
 | 2026-10-12 | M6 폰트·환경 예시 후속 | NFR-04·SET-07: 사용자 지시로 Pretendard 정적 400/500/600/700 네 벌을 Adobe-KR-9 상용 한글2,780자+원본 비한글3,164자 기준으로 subset. 합계6,318,784→3,011,192bytes(52.35% 감소), 앱/공유168파일의 AST/원문·Intl615문자 검사 신규 누락0·기존 ⌄/☰ fallback 유지, 5,944코드포인트/네 벌의 윤곽·폭 해시·정적weight 검증. 재현 scripts/subset.js·FontTools4.61.1 임시 venv 도구·tokens.md §7/런북 갱신. export11,144,030→7,836,393bytes, Hermes4,800,223bytes. mobile .env.example의 배포5항목을 desktop처럼 빈 값+주석으로 통일(배포별 값은 local/EAS에서 설정), 앱 기본 링크 동작 유지. 필수4종 실제 출력 core156·i18n5·api80·desktop112·mobile Vitest123·RNTL10스위트87=563검사 통과, 신규음절 누락 거부/예시5항목 빈 값 검사 통과. 앱/프로젝트 의존성·DB 변경 없음으로 DB검증 미실행. 기존 EAS0.1.0(5) IPA는 서브셋 전 결과이며 새 네이티브 빌드/정적폰트·fallback 실기기 확인은 미실행. |
 
 | 2026-10-19 | v2 M7 | TODO-01/02/09~12·MOB-02~05: W/M 상단 줄·보이는 하루 메뉴·캘린더 동반 스크롤/축 분리·목표 + 인라인 연속 추가·파란 포커스 제거·상태 표시줄 배경 수정. 필수4종 564검사(core156·i18n5·api80·desktop112·mobile Vitest122·RNTL89)와 iOS Hermes export(1,799모듈·약4.8MB) 통과. 의존성·core/api·DB 변경 없음으로 DB 검증 미실행. 이전 요구사항/시안 차이·실기기 스크롤/키보드/제스처·다크 확인은 M7 절에 기록. |
+
+| 2026-10-19 | iOS Simulator ATS 연결 수정 | MOB-01 개발 검증 지원: `ios` 스크립트에 `--localhost`를 추가해 자동 선택된 LAN IP의 HTTP 개발 서버가 ATS에 차단되는 오류를 피하고, README에 Metro 재시작·실기기 실행 구분 안내 추가. 필수4종 통과(core156·i18n5·api80·desktop112·mobile Vitest122·RNTL89=564검사), `ios --help`에서 옵션 전달 확인. RNTL의 act 경고는 남음. sandbox의 CoreSimulatorService 접근 제한으로 실제 Simulator 재연결 미확인. 새 의존성·DB·배포 보안 설정 변경 없음으로 DB 검증 미실행. |
+
+| 2026-10-19 | iOS Simulator 실행 단순화 | MOB-01 개발 검증 지원: `pnpm --filter @nodii/mobile ios`에 IPv4 우선(`NODE_OPTIONS=--dns-result-order=ipv4first`)·Expo Go(`--go`)·캐시 초기화(`--clear`)를 포함하고 기존 `--ios --localhost` 유지. README의 수동 IPv4 명령을 통합 실행 안내로 정리. 필수 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과(564검사), `ios --help`로 옵션 전달 확인. 기존 RNTL act 경고 유지. 이번 변경 후 Simulator 실제 실행은 미실행이며 사용자 재시작 확인 필요. 새 의존성·제품/설계 변경·DB 변경 없음으로 DB 검증 미실행. |
