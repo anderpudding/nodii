@@ -525,6 +525,8 @@
 - [x] W/M 직접 선택·상단 하루 메뉴·목표별 연속 추가/입력 인스턴스 유지·오프라인 비활성·날짜 선택 중 blur·주월 스크롤 헤더 회귀 검증
 - [ ] 실기기: 캘린더 동반 세로 스크롤, 가로 밀기 축 충돌, 긴 목표 목록의 키보드 회피/날짜 시트 복귀, 모든 화면의 포커스·다크 상태 표시줄 확인
 
+- [x] M7 후속: 사용자 요청으로 빈 날 안내 문구와 여백·미사용 카탈로그 키 제거, 목표 + 추가 및 목표 없는 상태의 설정 안내 유지 (TODO-01/09)
+
 **M7 검증·문서 차이 (2026-10-19)**
 
 - `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` 통과. 실제 출력: core **156**, i18n **5**, api **80**, desktop **112**, mobile Vitest **122**, Jest/RNTL **10스위트·89개**, 합계 **564개**. 삭제한 하단 바 전용 단위 검사 1개 대신 기존 흐름을 갱신하고 네이티브 통합 검사 2개를 추가했다. 기존 비동기 `act` 경고는 남아 있다.
@@ -663,3 +665,5 @@
 | 2026-10-19 | iOS Simulator ATS 연결 수정 | MOB-01 개발 검증 지원: `ios` 스크립트에 `--localhost`를 추가해 자동 선택된 LAN IP의 HTTP 개발 서버가 ATS에 차단되는 오류를 피하고, README에 Metro 재시작·실기기 실행 구분 안내 추가. 필수4종 통과(core156·i18n5·api80·desktop112·mobile Vitest122·RNTL89=564검사), `ios --help`에서 옵션 전달 확인. RNTL의 act 경고는 남음. sandbox의 CoreSimulatorService 접근 제한으로 실제 Simulator 재연결 미확인. 새 의존성·DB·배포 보안 설정 변경 없음으로 DB 검증 미실행. |
 
 | 2026-10-19 | iOS Simulator 실행 단순화 | MOB-01 개발 검증 지원: `pnpm --filter @nodii/mobile ios`에 IPv4 우선(`NODE_OPTIONS=--dns-result-order=ipv4first`)·Expo Go(`--go`)·캐시 초기화(`--clear`)를 포함하고 기존 `--ios --localhost` 유지. README의 수동 IPv4 명령을 통합 실행 안내로 정리. 필수 `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과(564검사), `ios --help`로 옵션 전달 확인. 기존 RNTL act 경고 유지. 이번 변경 후 Simulator 실제 실행은 미실행이며 사용자 재시작 확인 필요. 새 의존성·제품/설계 변경·DB 변경 없음으로 DB 검증 미실행. |
+
+| 2026-10-19 | M7 빈 날 문구 후속 | TODO-01/09: 사용자 요청으로 모바일 빈 날 안내와 해당 여백·미사용 i18n 키를 제거하고 목표 + 추가·활성 목표가 없는 상태의 설정 안내는 유지. 기존 회귀 검사와 모바일 화면 스펙 갱신. pnpm lint·format:check·typecheck·test 564검사 통과. 새 의존성·DB 변경 없음으로 DB 검증 미실행. 단계 지시서의 빈 날 안내 유지보다 이번 사용자 요청을 우선. 실기기 화면 확인은 미실행. |

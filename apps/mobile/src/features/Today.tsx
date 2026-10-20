@@ -380,7 +380,11 @@ function TodayContent({
                   />
                 </View>
               )}
-              <View style={failed || loading || !items.length ? styles.feedback : undefined}>
+              <View
+                style={
+                  failed || loading || (!items.length && !activeGoal) ? styles.feedback : undefined
+                }
+              >
                 {failed ? (
                   <View>
                     <Text accessibilityRole="alert" style={{ color: colors.danger }}>
@@ -392,18 +396,16 @@ function TodayContent({
                   <Text style={[styles.supporting, { color: colors.muted }]}>
                     {t(online ? 'mobile.today.loading' : 'mobile.offline.noCache')}
                   </Text>
-                ) : !items.length ? (
+                ) : !items.length && !activeGoal ? (
                   <View style={{ gap: m.space.sm }}>
                     <Text style={[styles.supporting, { color: colors.muted }]}>
-                      {t(activeGoal ? 'mobile.today.empty' : 'mobile.today.noGoals')}
+                      {t('mobile.today.noGoals')}
                     </Text>
-                    {!activeGoal && (
-                      <Button
-                        label={t('settings.title')}
-                        secondary
-                        onPress={() => setSettings(true)}
-                      />
-                    )}
+                    <Button
+                      label={t('settings.title')}
+                      secondary
+                      onPress={() => setSettings(true)}
+                    />
                   </View>
                 ) : null}
               </View>

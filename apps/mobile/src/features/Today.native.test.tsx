@@ -308,10 +308,13 @@ it('IME 확인 Enter는 무시하고 바깥 누르기나 빈 제출은 인라인
   expect(createTodo).not.toHaveBeenCalled();
   expect(screen.queryByLabelText(t('todo.title'))).toBeNull();
 });
-it('빈 날 안내와 safe area 아래 여백을 유지하고 캘린더를 목록 헤더에 둔다', async () => {
+it('빈 날 안내 없이 목표 추가와 safe area 여백을 유지하고 캘린더를 목록 헤더에 둔다', async () => {
   jest.mocked(listTodosInRange).mockResolvedValue([]);
   await mount();
-  await screen.findByText(t('mobile.today.empty'));
+  expect(screen.queryByText('이날은 비어 있어요. 아래에서 바로 추가할 수 있어요.')).toBeNull();
+  expect(
+    screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }),
+  ).toBeTruthy();
   const list = screen.getByTestId('day-list');
   expect(StyleSheet.flatten(list.props.contentContainerStyle).paddingBottom).toBe(34);
   expect(list.props.ListHeaderComponent).toBeTruthy();
@@ -1313,7 +1316,7 @@ it('기기 오프라인 띠와 쓰기 비활성이 재연결 때 해제되고 �
   ).toBe(false);
 });
 
-it('빈 하루는 첫 할 일 추가를 안내하고 활성 목표가 없어도 설정으로 진입한다', async () => {
+it('활성 목표가 없는 빈 하루에서는 설정으로 진입할 수 있다', async () => {
   jest.mocked(listTodosInRange).mockResolvedValue([]);
   jest.mocked(listGoals).mockResolvedValue([]);
   await mount();
@@ -1327,7 +1330,7 @@ it('빈 하루는 첫 할 일 추가를 안내하고 활성 목표가 없어도 
 it('기본 목표만 있는 첫 하루에서도 할 일을 추가할 수 있다', async () => {
   jest.mocked(listTodosInRange).mockResolvedValue([]);
   await mount();
-  expect(screen.getByText(t('mobile.today.empty'))).toBeTruthy();
+  expect(screen.queryByText('이날은 비어 있어요. 아래에서 바로 추가할 수 있어요.')).toBeNull();
   expect(
     screen.getByRole('button', { name: t('mobile.goal.add', { name: goal.name }) }).props
       .accessibilityState.disabled,

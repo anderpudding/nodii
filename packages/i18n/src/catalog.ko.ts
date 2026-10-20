@@ -172,7 +172,6 @@ export const ko = {
   'calendar.empty': '{date}, 할 일 없음',
   'calendar.done': '{date}, 모두 끝냄',
   'calendar.remaining': '{date}, {count}개 남음',
-  'mobile.today.empty': '이날은 비어 있어요. 아래에서 바로 추가할 수 있어요.',
   'mobile.today.noGoals': '설정에서 목표를 만든 뒤 첫 할 일을 추가해 주세요.',
   'mobile.offline.noCache': '저장된 기록이 없어요. 인터넷에 연결하면 불러올 수 있어요.',
   'mobile.error.title': '문제가 생겼어요',
