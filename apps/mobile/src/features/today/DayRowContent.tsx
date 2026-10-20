@@ -1,5 +1,4 @@
 import { useOnline } from '../../../lib/connectivity';
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type AccessibilityActionInfo } from 'react-native';
 import { checkColor, type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
@@ -29,7 +28,6 @@ export function DayRowContent({
 }) {
   const { colors } = useTheme();
   const online = useOnline();
-  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.row}>
       <Pressable
@@ -45,13 +43,11 @@ export function DayRowContent({
         accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
         disabled={locked || !online}
         onPress={onToggle}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         style={({ pressed }) => [
           styles.touch,
           {
             opacity: pressed || !online ? m.pressedOpacity : 1,
-            borderColor: focused ? colors.focus : colors.bg,
+            borderColor: colors.bg,
           },
         ]}
       >
@@ -80,13 +76,11 @@ export function DayRowContent({
         onAccessibilityAction={(event) => onAction(event.nativeEvent.actionName)}
         disabled={locked}
         onPress={onMenu}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         style={({ pressed }) => [
           styles.titleTouch,
           {
             opacity: pressed ? m.pressedOpacity : 1,
-            borderColor: focused ? colors.focus : colors.bg,
+            borderColor: colors.bg,
           },
         ]}
       >

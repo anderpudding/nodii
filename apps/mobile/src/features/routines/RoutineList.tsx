@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar';
 import { useOnline } from '../../../lib/connectivity';
 import { useMemo, useState } from 'react';
 import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -45,7 +46,7 @@ export function RoutineList({
   onClose(): void;
   backLabel?: string;
 }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const online = useOnline();
   const insets = useSafeAreaInsets();
   const edge = useMemo(
@@ -85,6 +86,7 @@ export function RoutineList({
   const barHeight = m.height.field + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg);
   return (
     <Modal visible animationType="none" onRequestClose={onClose}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <View
         accessibilityViewIsModal
         {...edge.panHandlers}
@@ -214,7 +216,6 @@ function ManagementRow({
   const online = useOnline();
   const busy = useRoutineWritePending(routine.id);
   const [menu, setMenu] = useState(false);
-  const [focused, setFocused] = useState(false);
   const label = `${routine.title} · ${ruleLabel(routine)} · ${t(routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from', { date: routineDate(routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate) })}`;
   function run(action: RoutineManagementAction) {
     if (busy || !online) return;
@@ -251,8 +252,7 @@ function ManagementRow({
             else setMenu(true);
           }}
           onLongPress={() => setMenu(true)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+
           accessibilityActions={routineManagementActions.map(({ id }) => ({
             name: id,
             label: routineActionLabel(id, false),
@@ -266,7 +266,7 @@ function ManagementRow({
           style={({ pressed }) => [
             styles.row,
             {
-              borderColor: focused ? colors.focus : colors.surface,
+              borderColor: colors.surface,
               borderBottomColor: colors.line,
               opacity: pressed ? m.pressedOpacity : 1,
             },

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -36,7 +36,6 @@ export function BottomSheet({
 }) {
   const { colors } = useTheme();
   const reduced = useReducedMotion();
-  const [cancelFocused, setCancelFocused] = useState(false);
   const insets = useSafeAreaInsets();
   const pan = useMemo(
     () =>
@@ -96,12 +95,10 @@ export function BottomSheet({
                 accessibilityRole="button"
                 accessibilityLabel={t('mobile.add.cancel')}
                 onPress={onClose}
-                onFocus={() => setCancelFocused(true)}
-                onBlur={() => setCancelFocused(false)}
                 style={({ pressed }) => [
                   styles.cancel,
                   {
-                    borderColor: cancelFocused ? colors.focus : colors.field,
+                    borderColor: colors.field,
                     opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}

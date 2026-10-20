@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { StyleSheet, View } from 'react-native';
 import { addDays, type DaySummary, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { DayCell } from './DayCell';
@@ -21,40 +21,39 @@ export function WeekStrip({
 }) {
   const { colors } = useTheme();
   const move = (direction: -1 | 1) => onSelect(addDays(selectedDate, direction * 7));
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gesture) =>
-          Math.abs(gesture.dx) > m.height.touch && Math.abs(gesture.dx) > Math.abs(gesture.dy),
-        onPanResponderRelease: (_event, gesture) => {
-          if (Math.abs(gesture.dx) > m.height.touch)
-            onSelect(addDays(selectedDate, gesture.dx < 0 ? 7 : -7));
-        },
-      }),
-    [selectedDate, onSelect],
-  );
+  const pan = Gesture.Pan()
+    .activeOffsetX([-m.space.md, m.space.md])
+    .failOffsetY([-m.space.sm, m.space.sm])
+    .runOnJS(true)
+    .onEnd((event) => {
+      if (Math.abs(event.translationX) > m.height.touch)
+        onSelect(addDays(selectedDate, event.translationX < 0 ? 7 : -7));
+    });
   return (
-    <View
-      accessibilityLabel={t('calendar.week')}
-      accessibilityActions={[
-        { name: 'decrement', label: t('calendar.previousWeek') },
-        { name: 'increment', label: t('calendar.nextWeek') },
-      ]}
-      onAccessibilityAction={(event) => move(event.nativeEvent.actionName === 'decrement' ? -1 : 1)}
-      style={[styles.strip, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
-      {...pan.panHandlers}
-    >
-      {dates.map((date) => (
-        <DayCell
-          key={date}
-          date={date}
-          today={today}
-          selected={date === selectedDate}
-          summary={summary.get(date)}
-          onPress={() => onSelect(date)}
-        />
-      ))}
-    </View>
+    <GestureDetector gesture={pan}>
+      <View
+        accessibilityLabel={t('calendar.week')}
+        accessibilityActions={[
+          { name: 'decrement', label: t('calendar.previousWeek') },
+          { name: 'increment', label: t('calendar.nextWeek') },
+        ]}
+        onAccessibilityAction={(event) =>
+          move(event.nativeEvent.actionName === 'decrement' ? -1 : 1)
+        }
+        style={[styles.strip, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
+      >
+        {dates.map((date) => (
+          <DayCell
+            key={date}
+            date={date}
+            today={today}
+            selected={date === selectedDate}
+            summary={summary.get(date)}
+            onPress={() => onSelect(date)}
+          />
+        ))}
+      </View>
+    </GestureDetector>
   );
 }
 const styles = StyleSheet.create({

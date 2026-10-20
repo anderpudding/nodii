@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { metrics as m, useTheme } from '../../lib/theme';
 
@@ -21,7 +20,6 @@ export function Button({
   accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
-  const [focused, setFocused] = useState(false);
   return (
     <Pressable
       accessibilityRole="button"
@@ -29,15 +27,13 @@ export function Button({
       accessibilityState={{ disabled, busy }}
       disabled={disabled}
       onPress={onPress}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
       style={({ pressed }) => [
         styles.button,
         {
           borderRadius: pill ? m.radius.pill : m.radius.button,
           minHeight: secondary ? m.height.touch : m.height.field,
           backgroundColor: secondary ? colors.bg : colors.ink,
-          borderColor: focused ? colors.focus : secondary ? colors.bg : colors.ink,
+          borderColor: secondary ? colors.bg : colors.ink,
           opacity: pressed || disabled ? m.pressedOpacity : 1,
         },
       ]}

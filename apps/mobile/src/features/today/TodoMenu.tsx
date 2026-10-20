@@ -167,7 +167,8 @@ export function TodoMenu({
                     {
                       color: colors.ink,
                       backgroundColor: colors.bg,
-                      borderColor: focused === 'input' ? colors.focus : colors.field,
+                      borderWidth: 1.5,
+                      borderColor: focused === 'input' ? colors.ink : colors.field,
                     },
                   ]}
                 />
@@ -211,13 +212,12 @@ export function TodoMenu({
                       onAction(id);
                     }
                   }}
-                  onFocus={() => setFocused(id)}
-                  onBlur={() => setFocused(null)}
+
                   style={({ pressed }) => [
                     styles.item,
                     {
                       borderBottomColor: colors.line,
-                      borderColor: focused === id ? colors.focus : colors.surface,
+                      borderColor: colors.surface,
                       opacity: pressed ? m.pressedOpacity : 1,
                     },
                   ]}
@@ -244,12 +244,10 @@ export function TodoMenu({
                 accessibilityRole="button"
                 accessibilityLabel={t('mobile.add.cancel')}
                 onPress={close}
-                onFocus={() => setFocused('cancel')}
-                onBlur={() => setFocused(null)}
                 style={({ pressed }) => [
                   styles.cancel,
                   {
-                    borderColor: focused === 'cancel' ? colors.focus : colors.field,
+                    borderColor: colors.field,
                     opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}

@@ -1,5 +1,4 @@
 import { useOnline } from '../../../lib/connectivity';
-import { useState } from 'react';
 import type { Goal, Routine } from '@nodii/core';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { t } from '@nodii/i18n';
@@ -35,7 +34,6 @@ export function RoutineMenu({
 }) {
   const { colors } = useTheme();
   const online = useOnline();
-  const [focused, setFocused] = useState<string | null>(null);
   return (
     <BottomSheet title={routine.title} testID="routine-menu-sheet" bottomCancel onClose={onClose}>
       <GoalBadge goal={goal} />
@@ -53,12 +51,11 @@ export function RoutineMenu({
               onClose();
               onAction(id);
             }}
-            onFocus={() => setFocused(id)}
-            onBlur={() => setFocused(null)}
+
             style={({ pressed }) => [
               styles.item,
               {
-                borderColor: focused === id ? colors.focus : colors.surface,
+                borderColor: colors.surface,
                 borderBottomColor: colors.line,
                 opacity: pressed || locked ? m.pressedOpacity : 1,
               },

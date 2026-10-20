@@ -162,11 +162,13 @@ export function GoalEditor({
         onChangeText={setName}
         maxLength={GOAL_NAME_MAX_LENGTH}
         editable={!blocked}
+        selectionColor={isHexColor(color) ? color : colors.ink}
         onFocus={() => setFocused('name')}
         onBlur={() => setFocused(null)}
         style={[
           s.input,
-          { color: colors.ink, borderColor: focused === 'name' ? colors.focus : colors.field },
+          { borderWidth: 1.5 },
+          { color: colors.ink, borderColor: focused === 'name' ? colors.ink : colors.field },
         ]}
       />
       <Text style={[s.label, { color: colors.ink2 }]}>{t('goal.color')}</Text>
@@ -197,12 +199,13 @@ export function GoalEditor({
         onBlur={() => setFocused(null)}
         style={[
           s.input,
+          { borderWidth: 1.5 },
           {
             color: colors.ink,
             borderColor: !isHexColor(color)
               ? colors.danger
               : focused === 'color'
-                ? colors.focus
+                ? colors.ink
                 : colors.field,
           },
         ]}

@@ -164,7 +164,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
 
   return (
     <SafeAreaView
-      edges={gate.status === 'ready' && gate.session ? ['top', 'left', 'right'] : undefined}
+      edges={gate.status === 'ready' && gate.session ? ['left', 'right'] : undefined}
       style={[styles.root, { backgroundColor: colors.bg }]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />

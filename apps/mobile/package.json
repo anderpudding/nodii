@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios",
+    "ios": "NODE_OPTIONS=--dns-result-order=ipv4first expo start --go --ios --localhost --clear",
     "typecheck": "tsc --noEmit",
     "test": "vitest run && jest --runInBand",
     "test:native": "jest --runInBand",

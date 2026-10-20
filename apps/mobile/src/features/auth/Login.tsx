@@ -100,10 +100,8 @@ export function Login({
     {
       color: colors.ink,
       backgroundColor: colors.surface,
-      borderColor: focused === name ? colors.focus : colors.field,
-      outlineColor: colors.focus,
-      outlineWidth: focused === name ? m.focusRing : 0,
-      outlineStyle: 'solid' as const,
+      borderWidth: 1.5,
+      borderColor: focused === name ? colors.ink : colors.field,
     },
   ];
   return (
@@ -206,7 +204,8 @@ export function Login({
                       styles.slot,
                       {
                         backgroundColor: colors.surface,
-                        borderColor: focused === 'code' ? colors.focus : colors.field,
+                        borderWidth: 1.5,
+                        borderColor: focused === 'code' ? colors.ink : colors.field,
                       },
                     ]}
                   >
@@ -229,14 +228,7 @@ export function Login({
                 maxLength={6}
                 editable={!state.pending}
                 caretHidden
-                style={[
-                  styles.codeInput,
-                  {
-                    outlineColor: colors.focus,
-                    outlineWidth: focused === 'code' ? m.focusRing : 0,
-                    outlineStyle: 'solid',
-                  },
-                ]}
+                style={[styles.codeInput, {}]}
                 onFocus={() => setFocused('code')}
                 onBlur={() => setFocused(null)}
                 onChangeText={(value) => {
