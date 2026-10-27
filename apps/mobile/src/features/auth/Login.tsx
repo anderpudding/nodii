@@ -15,7 +15,7 @@ import {
   verifyOtp,
   type NodiiClient,
 } from '@nodii/api';
-import { goalInk, goalTint } from '@nodii/core';
+import { BrandMark } from '../../components/BrandMark';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
@@ -40,7 +40,7 @@ export function Login({
   const [focused, setFocused] = useState<string | null>(null);
   const busy = useRef(false);
   const codeInput = useRef<TextInput>(null);
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const email = state.email.trim().toLowerCase();
   const review = isReviewEmail(email, reviewAccountEmail);
   const remaining = cooldownRemaining(state, state.step === 'code' ? state.codeEmail : email, now);
@@ -99,14 +99,14 @@ export function Login({
     styles.input,
     {
       color: colors.ink,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.chip,
       borderWidth: 1.5,
       borderColor: focused === name ? colors.ink : colors.chip,
     },
   ];
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, { backgroundColor: colors.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -119,19 +119,7 @@ export function Login({
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          {['#4F7CFF', '#3FB28A', '#E9C23A', '#A06CD5'].map((color, index) => (
-            <View
-              key={color}
-              style={[
-                styles.mark,
-                {
-                  backgroundColor:
-                    index === 3 ? colors.bg : goalTint(color, colors.bg, isDark ? 0.22 : 0.14),
-                  borderColor: goalInk(color, colors.bg, isDark),
-                },
-              ]}
-            />
-          ))}
+          <BrandMark />
         </View>
         <Text style={[styles.brand, { color: colors.muted }]}>{t('auth.brand')}</Text>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
@@ -203,7 +191,7 @@ export function Login({
                     style={[
                       styles.slot,
                       {
-                        backgroundColor: colors.surface,
+                        backgroundColor: colors.chip,
                         borderWidth: 1.5,
                         borderColor: focused === 'code' ? colors.ink : colors.chip,
                       },
@@ -301,22 +289,16 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: m.space.group },
   marks: { flexDirection: 'row', gap: m.space.sm, marginBottom: m.space.group },
-  mark: {
-    width: m.type.title,
-    height: m.type.title,
-    borderRadius: m.radius.mark,
-    borderWidth: m.border,
-  },
   brand: {
-    fontFamily: m.fontBold,
+    fontFamily: m.fontExtraBold,
     fontSize: m.type.button,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: m.space.sm,
   },
   title: {
-    fontFamily: m.fontBold,
+    fontFamily: m.fontExtraBold,
     fontSize: m.type.title,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: m.letterSpacing.title,
     lineHeight: m.type.title * m.lineHeight.title,
   },
@@ -354,9 +336,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   digit: {
-    fontFamily: m.fontBold,
+    fontFamily: m.fontExtraBold,
     fontSize: m.type.heading,
-    fontWeight: '700',
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
   codeInput: {

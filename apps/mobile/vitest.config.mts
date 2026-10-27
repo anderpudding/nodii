@@ -1,7 +1,12 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  resolve: { alias: { 'react-native': 'react-native-web' } },
+  resolve: {
+    alias: {
+      'react-native': 'react-native-web',
+      'react-native-svg': 'react-native-svg/lib/module/elements.web.js',
+    },
+  },
   test: {
     include: ['{lib,src}/**/*.test.{ts,tsx}'],
     exclude: ['**/*.native.test.tsx'],
