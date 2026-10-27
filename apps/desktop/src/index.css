@@ -418,21 +418,20 @@ h2 {
 .goal-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   max-width: 100%;
-  min-height: 32px;
-  padding: 4px 11px 4px 14px;
+  min-height: 34px;
+  padding: 4px 11px;
   border: 0;
   border-radius: 999px;
-  background: var(--goal-tint-light);
+  background: var(--color-chip);
   color: var(--goal-ink-light);
   font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
   overflow-wrap: anywhere;
 }
 .dark .goal-chip {
-  background: var(--goal-tint-dark);
   color: var(--goal-ink-dark);
 }
 button.goal-chip,
@@ -1627,4 +1626,18 @@ body,
     stroke: var(--color-muted);
     stroke-width: 1.4px;
   }
+}
+
+.goal-chip-surface {
+  background: var(--color-bg);
+}
+.goal-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 999px;
+  background: var(--goal-color);
+}
+.goal-chip > span:last-child:not(.goal-dot) {
+  color: var(--color-ink);
 }
