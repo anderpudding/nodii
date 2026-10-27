@@ -152,23 +152,22 @@ h2 {
 }
 .input {
   width: 100%;
-  height: 48px;
-  border: 1px solid var(--color-chip);
-  border-radius: 10px;
   padding: 0 16px;
-  background: var(--color-bg);
   color: var(--color-ink);
   font-size: 15px;
-  transition: border-color 0.15s ease-out;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-chip);
+  transition: box-shadow 0.15s ease-out;
 }
 .input::placeholder {
   color: var(--color-muted);
 }
 .input:hover {
-  border-color: var(--color-ink-2);
 }
 .input[aria-invalid='true'] {
-  border-color: var(--color-danger);
+  box-shadow: inset 0 0 0 1.5px var(--color-danger);
 }
 .input:disabled {
   background: var(--color-box);
@@ -1702,4 +1701,12 @@ body,
   background: var(--color-box);
   color: var(--color-muted);
   cursor: not-allowed;
+}
+
+.input:focus {
+  box-shadow: inset 0 0 0 1.5px var(--color-ink);
+}
+
+.auth-form .input {
+  height: 48px;
 }
