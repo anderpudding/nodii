@@ -50,10 +50,10 @@ export const metrics = {
   fontSemiBold: 'Pretendard-SemiBold',
   fontBold: 'Pretendard-Bold',
   fontExtraBold: 'Pretendard-ExtraBold',
-  space: { xs: 4, sm: 8, md: 12, lg: 16, group: 16, page: 48 },
+  space: { xs: 4, sm: 8, md: 12, lg: 16, group: 16, page: 48, goalDot: 7 },
   radius: { field: 14, button: 999, card: 18, mark: 999, stamp: 999, sheet: 26, pill: 999 },
   height: { touch: 44, field: 52, chip: 36, menu: 56, calendarCell: 66, weekCell: 78, button: 54 },
-  glyph: { check: 26, stamp: 30, icon: 20 },
+  glyph: { check: 26, stamp: 30, icon: 20, dot: 10 },
   handle: { width: 36, height: 5 },
   selectionRing: 2,
   border: 1,
@@ -92,4 +92,29 @@ export function useReducedMotion() {
     };
   }, []);
   return reduced;
+}
+
+/** iOS 대비 높이기는 RN의 darkerSystemColors 설정과 변경 이벤트를 따른다 (DESIGN §7). */
+export function useHighContrast() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void AccessibilityInfo.isDarkerSystemColorsEnabled().then(
+      (value) => {
+        if (live) setEnabled(value);
+      },
+      () => {
+        if (live) setEnabled(true);
+      },
+    );
+    const subscription = AccessibilityInfo.addEventListener(
+      'darkerSystemColorsChanged',
+      setEnabled,
+    );
+    return () => {
+      live = false;
+      subscription.remove();
+    };
+  }, []);
+  return enabled;
 }

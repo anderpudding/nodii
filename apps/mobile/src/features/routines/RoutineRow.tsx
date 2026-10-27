@@ -65,10 +65,10 @@ export function RoutineRow({
           ? goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14)
           : id === 'stop'
             ? lightColors.dangerFill
-            : colors.bg,
+            : colors.chip,
       color:
         id === 'toggle'
-          ? goalInk(goal.color, colors.bg, isDark)
+          ? goalInk(goal.color, goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14), isDark)
           : id === 'stop'
             ? lightColors.bg
             : colors.ink,

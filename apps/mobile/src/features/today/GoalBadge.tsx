@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { goalInk, goalTint, type Goal } from '@nodii/core';
+import { goalInk, type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 
@@ -11,6 +11,7 @@ export function GoalBadge({
   add = false,
   disabled = false,
   hint,
+  onChip = false,
 }: {
   goal: Goal;
   onPress?(): void;
@@ -18,22 +19,26 @@ export function GoalBadge({
   add?: boolean;
   disabled?: boolean;
   hint?: string;
+  onChip?: boolean;
 }) {
   const { colors, isDark } = useTheme();
+  const background = onChip ? colors.bg : colors.chip;
   const badge = (
     <View
       style={[
         styles.badge,
         {
-          backgroundColor: goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14),
+          backgroundColor: background,
+          borderColor: selected ? goal.color : 'transparent',
           opacity: goal.archivedAt === null ? 1 : m.pressedOpacity,
         },
       ]}
     >
-      <Text style={[styles.text, { color: goalInk(goal.color, colors.bg, isDark) }]}>
+      <View style={[styles.dot, { backgroundColor: goal.color }]} />
+      <Text style={[styles.text, { color: goalInk(goal.color, background, isDark) }]}>
         {goal.name}
-        {add ? ' +' : ''}
       </Text>
+      {add && <Text style={[styles.text, { color: colors.ink }]}> +</Text>}
     </View>
   );
   if (!onPress) return <View accessibilityLabel={goal.name}>{badge}</View>;
@@ -49,7 +54,7 @@ export function GoalBadge({
         styles.touch,
         {
           opacity: pressed ? m.pressedOpacity : 1,
-          borderColor: selected ? colors.ink : 'transparent',
+          borderColor: 'transparent',
         },
       ]}
     >
@@ -62,20 +67,23 @@ const styles = StyleSheet.create({
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     justifyContent: 'center',
-    padding: m.selectionRing,
-    borderWidth: m.selectionRing,
+    padding: 0,
     borderRadius: m.radius.pill,
   },
   badge: {
     minHeight: m.height.chip,
     paddingHorizontal: m.space.md,
-    paddingVertical: m.space.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.space.goalDot,
+    borderWidth: m.selectionRing,
     justifyContent: 'center',
     borderRadius: m.radius.pill,
   },
+  dot: { width: m.glyph.dot, height: m.glyph.dot, borderRadius: m.radius.pill },
   text: {
-    fontFamily: m.fontBold,
-    fontWeight: '700',
+    fontFamily: m.fontExtraBold,
+    fontWeight: '800',
     fontSize: m.type.button,
     letterSpacing: m.letterSpacing.button,
   },
