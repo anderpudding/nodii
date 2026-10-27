@@ -40,6 +40,7 @@ export function DayCell({
     count: summary?.remaining ?? 0,
   });
   const weekdayColor = weekday === 0 ? colors.sun : weekday === 6 ? colors.sat : colors.muted;
+  const dateColor = weekday === 0 ? colors.sun : weekday === 6 ? colors.sat : colors.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -69,10 +70,11 @@ export function DayCell({
           {
             backgroundColor: selected ? colors.ink : 'transparent',
             borderColor: selected || date === today ? colors.ink : 'transparent',
+            borderWidth: m.todayRing,
           },
         ]}
       >
-        <Text style={[styles.label, { color: selected ? colors.bg : weekdayColor }]}>
+        <Text style={[styles.label, { color: selected ? colors.bg : dateColor }]}>
           {Number(date.slice(-2))}
         </Text>
       </View>

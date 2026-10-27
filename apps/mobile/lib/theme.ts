@@ -65,6 +65,7 @@ export const metrics = {
   glyph: { check: 26, stamp: 30, icon: 20, dot: 10 },
   handle: { width: 36, height: 5 },
   selectionRing: 2,
+  todayRing: 1.5, // components.md 캘린더의 선택되지 않은 오늘 날짜.
   border: 1,
   pressedOpacity: 0.55,
   toastInset: 10, // MobileUndo
