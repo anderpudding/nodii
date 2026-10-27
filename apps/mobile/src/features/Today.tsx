@@ -233,7 +233,7 @@ function TodayContent({
     >
       <View
         testID="today-top"
-        style={[styles.top, { backgroundColor: colors.side, paddingTop: insets.top }]}
+        style={[styles.top, { backgroundColor: colors.bg, paddingTop: insets.top }]}
       >
         <Text
           accessibilityRole="header"
@@ -252,7 +252,7 @@ function TodayContent({
         </Pressable>
         <View
           accessibilityRole="radiogroup"
-          style={[styles.segment, { backgroundColor: colors.side }]}
+          style={[styles.segment, { backgroundColor: colors.bg }]}
         >
           {([false, true] as const).map((expanded) => (
             <Pressable
@@ -265,7 +265,7 @@ function TodayContent({
               style={({ pressed }) => [
                 styles.option,
                 {
-                  backgroundColor: monthExpanded === expanded ? colors.bg : colors.side,
+                  backgroundColor: monthExpanded === expanded ? colors.bg : colors.bg,
                   opacity: pressed ? m.pressedOpacity : 1,
                 },
               ]}
@@ -308,7 +308,7 @@ function TodayContent({
           accessibilityRole="alert"
           style={[
             styles.offline,
-            { backgroundColor: colors.side, color: colors.ink2, borderBottomColor: colors.line },
+            { backgroundColor: colors.bg, color: colors.ink2, borderBottomColor: colors.line },
           ]}
         >
           {t('sync.offline')}

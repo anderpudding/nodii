@@ -168,7 +168,7 @@ export function GoalEditor({
         style={[
           s.input,
           { borderWidth: 1.5 },
-          { color: colors.ink, borderColor: focused === 'name' ? colors.ink : colors.field },
+          { color: colors.ink, borderColor: focused === 'name' ? colors.ink : colors.chip },
         ]}
       />
       <Text style={[s.label, { color: colors.ink2 }]}>{t('goal.color')}</Text>
@@ -206,7 +206,7 @@ export function GoalEditor({
               ? colors.danger
               : focused === 'color'
                 ? colors.ink
-                : colors.field,
+                : colors.chip,
           },
         ]}
       />

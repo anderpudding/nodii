@@ -289,7 +289,7 @@ export function RoutineEditor({
               {
                 color: colors.ink,
                 backgroundColor: colors.bg,
-                borderColor: inputFocused ? colors.ink : colors.field,
+                borderColor: inputFocused ? colors.ink : colors.chip,
               },
             ]}
           />
@@ -323,10 +323,7 @@ export function RoutineEditor({
         </View>
         <View style={s.group}>
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.repeat')}</Text>
-          <View
-            accessibilityRole="radiogroup"
-            style={[s.segment, { backgroundColor: colors.boxFill }]}
-          >
+          <View accessibilityRole="radiogroup" style={[s.segment, { backgroundColor: colors.box }]}>
             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
               <RoutineOption
                 key={freq}

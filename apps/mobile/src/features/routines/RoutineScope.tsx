@@ -91,7 +91,7 @@ export function RoutineScope({
                         state === 'done'
                           ? colors.ink
                           : state === 'missing'
-                            ? colors.stamp
+                            ? colors.box
                             : colors.surface,
                     },
                   ]}

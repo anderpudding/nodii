@@ -55,7 +55,7 @@ export function ManagementScreen({
         style={[
           styles.screen,
           {
-            backgroundColor: colors.side,
+            backgroundColor: colors.bg,
             paddingTop: insets.top,
             paddingBottom: Math.max(insets.bottom, m.space.lg),
           },

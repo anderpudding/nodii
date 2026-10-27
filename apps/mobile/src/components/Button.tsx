@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: m.radius.button,
-    borderWidth: m.focusRing,
+    borderWidth: 0,
     paddingHorizontal: m.space.lg,
     paddingVertical: m.space.sm,
   },

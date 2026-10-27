@@ -40,7 +40,7 @@ export function WeekStrip({
         onAccessibilityAction={(event) =>
           move(event.nativeEvent.actionName === 'decrement' ? -1 : 1)
         }
-        style={[styles.strip, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
+        style={[styles.strip, { backgroundColor: colors.bg, borderBottomColor: colors.line }]}
       >
         {dates.map((date) => (
           <DayCell

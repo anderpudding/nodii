@@ -203,7 +203,7 @@ function GoalRow({
       id,
       swipe: id === 'archive' && last ? null : swipe,
       label: labels[id],
-      background: colors.side,
+      background: colors.bg,
       color: colors.ink,
       run: () => run(id),
     })),

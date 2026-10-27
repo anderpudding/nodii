@@ -105,7 +105,7 @@ export function Settings({
         <>
           {row(
             t('settings.weekStart'),
-            <View style={[s.segment, { backgroundColor: colors.side }]}>
+            <View style={[s.segment, { backgroundColor: colors.bg }]}>
               {([0, 1] as const).map((value) => (
                 <RoutineOption
                   key={value}
@@ -123,7 +123,7 @@ export function Settings({
           )}
           {row(
             t('settings.theme'),
-            <View style={[s.segment, { backgroundColor: colors.side }]}>
+            <View style={[s.segment, { backgroundColor: colors.bg }]}>
               {(['system', 'light', 'dark'] as const).map((value) => (
                 <RoutineOption
                   key={value}

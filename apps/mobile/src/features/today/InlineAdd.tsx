@@ -120,11 +120,9 @@ export function InlineAdd({
   // DESIGN.md §3의 입력 중인 줄 바탕(side)이 MobileAdd의 inputBg 역할이다.
   return (
     <View style={styles.container}>
-      <View style={[styles.row, { backgroundColor: colors.side }]}>
+      <View style={[styles.row, { backgroundColor: colors.bg }]}>
         <View accessible={false} style={styles.checkSpace}>
-          <View
-            style={[styles.check, { backgroundColor: colors.boxFill, borderColor: colors.field }]}
-          />
+          <View style={[styles.check, { backgroundColor: colors.box, borderColor: colors.chip }]} />
         </View>
         <TextInput
           ref={input}

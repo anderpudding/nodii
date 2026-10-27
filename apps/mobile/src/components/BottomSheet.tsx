@@ -98,7 +98,7 @@ export function BottomSheet({
                 style={({ pressed }) => [
                   styles.cancel,
                   {
-                    borderColor: colors.field,
+                    borderColor: colors.chip,
                     opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}

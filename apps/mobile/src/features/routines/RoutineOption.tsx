@@ -47,21 +47,17 @@ export function RoutineOption({
         inline && styles.inline,
         {
           backgroundColor:
-            selected && filled
-              ? colors.ink
-              : segment && !selected
-                ? colors.boxFill
-                : colors.surface,
+            selected && filled ? colors.ink : segment && !selected ? colors.box : colors.surface,
           borderColor:
             selected && !filled
               ? colors.ink
               : selected
                 ? colors.ink
                 : segment
-                  ? colors.boxFill
+                  ? colors.box
                   : inline
                     ? colors.surface
-                    : colors.field,
+                    : colors.chip,
           opacity: pressed || disabled ? m.pressedOpacity : 1,
         },
       ]}

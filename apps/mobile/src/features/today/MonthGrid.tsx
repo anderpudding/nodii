@@ -45,7 +45,7 @@ export function MonthGrid({
           if (event.nativeEvent.actionName === 'decrement') onMove(-1);
           if (event.nativeEvent.actionName === 'increment') onMove(1);
         }}
-        style={[styles.grid, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
+        style={[styles.grid, { backgroundColor: colors.bg, borderBottomColor: colors.line }]}
       >
         <View style={styles.week}>
           {Array.from({ length: 7 }, (_, i) => addDays(from, i)).map((date, i) => (

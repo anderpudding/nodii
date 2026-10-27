@@ -55,8 +55,8 @@ export function DayRowContent({
           style={[
             styles.box,
             {
-              backgroundColor: isDone ? goal.color : colors.boxFill,
-              borderColor: isDone ? goal.color : colors.field,
+              backgroundColor: isDone ? goal.color : colors.box,
+              borderColor: isDone ? goal.color : colors.chip,
             },
           ]}
         >

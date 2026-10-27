@@ -90,7 +90,7 @@ export function RoutineList({
       <View
         accessibilityViewIsModal
         {...edge.panHandlers}
-        style={[styles.screen, { backgroundColor: colors.side, paddingTop: insets.top }]}
+        style={[styles.screen, { backgroundColor: colors.bg, paddingTop: insets.top }]}
       >
         <ToastInset bottom={barHeight} />
         <View style={styles.header}>
@@ -227,7 +227,7 @@ function ManagementRow({
       id,
       swipe,
       label: routineActionLabel(id, false),
-      background: id === 'stop' ? lightColors.danger : colors.side,
+      background: id === 'stop' ? lightColors.dangerFill : colors.bg,
       color: id === 'stop' ? lightColors.bg : colors.ink,
       run: () => run(id),
     })),

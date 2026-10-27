@@ -617,7 +617,7 @@ it('월 제목으로 42칸을 펼치고 이전·다음 달과 VoiceOver로 이�
   );
   expect(useUIStore.getState().calendarMonth).toBe('2026-10');
   const day = within(screen.getByTestId('month-grid')).getAllByRole('button')[0]!;
-  expect(StyleSheet.flatten(day.props.style).height).toBe(64);
+  expect(StyleSheet.flatten(day.props.style).height).toBe(66);
   expect(StyleSheet.flatten(day.props.style).opacity).toBe(0.4);
   fireEvent.press(day);
   expect(useUIStore.getState().selectedDate).toBe('2026-09-27');
@@ -1368,7 +1368,7 @@ it('W/M은 직접 선택하고 월간에서도 상단 하루 메뉴와 설정을
   await mount();
   const top = screen.getByTestId('today-top');
   expect(StyleSheet.flatten(top.props.style)).toMatchObject({
-    backgroundColor: '#F7F8FA',
+    backgroundColor: '#FFFFFF',
     paddingTop: 47,
   });
   expect(within(top).getAllByRole('header')).toHaveLength(1);

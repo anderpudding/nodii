@@ -168,7 +168,7 @@ export function TodoMenu({
                       color: colors.ink,
                       backgroundColor: colors.bg,
                       borderWidth: 1.5,
-                      borderColor: focused === 'input' ? colors.ink : colors.field,
+                      borderColor: focused === 'input' ? colors.ink : colors.chip,
                     },
                   ]}
                 />
@@ -247,7 +247,7 @@ export function TodoMenu({
                 style={({ pressed }) => [
                   styles.cancel,
                   {
-                    borderColor: colors.field,
+                    borderColor: colors.chip,
                     opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}

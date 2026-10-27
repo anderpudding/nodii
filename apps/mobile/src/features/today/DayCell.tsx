@@ -48,7 +48,7 @@ export function DayCell({
         monthly && styles.monthCell,
         {
           opacity: (pressed ? m.pressedOpacity : 1) * (outside ? 0.4 : 1),
-          borderColor: colors.side,
+          borderColor: colors.bg,
         },
       ]}
     >
@@ -64,19 +64,19 @@ export function DayCell({
           styles.stamp,
           {
             backgroundColor: empty
-              ? colors.stampEmpty
+              ? colors.stampSoft
               : done
                 ? colors.ink
                 : future
-                  ? colors.side
-                  : colors.stamp,
+                  ? colors.bg
+                  : colors.box,
             borderColor: empty
-              ? colors.stampEmpty
+              ? colors.stampSoft
               : done
                 ? colors.ink
                 : future
                   ? colors.line2
-                  : colors.stamp,
+                  : colors.box,
           },
         ]}
       >
@@ -88,8 +88,8 @@ export function DayCell({
         style={[
           styles.pill,
           {
-            backgroundColor: selected ? colors.ink : colors.side,
-            borderColor: selected || date === today ? colors.ink : colors.side,
+            backgroundColor: selected ? colors.ink : colors.bg,
+            borderColor: selected || date === today ? colors.ink : colors.bg,
           },
         ]}
       >

@@ -101,7 +101,7 @@ export function Login({
       color: colors.ink,
       backgroundColor: colors.surface,
       borderWidth: 1.5,
-      borderColor: focused === name ? colors.ink : colors.field,
+      borderColor: focused === name ? colors.ink : colors.chip,
     },
   ];
   return (
@@ -205,7 +205,7 @@ export function Login({
                       {
                         backgroundColor: colors.surface,
                         borderWidth: 1.5,
-                        borderColor: focused === 'code' ? colors.ink : colors.field,
+                        borderColor: focused === 'code' ? colors.ink : colors.chip,
                       },
                     ]}
                   >
