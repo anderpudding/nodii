@@ -99,6 +99,7 @@ export function BottomSheet({
                   styles.cancel,
                   {
                     borderColor: colors.chip,
+                    backgroundColor: colors.chip,
                     opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}
@@ -123,6 +124,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: m.radius.sheet,
     paddingHorizontal: m.space.lg,
     flexShrink: 1,
+    boxShadow: '0 -16px 48px rgba(17,19,24,0.16)',
   },
   handleTouch: { minHeight: m.height.touch, alignItems: 'center', justifyContent: 'center' },
   handle: { width: m.handle.width, height: m.handle.height, borderRadius: m.radius.pill },
@@ -132,15 +134,15 @@ const styles = StyleSheet.create({
     gap: m.space.sm,
     paddingBottom: m.space.sm,
   },
-  title: { flex: 1, fontFamily: m.fontBold, fontSize: m.type.heading },
+  title: { flex: 1, fontFamily: m.fontExtraBold, fontSize: m.type.heading },
   cancel: {
-    minHeight: m.height.field,
+    minHeight: m.height.button,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: m.border,
-    borderRadius: m.radius.field,
+    borderWidth: 0,
+    borderRadius: m.radius.pill,
     marginTop: m.space.lg,
   },
-  cancelText: { fontFamily: m.fontMedium, fontSize: m.type.body },
+  cancelText: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   content: { gap: m.space.sm, paddingBottom: m.space.lg },
 });
