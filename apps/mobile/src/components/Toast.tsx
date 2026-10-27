@@ -8,10 +8,10 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Keyboard, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@nodii/i18n';
-import { metrics as m, useTheme } from '../../lib/theme';
+import { metrics as m, useReducedMotion, useTheme } from '../../lib/theme';
 import { enqueueToast, expireToasts, undoLifetime, type ToastEntry } from './undo-queue';
 
 type ShowToast = (message: string, undo?: () => Promise<void>) => void;
@@ -156,7 +156,6 @@ function ToastView({
       hide.remove();
     };
   }, []);
-  const [focused, setFocused] = useState<number | null>(null);
   return entries.length ? (
     <ScrollView
       style={[
@@ -172,7 +171,7 @@ function ToastView({
       keyboardShouldPersistTaps="always"
     >
       {entries.map((entry) => (
-        <View key={entry.id} style={[styles.toast, { backgroundColor: colors.ink }]}>
+        <ToastFrame key={entry.id}>
           <Text
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
@@ -186,13 +185,10 @@ function ToastView({
             accessibilityState={{ disabled: !!entry.busy, busy: !!entry.busy }}
             disabled={entry.busy}
             onPress={() => (entry.undo ? restore(entry.id) : dismiss(entry.id))}
-            onFocus={() => setFocused(entry.id)}
-            onBlur={() => setFocused(null)}
             style={({ pressed }) => [
               styles.action,
               {
                 opacity: pressed || entry.busy ? m.pressedOpacity : 1,
-                borderColor: focused === entry.id ? colors.bg : colors.ink,
               },
             ]}
           >
@@ -200,10 +196,53 @@ function ToastView({
               {t(entry.undo ? 'todo.undo' : 'common.dismiss')}
             </Text>
           </Pressable>
-        </View>
+        </ToastFrame>
       ))}
     </ScrollView>
   ) : null;
+}
+/** 모션 감소에서는 즉시, 그 외에는 토큰 시간에 맞춰 토스트를 올린다. */
+function ToastFrame({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  const reduced = useReducedMotion();
+  const [progress] = useState(() => new Animated.Value(1));
+  useEffect(() => {
+    progress.stopAnimation();
+    if (reduced) {
+      progress.setValue(1);
+      return;
+    }
+    progress.setValue(0);
+    const animation = Animated.timing(progress, {
+      toValue: 1,
+      duration: m.motion.toast,
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [progress, reduced]);
+  return (
+    <Animated.View
+      style={[
+        styles.toast,
+        {
+          backgroundColor: colors.ink,
+          opacity: progress,
+          transform: [
+            {
+              translateY: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [m.toastInset, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 /** 실패 안내와 실행 취소는 같은 카탈로그/표시 경로를 사용한다. */
 export function useToast() {
@@ -213,10 +252,11 @@ const styles = StyleSheet.create({
   stack: { position: 'absolute', left: m.space.lg, right: m.space.lg, maxHeight: '40%' },
   stackContent: { gap: m.space.sm },
   toast: {
-    minHeight: m.height.field,
+    minHeight: m.height.button,
     paddingHorizontal: m.space.lg,
     paddingVertical: m.space.xs,
-    borderRadius: m.radius.card,
+    borderRadius: m.radius.pill,
+    boxShadow: '0 12px 32px rgba(17,19,24,0.24)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: m.space.sm,
@@ -231,9 +271,9 @@ const styles = StyleSheet.create({
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     justifyContent: 'center',
-    borderWidth: m.selectionRing,
+    borderWidth: 0,
     borderRadius: m.radius.mark,
     paddingHorizontal: m.space.xs,
   },
-  actionText: { fontFamily: m.fontBold, fontSize: m.type.button },
+  actionText: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
 });
