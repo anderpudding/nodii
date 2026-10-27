@@ -1,7 +1,8 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
+/* 도장 채움처럼 TS에서 참조하는 토큰도 Tailwind가 제거하지 않게 유지한다. */
+@theme static {
   --color-bg: #ffffff;
   --color-surface: #ffffff;
   --color-chip: #f2f3f6;
@@ -467,8 +468,6 @@ button.goal-chip:disabled {
   gap: 12px;
   min-height: 44px;
   padding: 4px 0;
-  background: var(--color-chip);
-  border-radius: 14px;
 }
 .empty-check {
   border-radius: 7px;
@@ -550,8 +549,8 @@ button.goal-chip:disabled {
 .add-todo {
   flex-wrap: wrap;
   padding: 8px;
-  border-radius: 10px;
-  background: var(--color-bg);
+  border-radius: 14px;
+  background: var(--color-chip);
 }
 .empty-check {
   border-color: var(--color-line-2);
@@ -1799,4 +1798,9 @@ body,
 
 .routine-form .input {
   height: 44px;
+}
+
+.calendar-navigation .button:not(:last-child),
+.day-navigation .button {
+  font-size: 20px;
 }
