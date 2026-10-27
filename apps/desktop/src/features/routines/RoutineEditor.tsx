@@ -26,7 +26,7 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { notifyError } from '../../lib/notify-error';
 import { useUIStore } from '../../stores/ui';
-import { GoalChip } from '../goals/GoalChip';
+import { GoalChip, goalStyle } from '../goals/GoalChip';
 import { weekdays } from './format-rule';
 import { RoutineScope } from './RoutineScope';
 import { RoutineStopDialog } from './RoutineStopDialog';
@@ -219,10 +219,11 @@ export function RoutineEditor({
                     key={item.id}
                     type="button"
                     className="routine-goal-option"
+                    style={goalStyle(item.color)}
                     aria-pressed={item.id === selectedGoalId}
                     onClick={() => patch({ goalId: item.id })}
                   >
-                    <GoalChip goal={item} surface />
+                    <GoalChip goal={item} />
                   </button>
                 ))}
               </div>

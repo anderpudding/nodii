@@ -1044,7 +1044,7 @@ button.goal-chip:disabled {
 .routine-fieldset legend {
   margin: 0 0 8px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .routine-choices {
   display: flex;
@@ -1056,9 +1056,9 @@ button.goal-chip:disabled {
   border: 0;
   border-radius: 999px;
   cursor: pointer;
+  background: transparent;
 }
 .routine-goal-option[aria-pressed='true'] {
-  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .routine-goal-option:hover {
@@ -1786,4 +1786,16 @@ body,
 .goal-delete-modal .routine-actions {
   gap: 8px;
   padding-top: 16px;
+}
+
+.routine-goal-option[aria-pressed='true'] .goal-chip {
+  box-shadow: inset 0 0 0 2px var(--goal-color);
+}
+
+.routine-goal-option:focus-visible {
+  outline: 2px solid var(--color-ink);
+}
+
+.routine-form .input {
+  height: 44px;
 }
