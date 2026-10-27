@@ -183,7 +183,11 @@ export function GoalManagerSheet({
   const editing = view.kind === 'edit' ? view.goal : undefined;
   if (view.kind === 'add' || editing)
     return (
-      <Sheet labelledBy="goal-editor-title" onClose={() => setView({ kind: 'list' })}>
+      <Sheet
+        className="goal-editor-modal"
+        labelledBy="goal-editor-title"
+        onClose={() => setView({ kind: 'list' })}
+      >
         <GoalEditor
           goal={editing}
           client={client}

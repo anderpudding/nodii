@@ -707,7 +707,7 @@ button.goal-chip:disabled {
 .goal-editor-body label,
 .goal-palette legend {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .goal-palette {
   display: flex;
@@ -730,11 +730,10 @@ button.goal-chip:disabled {
   color: var(--goal-check);
 }
 .color-option[aria-pressed='true'] {
-  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
+  outline: 2px solid var(--goal-color);
 }
 .color-option:hover {
-  box-shadow: 0 0 0 1px var(--color-chip);
 }
 .goal-color-field {
   display: flex;
@@ -746,7 +745,7 @@ button.goal-chip:disabled {
   height: 40px;
 }
 .goal-preview {
-  min-height: 32px;
+  min-height: 34px;
 }
 .goal-destructive {
   display: grid;
@@ -1754,4 +1753,16 @@ body,
 
 .auth-panel .version-details {
   margin-top: 16px;
+}
+
+.goal-editor-modal {
+  max-width: 440px;
+}
+
+.goal-add-screen .goal-editor-actions .button {
+  height: 40px;
+}
+
+.color-option:focus-visible {
+  outline: 2px solid var(--color-ink);
 }
