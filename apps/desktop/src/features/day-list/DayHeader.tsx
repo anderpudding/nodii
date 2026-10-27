@@ -60,7 +60,6 @@ export function DayHeader({
         </p>
       </div>
       <div className="day-navigation">
-        {menu}
         <Button
           variant="ghost"
           aria-label="이전 날"
@@ -75,6 +74,7 @@ export function DayHeader({
         >
           ›
         </Button>
+        {menu}
       </div>
     </header>
   );
