@@ -806,9 +806,9 @@ button.goal-chip:disabled {
 }
 .archive-description {
   max-width: 65ch;
-  color: var(--color-muted);
   font-size: 13px;
   font-weight: 500;
+  color: var(--color-ink-2);
 }
 .archive-goal-list {
   display: flex;
@@ -822,6 +822,7 @@ button.goal-chip:disabled {
   align-items: center;
   gap: 16px;
   min-height: 56px;
+  padding: 12px 0;
 }
 .goal-empty-state {
   margin-top: 48px;

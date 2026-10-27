@@ -109,7 +109,7 @@ function ArchivedGoalRow({
     : '';
   return (
     <div className="archive-goal-row">
-      <GoalChip goal={goal} surface />
+      <GoalChip goal={goal} />
       <p className="supporting">
         {counts ? `할 일 ${counts.todos}개` : '할 일 개수 확인 중'}
         {archivedDate && ` · ${archivedDate}에 보관`}
