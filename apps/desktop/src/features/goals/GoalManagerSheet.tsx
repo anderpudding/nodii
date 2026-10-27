@@ -54,7 +54,7 @@ function GoalManagerRow({
         disabled={disabled}
         onClick={onEdit}
       >
-        <GoalChip goal={goal} surface />
+        <GoalChip goal={goal} />
         <span className="supporting goal-counts">
           {counts
             ? `할 일 ${counts.todos}개 · 루틴 ${counts.routines}개`

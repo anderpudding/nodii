@@ -648,18 +648,18 @@ button.goal-chip:disabled {
   gap: 8px;
 }
 .goal-manager-intro {
-  margin-bottom: 16px;
   color: var(--color-muted);
   font-size: 13px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  margin-bottom: 16px;
 }
 .goal-manager-row {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 56px;
-  padding: 8px 0;
+  padding: 12px 0;
 }
 .goal-row-main {
   display: flex;
@@ -776,12 +776,12 @@ button.goal-chip:disabled {
   margin-top: 26px;
   padding: 0 16px;
   border: 0;
-  border-top: 1px solid var(--color-line);
-  border-radius: 12px;
-  background: transparent;
   color: var(--color-ink);
   text-align: left;
   cursor: pointer;
+  border-top: 0;
+  border-radius: 18px;
+  background: var(--color-chip);
 }
 .archive-link:hover {
   background: var(--color-bg);
