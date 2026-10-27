@@ -97,15 +97,15 @@ p {
 }
 h1 {
   font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.7px;
   line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.9px;
 }
 h2 {
   font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
   line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.3px;
 }
 .brand {
   font-size: 20px;
@@ -277,16 +277,16 @@ h2 {
 .sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
   padding: 26px;
-  border-right: 1px solid var(--color-line);
+  background: var(--color-bg);
+  border-right: 0;
 }
 .management {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border-top: 1px solid var(--color-line);
   padding-top: 16px;
+  border-top: 0;
 }
 .management .button {
   justify-content: flex-start;
@@ -382,7 +382,7 @@ h2 {
 }
 @media (max-width: 880px) {
   .app-shell {
-    grid-template-columns: minmax(220px, 380px) minmax(0, 1fr);
+    grid-template-columns: 380px minmax(0, 1fr);
   }
   .day-content {
     padding: 26px;
@@ -463,14 +463,16 @@ button.goal-chip:disabled {
   gap: 12px;
   min-height: 44px;
   padding: 4px 0;
+  background: var(--color-chip);
+  border-radius: 14px;
 }
 .empty-check {
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
   border-radius: 7px;
-  border: 1.5px solid var(--color-chip);
-  background: var(--color-box);
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 0;
+  background: transparent;
 }
 .todo-check {
   padding: 0;
@@ -534,12 +536,12 @@ button.goal-chip:disabled {
   flex: 1;
   min-width: 0;
   border: 0;
-  background: var(--color-bg);
   color: var(--color-ink);
   font-size: 15px;
   padding: 4px;
   caret-color: var(--goal-color);
-  border-radius: 9px;
+  background: var(--color-chip);
+  border-radius: 14px;
 }
 .add-todo {
   flex-wrap: wrap;
@@ -837,9 +839,10 @@ button.goal-chip:disabled {
   gap: 4px;
 }
 .calendar-header h2 {
-  font-size: 20px;
-  letter-spacing: -0.4px;
   white-space: nowrap;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
 }
 .calendar-navigation .button {
   min-width: 34px;
@@ -1541,7 +1544,6 @@ body,
   .week-strip {
     flex-shrink: 0;
     padding: 0 16px 16px;
-    border-bottom: 1px solid var(--color-line);
   }
   .app-toolbar {
     padding: 8px 16px;
@@ -1735,4 +1737,8 @@ body,
 
 .routine-actions .button {
   height: 40px;
+}
+
+.week-strip {
+  border-bottom: 0;
 }
