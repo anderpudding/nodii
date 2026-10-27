@@ -17,6 +17,8 @@ export function RoutineOption({
   filled = false,
   segment = false,
   inline = false,
+  descriptionBelow = false,
+  labelColor,
   borderless = false,
 }: {
   label: string;
@@ -32,6 +34,8 @@ export function RoutineOption({
   filled?: boolean;
   segment?: boolean;
   inline?: boolean;
+  descriptionBelow?: boolean;
+  labelColor?: string;
   borderless?: boolean;
 }) {
   const { colors } = useTheme();
@@ -47,14 +51,18 @@ export function RoutineOption({
         compact && styles.compact,
         segment && styles.segment,
         inline && styles.inline,
+        inline && descriptionBelow && styles.stacked,
         {
           backgroundColor: disabled
             ? colors.box
             : selected && (filled || segment)
               ? colors.ink
               : 'transparent',
-          borderColor: selected && !filled && !segment ? colors.ink : 'transparent',
-          borderWidth: !borderless && selected && !filled && !segment ? m.selectionRing : 0,
+          borderColor:
+            filled && !selected ? colors.line2 : selected && !segment ? colors.ink : 'transparent',
+          borderWidth:
+            borderless || segment ? 0 : filled ? m.border : selected ? m.selectionRing : 0,
+          borderBottomColor: inline ? colors.line : undefined,
           opacity: pressed ? m.pressedOpacity : 1,
         },
       ]}
@@ -63,6 +71,7 @@ export function RoutineOption({
         <Text
           style={[
             styles.label,
+            inline && styles.inlineLabel,
             {
               color: disabled
                 ? colors.muted
@@ -70,7 +79,7 @@ export function RoutineOption({
                   ? colors.bg
                   : danger
                     ? colors.danger
-                    : colors.ink,
+                    : (labelColor ?? colors.ink),
             },
           ]}
         >
@@ -81,6 +90,7 @@ export function RoutineOption({
         <Text
           style={[
             styles.supporting,
+            inline && !descriptionBelow && styles.value,
             { color: selected && (filled || segment) ? colors.bg : colors.ink2 },
           ]}
         >
@@ -113,7 +123,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: m.height.field,
+    borderRadius: 0,
+    borderBottomWidth: m.border,
   },
+  stacked: { flexDirection: 'column', alignItems: 'stretch', gap: m.space.xs },
+  inlineLabel: { fontFamily: m.fontFamily, fontSize: m.type.body },
+  value: { fontFamily: m.fontFamily, fontSize: m.type.body, flexShrink: 1 },
   label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   supporting: {
     fontFamily: m.fontMedium,
