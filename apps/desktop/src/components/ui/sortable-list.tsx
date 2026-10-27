@@ -85,7 +85,12 @@ function SortableItem({
             disabled={disabled}
           >
             <svg viewBox="0 0 22 22" aria-hidden="true">
-              <path d="M6 7h10M6 11h10M6 15h10" />
+              <circle cx="8" cy="5" r="1.5" />
+              <circle cx="14" cy="5" r="1.5" />
+              <circle cx="8" cy="11" r="1.5" />
+              <circle cx="14" cy="11" r="1.5" />
+              <circle cx="8" cy="17" r="1.5" />
+              <circle cx="14" cy="17" r="1.5" />
             </svg>
           </Button>
         ))}
