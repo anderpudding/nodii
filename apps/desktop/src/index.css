@@ -181,16 +181,16 @@ h2 {
   justify-content: center;
   gap: 4px;
   padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 10px;
   font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
   white-space: nowrap;
   cursor: pointer;
   transition:
     background-color 0.15s ease-out,
     border-color 0.15s ease-out;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
 }
 .button-compact {
   height: 34px;
@@ -206,7 +206,8 @@ h2 {
   background: var(--color-ink-2);
 }
 .button-outline {
-  border-color: var(--color-chip);
+  background: var(--color-chip);
+  color: var(--color-ink);
 }
 .button-ghost:hover,
 .button-outline:hover {
@@ -1690,4 +1691,15 @@ body,
 .routine-skipped-label {
   font-size: 12px;
   font-weight: 700;
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.button.button:disabled {
+  background: var(--color-box);
+  color: var(--color-muted);
+  cursor: not-allowed;
 }
