@@ -560,17 +560,17 @@ button.goal-chip:disabled {
   z-index: 1;
   width: 220px;
   padding: 8px;
-  border-radius: 12px;
   background: var(--color-surface);
-  box-shadow:
-    0 14px 36px rgba(22, 24, 29, 0.16),
-    0 0 0 1px var(--color-line);
   animation: menu-appear 0.14s ease-out;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .dark .todo-menu {
   box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .todo-menu .button {
   width: 100%;
@@ -941,10 +941,10 @@ button.goal-chip:disabled {
   gap: 8px;
   min-height: 34px;
   padding: 0 8px;
-  border-radius: 9px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  border-radius: 8px;
 }
 .todo-menu-item span {
   color: var(--color-muted);
@@ -973,17 +973,17 @@ button.goal-chip:disabled {
   width: 380px;
   max-width: calc(100vw - 48px);
   padding: 16px;
-  border-radius: 12px;
   background: var(--color-surface);
-  box-shadow:
-    0 14px 36px rgba(22, 24, 29, 0.16),
-    0 0 0 1px var(--color-line);
   animation: menu-appear 0.14s ease-out;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .dark .date-popover {
   box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .date-popover-heading {
   margin-bottom: 12px;
@@ -1510,10 +1510,10 @@ body,
   gap: 16px;
 }
 .day-menu {
-  width: 380px;
   max-width: calc(100vw - 48px);
   max-height: var(--radix-dropdown-menu-content-available-height);
   overflow-y: auto;
+  width: 272px;
 }
 .day-menu .todo-menu-item {
   flex-direction: column;
