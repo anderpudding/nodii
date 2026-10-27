@@ -97,7 +97,7 @@ export function useReducedMotion() {
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
     return () => {
       live = false;
-      subscription.remove();
+      subscription?.remove();
     };
   }, []);
   return reduced;
@@ -107,6 +107,7 @@ export function useReducedMotion() {
 export function useHighContrast() {
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
+    if (typeof AccessibilityInfo.isDarkerSystemColorsEnabled !== 'function') return;
     let live = true;
     void AccessibilityInfo.isDarkerSystemColorsEnabled().then(
       (value) => {
@@ -122,7 +123,7 @@ export function useHighContrast() {
     );
     return () => {
       live = false;
-      subscription.remove();
+      subscription?.remove();
     };
   }, []);
   return enabled;
