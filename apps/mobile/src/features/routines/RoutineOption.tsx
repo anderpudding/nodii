@@ -46,19 +46,14 @@ export function RoutineOption({
         segment && styles.segment,
         inline && styles.inline,
         {
-          backgroundColor:
-            selected && filled ? colors.ink : segment && !selected ? colors.box : colors.surface,
-          borderColor:
-            selected && !filled
+          backgroundColor: disabled
+            ? colors.box
+            : selected && (filled || segment)
               ? colors.ink
-              : selected
-                ? colors.ink
-                : segment
-                  ? colors.box
-                  : inline
-                    ? colors.surface
-                    : colors.chip,
-          opacity: pressed || disabled ? m.pressedOpacity : 1,
+              : 'transparent',
+          borderColor: selected && !filled && !segment ? colors.ink : 'transparent',
+          borderWidth: selected && !filled && !segment ? m.selectionRing : 0,
+          opacity: pressed ? m.pressedOpacity : 1,
         },
       ]}
     >
@@ -66,14 +61,27 @@ export function RoutineOption({
         <Text
           style={[
             styles.label,
-            { color: selected && filled ? colors.bg : danger ? colors.danger : colors.ink },
+            {
+              color: disabled
+                ? colors.muted
+                : selected && (filled || segment)
+                  ? colors.bg
+                  : danger
+                    ? colors.danger
+                    : colors.ink,
+            },
           ]}
         >
           {label}
         </Text>
       )}
       {description && (
-        <Text style={[styles.supporting, { color: selected && filled ? colors.bg : colors.ink2 }]}>
+        <Text
+          style={[
+            styles.supporting,
+            { color: selected && (filled || segment) ? colors.bg : colors.ink2 },
+          ]}
+        >
           {description}
         </Text>
       )}
@@ -97,14 +105,14 @@ const styles = StyleSheet.create({
     padding: m.space.xs,
     borderRadius: m.radius.pill,
   },
-  segment: { flex: 1, borderRadius: m.radius.field },
+  segment: { flex: 1, borderRadius: m.radius.pill },
   inline: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: m.height.field,
   },
-  label: { fontFamily: m.fontBold, fontSize: m.type.button },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,

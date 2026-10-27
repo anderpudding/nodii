@@ -70,10 +70,7 @@ export function ManagementScreen({
         {swipeRows ? <SwipeRows>{scroll}</SwipeRows> : scroll}
         {footer && (
           <View
-            style={[
-              styles.footer,
-              { backgroundColor: colors.surface, borderTopColor: colors.line },
-            ]}
+            style={[styles.footer, { backgroundColor: colors.bg, borderTopColor: colors.line }]}
           >
             {footer}
           </View>
@@ -95,7 +92,11 @@ const styles = StyleSheet.create({
     gap: m.space.lg,
     paddingBottom: m.space.lg,
   },
-  title: { fontFamily: m.fontBold, fontSize: m.type.title, letterSpacing: m.letterSpacing.title },
+  title: {
+    fontFamily: m.fontExtraBold,
+    fontSize: m.type.title,
+    letterSpacing: m.letterSpacing.title,
+  },
   content: { padding: m.space.lg, gap: m.space.group },
   footer: { padding: m.space.lg, borderTopWidth: m.border },
 });
