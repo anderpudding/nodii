@@ -40,7 +40,7 @@ export function GoalDeleteDialog({
   return (
     <Sheet
       role="alertdialog"
-      className="routine-modal"
+      className="routine-modal goal-delete-modal"
       labelledBy="delete-goal-title"
       onClose={() => {
         if (!pending) onClose();

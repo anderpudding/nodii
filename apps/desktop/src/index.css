@@ -1778,3 +1778,12 @@ body,
 .goal-edit-screen .goal-editor-actions .button {
   height: 40px;
 }
+
+.goal-delete-modal p {
+  color: var(--color-ink-2);
+}
+
+.goal-delete-modal .routine-actions {
+  gap: 8px;
+  padding-top: 16px;
+}
