@@ -1069,8 +1069,8 @@ button.goal-chip:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
-  border-radius: 12px;
-  background: var(--color-box);
+  border-radius: 999px;
+  background: var(--color-chip);
 }
 .routine-segments .button {
   min-height: 34px;
@@ -1078,9 +1078,9 @@ button.goal-chip:disabled {
   color: var(--color-ink-2);
 }
 .routine-segments .button[aria-checked='true'] {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  outline: 2px solid var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  font-weight: 800;
 }
 .routine-dates {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1304,17 +1304,17 @@ button.goal-chip:disabled {
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: 12px;
-  background: var(--color-box);
+  border-radius: 999px;
+  background: var(--color-bg);
 }
 .settings-segment .button {
   min-width: 76px;
   color: var(--color-ink-2);
 }
 .settings-segment .button[aria-checked='true'] {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  box-shadow: 0 1px 2px rgba(22, 24, 29, 0.14);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  font-weight: 800;
 }
 .settings-link-row {
   display: grid;
