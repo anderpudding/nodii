@@ -69,7 +69,7 @@ export function Settings({
   }
   function row(label: string, value: ReactNode) {
     return (
-      <View style={[s.row, { borderBottomColor: colors.line }]}>
+      <View style={[s.row, s.horizontal, { flexWrap: 'wrap', borderBottomColor: colors.line }]}>
         <Text style={[s.body, { color: colors.ink }]}>{label}</Text>
         {value}
       </View>
@@ -87,12 +87,13 @@ export function Settings({
         <>
           {row(
             t('auth.email'),
-            <Text selectable style={[s.supporting, { color: colors.ink2 }]}>
+            <Text selectable style={[s.body, { color: colors.ink2, flexShrink: 1 }]}>
               {email}
             </Text>,
           )}
           <RoutineOption
             inline
+            descriptionBelow
             label={t('auth.logout')}
             description={t('settings.logout.description')}
             disabled={loggingOut}
@@ -171,7 +172,7 @@ export function Settings({
         <>
           {row(
             t('settings.version'),
-            <Text style={[s.supporting, { color: colors.ink2 }]}>
+            <Text style={[s.body, { color: colors.ink2 }]}>
               {Constants.expoConfig?.version ?? '0.1.0'} (iOS)
             </Text>,
           )}
@@ -187,6 +188,7 @@ export function Settings({
           ))}
           <RoutineOption
             inline
+            descriptionBelow
             label={t('settings.delete')}
             description={t('settings.delete.summary')}
             danger

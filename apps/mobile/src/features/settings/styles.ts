@@ -24,6 +24,7 @@ export const settingsStyles = StyleSheet.create({
   },
   segment: {
     flexDirection: 'row',
+    flexShrink: 1,
     flexWrap: 'wrap',
     gap: m.space.sm,
     padding: m.space.xs,
