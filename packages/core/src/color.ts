@@ -50,7 +50,7 @@ export function checkColor(goalColor: string): string {
   return contrast(WHITE, goalColor) >= 3 ? WHITE : INK;
 }
 
-/** 완료한 목표 색을 순서대로 최대 네 색의 경계가 또렷한 채움으로 만든다 (CAL-02)。 */
+/** 완료한 목표 색을 순서대로 최대 네 색의 경계가 또렷한 채움으로 만든다 (CAL-02). */
 export function stampFill(goalColors: string[]): string {
   const colors = [...new Set(goalColors)].slice(0, 4);
   if (colors.length === 0) throw new RangeError('Stamp requires at least one goal color');

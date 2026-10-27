@@ -8,7 +8,7 @@ import {
   type DaySummary,
 } from '@nodii/core';
 
-/** 날짜 집계와 같은 월 캐시에서 받은 완료 목표 색을 그린다 (CAL-02)。 */
+/** 날짜 집계와 같은 월 캐시에서 받은 완료 목표 색을 그린다 (CAL-02). */
 export function CalendarStamp({
   summary,
   future,
