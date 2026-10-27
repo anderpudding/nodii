@@ -1,3 +1,4 @@
+import { BrandMark } from '../components/ui/brand-mark';
 import { useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -29,7 +30,10 @@ export function UpdateRequired({
     <main className="center-screen">
       <section className="auth-panel" aria-labelledby="update-title">
         <header className="auth-heading">
-          <p className="brand">Nodii</p>
+          <p className="brand">
+            <BrandMark />
+            Nodii
+          </p>
           <h1 id="update-title">새 버전이 필요해요</h1>
           <p className="supporting">
             App Store에서 업데이트해 주세요.
