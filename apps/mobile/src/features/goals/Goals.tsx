@@ -79,7 +79,7 @@ export function Goals({ client, onClose }: { client: NodiiClient; onClose(): voi
       {!online && (
         <Text style={[s.supporting, { color: colors.muted }]}>{t('sync.writeDisabled')}</Text>
       )}
-      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+      <View style={[s.card, { backgroundColor: colors.chip, borderColor: colors.line }]}>
         {(archived ? archive : active).map((goal, index) => (
           <GoalRow
             key={goal.id}
@@ -216,9 +216,9 @@ function GoalRow({
         s.row,
         s.horizontal,
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.chip,
           borderColor: colors.line,
-          borderWidth: m.selectionRing,
+          borderWidth: 0,
         },
       ]}
     >
@@ -254,7 +254,7 @@ function GoalRow({
           },
         ]}
       >
-        <GoalBadge goal={goal} />
+        <GoalBadge goal={goal} onChip />
         <View style={{ flex: 1 }}>
           <Text style={[s.supporting, { color: colors.muted }]}>
             {contents ? t('goal.contents', { ...contents }) : t('goal.counts.loading')}

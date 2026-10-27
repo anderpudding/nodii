@@ -17,6 +17,7 @@ export function RoutineOption({
   filled = false,
   segment = false,
   inline = false,
+  borderless = false,
 }: {
   label: string;
   description?: string;
@@ -31,6 +32,7 @@ export function RoutineOption({
   filled?: boolean;
   segment?: boolean;
   inline?: boolean;
+  borderless?: boolean;
 }) {
   const { colors } = useTheme();
   return (
@@ -52,7 +54,7 @@ export function RoutineOption({
               ? colors.ink
               : 'transparent',
           borderColor: selected && !filled && !segment ? colors.ink : 'transparent',
-          borderWidth: selected && !filled && !segment ? m.selectionRing : 0,
+          borderWidth: !borderless && selected && !filled && !segment ? m.selectionRing : 0,
           opacity: pressed ? m.pressedOpacity : 1,
         },
       ]}
