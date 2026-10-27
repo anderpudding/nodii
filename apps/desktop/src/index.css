@@ -3,22 +3,20 @@
 
 @theme {
   --color-bg: #ffffff;
-  --color-side: #f7f8fa;
   --color-surface: #ffffff;
-  --color-ink: #16181d;
-  --color-ink-2: #4b5160;
-  --color-muted: #646a76;
-  --color-line: #e9ebef;
-  --color-line-2: #dadde2;
-  --color-field: #8f95a0;
-  --color-box: #f1f2f5;
-  --color-stamp: #eceef1;
-  --color-stamp-empty: #f4f5f7;
-  --color-banner: #f2f4f7;
-  --color-focus: #2a63c9;
-  --color-danger: #c4332c;
-  --color-sun: #c4332c;
-  --color-sat: #2a63c9;
+  --color-chip: #f2f3f6;
+  --color-box: #e6e8ec;
+  --color-stamp-soft: #f2f3f6;
+  --color-ink: #111318;
+  --color-ink-2: #3e4350;
+  --color-muted: #626877;
+  --color-line: #eceef1;
+  --color-line-2: #dfe2e7;
+  --color-danger: #d6303a;
+  --color-danger-fill: #d6303a;
+  --color-sun: #d6303a;
+  --color-sat: #2563eb;
+  --color-toast-action: #9db8ff;
   --color-warn-bg: #fff4db;
   --color-warn-ink: #8a5a00;
   --font-sans:
@@ -26,23 +24,21 @@
 }
 
 .dark {
-  --color-bg: #131417;
-  --color-side: #1a1c20;
-  --color-surface: #1d1f23;
-  --color-ink: #f1f2f4;
-  --color-ink-2: #b4b9c2;
-  --color-muted: #9aa0aa;
-  --color-line: #26292e;
-  --color-line-2: #353941;
-  --color-field: #70757f;
-  --color-box: #1e2024;
-  --color-stamp: #2a2d33;
-  --color-stamp-empty: #212429;
-  --color-banner: #1f2227;
-  --color-focus: #7aa7ff;
-  --color-danger: #ff7a70;
-  --color-sun: #ff7a70;
+  --color-bg: #0f1013;
+  --color-surface: #1a1c21;
+  --color-chip: #1e2026;
+  --color-box: #2b2e35;
+  --color-stamp-soft: #1e2026;
+  --color-ink: #f3f4f6;
+  --color-ink-2: #b9bec8;
+  --color-muted: #9097a3;
+  --color-line: #22252b;
+  --color-line-2: #30333a;
+  --color-danger: #ff6b6b;
+  --color-danger-fill: #d6303a;
+  --color-sun: #ff7a7a;
   --color-sat: #7aa7ff;
+  --color-toast-action: #2f5bd8;
   --color-warn-bg: #3a2f17;
   --color-warn-ink: #f2c66d;
 }
@@ -70,7 +66,7 @@ textarea::selection,
   color: var(--color-bg);
 }
 :focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 
@@ -248,7 +244,7 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 .otp-slot-active {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .otp-container-disabled .otp-slot {
@@ -736,7 +732,7 @@ button.goal-chip:disabled {
   color: var(--goal-check);
 }
 .color-option[aria-pressed='true'] {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .color-option:hover {
@@ -964,7 +960,7 @@ button.goal-chip:disabled {
 }
 .todo-menu-item[data-highlighted] {
   background: var(--color-box);
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .todo-menu-item[data-disabled] {
@@ -1061,7 +1057,7 @@ button.goal-chip:disabled {
   cursor: pointer;
 }
 .routine-goal-option[aria-pressed='true'] {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .routine-goal-option:hover {
@@ -1092,7 +1088,7 @@ button.goal-chip:disabled {
 .routine-segments .button[aria-checked='true'] {
   background: var(--color-surface);
   color: var(--color-ink);
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
 }
 .routine-dates {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1396,7 +1392,7 @@ button.goal-chip:disabled {
   touch-action: none;
 }
 .sortable-row-activator:focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .sortable-dragging .sortable-row-activator {
@@ -1623,4 +1619,12 @@ body,
 
 .scroll-sheet {
   overflow: hidden;
+}
+
+/* M8: 대비 높이기에서는 씨앗 path에만 외곽선을 그린다. */
+@media (prefers-contrast: more) {
+  .sprout-empty {
+    stroke: var(--color-muted);
+    stroke-width: 1.4px;
+  }
 }
