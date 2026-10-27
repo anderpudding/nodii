@@ -78,7 +78,7 @@ export function CalendarGrid({
             ›
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => {
               if (week) week.onChange(today);
               else onMonthChange(monthKeyOf(today));
