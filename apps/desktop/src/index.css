@@ -612,25 +612,23 @@ button.goal-chip:disabled {
   flex-direction: column;
   gap: 16px;
   border: 0;
-  border-radius: 14px;
   padding: 26px;
   background: var(--color-surface);
   color: var(--color-ink);
-  box-shadow: 0 24px 64px rgba(22, 24, 29, 0.22);
+  border-radius: 22px;
+  box-shadow: 0 -16px 48px rgba(17, 19, 24, 0.16);
 }
 .sheet-backdrop {
   position: fixed;
   inset: 0;
   z-index: 2;
-  background: rgba(22, 24, 29, 0.32);
+  background: rgba(17, 19, 24, 0.36);
 }
 .dark .goal-sheet {
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+  box-shadow: 0 -16px 48px rgba(17, 19, 24, 0.16);
 }
 .dark .sheet-backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
 }
 .goal-sheet-header {
   margin-bottom: 0;
@@ -994,7 +992,8 @@ button.goal-chip:disabled {
 /* 5단계: 루틴 모달도 기존 입력·이름표·버튼과 동일한 토큰을 사용한다. */
 .routine-modal {
   max-width: 440px;
-  border-radius: 16px;
+  border-radius: 22px;
+  box-shadow: 0 24px 64px rgba(17, 19, 24, 0.18);
 }
 .routine-form {
   display: flex;
@@ -1728,4 +1727,12 @@ body,
   height: 36px;
   padding: 0;
   box-shadow: inset 0 0 0 1px var(--color-line-2);
+}
+
+.dark .routine-modal {
+  box-shadow: 0 24px 64px rgba(17, 19, 24, 0.18);
+}
+
+.routine-actions .button {
+  height: 40px;
 }
