@@ -10,6 +10,7 @@ import {
 } from '@nodii/api';
 import type { RoutineLog } from '@nodii/core';
 import { toast } from 'sonner';
+import { SproutCheck } from '../../components/ui/sprout-check';
 import { Button } from '../../components/ui/button';
 import { notifyError } from '../../lib/notify-error';
 import { useUIStore } from '../../stores/ui';
@@ -37,6 +38,7 @@ export function RoutineRow({
   const online = useConnectivity();
   const setLog = useSetRoutineLog(client, weekStart, routine.id, date, { onError: notifyError });
   const busy = useRoutineWritePending(routine.id, date) || disabled;
+  const skipped = log?.status === 'skipped';
   const done = log?.status === 'done';
   const today = useUIStore((state) => state.today);
   const more = useRef<HTMLButtonElement>(null);
@@ -112,10 +114,10 @@ export function RoutineRow({
       }}
     >
       <ContextMenu.Trigger asChild disabled={busy}>
-        <div className={`todo-row${done ? ' todo-done' : ''}`}>
+        <div className={`todo-row${done ? ' todo-done' : skipped ? ' todo-skipped' : ''}`}>
           <button
             type="button"
-            className="todo-check"
+            className="todo-check check"
             aria-disabled={!online || undefined}
             aria-label={`${routine.title} 완료`}
             aria-pressed={done}
@@ -124,13 +126,10 @@ export function RoutineRow({
               setLog.mutate({ routineId: routine.id, date, status: done ? null : 'done' })
             }
           >
-            {done && (
-              <svg viewBox="0 0 22 22" aria-hidden="true">
-                <path d="m5 11 4 4 8-8" />
-              </svg>
-            )}
+            <SproutCheck done={done} skipped={skipped} />
           </button>
           <span className="todo-title">{routine.title}</span>
+          {skipped && <span className="routine-skipped-label">건너뜀</span>}
           <DropdownMenu.Root
             open={dropdownOpen}
             onOpenChange={(open) => {

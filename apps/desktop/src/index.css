@@ -1684,3 +1684,12 @@ body,
     animation: none;
   }
 }
+
+.todo-skipped .todo-title,
+.routine-skipped-label {
+  color: var(--color-muted);
+}
+.routine-skipped-label {
+  font-size: 12px;
+  font-weight: 700;
+}
