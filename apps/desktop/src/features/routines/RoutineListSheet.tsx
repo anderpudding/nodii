@@ -106,7 +106,7 @@ export function RoutineListSheet({
                 return (
                   rows.length > 0 && (
                     <section className="routine-list-group" key={goal.id} aria-label={goal.name}>
-                      <GoalChip goal={goal} surface />
+                      <GoalChip goal={goal} />
                       {goal.archivedAt && (
                         <p className="supporting">
                           보관한 목표예요. 보관 이후 날짜에는 나타나지 않아요.

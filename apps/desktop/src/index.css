@@ -1015,6 +1015,7 @@ button.goal-chip:disabled {
   display: flex;
   align-items: center;
   gap: 8px;
+  border-radius: 18px;
 }
 .routine-heading,
 .routine-list-row {
@@ -1155,14 +1156,14 @@ button.goal-chip:disabled {
   text-align: center;
 }
 .routine-list-group {
-  margin-top: 32px;
+  margin-top: 26px;
 }
 .routine-list-group:first-child {
   margin-top: 0;
 }
 .routine-group-rows {
   margin-top: 12px;
-  padding-left: 48px;
+  padding-left: 0;
 }
 .routine-list-row {
   min-height: 58px;
@@ -1174,7 +1175,7 @@ button.goal-chip:disabled {
 .routine-list-copy strong {
   display: block;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .routine-row-actions {
   opacity: 0;
@@ -1187,7 +1188,7 @@ button.goal-chip:disabled {
 .routine-finished {
   margin-top: 32px;
   padding-top: 26px;
-  border-top: 1px solid var(--color-line);
+  border-top: 0;
 }
 .routine-finished-heading {
   justify-content: space-between;
