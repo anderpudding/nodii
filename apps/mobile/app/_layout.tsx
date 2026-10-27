@@ -6,6 +6,7 @@ import regular from '../assets/fonts/Pretendard-Regular.otf';
 import medium from '../assets/fonts/Pretendard-Medium.otf';
 import semiBold from '../assets/fonts/Pretendard-SemiBold.otf';
 import bold from '../assets/fonts/Pretendard-Bold.otf';
+import extraBold from '../assets/fonts/Pretendard-ExtraBold.otf';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -46,6 +47,7 @@ function RootContent() {
     'Pretendard-Medium': medium,
     'Pretendard-SemiBold': semiBold,
     'Pretendard-Bold': bold,
+    'Pretendard-ExtraBold': extraBold,
   });
   const [fontTimedOut, setFontTimedOut] = useState(false);
   useEffect(() => {

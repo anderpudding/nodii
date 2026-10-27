@@ -49,6 +49,7 @@ export const metrics = {
   fontMedium: 'Pretendard-Medium',
   fontSemiBold: 'Pretendard-SemiBold',
   fontBold: 'Pretendard-Bold',
+  fontExtraBold: 'Pretendard-ExtraBold',
   space: { xs: 4, sm: 8, md: 12, lg: 16, group: 16, page: 48 },
   radius: { field: 14, button: 999, card: 18, mark: 999, stamp: 999, sheet: 26, pill: 999 },
   height: { touch: 44, field: 52, chip: 36, menu: 56, calendarCell: 66, weekCell: 78, button: 54 },

@@ -1,4 +1,4 @@
-"""정적 네 굵기의 상용 한글과 기존 비한글·앱 문자를 보존하고 실제 cmap/윤곽을 검증한다."""
+"""정적 다섯 굵기의 상용 한글과 기존 비한글·앱 문자를 보존하고 실제 cmap/윤곽을 검증한다."""
 import hashlib
 import json
 import sys
@@ -15,7 +15,7 @@ assets = root / 'apps/mobile/assets/fonts'
 report_path = root / 'scripts/font-subset/report.json'
 common = {ord(c) for c in (root / 'scripts/font-subset/pretendard-common-v1.3.9.txt').read_text()}
 ui = set(request['uiCodepoints'])
-weights = {'Regular': 400, 'Medium': 500, 'SemiBold': 600, 'Bold': 700}
+weights = {'Regular': 400, 'Medium': 500, 'SemiBold': 600, 'Bold': 700, 'ExtraBold': 800}
 
 
 def hangul(codepoint):
@@ -58,16 +58,16 @@ if sys.argv[1] == '--check':
             cmap = verify(font, expected, weight)
             if fingerprint(font, cmap, expected) != report['fonts'][filename]['outlineAndMetricsSha256']:
                 raise ValueError(f'{filename}: outlines or metrics changed')
-    print(json.dumps({'fontsChecked': 4, 'retainedCodepoints': len(expected), 'sourceFiles': request['sourceFiles'], 'uiCodepoints': len(ui), 'newMissingUiCodepoints': 0, 'originalMissingUiCodepoints': sorted(ui & previous_fallback)}, ensure_ascii=False))
+    print(json.dumps({'fontsChecked': len(weights), 'retainedCodepoints': len(expected), 'sourceFiles': request['sourceFiles'], 'uiCodepoints': len(ui), 'newMissingUiCodepoints': 0, 'originalMissingUiCodepoints': sorted(ui & previous_fallback)}, ensure_ascii=False))
 else:
     source_dir = Path(sys.argv[2]).resolve()
     fonts = {style: TTFont(source_dir / f'Pretendard-{style}.otf') for style in weights}
     cmaps = {style: font.getBestCmap() for style, font in fonts.items()}
     if any(set(cmap) != set(cmaps['Regular']) for cmap in cmaps.values()):
-        raise ValueError('원본 네 벌의 문자 지원 범위가 다릅니다')
+        raise ValueError('원본 다섯 벌의 문자 지원 범위가 다릅니다')
     original = set(cmaps['Regular'])
     if sum(hangul(u) for u in original) != 11172:
-        raise ValueError('이미 subset된 파일이 아닌 원본 정적 OTF 네 벌을 지정하세요')
+        raise ValueError('이미 subset된 파일이 아닌 원본 정적 OTF 다섯 벌을 지정하세요')
     non_hangul = {u for u in original if not hangul(u)}
     expected = non_hangul | (common & original) | (ui & original)
     original_missing = ui - original

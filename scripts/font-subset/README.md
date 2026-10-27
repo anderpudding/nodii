@@ -26,3 +26,7 @@ Python 단계는 네 벌을 실제 직렬화한 뒤 다시 열어 다음을 검�
 `⌄`(U+2304)·`☰`(U+2630)는 **원본에도 없던** 앱 문자입니다. 새로운 누락으로 처리하지 않고 기록하며 기존 iOS 시스템 폰트 fallback을 유지합니다. 사용자 입력은 제한하지 않습니다. 상용 한글 목록 밖 음절은 시스템 fallback으로 표시되며, 새 UI 문구에 그런 음절이 추가되면 `--check`가 실패하므로 원본에서 다시 생성합니다. 자모 조합을 포함한 실제 native fallback 렌더링은 TestFlight에서 확인합니다.
 
 저작권/원래 OFL은 `apps/mobile/assets/fonts/LICENSE.txt`에 그대로 둡니다. [OFL Reserved Font Name 조건](https://openfontlicense.org/webfonts-and-reserved-font-names/)에 따라 파생 바이너리의 내부 family/PostScript 이름만 **NodiiUISubset**으로 바꿨습니다. 파일명·Expo 등록 별칭 `Pretendard-*`·정적 네 벌 로딩·앱의 타이포그래피 값은 유지합니다. 이 별칭은 앱의 로딩 키이며 폰트 자체의 배포 이름은 아닙니다.
+
+## M8 · ExtraBold (800) 추가
+
+기존 네 굵기에 `Pretendard-ExtraBold.otf`를 추가합니다. 원본 다섯 벌은 설치된 Pretendard v1.3.9의 `dist/public/static/`에서도 얻을 수 있습니다. 위 절차는 400/500/600/700/800 다섯 벌의 cmap·정적 weight·윤곽·글자 폭을 모두 검증하며, `--check`도 다섯 벌을 확인합니다. 앱 별칭은 `Pretendard-ExtraBold`, 내부 파생 이름은 기존과 같은 `NodiiUISubset`입니다.
