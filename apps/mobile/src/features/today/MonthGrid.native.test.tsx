@@ -1,3 +1,4 @@
+import { Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { fireGestureHandler } from 'react-native-gesture-handler/jest-utils';
 /// <reference types="jest" />
@@ -53,6 +54,13 @@ it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴
       .filter((style) => style?.width === 24 || style?.minWidth === 24),
   );
   expect(decorations[0]).toEqual(decorations[1]);
+  const stamps = cells.map((cell) =>
+    within(cell)
+      .UNSAFE_getAllByType(Path)
+      .map((path) => ({ d: path.props.d, fill: path.props.fill })),
+  );
+  expect(stamps[0]).toEqual(stamps[1]);
+  expect(stamps[0]).not.toHaveLength(0);
 });
 it('달 밀기 제스처는 격자에만 있고 수직 스크롤에는 달을 넘기지 않는다', async () => {
   const move = jest.fn();

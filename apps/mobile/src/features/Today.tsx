@@ -1,3 +1,4 @@
+import { completedStampColors } from './today/stamp-colors';
 import { useOnline } from '../../lib/connectivity';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -195,6 +196,36 @@ function TodayContent({
       profile.timezone,
     ],
   );
+  const stampColors = useMemo(
+    () =>
+      completedStampColors(
+        {
+          goals: goals.data ?? [],
+          todos: monthExpanded ? (month.data ?? []) : rows,
+          routines: routines.data ?? [],
+          logs: monthExpanded ? (monthLogs.data ?? []) : logs,
+          from: monthExpanded ? monthRange.from : from,
+          to: monthExpanded ? monthRange.to : to,
+          timeZone: profile.timezone,
+        },
+        summary,
+      ),
+    [
+      goals.data,
+      monthExpanded,
+      month.data,
+      rows,
+      routines.data,
+      monthLogs.data,
+      logs,
+      monthRange.from,
+      monthRange.to,
+      from,
+      to,
+      profile.timezone,
+      summary,
+    ],
+  );
   const items = sections.flatMap((section) => section.data);
   const activeGoal = preferredGoal(goals.data ?? [], null);
   const queries = [goals, routines, first, last, firstLogs, lastLogs];
@@ -350,6 +381,7 @@ function TodayContent({
                   today={today}
                   selectedDate={selectedDate}
                   summary={summary}
+                  stampColors={stampColors}
                   onSelect={selectDate}
                   onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
                 />
@@ -359,6 +391,7 @@ function TodayContent({
                   today={today}
                   selectedDate={selectedDate}
                   summary={summary}
+                  stampColors={stampColors}
                   onSelect={selectDate}
                 />
               )}

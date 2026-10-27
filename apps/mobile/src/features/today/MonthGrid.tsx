@@ -12,6 +12,7 @@ export function MonthGrid({
   today,
   selectedDate,
   summary,
+  stampColors,
   onSelect,
   onMove,
 }: {
@@ -20,6 +21,7 @@ export function MonthGrid({
   today: ISODate;
   selectedDate: ISODate;
   summary: Map<ISODate, DaySummary>;
+  stampColors?: Map<ISODate, string[]>;
   onSelect(date: ISODate): void;
   onMove(direction: -1 | 1): void;
 }) {
@@ -78,6 +80,7 @@ export function MonthGrid({
                 today={today}
                 selected={date === selectedDate}
                 summary={summary.get(date)}
+                goalColors={stampColors?.get(date)}
                 monthly
                 outside={monthKeyOf(date) !== month}
                 onPress={() => onSelect(date)}
@@ -90,7 +93,7 @@ export function MonthGrid({
   );
 }
 const styles = StyleSheet.create({
-  grid: { paddingHorizontal: m.space.sm, paddingBottom: m.space.sm, borderBottomWidth: m.border },
+  grid: { paddingHorizontal: m.space.sm, paddingBottom: m.space.sm, borderBottomWidth: 0 },
   week: { flexDirection: 'row' },
   weekday: {
     flex: 1,
