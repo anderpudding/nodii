@@ -169,6 +169,7 @@ export function RoutineEditor({
           <RoutineScope
             before={routine}
             after={after}
+            goalColor={goal?.color}
             today={today}
             client={client}
             profile={profile}
