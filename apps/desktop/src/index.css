@@ -153,7 +153,7 @@ h2 {
 .input {
   width: 100%;
   height: 48px;
-  border: 1px solid var(--color-field);
+  border: 1px solid var(--color-chip);
   border-radius: 10px;
   padding: 0 16px;
   background: var(--color-bg);
@@ -206,7 +206,7 @@ h2 {
   background: var(--color-ink-2);
 }
 .button-outline {
-  border-color: var(--color-field);
+  border-color: var(--color-chip);
 }
 .button-ghost:hover,
 .button-outline:hover {
@@ -237,7 +237,7 @@ h2 {
   justify-content: center;
   width: 48px;
   height: 48px;
-  border: 1px solid var(--color-field);
+  border: 1px solid var(--color-chip);
   border-radius: 10px;
   font-size: 20px;
   font-weight: 700;
@@ -277,7 +277,7 @@ h2 {
 .sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--color-side);
+  background: var(--color-bg);
   padding: 26px;
   border-right: 1px solid var(--color-line);
 }
@@ -467,7 +467,7 @@ button.goal-chip:disabled {
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  border: 1.5px solid var(--color-field);
+  border: 1.5px solid var(--color-chip);
   background: var(--color-box);
 }
 .todo-check {
@@ -540,7 +540,7 @@ button.goal-chip:disabled {
   flex: 1;
   min-width: 0;
   border: 0;
-  background: var(--color-side);
+  background: var(--color-bg);
   color: var(--color-ink);
   font-size: 15px;
   padding: 4px;
@@ -551,7 +551,7 @@ button.goal-chip:disabled {
   flex-wrap: wrap;
   padding: 8px;
   border-radius: 10px;
-  background: var(--color-side);
+  background: var(--color-bg);
 }
 .empty-check {
   border-color: var(--color-line-2);
@@ -736,7 +736,7 @@ button.goal-chip:disabled {
   outline-offset: 2px;
 }
 .color-option:hover {
-  box-shadow: 0 0 0 1px var(--color-field);
+  box-shadow: 0 0 0 1px var(--color-chip);
 }
 .goal-color-field {
   display: flex;
@@ -786,7 +786,7 @@ button.goal-chip:disabled {
   cursor: pointer;
 }
 .archive-link:hover {
-  background: var(--color-side);
+  background: var(--color-bg);
 }
 .archive-link span {
   color: var(--color-muted);
@@ -908,7 +908,7 @@ button.goal-chip:disabled {
   font-weight: 700;
 }
 .stamp-remaining {
-  background: var(--color-stamp);
+  background: var(--color-box);
 }
 .stamp-future {
   border: 1.5px solid var(--color-line-2);
@@ -1128,7 +1128,7 @@ button.goal-chip:disabled {
 }
 .routine-danger,
 .routine-danger:hover {
-  background: #c4332c;
+  background: var(--color-danger-fill);
   color: #ffffff;
 }
 .routine-list-header,
@@ -1215,7 +1215,7 @@ button.goal-chip:disabled {
   min-height: 58px;
   padding: 4px 0;
   border-radius: 8px;
-  background: var(--color-side);
+  background: var(--color-bg);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-muted);
@@ -1239,7 +1239,7 @@ button.goal-chip:disabled {
 .goal-chip[aria-disabled='true'] {
   background: var(--color-box);
   color: var(--color-muted);
-  border-color: var(--color-field);
+  border-color: var(--color-chip);
   cursor: not-allowed;
 }
 .todo-check[aria-disabled='true'] svg {
@@ -1249,7 +1249,7 @@ button.goal-chip:disabled {
 /* 설정 시안: 두 열의 그룹과 표면 카드로 정보 구조를 분리한다. */
 .settings-sheet {
   max-width: 1120px;
-  background: var(--color-side);
+  background: var(--color-bg);
 }
 .settings-header {
   display: grid;
@@ -1401,7 +1401,7 @@ button.goal-chip:disabled {
 .sortable-dragging {
   position: relative;
   z-index: 1;
-  background: var(--color-side);
+  background: var(--color-bg);
   border-radius: 12px;
 }
 .drag-handle,
@@ -1516,7 +1516,7 @@ body,
   gap: 16px;
 }
 .stamp-empty {
-  background: var(--color-stamp-empty);
+  background: var(--color-stamp-soft);
 }
 .day-menu {
   width: 380px;
