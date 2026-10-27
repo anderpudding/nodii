@@ -54,6 +54,9 @@ it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴
       .filter((style) => style?.width === 24 || style?.minWidth === 24),
   );
   expect(decorations[0]).toEqual(decorations[1]);
+  const monthLayout = StyleSheet.flatten(cells[1]!.props.style);
+  // 주간 최소 높이가 월간의 66pt 높이를 덮지 않아야 한다 (components.md 캘린더 칸).
+  expect(Math.max(monthLayout.height, monthLayout.minHeight)).toBe(66);
   const stamps = cells.map((cell) =>
     within(cell)
       .UNSAFE_getAllByType(Path)

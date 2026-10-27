@@ -90,7 +90,12 @@ const styles = StyleSheet.create({
     borderRadius: m.radius.field,
     paddingVertical: m.space.xs,
   },
-  monthCell: { height: m.height.calendarCell, justifyContent: 'center', gap: m.space.xs },
+  monthCell: {
+    minHeight: m.height.calendarCell,
+    height: m.height.calendarCell,
+    justifyContent: 'center',
+    gap: m.space.xs,
+  },
   label: {
     fontFamily: m.fontSemiBold,
     fontWeight: '600',
