@@ -1,3 +1,4 @@
+import { BrandMark } from '../../components/ui/brand-mark';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   normalizeAuthError,
@@ -123,7 +124,10 @@ export function Login({
     <main className="center-screen">
       <section className="auth-panel" aria-labelledby="login-title">
         <header className="auth-heading">
-          <p className="brand">Nodii</p>
+          <p className="brand">
+            <BrandMark />
+            Nodii
+          </p>
           <h1 id="login-title">{codeEmail ? '메일을 확인해 주세요' : '같은 하루를, 어디서나'}</h1>
           <p className="supporting">
             {codeEmail ? (

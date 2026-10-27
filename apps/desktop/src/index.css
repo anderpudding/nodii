@@ -109,8 +109,11 @@ h2 {
 }
 .brand {
   font-size: 20px;
-  font-weight: 700;
   letter-spacing: -0.4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
 }
 .supporting {
   color: var(--color-muted);
@@ -237,15 +240,16 @@ h2 {
   justify-content: center;
   width: 48px;
   height: 48px;
-  border: 1px solid var(--color-chip);
-  border-radius: 10px;
   font-size: 20px;
-  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-chip);
+  font-weight: 800;
 }
 .otp-slot-active {
-  outline: 2px solid var(--color-ink);
-  outline-offset: 2px;
+  outline: 1.5px solid var(--color-ink);
+  outline-offset: -1.5px;
 }
 .otp-container-disabled .otp-slot {
   background: var(--color-box);
@@ -1741,4 +1745,9 @@ body,
 
 .week-strip {
   border-bottom: 0;
+}
+
+.brand-marks {
+  width: 104px;
+  height: 24px;
 }
