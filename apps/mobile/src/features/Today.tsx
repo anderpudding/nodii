@@ -260,7 +260,7 @@ function TodayContent({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.root}
+      style={[styles.root, { backgroundColor: colors.bg }]}
     >
       <View
         testID="today-top"
@@ -283,7 +283,7 @@ function TodayContent({
         </Pressable>
         <View
           accessibilityRole="radiogroup"
-          style={[styles.segment, { backgroundColor: colors.bg }]}
+          style={[styles.segment, { backgroundColor: colors.chip }]}
         >
           {([false, true] as const).map((expanded) => (
             <Pressable
@@ -296,7 +296,7 @@ function TodayContent({
               style={({ pressed }) => [
                 styles.option,
                 {
-                  backgroundColor: monthExpanded === expanded ? colors.bg : colors.bg,
+                  backgroundColor: 'transparent',
                   opacity: pressed ? m.pressedOpacity : 1,
                 },
               ]}
@@ -304,7 +304,11 @@ function TodayContent({
               <Text
                 style={[
                   styles.label,
-                  { color: monthExpanded === expanded ? colors.ink : colors.muted },
+                  styles.segmentLetter,
+                  {
+                    color: monthExpanded === expanded ? colors.bg : colors.ink2,
+                    backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
+                  },
                 ]}
               >
                 {expanded ? 'M' : 'W'}
@@ -578,22 +582,34 @@ const styles = StyleSheet.create({
   },
   month: { flex: 1, flexShrink: 1 },
   today: { minHeight: m.height.chip, paddingHorizontal: m.space.sm, justifyContent: 'center' },
-  segment: { flexDirection: 'row', padding: m.space.xs, borderRadius: m.radius.pill },
+  segment: { flexDirection: 'row', padding: 0, borderRadius: m.radius.pill },
   option: {
     minWidth: m.height.touch,
-    minHeight: m.height.chip,
+    minHeight: m.height.touch,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: m.radius.pill,
   },
-  label: { fontFamily: m.fontBold, fontSize: m.type.button },
+  segmentLetter: {
+    minWidth: m.height.segmentMark,
+    minHeight: m.height.segmentMark,
+    lineHeight: m.height.segmentMark,
+    borderRadius: m.radius.pill,
+    textAlign: 'center',
+  },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   settings: {
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heading: { fontFamily: m.fontBold, fontWeight: '700', fontSize: m.type.heading },
+  heading: {
+    fontFamily: m.fontExtraBold,
+    fontWeight: '800',
+    fontSize: m.type.month,
+    letterSpacing: -0.6,
+  },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,

@@ -52,7 +52,16 @@ export const metrics = {
   fontExtraBold: 'Pretendard-ExtraBold',
   space: { xs: 4, sm: 8, md: 12, lg: 16, group: 16, page: 48, goalDot: 7 },
   radius: { field: 14, button: 999, card: 18, mark: 999, stamp: 999, sheet: 26, pill: 999 },
-  height: { touch: 44, field: 52, chip: 36, menu: 56, calendarCell: 66, weekCell: 78, button: 54 },
+  height: {
+    touch: 44,
+    field: 52,
+    chip: 36,
+    menu: 56,
+    calendarCell: 66,
+    weekCell: 78,
+    button: 54,
+    segmentMark: 28,
+  },
   glyph: { check: 26, stamp: 30, icon: 20, dot: 10 },
   handle: { width: 36, height: 5 },
   selectionRing: 2,
@@ -60,7 +69,7 @@ export const metrics = {
   pressedOpacity: 0.55,
   toastInset: 10, // MobileUndo
   longPressScale: 1.02, // mobile-screens.md MobileGestures 보완값
-  type: { title: 30, heading: 20, body: 16, button: 14, supporting: 13, label: 12 },
+  type: { title: 30, heading: 20, month: 21, body: 16, button: 14, supporting: 13, label: 12 },
   letterSpacing: { title: -1, button: -0.2 },
   lineHeight: { body: 1.5, title: 1.25 },
   motion: { state: 150, press: 120, check: 280, menu: 140, toast: 240 },
