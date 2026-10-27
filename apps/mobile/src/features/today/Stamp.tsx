@@ -23,11 +23,13 @@ export function Stamp({
   future,
   today,
   goalColors = [],
+  showCount = true,
 }: {
   summary?: DaySummary;
   future: boolean;
   today: boolean;
   goalColors?: string[];
+  showCount?: boolean;
 }) {
   const { colors } = useTheme();
   const highContrast = useHighContrast();
@@ -83,6 +85,7 @@ export function Stamp({
           filter={`url(#${id}-shadow)`}
         />
       ) : (
+        showCount &&
         !!summary?.remaining && (
           <Text
             testID="stamp-count"
