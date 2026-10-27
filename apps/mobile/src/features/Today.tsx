@@ -31,6 +31,7 @@ import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
 import { Button } from '../components/Button';
+import { SettingsIcon } from '../components/SettingsIcon';
 import { useUIStore } from '../stores/ui';
 import { InlineAdd } from './today/InlineAdd';
 import { GoalBadge } from './today/GoalBadge';
@@ -335,7 +336,7 @@ function TodayContent({
           accessibilityState={{ expanded: settings }}
           style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
         >
-          <Text style={[styles.heading, { color: colors.ink2 }]}>☰</Text>
+          <SettingsIcon color={colors.ink2} />
         </Pressable>
       </View>
       {!online && (
