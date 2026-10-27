@@ -131,7 +131,7 @@ export function RoutineList({
                 <Text accessibilityRole="header" style={[styles.label, { color: colors.ink2 }]}>
                   {t(key, { count: rows.length })}
                 </Text>
-                <View style={[styles.card, { backgroundColor: colors.surface }]}>
+                <View style={[styles.card, { backgroundColor: colors.chip }]}>
                   {rows.map((routine) => (
                     <ManagementRow
                       key={routine.id}
@@ -160,7 +160,7 @@ export function RoutineList({
             styles.bar,
             {
               paddingBottom: Math.max(insets.bottom, m.space.lg),
-              backgroundColor: colors.surface,
+              backgroundColor: colors.bg,
               borderTopColor: colors.line,
             },
           ]}
@@ -227,7 +227,7 @@ function ManagementRow({
       id,
       swipe,
       label: routineActionLabel(id, false),
-      background: id === 'stop' ? lightColors.dangerFill : colors.bg,
+      background: id === 'stop' ? lightColors.dangerFill : colors.chip,
       color: id === 'stop' ? lightColors.bg : colors.ink,
       run: () => run(id),
     })),
@@ -266,13 +266,13 @@ function ManagementRow({
           style={({ pressed }) => [
             styles.row,
             {
-              borderColor: colors.surface,
+              borderColor: colors.chip,
               borderBottomColor: colors.line,
               opacity: pressed ? m.pressedOpacity : 1,
             },
           ]}
         >
-          <GoalBadge goal={goal} />
+          <GoalBadge goal={goal} onChip />
           <View style={styles.rowContent}>
             <Text style={[styles.rowTitle, { color: colors.ink }]}>{routine.title}</Text>
             <Text style={[styles.supporting, { color: colors.muted }]}>
@@ -315,10 +315,10 @@ function ManagementRow({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { paddingHorizontal: m.space.lg, gap: m.space.lg, alignItems: 'flex-start' },
-  title: { fontFamily: m.fontBold, fontSize: m.type.title },
+  title: { fontFamily: m.fontExtraBold, fontSize: m.type.title },
   content: { paddingHorizontal: m.space.lg, gap: m.space.group, paddingTop: m.space.lg },
   group: { gap: m.space.md },
-  label: { fontFamily: m.fontBold, fontSize: m.type.supporting },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.supporting },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: m.space.md,
     padding: m.space.lg,
-    borderWidth: m.selectionRing,
+    borderWidth: 0,
     borderBottomWidth: m.border,
   },
   rowContent: { flex: 1 },
