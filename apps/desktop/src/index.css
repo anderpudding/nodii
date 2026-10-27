@@ -1766,3 +1766,14 @@ body,
 .color-option:focus-visible {
   outline: 2px solid var(--color-ink);
 }
+
+.goal-edit-screen .goal-destructive {
+  border-top: 0;
+  background: var(--color-chip);
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.goal-edit-screen .goal-editor-actions .button {
+  height: 40px;
+}
