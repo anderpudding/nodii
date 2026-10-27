@@ -61,7 +61,7 @@ export function Settings({
         <Text accessibilityRole="header" style={[s.label, { color: colors.ink2 }]}>
           {title}
         </Text>
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <View style={[s.card, { backgroundColor: colors.chip, borderColor: colors.line }]}>
           {children}
         </View>
       </View>

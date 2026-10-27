@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { metrics as m } from '../../../lib/theme';
 export const settingsStyles = StyleSheet.create({
   group: { gap: m.space.sm },
-  card: { borderRadius: m.radius.field, borderWidth: m.border, overflow: 'hidden' },
+  card: { borderRadius: m.radius.card, borderWidth: 0, overflow: 'hidden' },
   row: {
     padding: m.space.lg,
     gap: m.space.sm,
@@ -16,7 +16,7 @@ export const settingsStyles = StyleSheet.create({
     gap: m.space.sm,
   },
   body: { fontFamily: m.fontFamily, fontSize: m.type.body },
-  label: { fontFamily: m.fontBold, fontSize: m.type.supporting },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.supporting },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,
@@ -27,6 +27,6 @@ export const settingsStyles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: m.space.sm,
     padding: m.space.xs,
-    borderRadius: m.radius.field,
+    borderRadius: m.radius.pill,
   },
 });
