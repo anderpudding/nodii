@@ -307,8 +307,10 @@ h2 {
   height: 22px;
 }
 .wide-settings {
-  width: 34px;
   padding: 0;
+  width: 32px;
+  height: 32px;
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
 }
 .app-toolbar {
   display: flex;
@@ -1709,4 +1711,19 @@ body,
 
 .auth-form .input {
   height: 48px;
+}
+
+.calendar-navigation .button:not(:last-child) {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
+}
+
+.day-navigation .button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
 }
