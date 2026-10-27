@@ -8,6 +8,7 @@ export function Button({
   disabled = false,
   busy = false,
   secondary = false,
+  quiet = false,
   pill = false,
   accessibilityLabel = label,
 }: {
@@ -16,6 +17,7 @@ export function Button({
   disabled?: boolean;
   busy?: boolean;
   secondary?: boolean;
+  quiet?: boolean;
   pill?: boolean;
   accessibilityLabel?: string;
 }) {
@@ -31,20 +33,41 @@ export function Button({
         styles.button,
         {
           borderRadius: pill ? m.radius.pill : m.radius.button,
-          minHeight: secondary ? m.height.touch : m.height.button,
-          backgroundColor: disabled ? colors.box : secondary ? colors.chip : colors.ink,
+          minHeight: secondary || quiet ? m.height.touch : m.height.button,
+          backgroundColor: quiet
+            ? 'transparent'
+            : disabled
+              ? colors.box
+              : secondary
+                ? colors.chip
+                : colors.ink,
+          paddingHorizontal: quiet ? m.space.xs : m.space.lg,
           borderColor: secondary ? colors.bg : colors.ink,
           opacity: pressed ? m.pressedOpacity : 1,
         },
       ]}
     >
       {busy ? (
-        <ActivityIndicator color={disabled ? colors.muted : secondary ? colors.ink : colors.bg} />
+        <ActivityIndicator
+          color={disabled ? colors.muted : quiet || secondary ? colors.ink : colors.bg}
+        />
       ) : (
         <Text
           style={[
             styles.label,
-            { color: disabled ? colors.muted : secondary ? colors.ink : colors.bg },
+            quiet && styles.quietLabel,
+            quiet && secondary && styles.quietSecondary,
+            {
+              color: disabled
+                ? colors.muted
+                : quiet
+                  ? secondary
+                    ? colors.ink2
+                    : colors.ink
+                  : secondary
+                    ? colors.ink
+                    : colors.bg,
+            },
           ]}
         >
           {label}
@@ -70,4 +93,6 @@ const styles = StyleSheet.create({
     letterSpacing: m.letterSpacing.button,
     textAlign: 'center',
   },
+  quietLabel: { fontSize: m.type.body },
+  quietSecondary: { fontFamily: m.fontFamily, fontWeight: '400' },
 });
