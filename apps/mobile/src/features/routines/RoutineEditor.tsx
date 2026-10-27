@@ -288,7 +288,7 @@ export function RoutineEditor({
               { borderWidth: 1.5 },
               {
                 color: colors.ink,
-                backgroundColor: colors.bg,
+                backgroundColor: colors.chip,
                 borderColor: inputFocused ? colors.ink : colors.chip,
               },
             ]}
@@ -310,8 +310,9 @@ export function RoutineEditor({
                 disabled={blocked}
                 onPress={() => setDraft((value) => ({ ...value, goalId: goal.id }))}
                 compact
+                borderless
               >
-                <GoalBadge goal={goal} />
+                <GoalBadge goal={goal} selected={draft.goalId === goal.id} />
               </RoutineOption>
             ))}
           </View>
@@ -323,7 +324,10 @@ export function RoutineEditor({
         </View>
         <View style={s.group}>
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.repeat')}</Text>
-          <View accessibilityRole="radiogroup" style={[s.segment, { backgroundColor: colors.box }]}>
+          <View
+            accessibilityRole="radiogroup"
+            style={[s.segment, { backgroundColor: colors.chip }]}
+          >
             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
               <RoutineOption
                 key={freq}
