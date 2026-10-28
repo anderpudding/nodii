@@ -287,7 +287,12 @@ export function Login({
 }
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', padding: m.space.group },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: m.space.lg + m.space.sm,
+    paddingVertical: m.space.lg,
+  },
   marks: { flexDirection: 'row', gap: m.space.sm, marginBottom: m.space.group },
   brand: {
     fontFamily: m.fontExtraBold,

@@ -13,7 +13,7 @@ export function BrandMark() {
           <Path d={SPROUT_LEAVES} />
         </G>
       ))}
-      <Path d={SPROUT_BODY} transform="translate(78 0)" fill={colors.chip} />
+      <Path d={SPROUT_BODY} transform="translate(78 0)" fill={colors.box} />
     </Svg>
   );
 }
