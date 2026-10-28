@@ -25,11 +25,14 @@ afterEach(() => {
 it('이메일 발송·6자리 자동 제출·오류 후 다시 입력을 처리한다', async () => {
   vi.mocked(verifyOtp).mockRejectedValueOnce({ code: 'invalid_code' });
   render(<Login client={client} reviewAccountEmail="" />);
+  expect(screen.getByRole('heading', { name: t('auth.title') })).toBeTruthy();
+  expect(screen.getByText(t('auth.email.help'))).toBeTruthy();
   fireEvent.change(screen.getByLabelText(t('auth.email')), {
     target: { value: ' A@EXAMPLE.COM ' },
   });
   fireEvent.click(screen.getByRole('button', { name: t('auth.send') }));
   await screen.findByLabelText(t('auth.code.label'));
+  expect(screen.queryByText(t('auth.email.help'))).toBeNull();
   expect(sendOtp).toHaveBeenCalledWith(client, 'a@example.com');
   const input = screen.getByLabelText(t('auth.code.label'));
   expect(input.getAttribute('autocomplete')).toBe('one-time-code');
@@ -62,6 +65,7 @@ it('설정된 심사 이메일만 비밀번호를 표시하고 OTP 요청 없이
   fireEvent.change(screen.getByLabelText(t('auth.email')), {
     target: { value: ' REVIEW@EXAMPLE.COM ' },
   });
+  expect(screen.queryByText(t('auth.email.help'))).toBeNull();
   fireEvent.change(screen.getByLabelText(t('auth.password')), {
     target: { value: 'review-secret' },
   });

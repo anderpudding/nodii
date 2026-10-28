@@ -121,7 +121,6 @@ export function Login({
         >
           <BrandMark />
         </View>
-        <Text style={[styles.brand, { color: colors.muted }]}>{t('auth.brand')}</Text>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
           {t(state.step === 'code' ? 'auth.code.title' : 'auth.title')}
         </Text>
@@ -281,6 +280,9 @@ export function Login({
             </>
           )}
         </View>
+        {state.step !== 'code' && !review && (
+          <Text style={[styles.help, { color: colors.muted }]}>{t('auth.email.help')}</Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -291,15 +293,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: m.space.lg + m.space.sm,
-    paddingVertical: m.space.lg,
+    paddingTop: m.space.lg,
+    paddingBottom: m.space.page + m.space.lg,
   },
-  marks: { flexDirection: 'row', gap: m.space.sm, marginBottom: m.space.group },
-  brand: {
-    fontFamily: m.fontExtraBold,
-    fontSize: m.type.button,
-    fontWeight: '800',
-    marginBottom: m.space.sm,
-  },
+  marks: { flexDirection: 'row', gap: m.space.sm, marginBottom: m.space.lg + m.space.sm },
   title: {
     fontFamily: m.fontExtraBold,
     fontSize: m.type.title,
@@ -312,12 +309,12 @@ const styles = StyleSheet.create({
     fontSize: m.type.body,
     lineHeight: m.type.body * m.lineHeight.body,
     marginTop: m.space.md,
-    marginBottom: m.space.group,
+    marginBottom: m.space.lg + m.space.sm,
   },
   label: {
-    fontFamily: m.fontSemiBold,
+    fontFamily: m.fontBold,
     fontSize: m.type.label,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: m.space.sm,
     marginTop: m.space.md,
   },
@@ -365,4 +362,10 @@ const styles = StyleSheet.create({
     marginTop: m.space.md,
   },
   actions: { marginTop: m.space.group, gap: m.space.sm },
+  help: {
+    fontFamily: m.fontMedium,
+    fontSize: m.type.supporting,
+    lineHeight: m.type.supporting * m.lineHeight.body,
+    marginTop: m.space.lg * 2,
+  },
 });

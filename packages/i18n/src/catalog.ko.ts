@@ -88,8 +88,9 @@ export const ko = {
   'sync.cache.clearFailed': '보관된 데이터를 지우지 못했어요. 다시 시도해 주세요.',
 
   'auth.brand': 'Nodii',
-  'auth.title': '같은 하루를, 어디서나',
-  'auth.description': '이메일로 간편하게 시작해 보세요.',
+  'auth.title': 'Nodii 시작하기',
+  'auth.description': '이메일로 받은 6자리 코드로 로그인해요. 처음이면 가입도 함께 돼요.',
+  'auth.email.help': '코드는 10분 동안 쓸 수 있어요. 메일이 안 보이면 스팸함도 확인해 주세요.',
   'auth.code.title': '메일을 확인해 주세요',
   'auth.code.description': '{email}로 보낸\n6자리 인증 코드를 입력해 주세요.',
   'auth.email': '이메일',
