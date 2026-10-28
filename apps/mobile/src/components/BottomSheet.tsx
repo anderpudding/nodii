@@ -80,7 +80,7 @@ export function BottomSheet({
                 {title}
               </Text>
               {!bottomCancel && (
-                <Button label={t('mobile.add.cancel')} secondary onPress={onClose} />
+                <Button label={t('mobile.add.cancel')} secondary quiet onPress={onClose} />
               )}
             </View>
           )}
