@@ -221,9 +221,9 @@ EXPO_NO_DOTENV=1 pnpm exec expo export --platform ios --output-dir /tmp/nodii-io
 - [ ] SectionList 가상화는 유지했습니다. 실기기 프레임 드랍 측정은 이번 환경의 Simulator.app/실기기 실행 경로 부재로 못 했습니다. 프레임 드랍이 없다고 판정하지 않습니다.
 - [ ] 앱 작성 코드(core/api/i18n 포함)에는 production `console.*` 호출이 없습니다. Hermes에는 React Native/Expo/Supabase 등 라이브러리 진단용 console 심볼이 남을 수 있습니다. release 기기 로그로 실제 이메일/토큰/사용자 콘텐츠가 출력되지 않는지 확인합니다.
 
-아이콘은 Mac의 블루 `#4F7CFF` 체크를 유지하며 iOS **1024×1024 불투명·정사각형·가장자리까지 채운** PNG로 정리했습니다. 바깥 모서리는 시스템이 자릅니다. 원본 SVG도 같이 보관합니다. 스플래시는 같은 체크 모양, 기존 라이트 `bg`/다크 `bg`이며 세션 복원까지 유지되고 오류에서도 숨겨집니다.
+아이콘은 **새싹 잎**(흰 바탕, 먹색 씨앗, 초록 잎, 흰 체크, 2026-10-27)입니다. iOS 기본 아이콘은 **1024×1024 불투명·정사각형·가장자리까지 채운** PNG이고, 바깥 모서리는 시스템이 자릅니다. `ios.icon`에 라이트·다크·틴트 세 장을 넣었습니다. 원본 SVG와 다시 만드는 방법은 `docs/design/app-icon/`에 있습니다. macOS 아이콘도 같은 원본에서 `tauri icon`으로 만들었습니다. 스플래시는 같은 싹이 실루엣이고 라이트 `#FFFFFF`/다크 `#0F1013` 바탕에 다크 전용 이미지를 씁니다. 세션 복원까지 유지되고 오류에서도 숨겨집니다.
 
-- [ ] iOS의 기본/다크/틴티드 홈 화면에서 체크 식별/대비를 확인합니다. **별도 다크/틴티드 변형은 이번에 넣지 않았습니다.** 단색 바탕+흰 체크라 기존 기본 아이콘으로 동작하지만 시스템 변환의 결과는 실기기 확인이 필요합니다. 필요하면 같은 토큰의 별도 변형을 `ios.icon`에 추가할 수 있습니다([Apple 아이콘 안내](https://developer.apple.com/documentation/xcode/configuring-your-app-icon), [Expo 아이콘 설정](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)).
+- [ ] iOS의 기본/다크/틴티드 홈 화면에서 싹이와 체크 식별/대비를 확인합니다. 다크·틴트 변형은 별도 PNG로 넣었고(`expo prebuild`에서 AppIcon 세 장 생성 확인), 실제 홈 화면 표시는 production 설치본에서 확인해야 합니다([Apple 아이콘 안내](https://developer.apple.com/documentation/xcode/configuring-your-app-icon), [Expo 아이콘 설정](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)).
 - [ ] 기본 아이콘의 알파 없음·수동 둥근 바깥 모서리 없음, 스플래시→로그인/하루 화면 전환에 빈 화면이 없는지 확인합니다. JS export만으로 네이티브 스플래시 포함/Store 아이콘 처리를 증명하지 않습니다.
 
 ## 9. 심사 거절·정보 요청 대응
