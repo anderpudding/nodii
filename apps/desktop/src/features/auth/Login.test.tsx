@@ -38,7 +38,10 @@ describe('이메일 OTP 로그인 (AUTH-01/07)', () => {
       }),
     );
     const { user, client } = setup();
+    expect(screen.getByRole('heading', { name: 'Nodii 시작하기' })).toBeTruthy();
+    expect(screen.getByText(/코드는 10분 동안 쓸 수 있어요/)).toBeTruthy();
     await receiveCode(user);
+    expect(screen.queryByText(/코드는 10분 동안 쓸 수 있어요/)).toBeNull();
     expect(screen.getByRole('heading', { name: '코드를 보냈어요' })).toBeTruthy();
     expect(screen.getByText('user@example.com').tagName).toBe('STRONG');
     expect(otp).toHaveBeenCalledWith(
@@ -132,6 +135,7 @@ describe('심사 계정 분기 (AUTH-08)', () => {
     expect(screen.queryByLabelText('비밀번호')).toBeNull();
     await user.clear(input);
     await user.type(input, ' REVIEW@example.com ');
+    expect(screen.queryByText(/코드는 10분 동안 쓸 수 있어요/)).toBeNull();
     await user.type(screen.getByLabelText('비밀번호'), 'review-test-password');
     await user.click(screen.getByRole('button', { name: '로그인' }));
     await waitFor(() =>

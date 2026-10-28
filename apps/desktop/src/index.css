@@ -1783,6 +1783,10 @@ body,
   font-weight: 700;
 }
 
+.login-help {
+  margin-top: 32px;
+}
+
 .login-panel .otp-slot {
   flex: 1;
   min-width: 0;

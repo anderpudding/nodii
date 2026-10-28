@@ -127,7 +127,7 @@ export function Login({
           <p className="brand">
             <BrandMark />
           </p>
-          <h1 id="login-title">{codeEmail ? '코드를 보냈어요' : '같은 하루를, 어디서나'}</h1>
+          <h1 id="login-title">{codeEmail ? '코드를 보냈어요' : 'Nodii 시작하기'}</h1>
           <p className="login-description">
             {codeEmail ? (
               <>
@@ -135,7 +135,7 @@ export function Login({
                 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.
               </>
             ) : (
-              '이메일로 간편하게 시작해 보세요.'
+              '이메일로 받은 6자리 코드로 로그인해요. 처음이면 가입도 함께 돼요.'
             )}
           </p>
         </header>
@@ -257,6 +257,11 @@ export function Login({
               )}
             </div>
           </form>
+        )}
+        {!codeEmail && !review && (
+          <p className="supporting login-help">
+            코드는 10분 동안 쓸 수 있어요. 메일이 안 보이면 스팸함도 확인해 주세요.
+          </p>
         )}
       </section>
     </main>
