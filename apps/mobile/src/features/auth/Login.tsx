@@ -181,7 +181,6 @@ export function Login({
           </>
         ) : (
           <>
-            <Text style={[styles.label, { color: colors.muted }]}>{t('auth.code')}</Text>
             <View style={styles.codeArea}>
               <View
                 style={styles.slots}
