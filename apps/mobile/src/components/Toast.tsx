@@ -192,7 +192,9 @@ function ToastView({
               },
             ]}
           >
-            <Text style={[styles.actionText, { color: colors.bg }]}>
+            <Text
+              style={[styles.actionText, { color: entry.undo ? colors.toastAction : colors.bg }]}
+            >
               {t(entry.undo ? 'todo.undo' : 'common.dismiss')}
             </Text>
           </Pressable>
