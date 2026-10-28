@@ -1,4 +1,5 @@
 import { SproutCheck } from '../../components/SproutCheck';
+import { ActionIcon } from '../../components/ActionIcon';
 import { useEffect, useRef, useState } from 'react';
 import {
   InputAccessoryView,
@@ -160,6 +161,7 @@ export function InlineAdd({
             }}
             style={({ pressed }) => [styles.date, { opacity: pressed ? m.pressedOpacity : 1 }]}
           >
+            <ActionIcon action="move" color={colors.ink2} />
             <Text style={[styles.label, { color: colors.ink2 }]}>
               {date === today ? t('mobile.add.date.today', { date: dateLabel }) : dateLabel}
             </Text>
@@ -227,7 +229,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.lg,
     gap: m.space.sm,
   },
-  date: { flex: 1, minHeight: m.height.touch, justifyContent: 'center' },
+  date: {
+    flex: 1,
+    minHeight: m.height.touch,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.space.md,
+  },
   action: {
     minHeight: m.height.touch,
     minWidth: m.height.touch,
