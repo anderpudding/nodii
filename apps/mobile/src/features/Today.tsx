@@ -278,7 +278,10 @@ function TodayContent({
           accessibilityLabel={t('day.today')}
           hitSlop={m.space.xs}
           onPress={() => selectDate(today)}
-          style={({ pressed }) => [styles.today, { opacity: pressed ? m.pressedOpacity : 1 }]}
+          style={({ pressed }) => [
+            styles.today,
+            { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
+          ]}
         >
           <Text style={[styles.label, { color: colors.ink }]}>{t('day.today')}</Text>
         </Pressable>
@@ -582,7 +585,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.sm,
   },
   month: { flex: 1, flexShrink: 1 },
-  today: { minHeight: m.height.chip, paddingHorizontal: m.space.sm, justifyContent: 'center' },
+  today: {
+    minHeight: m.height.chip,
+    minWidth: m.height.touch,
+    paddingHorizontal: m.space.md,
+    justifyContent: 'center',
+    borderRadius: m.radius.pill,
+  },
   segment: { flexDirection: 'row', padding: 0, borderRadius: m.radius.pill },
   option: {
     minWidth: m.height.touch,
