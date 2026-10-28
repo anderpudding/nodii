@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import { addDays, monthGridRange, monthKeyOf, weekdayOf, type DaySummary } from '@nodii/core';
 import { adjacentMonthKey } from '@nodii/api';
+import { CalendarStamp } from './CalendarStamp';
 import { Button } from '../../components/ui/button';
 
 /** 표시만 UTC로 고정해 저장 날짜가 시간대로 밀리지 않게 한다. */
@@ -19,6 +20,7 @@ interface CalendarProps {
   today: string;
   weekStart: 0 | 1;
   summary?: Map<string, DaySummary>;
+  stampColors?: Map<string, string[]>;
   onMonthChange: (month: string) => void;
   onSelect: (date: string) => void;
 }
@@ -30,6 +32,7 @@ export function CalendarGrid({
   today,
   weekStart,
   summary,
+  stampColors,
   onMonthChange,
   onSelect,
 }: CalendarProps) {
@@ -75,7 +78,7 @@ export function CalendarGrid({
             ›
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => {
               if (week) week.onChange(today);
               else onMonthChange(monthKeyOf(today));
@@ -139,18 +142,12 @@ export function CalendarGrid({
                       );
                     }}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={`calendar-stamp${completed ? ' stamp-complete' : counts?.remaining ? (date > today ? ' stamp-future' : ' stamp-remaining') : ' stamp-empty'}`}
-                    >
-                      {completed ? (
-                        <svg viewBox="0 0 22 22">
-                          <path d="m5 11 4 4 8-8" />
-                        </svg>
-                      ) : (
-                        counts?.remaining || ''
-                      )}
-                    </span>
+                    <CalendarStamp
+                      summary={counts}
+                      future={date > today}
+                      today={date === today}
+                      colors={stampColors?.get(date)}
+                    />
                     <span
                       className={`calendar-number${date === selectedDate ? ' date-selected' : date === today ? ' date-today' : ''}`}
                       aria-hidden="true"

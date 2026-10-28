@@ -83,18 +83,24 @@ export function RoutineList({
   const ended = ordered.filter((row) => row.endDate !== null && row.endDate < today);
   const failed = routines.isError || goals.isError;
   const loading = routines.isPending || goals.isPending;
-  const barHeight = m.height.field + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg);
+  const barHeight = m.height.button + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg);
   return (
     <Modal visible animationType="none" onRequestClose={onClose}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View
         accessibilityViewIsModal
         {...edge.panHandlers}
-        style={[styles.screen, { backgroundColor: colors.side, paddingTop: insets.top }]}
+        style={[styles.screen, { backgroundColor: colors.bg, paddingTop: insets.top }]}
       >
         <ToastInset bottom={barHeight} />
         <View style={styles.header}>
-          <Button label={backLabel} secondary onPress={onClose} />
+          <Button
+            label={backLabel.startsWith('‹') ? backLabel : `‹ ${backLabel}`}
+            accessibilityLabel={backLabel}
+            secondary
+            quiet
+            onPress={onClose}
+          />
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             {t('routine.manage')}
           </Text>
@@ -131,7 +137,7 @@ export function RoutineList({
                 <Text accessibilityRole="header" style={[styles.label, { color: colors.ink2 }]}>
                   {t(key, { count: rows.length })}
                 </Text>
-                <View style={[styles.card, { backgroundColor: colors.surface }]}>
+                <View style={[styles.card, { backgroundColor: colors.chip }]}>
                   {rows.map((routine) => (
                     <ManagementRow
                       key={routine.id}
@@ -160,7 +166,7 @@ export function RoutineList({
             styles.bar,
             {
               paddingBottom: Math.max(insets.bottom, m.space.lg),
-              backgroundColor: colors.surface,
+              backgroundColor: colors.bg,
               borderTopColor: colors.line,
             },
           ]}
@@ -227,7 +233,7 @@ function ManagementRow({
       id,
       swipe,
       label: routineActionLabel(id, false),
-      background: id === 'stop' ? lightColors.danger : colors.side,
+      background: id === 'stop' ? lightColors.dangerFill : colors.chip,
       color: id === 'stop' ? lightColors.bg : colors.ink,
       run: () => run(id),
     })),
@@ -266,13 +272,14 @@ function ManagementRow({
           style={({ pressed }) => [
             styles.row,
             {
-              borderColor: colors.surface,
+              borderColor: colors.chip,
               borderBottomColor: colors.line,
+              backgroundColor: colors.chip,
               opacity: pressed ? m.pressedOpacity : 1,
             },
           ]}
         >
-          <GoalBadge goal={goal} />
+          <GoalBadge goal={goal} onChip />
           <View style={styles.rowContent}>
             <Text style={[styles.rowTitle, { color: colors.ink }]}>{routine.title}</Text>
             <Text style={[styles.supporting, { color: colors.muted }]}>
@@ -314,11 +321,15 @@ function ManagementRow({
 }
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { paddingHorizontal: m.space.lg, gap: m.space.lg, alignItems: 'flex-start' },
-  title: { fontFamily: m.fontBold, fontSize: m.type.title },
-  content: { paddingHorizontal: m.space.lg, gap: m.space.group, paddingTop: m.space.lg },
+  header: { paddingHorizontal: m.space.lg, gap: m.space.sm, alignItems: 'flex-start' },
+  title: {
+    fontFamily: m.fontExtraBold,
+    fontSize: m.type.title,
+    letterSpacing: m.letterSpacing.title,
+  },
+  content: { paddingHorizontal: m.space.lg, gap: m.space.group, paddingTop: m.space.sm },
   group: { gap: m.space.md },
-  label: { fontFamily: m.fontBold, fontSize: m.type.supporting },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.supporting },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,
@@ -329,8 +340,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: m.space.md,
-    padding: m.space.lg,
-    borderWidth: m.selectionRing,
+    paddingHorizontal: m.space.lg,
+    paddingVertical: m.space.md,
+    borderWidth: 0,
     borderBottomWidth: m.border,
   },
   rowContent: { flex: 1 },

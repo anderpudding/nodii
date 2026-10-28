@@ -84,7 +84,7 @@ export function GoalEditor({
 
   return (
     <form
-      className="goal-editor-screen"
+      className={`goal-editor-screen ${goal ? 'goal-edit-screen' : 'goal-add-screen'}`}
       noValidate
       onKeyDown={(event) => {
         if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.keyCode === 229))
@@ -163,7 +163,7 @@ export function GoalEditor({
           </p>
         )}
         <div className="goal-preview" aria-label="목표 미리보기">
-          <GoalChip goal={preview} surface />
+          <GoalChip goal={preview} />
         </div>
         {goal && (
           <section className="goal-destructive" aria-label="목표 보관 및 삭제">

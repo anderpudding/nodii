@@ -15,7 +15,7 @@ import {
   verifyOtp,
   type NodiiClient,
 } from '@nodii/api';
-import { goalInk, goalTint } from '@nodii/core';
+import { BrandMark } from '../../components/BrandMark';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
@@ -40,7 +40,7 @@ export function Login({
   const [focused, setFocused] = useState<string | null>(null);
   const busy = useRef(false);
   const codeInput = useRef<TextInput>(null);
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const email = state.email.trim().toLowerCase();
   const review = isReviewEmail(email, reviewAccountEmail);
   const remaining = cooldownRemaining(state, state.step === 'code' ? state.codeEmail : email, now);
@@ -99,14 +99,14 @@ export function Login({
     styles.input,
     {
       color: colors.ink,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.chip,
       borderWidth: 1.5,
-      borderColor: focused === name ? colors.ink : colors.field,
+      borderColor: focused === name ? colors.ink : colors.chip,
     },
   ];
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, { backgroundColor: colors.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -119,28 +119,20 @@ export function Login({
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          {['#4F7CFF', '#3FB28A', '#E9C23A', '#A06CD5'].map((color, index) => (
-            <View
-              key={color}
-              style={[
-                styles.mark,
-                {
-                  backgroundColor:
-                    index === 3 ? colors.bg : goalTint(color, colors.bg, isDark ? 0.22 : 0.14),
-                  borderColor: goalInk(color, colors.bg, isDark),
-                },
-              ]}
-            />
-          ))}
+          <BrandMark />
         </View>
-        <Text style={[styles.brand, { color: colors.muted }]}>{t('auth.brand')}</Text>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
           {t(state.step === 'code' ? 'auth.code.title' : 'auth.title')}
         </Text>
         <Text style={[styles.description, { color: colors.ink2 }]}>
-          {state.step === 'code'
-            ? t('auth.code.description', { email: state.codeEmail })
-            : t('auth.description')}
+          {state.step === 'code' ? (
+            <>
+              <Text style={[styles.emailAddress, { color: colors.ink }]}>{state.codeEmail}</Text>
+              {t('auth.code.description', { email: '' })}
+            </>
+          ) : (
+            t('auth.description')
+          )}
         </Text>
         {state.step !== 'code' ? (
           <>
@@ -189,7 +181,6 @@ export function Login({
           </>
         ) : (
           <>
-            <Text style={[styles.label, { color: colors.muted }]}>{t('auth.code')}</Text>
             <View style={styles.codeArea}>
               <View
                 style={styles.slots}
@@ -203,9 +194,9 @@ export function Login({
                     style={[
                       styles.slot,
                       {
-                        backgroundColor: colors.surface,
+                        backgroundColor: colors.chip,
                         borderWidth: 1.5,
-                        borderColor: focused === 'code' ? colors.ink : colors.field,
+                        borderColor: focused === 'code' ? colors.ink : colors.chip,
                       },
                     ]}
                   >
@@ -273,50 +264,54 @@ export function Login({
             onPress={() => void request(state.step === 'code' ? 'code' : 'email')}
           />
           {state.step === 'code' && (
-            <>
+            <View style={styles.codeActions}>
               <Button
-                secondary
-                label={
-                  remaining > 0
-                    ? t('auth.resendCountdown', { seconds: remaining })
-                    : t('auth.resend')
-                }
-                disabled={state.pending || remaining > 0}
-                onPress={() => void request('resend')}
-              />
-              <Button
+                quiet
                 secondary
                 label={t('auth.changeEmail')}
                 disabled={state.pending}
                 onPress={() => dispatch({ type: 'changeEmail' })}
               />
-            </>
+              {remaining > 0 ? (
+                <Text style={[styles.countdown, { color: colors.muted }]}>
+                  {t('auth.resendCountdown', {
+                    minutes: Math.floor(remaining / 60),
+                    seconds: String(remaining % 60).padStart(2, '0'),
+                  })}
+                </Text>
+              ) : (
+                <Button
+                  quiet
+                  secondary
+                  label={t('auth.resend')}
+                  disabled={state.pending}
+                  onPress={() => void request('resend')}
+                />
+              )}
+            </View>
           )}
         </View>
+        {state.step !== 'code' && !review && (
+          <Text style={[styles.help, { color: colors.muted }]}>{t('auth.email.help')}</Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', padding: m.space.group },
-  marks: { flexDirection: 'row', gap: m.space.sm, marginBottom: m.space.group },
-  mark: {
-    width: m.type.title,
-    height: m.type.title,
-    borderRadius: m.radius.mark,
-    borderWidth: m.border,
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: m.space.lg + m.space.sm,
+    paddingTop: m.space.lg,
+    paddingBottom: m.space.page + m.space.lg,
   },
-  brand: {
-    fontFamily: m.fontBold,
-    fontSize: m.type.button,
-    fontWeight: '700',
-    marginBottom: m.space.sm,
-  },
+  marks: { flexDirection: 'row', gap: m.space.sm, marginBottom: m.space.lg + m.space.sm },
   title: {
-    fontFamily: m.fontBold,
+    fontFamily: m.fontExtraBold,
     fontSize: m.type.title,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: m.letterSpacing.title,
     lineHeight: m.type.title * m.lineHeight.title,
   },
@@ -325,12 +320,13 @@ const styles = StyleSheet.create({
     fontSize: m.type.body,
     lineHeight: m.type.body * m.lineHeight.body,
     marginTop: m.space.md,
-    marginBottom: m.space.group,
+    marginBottom: m.space.lg + m.space.sm,
   },
+  emailAddress: { fontFamily: m.fontBold, fontWeight: '700' },
   label: {
-    fontFamily: m.fontSemiBold,
+    fontFamily: m.fontBold,
     fontSize: m.type.label,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: m.space.sm,
     marginTop: m.space.md,
   },
@@ -354,9 +350,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   digit: {
-    fontFamily: m.fontBold,
+    fontFamily: m.fontExtraBold,
     fontSize: m.type.heading,
-    fontWeight: '700',
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
   codeInput: {
@@ -378,4 +374,26 @@ const styles = StyleSheet.create({
     marginTop: m.space.md,
   },
   actions: { marginTop: m.space.group, gap: m.space.sm },
+  codeActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: m.space.sm,
+  },
+  countdown: {
+    fontFamily: m.fontMedium,
+    fontSize: m.type.supporting,
+    lineHeight: m.type.supporting * m.lineHeight.body,
+    fontVariant: ['tabular-nums'],
+    marginLeft: 'auto',
+    maxWidth: '100%',
+    textAlign: 'right',
+  },
+  help: {
+    fontFamily: m.fontMedium,
+    fontSize: m.type.supporting,
+    lineHeight: m.type.supporting * m.lineHeight.body,
+    marginTop: m.space.lg * 2,
+  },
 });

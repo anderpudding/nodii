@@ -1,3 +1,4 @@
+import { completedStampColors } from './today/stamp-colors';
 import { useOnline } from '../../lib/connectivity';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -30,6 +31,7 @@ import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
 import { Button } from '../components/Button';
+import { SettingsIcon } from '../components/SettingsIcon';
 import { useUIStore } from '../stores/ui';
 import { InlineAdd } from './today/InlineAdd';
 import { GoalBadge } from './today/GoalBadge';
@@ -195,6 +197,36 @@ function TodayContent({
       profile.timezone,
     ],
   );
+  const stampColors = useMemo(
+    () =>
+      completedStampColors(
+        {
+          goals: goals.data ?? [],
+          todos: monthExpanded ? (month.data ?? []) : rows,
+          routines: routines.data ?? [],
+          logs: monthExpanded ? (monthLogs.data ?? []) : logs,
+          from: monthExpanded ? monthRange.from : from,
+          to: monthExpanded ? monthRange.to : to,
+          timeZone: profile.timezone,
+        },
+        summary,
+      ),
+    [
+      goals.data,
+      monthExpanded,
+      month.data,
+      rows,
+      routines.data,
+      monthLogs.data,
+      logs,
+      monthRange.from,
+      monthRange.to,
+      from,
+      to,
+      profile.timezone,
+      summary,
+    ],
+  );
   const items = sections.flatMap((section) => section.data);
   const activeGoal = preferredGoal(goals.data ?? [], null);
   const queries = [goals, routines, first, last, firstLogs, lastLogs];
@@ -229,11 +261,11 @@ function TodayContent({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.root}
+      style={[styles.root, { backgroundColor: colors.bg }]}
     >
       <View
         testID="today-top"
-        style={[styles.top, { backgroundColor: colors.side, paddingTop: insets.top }]}
+        style={[styles.top, { backgroundColor: colors.bg, paddingTop: insets.top }]}
       >
         <Text
           accessibilityRole="header"
@@ -246,13 +278,16 @@ function TodayContent({
           accessibilityLabel={t('day.today')}
           hitSlop={m.space.xs}
           onPress={() => selectDate(today)}
-          style={({ pressed }) => [styles.today, { opacity: pressed ? m.pressedOpacity : 1 }]}
+          style={({ pressed }) => [
+            styles.today,
+            { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
+          ]}
         >
           <Text style={[styles.label, { color: colors.ink }]}>{t('day.today')}</Text>
         </Pressable>
         <View
           accessibilityRole="radiogroup"
-          style={[styles.segment, { backgroundColor: colors.side }]}
+          style={[styles.segment, { backgroundColor: colors.chip }]}
         >
           {([false, true] as const).map((expanded) => (
             <Pressable
@@ -265,7 +300,7 @@ function TodayContent({
               style={({ pressed }) => [
                 styles.option,
                 {
-                  backgroundColor: monthExpanded === expanded ? colors.bg : colors.side,
+                  backgroundColor: 'transparent',
                   opacity: pressed ? m.pressedOpacity : 1,
                 },
               ]}
@@ -273,7 +308,11 @@ function TodayContent({
               <Text
                 style={[
                   styles.label,
-                  { color: monthExpanded === expanded ? colors.ink : colors.muted },
+                  styles.segmentLetter,
+                  {
+                    color: monthExpanded === expanded ? colors.bg : colors.ink2,
+                    backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
+                  },
                 ]}
               >
                 {expanded ? 'M' : 'W'}
@@ -300,7 +339,7 @@ function TodayContent({
           accessibilityState={{ expanded: settings }}
           style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
         >
-          <Text style={[styles.heading, { color: colors.ink2 }]}>☰</Text>
+          <SettingsIcon color={colors.ink2} />
         </Pressable>
       </View>
       {!online && (
@@ -308,7 +347,7 @@ function TodayContent({
           accessibilityRole="alert"
           style={[
             styles.offline,
-            { backgroundColor: colors.side, color: colors.ink2, borderBottomColor: colors.line },
+            { backgroundColor: colors.bg, color: colors.ink2, borderBottomColor: colors.line },
           ]}
         >
           {t('sync.offline')}
@@ -350,6 +389,7 @@ function TodayContent({
                   today={today}
                   selectedDate={selectedDate}
                   summary={summary}
+                  stampColors={stampColors}
                   onSelect={selectDate}
                   onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
                 />
@@ -359,6 +399,7 @@ function TodayContent({
                   today={today}
                   selectedDate={selectedDate}
                   summary={summary}
+                  stampColors={stampColors}
                   onSelect={selectDate}
                 />
               )}
@@ -544,23 +585,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.sm,
   },
   month: { flex: 1, flexShrink: 1 },
-  today: { minHeight: m.height.chip, paddingHorizontal: m.space.sm, justifyContent: 'center' },
-  segment: { flexDirection: 'row', padding: m.space.xs, borderRadius: m.radius.pill },
+  today: {
+    minHeight: m.height.chip,
+    minWidth: m.height.touch,
+    paddingHorizontal: m.space.md,
+    justifyContent: 'center',
+    borderRadius: m.radius.pill,
+  },
+  segment: { flexDirection: 'row', padding: 0, borderRadius: m.radius.pill },
   option: {
     minWidth: m.height.touch,
-    minHeight: m.height.chip,
+    minHeight: m.height.touch,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: m.radius.pill,
   },
-  label: { fontFamily: m.fontBold, fontSize: m.type.button },
+  segmentLetter: {
+    minWidth: m.height.segmentMark,
+    minHeight: m.height.segmentMark,
+    lineHeight: m.height.segmentMark,
+    borderRadius: m.radius.pill,
+    textAlign: 'center',
+  },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   settings: {
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heading: { fontFamily: m.fontBold, fontWeight: '700', fontSize: m.type.heading },
+  heading: {
+    fontFamily: m.fontExtraBold,
+    fontWeight: '800',
+    fontSize: m.type.month,
+    letterSpacing: -0.6,
+  },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,

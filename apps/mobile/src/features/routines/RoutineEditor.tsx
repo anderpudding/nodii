@@ -256,13 +256,19 @@ export function RoutineEditor({
         onClose={close}
         header={
           <View style={s.header}>
-            <Button label={t('mobile.add.cancel')} secondary disabled={blocked} onPress={close} />
+            <Button
+              label={t('mobile.add.cancel')}
+              secondary
+              quiet
+              disabled={blocked}
+              onPress={close}
+            />
             <Text accessibilityRole="header" style={[s.heading, { color: colors.ink }]}>
               {t(routine ? 'routine.edit' : 'routine.create')}
             </Text>
             <Button
               label={t('mobile.rename.save')}
-              secondary
+              quiet
               disabled={!online || blocked || !validation.valid}
               busy={blocked}
               onPress={() => void save()}
@@ -288,8 +294,8 @@ export function RoutineEditor({
               { borderWidth: 1.5 },
               {
                 color: colors.ink,
-                backgroundColor: colors.bg,
-                borderColor: inputFocused ? colors.ink : colors.field,
+                backgroundColor: colors.chip,
+                borderColor: inputFocused ? colors.ink : colors.chip,
               },
             ]}
           />
@@ -310,8 +316,9 @@ export function RoutineEditor({
                 disabled={blocked}
                 onPress={() => setDraft((value) => ({ ...value, goalId: goal.id }))}
                 compact
+                borderless
               >
-                <GoalBadge goal={goal} />
+                <GoalBadge goal={goal} selected={draft.goalId === goal.id} />
               </RoutineOption>
             ))}
           </View>
@@ -325,7 +332,7 @@ export function RoutineEditor({
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.repeat')}</Text>
           <View
             accessibilityRole="radiogroup"
-            style={[s.segment, { backgroundColor: colors.boxFill }]}
+            style={[s.segment, { backgroundColor: colors.chip }]}
           >
             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
               <RoutineOption
@@ -386,6 +393,15 @@ export function RoutineEditor({
                 <RoutineOption
                   key={day}
                   label={draft.freq === 'weekly' ? weekdays[day]! : `${day}`}
+                  labelColor={
+                    draft.freq === 'weekly'
+                      ? day === 0
+                        ? colors.sun
+                        : day === 6
+                          ? colors.sat
+                          : colors.ink
+                      : colors.ink
+                  }
                   multiple
                   filled
                   accessibilityLabel={t(
@@ -414,11 +430,11 @@ export function RoutineEditor({
         )}
         <View style={s.group}>
           <Text style={[s.label, { color: colors.ink2 }]}>{t('routine.period')}</Text>
-          <View style={[s.period, { borderColor: colors.line }]}>
+          <View style={[s.period, { backgroundColor: colors.chip }]}>
             <RoutineOption
               inline
               label={t('routine.start')}
-              description={routineDate(draft.startDate)}
+              description={`${routineDate(draft.startDate)} ›`}
               disabled={blocked}
               onPress={() => {
                 Keyboard.dismiss();
@@ -428,7 +444,7 @@ export function RoutineEditor({
             <RoutineOption
               inline
               label={t('routine.end')}
-              description={draft.endDate ? routineDate(draft.endDate) : t('routine.noEnd')}
+              description={`${draft.endDate ? routineDate(draft.endDate) : t('routine.noEnd')} ›`}
               disabled={blocked}
               onPress={() => {
                 Keyboard.dismiss();

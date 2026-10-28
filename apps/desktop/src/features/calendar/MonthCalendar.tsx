@@ -11,6 +11,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
+import { completedStampColors } from './stamp-colors';
 import { CalendarGrid } from './CalendarGrid';
 
 /** 하루 목록과 동일한 월 캐시에서 도장을 계산하고 인접 월을 준비한다. */
@@ -36,18 +37,26 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
   useEffect(() => {
     void prefetchAdjacentMonths(cache, client, month, profile.weekStart);
   }, [cache, client, month, profile.weekStart]);
-  const summary = useMemo(
-    () =>
-      summarizeMonth({
-        ...monthGridRange(month, profile.weekStart),
-        goals: goals.data ?? [],
-        todos: todos.data ?? [],
-        routines: routines.data ?? [],
-        logs: logs.data ?? [],
-        timeZone: profile.timezone,
-      }),
-    [month, profile.weekStart, profile.timezone, goals.data, todos.data, routines.data, logs.data],
-  );
+  const { summary, stampColors } = useMemo(() => {
+    const input = {
+      ...monthGridRange(month, profile.weekStart),
+      goals: goals.data ?? [],
+      todos: todos.data ?? [],
+      routines: routines.data ?? [],
+      logs: logs.data ?? [],
+      timeZone: profile.timezone,
+    };
+    const summary = summarizeMonth(input);
+    return { summary, stampColors: completedStampColors(input, summary) };
+  }, [
+    month,
+    profile.weekStart,
+    profile.timezone,
+    goals.data,
+    todos.data,
+    routines.data,
+    logs.data,
+  ]);
   return (
     <section className="sidebar-calendar" aria-label="월간 캘린더">
       <CalendarGrid
@@ -56,6 +65,7 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
         today={today}
         weekStart={profile.weekStart}
         summary={summary}
+        stampColors={stampColors}
         onMonthChange={(next) => setView({ selection: selectedDate, month: next })}
         onSelect={selectDate}
       />

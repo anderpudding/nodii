@@ -4,47 +4,43 @@ import { AccessibilityInfo, useColorScheme } from 'react-native';
 
 export const lightColors = {
   bg: '#FFFFFF',
-  side: '#F7F8FA',
   surface: '#FFFFFF',
-  ink: '#16181D',
-  ink2: '#4B5160',
-  muted: '#646A76',
-  line: '#E9EBEF',
-  line2: '#DADDE2',
-  field: '#8F95A0',
-  boxFill: '#F1F2F5',
-  stamp: '#ECEEF1',
-  stampEmpty: '#F4F5F7',
-  banner: '#F2F4F7',
-  focus: '#2A63C9',
-  danger: '#C4332C',
-  sun: '#C4332C',
-  sat: '#2A63C9',
+  chip: '#F2F3F6',
+  box: '#E6E8EC',
+  stampSoft: '#F2F3F6',
+  ink: '#111318',
+  ink2: '#3E4350',
+  muted: '#626877',
+  line: '#ECEEF1',
+  line2: '#DFE2E7',
+  danger: '#D6303A',
+  dangerFill: '#D6303A',
+  sun: '#D6303A',
+  sat: '#2563EB',
+  toastAction: '#9DB8FF',
   warnBg: '#FFF4DB',
   warnInk: '#8A5A00',
-  scrim: 'rgba(22,24,29,0.32)',
+  scrim: 'rgba(17,19,24,0.36)',
 };
 export const darkColors: typeof lightColors = {
-  bg: '#131417',
-  side: '#1A1C20',
-  surface: '#1D1F23',
-  ink: '#F1F2F4',
-  ink2: '#B4B9C2',
-  muted: '#9AA0AA',
-  line: '#26292E',
-  line2: '#353941',
-  field: '#70757F',
-  boxFill: '#1E2024',
-  stamp: '#2A2D33',
-  stampEmpty: '#212429',
-  banner: '#1F2227',
-  focus: '#7AA7FF',
-  danger: '#FF7A70',
-  sun: '#FF7A70',
+  bg: '#0F1013',
+  surface: '#1A1C21',
+  chip: '#1E2026',
+  box: '#2B2E35',
+  stampSoft: '#1E2026',
+  ink: '#F3F4F6',
+  ink2: '#B9BEC8',
+  muted: '#9097A3',
+  line: '#22252B',
+  line2: '#30333A',
+  danger: '#FF6B6B',
+  dangerFill: '#D6303A',
+  sun: '#FF7A7A',
   sat: '#7AA7FF',
+  toastAction: '#2F5BD8',
   warnBg: '#3A2F17',
   warnInk: '#F2C66D',
-  scrim: 'rgba(0,0,0,0.5)',
+  scrim: 'rgba(0,0,0,0.55)',
 };
 export type Colors = typeof lightColors;
 // tokens.md의 공통 값 + mobile-screens.md §1/MobileLogin의 모바일 값.
@@ -53,19 +49,29 @@ export const metrics = {
   fontMedium: 'Pretendard-Medium',
   fontSemiBold: 'Pretendard-SemiBold',
   fontBold: 'Pretendard-Bold',
-  space: { xs: 4, sm: 8, md: 12, lg: 16, group: 26, page: 48 },
-  radius: { field: 12, button: 14, card: 14, mark: 7, stamp: 8, sheet: 22, pill: 999 },
-  height: { touch: 44, field: 52, chip: 36, menu: 56, calendarCell: 64 },
-  glyph: { check: 24, icon: 20 },
+  fontExtraBold: 'Pretendard-ExtraBold',
+  space: { xs: 4, sm: 8, md: 12, lg: 16, group: 16, page: 48, goalDot: 7 },
+  radius: { field: 14, button: 999, card: 18, mark: 999, stamp: 999, sheet: 26, pill: 999 },
+  height: {
+    touch: 44,
+    field: 52,
+    chip: 36,
+    menu: 56,
+    calendarCell: 66,
+    weekCell: 78,
+    button: 54,
+    segmentMark: 28,
+  },
+  glyph: { check: 26, stamp: 30, icon: 20, dot: 10 },
   handle: { width: 36, height: 5 },
   selectionRing: 2,
-  focusRing: 3,
+  todayRing: 1.5, // components.md 캘린더의 선택되지 않은 오늘 날짜.
   border: 1,
   pressedOpacity: 0.55,
   toastInset: 10, // MobileUndo
   longPressScale: 1.02, // mobile-screens.md MobileGestures 보완값
-  type: { title: 28, heading: 20, body: 16, button: 14, supporting: 13, label: 12 },
-  letterSpacing: { title: -0.7, button: -0.1 },
+  type: { title: 30, heading: 20, month: 21, body: 16, button: 14, supporting: 13, label: 12 },
+  letterSpacing: { title: -1, button: -0.2 },
   lineHeight: { body: 1.5, title: 1.25 },
   motion: { state: 150, press: 120, check: 280, menu: 140, toast: 240 },
 };
@@ -92,8 +98,34 @@ export function useReducedMotion() {
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
     return () => {
       live = false;
-      subscription.remove();
+      subscription?.remove();
     };
   }, []);
   return reduced;
+}
+
+/** iOS 대비 높이기는 RN의 darkerSystemColors 설정과 변경 이벤트를 따른다 (DESIGN §7). */
+export function useHighContrast() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    if (typeof AccessibilityInfo.isDarkerSystemColorsEnabled !== 'function') return;
+    let live = true;
+    void AccessibilityInfo.isDarkerSystemColorsEnabled().then(
+      (value) => {
+        if (live) setEnabled(value);
+      },
+      () => {
+        if (live) setEnabled(true);
+      },
+    );
+    const subscription = AccessibilityInfo.addEventListener(
+      'darkerSystemColorsChanged',
+      setEnabled,
+    );
+    return () => {
+      live = false;
+      subscription?.remove();
+    };
+  }, []);
+  return enabled;
 }

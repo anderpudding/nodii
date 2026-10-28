@@ -9,6 +9,7 @@ import {
 } from '@nodii/api';
 import { useUIStore } from '../../stores/ui';
 import { Button } from '../../components/ui/button';
+import { completedStampColors } from './stamp-colors';
 import { CalendarGrid } from './CalendarGrid';
 
 /** 월 경계의 두 캐시를 함께 구독하며 셀·키보드는 월간 보기와 공유한다 (CAL-07). */
@@ -28,41 +29,41 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
   const firstLogs = useMonthRoutineLogs(client, firstMonth, profile.weekStart);
   const lastLogs = useMonthRoutineLogs(client, lastMonth, profile.weekStart);
   // 날짜가 속한 달의 캐시를 기준으로 중복된 42칸 데이터를 한 번만 집계한다.
-  const summary = useMemo(
-    () =>
-      summarizeMonth({
-        from,
-        to,
-        goals: goals.data ?? [],
-        routines: routines.data ?? [],
-        timeZone: profile.timezone,
-        todos: [
-          ...(firstTodos.data ?? []).filter((row) => monthKeyOf(row.date) === firstMonth),
-          ...(firstMonth === lastMonth
-            ? []
-            : (lastTodos.data ?? []).filter((row) => monthKeyOf(row.date) === lastMonth)),
-        ],
-        logs: [
-          ...(firstLogs.data ?? []).filter((row) => monthKeyOf(row.date) === firstMonth),
-          ...(firstMonth === lastMonth
-            ? []
-            : (lastLogs.data ?? []).filter((row) => monthKeyOf(row.date) === lastMonth)),
-        ],
-      }),
-    [
+  const { summary, stampColors } = useMemo(() => {
+    const input = {
       from,
       to,
-      goals.data,
-      routines.data,
-      profile.timezone,
-      firstMonth,
-      lastMonth,
-      firstTodos.data,
-      lastTodos.data,
-      firstLogs.data,
-      lastLogs.data,
-    ],
-  );
+      goals: goals.data ?? [],
+      routines: routines.data ?? [],
+      timeZone: profile.timezone,
+      todos: [
+        ...(firstTodos.data ?? []).filter((row) => monthKeyOf(row.date) === firstMonth),
+        ...(firstMonth === lastMonth
+          ? []
+          : (lastTodos.data ?? []).filter((row) => monthKeyOf(row.date) === lastMonth)),
+      ],
+      logs: [
+        ...(firstLogs.data ?? []).filter((row) => monthKeyOf(row.date) === firstMonth),
+        ...(firstMonth === lastMonth
+          ? []
+          : (lastLogs.data ?? []).filter((row) => monthKeyOf(row.date) === lastMonth)),
+      ],
+    };
+    const summary = summarizeMonth(input);
+    return { summary, stampColors: completedStampColors(input, summary) };
+  }, [
+    from,
+    to,
+    goals.data,
+    routines.data,
+    profile.timezone,
+    firstMonth,
+    lastMonth,
+    firstTodos.data,
+    lastTodos.data,
+    firstLogs.data,
+    lastLogs.data,
+  ]);
   const queries = [goals, routines, firstTodos, lastTodos, firstLogs, lastLogs];
   return (
     <section className="week-strip" aria-label="주간 캘린더">
@@ -72,6 +73,7 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
         today={today}
         weekStart={profile.weekStart}
         summary={summary}
+        stampColors={stampColors}
         onSelect={selectDate}
         onMonthChange={() => {}}
         week={{ start: from, onChange: (next) => setView({ selection: selectedDate, date: next }) }}

@@ -1,6 +1,6 @@
 import { isHexColor } from './validation';
 
-const INK = '#16181D';
+const INK = '#111318';
 const WHITE = '#FFFFFF';
 function channels(hex: string): number[] {
   if (!isHexColor(hex)) throw new RangeError('Invalid hex color');
@@ -37,16 +37,23 @@ export function goalTint(goalColor: string, bg: string, ratio: number): string {
   return mix(goalColor, bg, ratio);
 }
 /** 5%씩 잉크 쪽으로 섞어 이름표의 4.5:1 대비를 보장한다 (GOAL-03). */
-export function goalInk(goalColor: string, bg: string, isDark: boolean): string {
-  const tint = goalTint(goalColor, bg, isDark ? 0.22 : 0.14);
+export function goalInk(goalColor: string, chip: string, isDark: boolean): string {
   const ink = isDark ? WHITE : INK;
   for (let step = 0; step <= 20; step++) {
     const color = mix(ink, goalColor, step / 20);
-    if (contrast(color, tint) >= 4.5) return color;
+    if (contrast(color, chip) >= 4.5) return color;
   }
   return ink;
 }
 /** 목표색 위 체크가 3:1 이상이 되도록 흰색 또는 잉크를 고른다 (GOAL-03). */
 export function checkColor(goalColor: string): string {
   return contrast(WHITE, goalColor) >= 3 ? WHITE : INK;
+}
+
+/** 완료한 목표 색을 순서대로 최대 네 색의 경계가 또렷한 채움으로 만든다 (CAL-02). */
+export function stampFill(goalColors: string[]): string {
+  const colors = [...new Set(goalColors)].slice(0, 4);
+  if (colors.length === 0) throw new RangeError('Stamp requires at least one goal color');
+  if (colors.length === 1) return colors[0]!;
+  return `linear-gradient(135deg, ${colors.map((color, i) => `${color} ${(i * 100) / colors.length}% ${((i + 1) * 100) / colors.length}%`).join(', ')})`;
 }

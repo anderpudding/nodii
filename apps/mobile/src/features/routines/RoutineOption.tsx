@@ -17,6 +17,9 @@ export function RoutineOption({
   filled = false,
   segment = false,
   inline = false,
+  descriptionBelow = false,
+  labelColor,
+  borderless = false,
 }: {
   label: string;
   description?: string;
@@ -31,6 +34,9 @@ export function RoutineOption({
   filled?: boolean;
   segment?: boolean;
   inline?: boolean;
+  descriptionBelow?: boolean;
+  labelColor?: string;
+  borderless?: boolean;
 }) {
   const { colors } = useTheme();
   return (
@@ -45,24 +51,19 @@ export function RoutineOption({
         compact && styles.compact,
         segment && styles.segment,
         inline && styles.inline,
+        inline && descriptionBelow && styles.stacked,
         {
-          backgroundColor:
-            selected && filled
+          backgroundColor: disabled
+            ? colors.box
+            : selected && (filled || segment)
               ? colors.ink
-              : segment && !selected
-                ? colors.boxFill
-                : colors.surface,
+              : 'transparent',
           borderColor:
-            selected && !filled
-              ? colors.ink
-              : selected
-                ? colors.ink
-                : segment
-                  ? colors.boxFill
-                  : inline
-                    ? colors.surface
-                    : colors.field,
-          opacity: pressed || disabled ? m.pressedOpacity : 1,
+            filled && !selected ? colors.line2 : selected && !segment ? colors.ink : 'transparent',
+          borderWidth:
+            borderless || segment ? 0 : filled ? m.border : selected ? m.selectionRing : 0,
+          borderBottomColor: inline ? colors.line : undefined,
+          opacity: pressed ? m.pressedOpacity : 1,
         },
       ]}
     >
@@ -70,14 +71,29 @@ export function RoutineOption({
         <Text
           style={[
             styles.label,
-            { color: selected && filled ? colors.bg : danger ? colors.danger : colors.ink },
+            inline && styles.inlineLabel,
+            {
+              color: disabled
+                ? colors.muted
+                : selected && (filled || segment)
+                  ? colors.bg
+                  : danger
+                    ? colors.danger
+                    : (labelColor ?? colors.ink),
+            },
           ]}
         >
           {label}
         </Text>
       )}
       {description && (
-        <Text style={[styles.supporting, { color: selected && filled ? colors.bg : colors.ink2 }]}>
+        <Text
+          style={[
+            styles.supporting,
+            inline && !descriptionBelow && styles.value,
+            { color: selected && (filled || segment) ? colors.bg : colors.ink2 },
+          ]}
+        >
           {description}
         </Text>
       )}
@@ -101,14 +117,20 @@ const styles = StyleSheet.create({
     padding: m.space.xs,
     borderRadius: m.radius.pill,
   },
-  segment: { flex: 1, borderRadius: m.radius.field },
+  segment: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', borderRadius: m.radius.pill },
   inline: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: m.height.field,
+    paddingVertical: m.space.sm,
+    borderRadius: 0,
+    borderBottomWidth: m.border,
   },
-  label: { fontFamily: m.fontBold, fontSize: m.type.button },
+  stacked: { flexDirection: 'column', alignItems: 'stretch', gap: m.space.xs },
+  inlineLabel: { fontFamily: m.fontFamily, fontSize: m.type.body },
+  value: { fontFamily: m.fontFamily, fontSize: m.type.body, flexShrink: 1 },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,

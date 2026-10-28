@@ -1,3 +1,4 @@
+import { completedStampColors } from './stamp-colors';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import {
@@ -60,6 +61,22 @@ export function DatePickSheet({
       ),
     [goals.data, todos.data, from, to, timeZone, routines.data, logs.data],
   );
+  const stampColors = useMemo(
+    () =>
+      completedStampColors(
+        {
+          goals: goals.data ?? [],
+          todos: todos.data ?? [],
+          routines: routines.data ?? [],
+          logs: logs.data ?? [],
+          from,
+          to,
+          timeZone,
+        },
+        summary,
+      ),
+    [goals.data, todos.data, routines.data, logs.data, from, to, timeZone, summary],
+  );
   const queries = [todos, goals, routines, logs];
   const failed = queries.some((query) => query.isError);
   const loading = queries.some((query) => query.isPending);
@@ -115,6 +132,7 @@ export function DatePickSheet({
         today={today}
         selectedDate={date}
         summary={summary}
+        stampColors={stampColors}
         onSelect={select}
         onMove={(direction) => setMonth(adjacentMonthKey(month, direction))}
       />

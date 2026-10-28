@@ -14,6 +14,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import * as Haptics from 'expo-haptics';
 import { metrics as m, useReducedMotion, useTheme } from '../../../lib/theme';
 import { createRowCoordinator, swipeOutcome, swipeRules } from './swipe';
+import { ActionIcon } from '../ActionIcon';
 
 export interface RowAction {
   id: string;
@@ -209,7 +210,10 @@ export function SwipeableRow({
           importantForAccessibility="no-hide-descendants"
           style={[styles.leading, leadingStyle, { backgroundColor: leading.background }]}
         >
-          <Text style={[styles.label, { color: leading.color }]}>{leading.label}</Text>
+          <View style={[styles.leadingContent, { width: actionWidth }]}>
+            <ActionIcon action={leading.id} color={leading.color} />
+            <Text style={[styles.label, { color: leading.color }]}>{leading.label}</Text>
+          </View>
         </Animated.View>
       )}
       <Animated.View
@@ -238,6 +242,7 @@ export function SwipeableRow({
               },
             ]}
           >
+            <ActionIcon action={action.id} color={action.color} />
             <Text style={[styles.label, { color: action.color }]}>{action.label}</Text>
           </Pressable>
         ))}
@@ -259,9 +264,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     justifyContent: 'center',
-    paddingLeft: m.space.lg,
   },
+  leadingContent: { alignItems: 'center', justifyContent: 'center', gap: m.space.xs },
   trailing: { position: 'absolute', top: 0, bottom: 0, right: 0, flexDirection: 'row' },
-  cell: { minHeight: m.height.field, justifyContent: 'center', alignItems: 'center' },
-  label: { fontFamily: m.fontBold, fontSize: m.type.button },
+  cell: {
+    minHeight: m.height.field,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: m.space.xs,
+  },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
 });

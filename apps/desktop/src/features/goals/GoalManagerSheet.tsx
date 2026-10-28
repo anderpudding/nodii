@@ -54,7 +54,7 @@ function GoalManagerRow({
         disabled={disabled}
         onClick={onEdit}
       >
-        <GoalChip goal={goal} surface />
+        <GoalChip goal={goal} />
         <span className="supporting goal-counts">
           {counts
             ? `할 일 ${counts.todos}개 · 루틴 ${counts.routines}개`
@@ -109,7 +109,7 @@ function ArchivedGoalRow({
     : '';
   return (
     <div className="archive-goal-row">
-      <GoalChip goal={goal} surface />
+      <GoalChip goal={goal} />
       <p className="supporting">
         {counts ? `할 일 ${counts.todos}개` : '할 일 개수 확인 중'}
         {archivedDate && ` · ${archivedDate}에 보관`}
@@ -183,7 +183,11 @@ export function GoalManagerSheet({
   const editing = view.kind === 'edit' ? view.goal : undefined;
   if (view.kind === 'add' || editing)
     return (
-      <Sheet labelledBy="goal-editor-title" onClose={() => setView({ kind: 'list' })}>
+      <Sheet
+        className="goal-editor-modal"
+        labelledBy="goal-editor-title"
+        onClose={() => setView({ kind: 'list' })}
+      >
         <GoalEditor
           goal={editing}
           client={client}

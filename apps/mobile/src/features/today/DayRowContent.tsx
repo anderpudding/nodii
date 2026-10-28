@@ -1,6 +1,7 @@
+import { SproutCheck } from '../../components/SproutCheck';
 import { useOnline } from '../../../lib/connectivity';
 import { Pressable, StyleSheet, Text, View, type AccessibilityActionInfo } from 'react-native';
-import { checkColor, type Goal } from '@nodii/core';
+import { type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 
@@ -47,25 +48,12 @@ export function DayRowContent({
           styles.touch,
           {
             opacity: pressed || !online ? m.pressedOpacity : 1,
+            transform: [{ scale: pressed ? 0.88 : 1 }],
             borderColor: colors.bg,
           },
         ]}
       >
-        <View
-          style={[
-            styles.box,
-            {
-              backgroundColor: isDone ? goal.color : colors.boxFill,
-              borderColor: isDone ? goal.color : colors.field,
-            },
-          ]}
-        >
-          {isDone && (
-            <Text accessible={false} style={[styles.check, { color: checkColor(goal.color) }]}>
-              ✓
-            </Text>
-          )}
-        </View>
+        <SproutCheck color={goal.color} done={isDone} />
       </Pressable>
       <Pressable
         testID={menuTestID}
@@ -88,8 +76,7 @@ export function DayRowContent({
           style={[
             styles.title,
             {
-              color: isDone ? colors.muted : colors.ink,
-              textDecorationLine: isDone ? 'line-through' : 'none',
+              color: isDone ? colors.ink2 : colors.ink,
             },
           ]}
         >
@@ -116,15 +103,6 @@ const styles = StyleSheet.create({
     borderWidth: m.selectionRing,
     borderRadius: m.radius.mark,
   },
-  box: {
-    width: m.glyph.check,
-    height: m.glyph.check,
-    borderWidth: m.border,
-    borderRadius: m.radius.mark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  check: { fontFamily: m.fontBold, fontSize: m.type.body, fontWeight: '700' },
   titleTouch: {
     flex: 1,
     minHeight: m.height.touch,

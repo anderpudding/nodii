@@ -57,11 +57,11 @@ export function TodoRow({
         id === 'toggle'
           ? goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14)
           : id === 'delete'
-            ? lightColors.danger
-            : colors.side,
+            ? lightColors.dangerFill
+            : colors.chip,
       color:
         id === 'toggle'
-          ? goalInk(goal.color, colors.bg, isDark)
+          ? goalInk(goal.color, goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14), isDark)
           : id === 'delete'
             ? lightColors.bg
             : colors.ink,

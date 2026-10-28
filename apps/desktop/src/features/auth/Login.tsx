@@ -1,3 +1,4 @@
+import { BrandMark } from '../../components/ui/brand-mark';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   normalizeAuthError,
@@ -120,20 +121,21 @@ export function Login({
   }
 
   return (
-    <main className="center-screen">
-      <section className="auth-panel" aria-labelledby="login-title">
+    <main className="center-screen login-screen">
+      <section className="auth-panel login-panel" aria-labelledby="login-title">
         <header className="auth-heading">
-          <p className="brand">Nodii</p>
-          <h1 id="login-title">{codeEmail ? '메일을 확인해 주세요' : '같은 하루를, 어디서나'}</h1>
-          <p className="supporting">
+          <p className="brand">
+            <BrandMark />
+          </p>
+          <h1 id="login-title">{codeEmail ? '코드를 보냈어요' : 'Nodii 시작하기'}</h1>
+          <p className="login-description">
             {codeEmail ? (
               <>
-                <span className="email-address">{codeEmail}</span>로 보낸
-                <br />
-                6자리 인증 코드를 입력해 주세요.
+                <strong className="email-address">{codeEmail}</strong>으로 보낸 6자리 코드를 입력해
+                주세요. 메일이 안 보이면 스팸함도 확인해 주세요.
               </>
             ) : (
-              '이메일로 간편하게 시작해 보세요.'
+              '이메일로 받은 6자리 코드로 로그인해요. 처음이면 가입도 함께 돼요.'
             )}
           </p>
         </header>
@@ -199,7 +201,9 @@ export function Login({
             aria-busy={pending}
           >
             <div className="field-group">
-              <label htmlFor="otp">인증 코드</label>
+              <label htmlFor="otp" className="sr-only">
+                인증 코드
+              </label>
               <InputOTP
                 id="otp"
                 ref={tokenInput}
@@ -229,14 +233,7 @@ export function Login({
             <Button type="submit" size="auth" disabled={pending || token.length !== 6}>
               {pending ? '확인하는 중…' : '로그인'}
             </Button>
-            <div className="auth-actions">
-              <Button
-                variant="ghost"
-                disabled={pending || remaining > 0}
-                onClick={() => void resend()}
-              >
-                {remaining > 0 ? `코드 다시 받기 (${remaining}초)` : '코드 다시 받기'}
-              </Button>
+            <div className="auth-actions login-actions">
               <Button
                 variant="ghost"
                 disabled={pending}
@@ -248,8 +245,23 @@ export function Login({
               >
                 다른 이메일로
               </Button>
+              {remaining > 0 ? (
+                <p className="supporting login-countdown">
+                  {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} 뒤에 다시
+                  받을 수 있어요
+                </p>
+              ) : (
+                <Button variant="ghost" disabled={pending} onClick={() => void resend()}>
+                  코드 다시 받기
+                </Button>
+              )}
             </div>
           </form>
+        )}
+        {!codeEmail && !review && (
+          <p className="supporting login-help">
+            코드는 10분 동안 쓸 수 있어요. 메일이 안 보이면 스팸함도 확인해 주세요.
+          </p>
         )}
       </section>
     </main>

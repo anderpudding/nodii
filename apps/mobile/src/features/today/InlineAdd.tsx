@@ -1,3 +1,5 @@
+import { SproutCheck } from '../../components/SproutCheck';
+import { ActionIcon } from '../../components/ActionIcon';
 import { useEffect, useRef, useState } from 'react';
 import {
   InputAccessoryView,
@@ -117,14 +119,12 @@ export function InlineAdd({
     day: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(`${date}T00:00:00Z`));
-  // DESIGN.md §3의 입력 중인 줄 바탕(side)이 MobileAdd의 inputBg 역할이다.
+  // M8: 입력 줄은 chip 채움과 같은 싹이 씨앗을 쓴다.
   return (
     <View style={styles.container}>
-      <View style={[styles.row, { backgroundColor: colors.side }]}>
+      <View style={[styles.row, { backgroundColor: colors.chip }]}>
         <View accessible={false} style={styles.checkSpace}>
-          <View
-            style={[styles.check, { backgroundColor: colors.boxFill, borderColor: colors.field }]}
-          />
+          <SproutCheck color={goal.color} />
         </View>
         <TextInput
           ref={input}
@@ -161,6 +161,7 @@ export function InlineAdd({
             }}
             style={({ pressed }) => [styles.date, { opacity: pressed ? m.pressedOpacity : 1 }]}
           >
+            <ActionIcon action="move" color={colors.ink2} />
             <Text style={[styles.label, { color: colors.ink2 }]}>
               {date === today ? t('mobile.add.date.today', { date: dateLabel }) : dateLabel}
             </Text>
@@ -211,12 +212,6 @@ const styles = StyleSheet.create({
     borderRadius: m.radius.field,
   },
   checkSpace: { width: m.height.touch, alignItems: 'center' },
-  check: {
-    width: m.glyph.check,
-    height: m.glyph.check,
-    borderWidth: 1.5,
-    borderRadius: m.radius.mark,
-  },
   input: {
     flex: 1,
     minHeight: m.height.field,
@@ -234,12 +229,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.lg,
     gap: m.space.sm,
   },
-  date: { flex: 1, minHeight: m.height.touch, justifyContent: 'center' },
+  date: {
+    flex: 1,
+    minHeight: m.height.touch,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.space.md,
+  },
   action: {
     minHeight: m.height.touch,
     minWidth: m.height.touch,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  label: { fontFamily: m.fontBold, fontSize: m.type.button },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
 });

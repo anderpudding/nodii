@@ -11,6 +11,7 @@ import {
   type TodoRecord,
 } from '@nodii/api';
 import { toast } from 'sonner';
+import { SproutCheck } from '../../components/ui/sprout-check';
 import { TodoMenu } from './TodoMenu';
 import { notifyError } from '../../lib/notify-error';
 
@@ -104,18 +105,14 @@ export function TodoRow({
     >
       <button
         type="button"
-        className="todo-check"
+        className="todo-check check"
         aria-disabled={!online || undefined}
         aria-label={`${todo.title} 완료`}
         aria-pressed={todo.isDone}
         disabled={pending}
         onClick={() => toggle.mutate(todo)}
       >
-        {todo.isDone && (
-          <svg viewBox="0 0 22 22" aria-hidden="true">
-            <path d="m5 11 4 4 8-8" />
-          </svg>
-        )}
+        <SproutCheck done={todo.isDone} />
       </button>
       {editing ? (
         <input

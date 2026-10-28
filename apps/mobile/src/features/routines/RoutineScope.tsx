@@ -1,3 +1,4 @@
+import { Stamp } from '../today/Stamp';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Goal, ISODate, Routine, RoutineLog } from '@nodii/core';
@@ -86,33 +87,32 @@ export function RoutineScope({
                   style={[
                     styles.cell,
                     {
-                      borderColor: state === 'planned' ? colors.line2 : colors.surface,
-                      backgroundColor:
-                        state === 'done'
-                          ? colors.ink
-                          : state === 'missing'
-                            ? colors.stamp
-                            : colors.surface,
+                      backgroundColor: 'transparent',
                     },
                   ]}
                 >
-                  <Text
-                    style={[styles.number, { color: state === 'done' ? colors.bg : colors.ink2 }]}
-                  >
+                  <Text style={[styles.number, { color: colors.ink2 }]}>
                     {Number(date.slice(-2))}
                   </Text>
-                  <Text
-                    accessible={false}
-                    style={[styles.number, { color: state === 'done' ? colors.bg : colors.ink2 }]}
-                  >
-                    {state === 'done'
-                      ? '✓'
-                      : state === 'missing'
-                        ? '—'
-                        : state === 'planned'
-                          ? '○'
-                          : ''}
-                  </Text>
+                  <Stamp
+                    summary={
+                      state === 'done'
+                        ? { total: 1, remaining: 0 }
+                        : state === 'missing' || state === 'planned'
+                          ? { total: 1, remaining: 1 }
+                          : undefined
+                    }
+                    future={state === 'planned'}
+                    today={date === today}
+                    goalColors={goals
+                      .filter(
+                        (goal) =>
+                          goal.id ===
+                          (value === 'today' && date < today ? before.goalId : after.goalId),
+                      )
+                      .map((goal) => goal.color)}
+                    showCount={false}
+                  />
                 </View>
               ),
             )}
@@ -120,10 +120,21 @@ export function RoutineScope({
         </View>
       ))}
       <View style={s.choices}>
-        {(['done', 'missing', 'planned'] as const).map((state, i) => (
-          <Text key={state} style={[s.supporting, { color: colors.ink2 }]}>
-            {['✓', '—', '○'][i]} {t(`routine.scope.${state}`)}
-          </Text>
+        {(['done', 'missing', 'planned'] as const).map((state) => (
+          <View key={state} style={s.stepper}>
+            <Stamp
+              summary={{ total: 1, remaining: state === 'done' ? 0 : 1 }}
+              future={state === 'planned'}
+              today={false}
+              goalColors={goals
+                .filter((goal) => goal.id === after.goalId)
+                .map((goal) => goal.color)}
+              showCount={false}
+            />
+            <Text style={[s.supporting, { color: colors.ink2 }]}>
+              {t(`routine.scope.${state}`)}
+            </Text>
+          </View>
         ))}
       </View>
       {(previewLoading || previewError) && (
@@ -155,8 +166,8 @@ const styles = StyleSheet.create({
   cell: {
     width: `${100 / 7}%`,
     minHeight: m.height.touch,
-    borderWidth: m.border,
-    borderRadius: m.radius.stamp,
+    borderWidth: 0,
+    borderRadius: m.radius.field,
     alignItems: 'center',
     justifyContent: 'center',
   },

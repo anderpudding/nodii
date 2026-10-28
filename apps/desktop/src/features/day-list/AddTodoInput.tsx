@@ -1,3 +1,4 @@
+import { SproutCheck } from '../../components/ui/sprout-check';
 import { useConnectivity } from '../../lib/connectivity';
 import { toast } from 'sonner';
 import { useEffect, useRef, useState } from 'react';
@@ -47,7 +48,9 @@ export function AddTodoInput({
         if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
       }}
     >
-      <span className="empty-check" aria-hidden="true" />
+      <span className="empty-check" aria-hidden="true">
+        <SproutCheck />
+      </span>
       <input
         autoFocus
         aria-label={`${goalName} 새 할 일`}

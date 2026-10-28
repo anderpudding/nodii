@@ -1,24 +1,23 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
+/* 도장 채움처럼 TS에서 참조하는 토큰도 Tailwind가 제거하지 않게 유지한다. */
+@theme static {
   --color-bg: #ffffff;
-  --color-side: #f7f8fa;
   --color-surface: #ffffff;
-  --color-ink: #16181d;
-  --color-ink-2: #4b5160;
-  --color-muted: #646a76;
-  --color-line: #e9ebef;
-  --color-line-2: #dadde2;
-  --color-field: #8f95a0;
-  --color-box: #f1f2f5;
-  --color-stamp: #eceef1;
-  --color-stamp-empty: #f4f5f7;
-  --color-banner: #f2f4f7;
-  --color-focus: #2a63c9;
-  --color-danger: #c4332c;
-  --color-sun: #c4332c;
-  --color-sat: #2a63c9;
+  --color-chip: #f2f3f6;
+  --color-box: #e6e8ec;
+  --color-stamp-soft: #f2f3f6;
+  --color-ink: #111318;
+  --color-ink-2: #3e4350;
+  --color-muted: #626877;
+  --color-line: #eceef1;
+  --color-line-2: #dfe2e7;
+  --color-danger: #d6303a;
+  --color-danger-fill: #d6303a;
+  --color-sun: #d6303a;
+  --color-sat: #2563eb;
+  --color-toast-action: #9db8ff;
   --color-warn-bg: #fff4db;
   --color-warn-ink: #8a5a00;
   --font-sans:
@@ -26,23 +25,21 @@
 }
 
 .dark {
-  --color-bg: #131417;
-  --color-side: #1a1c20;
-  --color-surface: #1d1f23;
-  --color-ink: #f1f2f4;
-  --color-ink-2: #b4b9c2;
-  --color-muted: #9aa0aa;
-  --color-line: #26292e;
-  --color-line-2: #353941;
-  --color-field: #70757f;
-  --color-box: #1e2024;
-  --color-stamp: #2a2d33;
-  --color-stamp-empty: #212429;
-  --color-banner: #1f2227;
-  --color-focus: #7aa7ff;
-  --color-danger: #ff7a70;
-  --color-sun: #ff7a70;
+  --color-bg: #0f1013;
+  --color-surface: #1a1c21;
+  --color-chip: #1e2026;
+  --color-box: #2b2e35;
+  --color-stamp-soft: #1e2026;
+  --color-ink: #f3f4f6;
+  --color-ink-2: #b9bec8;
+  --color-muted: #9097a3;
+  --color-line: #22252b;
+  --color-line-2: #30333a;
+  --color-danger: #ff6b6b;
+  --color-danger-fill: #d6303a;
+  --color-sun: #ff7a7a;
   --color-sat: #7aa7ff;
+  --color-toast-action: #2f5bd8;
   --color-warn-bg: #3a2f17;
   --color-warn-ink: #f2c66d;
 }
@@ -70,7 +67,7 @@ textarea::selection,
   color: var(--color-bg);
 }
 :focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 
@@ -101,20 +98,23 @@ p {
 }
 h1 {
   font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.7px;
   line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.9px;
 }
 h2 {
   font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
   line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.3px;
 }
 .brand {
   font-size: 20px;
-  font-weight: 700;
   letter-spacing: -0.4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
 }
 .supporting {
   color: var(--color-muted);
@@ -156,23 +156,22 @@ h2 {
 }
 .input {
   width: 100%;
-  height: 48px;
-  border: 1px solid var(--color-field);
-  border-radius: 10px;
   padding: 0 16px;
-  background: var(--color-bg);
   color: var(--color-ink);
   font-size: 15px;
-  transition: border-color 0.15s ease-out;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-chip);
+  transition: box-shadow 0.15s ease-out;
 }
 .input::placeholder {
   color: var(--color-muted);
 }
 .input:hover {
-  border-color: var(--color-ink-2);
 }
 .input[aria-invalid='true'] {
-  border-color: var(--color-danger);
+  box-shadow: inset 0 0 0 1.5px var(--color-danger);
 }
 .input:disabled {
   background: var(--color-box);
@@ -185,16 +184,16 @@ h2 {
   justify-content: center;
   gap: 4px;
   padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 10px;
   font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
   white-space: nowrap;
   cursor: pointer;
   transition:
     background-color 0.15s ease-out,
     border-color 0.15s ease-out;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
 }
 .button-compact {
   height: 34px;
@@ -210,7 +209,8 @@ h2 {
   background: var(--color-ink-2);
 }
 .button-outline {
-  border-color: var(--color-field);
+  background: var(--color-chip);
+  color: var(--color-ink);
 }
 .button-ghost:hover,
 .button-outline:hover {
@@ -241,15 +241,16 @@ h2 {
   justify-content: center;
   width: 48px;
   height: 48px;
-  border: 1px solid var(--color-field);
-  border-radius: 10px;
   font-size: 20px;
-  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-chip);
+  font-weight: 800;
 }
 .otp-slot-active {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: 1.5px solid var(--color-ink);
+  outline-offset: -1.5px;
 }
 .otp-container-disabled .otp-slot {
   background: var(--color-box);
@@ -281,16 +282,16 @@ h2 {
 .sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--color-side);
   padding: 26px;
-  border-right: 1px solid var(--color-line);
+  background: var(--color-bg);
+  border-right: 0;
 }
 .management {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border-top: 1px solid var(--color-line);
   padding-top: 16px;
+  border-top: 0;
 }
 .management .button {
   justify-content: flex-start;
@@ -311,8 +312,10 @@ h2 {
   height: 22px;
 }
 .wide-settings {
-  width: 34px;
   padding: 0;
+  width: 32px;
+  height: 32px;
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
 }
 .app-toolbar {
   display: flex;
@@ -360,13 +363,14 @@ h2 {
   display: flex;
   align-items: center;
   gap: 16px;
-  min-height: 44px;
   padding: 8px 16px;
-  border-radius: 12px;
   background: var(--color-ink);
   color: var(--color-bg);
   font-family: var(--font-sans);
   font-size: 13px;
+  min-height: 46px;
+  border-radius: 999px;
+  box-shadow: 0 12px 32px rgba(17, 19, 24, 0.24);
 }
 .toast-title {
   font-weight: 500;
@@ -377,12 +381,13 @@ h2 {
     opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .toast-action {
-  font-weight: 700;
   cursor: pointer;
+  font-weight: 800;
+  color: var(--color-toast-action);
 }
 @media (max-width: 880px) {
   .app-shell {
-    grid-template-columns: minmax(220px, 380px) minmax(0, 1fr);
+    grid-template-columns: 380px minmax(0, 1fr);
   }
   .day-content {
     padding: 26px;
@@ -422,21 +427,20 @@ h2 {
 .goal-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   max-width: 100%;
-  min-height: 32px;
-  padding: 4px 11px 4px 14px;
+  min-height: 34px;
+  padding: 4px 11px;
   border: 0;
   border-radius: 999px;
-  background: var(--goal-tint-light);
+  background: var(--color-chip);
   color: var(--goal-ink-light);
   font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
   overflow-wrap: anywhere;
 }
 .dark .goal-chip {
-  background: var(--goal-tint-dark);
   color: var(--goal-ink-dark);
 }
 button.goal-chip,
@@ -465,14 +469,13 @@ button.goal-chip:disabled {
   min-height: 44px;
   padding: 4px 0;
 }
-.todo-check,
 .empty-check {
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
   border-radius: 7px;
-  border: 1.5px solid var(--color-field);
-  background: var(--color-box);
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 0;
+  background: transparent;
 }
 .todo-check {
   padding: 0;
@@ -484,12 +487,7 @@ button.goal-chip:disabled {
 .todo-check:active {
   transform: scale(0.86);
 }
-.todo-check[aria-pressed='true'] {
-  background: var(--goal-color);
-  border-color: var(--goal-color);
-  color: var(--goal-check);
-}
-.todo-check svg,
+
 .color-option svg {
   width: 100%;
   height: 100%;
@@ -499,9 +497,7 @@ button.goal-chip:disabled {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.todo-check svg {
-  animation: check-appear 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.35);
-}
+
 @keyframes check-appear {
   from {
     transform: scale(0.86);
@@ -529,8 +525,7 @@ button.goal-chip:disabled {
   line-height: 1.6;
 }
 .todo-done .todo-title {
-  color: var(--color-muted);
-  text-decoration: line-through 1px var(--color-line-2);
+  color: var(--color-ink-2);
 }
 .todo-more {
   opacity: 0;
@@ -544,18 +539,18 @@ button.goal-chip:disabled {
   flex: 1;
   min-width: 0;
   border: 0;
-  background: var(--color-side);
   color: var(--color-ink);
   font-size: 15px;
   padding: 4px;
   caret-color: var(--goal-color);
-  border-radius: 9px;
+  background: var(--color-chip);
+  border-radius: 14px;
 }
 .add-todo {
   flex-wrap: wrap;
   padding: 8px;
-  border-radius: 10px;
-  background: var(--color-side);
+  border-radius: 14px;
+  background: var(--color-chip);
 }
 .empty-check {
   border-color: var(--color-line-2);
@@ -570,17 +565,17 @@ button.goal-chip:disabled {
   z-index: 1;
   width: 220px;
   padding: 8px;
-  border-radius: 12px;
   background: var(--color-surface);
-  box-shadow:
-    0 14px 36px rgba(22, 24, 29, 0.16),
-    0 0 0 1px var(--color-line);
   animation: menu-appear 0.14s ease-out;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .dark .todo-menu {
   box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .todo-menu .button {
   width: 100%;
@@ -622,25 +617,23 @@ button.goal-chip:disabled {
   flex-direction: column;
   gap: 16px;
   border: 0;
-  border-radius: 14px;
   padding: 26px;
   background: var(--color-surface);
   color: var(--color-ink);
-  box-shadow: 0 24px 64px rgba(22, 24, 29, 0.22);
+  border-radius: 22px;
+  box-shadow: 0 -16px 48px rgba(17, 19, 24, 0.16);
 }
 .sheet-backdrop {
   position: fixed;
   inset: 0;
   z-index: 2;
-  background: rgba(22, 24, 29, 0.32);
+  background: rgba(17, 19, 24, 0.36);
 }
 .dark .goal-sheet {
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+  box-shadow: 0 -16px 48px rgba(17, 19, 24, 0.16);
 }
 .dark .sheet-backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
 }
 .goal-sheet-header {
   margin-bottom: 0;
@@ -654,18 +647,18 @@ button.goal-chip:disabled {
   gap: 8px;
 }
 .goal-manager-intro {
-  margin-bottom: 16px;
   color: var(--color-muted);
   font-size: 13px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  margin-bottom: 16px;
 }
 .goal-manager-row {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 56px;
-  padding: 8px 0;
+  padding: 12px 0;
 }
 .goal-row-main {
   display: flex;
@@ -713,7 +706,7 @@ button.goal-chip:disabled {
 .goal-editor-body label,
 .goal-palette legend {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .goal-palette {
   display: flex;
@@ -736,11 +729,10 @@ button.goal-chip:disabled {
   color: var(--goal-check);
 }
 .color-option[aria-pressed='true'] {
-  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+  outline: 2px solid var(--goal-color);
 }
 .color-option:hover {
-  box-shadow: 0 0 0 1px var(--color-field);
 }
 .goal-color-field {
   display: flex;
@@ -752,7 +744,7 @@ button.goal-chip:disabled {
   height: 40px;
 }
 .goal-preview {
-  min-height: 32px;
+  min-height: 34px;
 }
 .goal-destructive {
   display: grid;
@@ -782,15 +774,15 @@ button.goal-chip:disabled {
   margin-top: 26px;
   padding: 0 16px;
   border: 0;
-  border-top: 1px solid var(--color-line);
-  border-radius: 12px;
-  background: transparent;
   color: var(--color-ink);
   text-align: left;
   cursor: pointer;
+  border-top: 0;
+  border-radius: 18px;
+  background: var(--color-chip);
 }
 .archive-link:hover {
-  background: var(--color-side);
+  background: var(--color-bg);
 }
 .archive-link span {
   color: var(--color-muted);
@@ -813,9 +805,9 @@ button.goal-chip:disabled {
 }
 .archive-description {
   max-width: 65ch;
-  color: var(--color-muted);
   font-size: 13px;
   font-weight: 500;
+  color: var(--color-ink-2);
 }
 .archive-goal-list {
   display: flex;
@@ -829,6 +821,7 @@ button.goal-chip:disabled {
   align-items: center;
   gap: 16px;
   min-height: 56px;
+  padding: 12px 0;
 }
 .goal-empty-state {
   margin-top: 48px;
@@ -849,9 +842,10 @@ button.goal-chip:disabled {
   gap: 4px;
 }
 .calendar-header h2 {
-  font-size: 20px;
-  letter-spacing: -0.4px;
   white-space: nowrap;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
 }
 .calendar-navigation .button {
   min-width: 34px;
@@ -886,9 +880,9 @@ button.goal-chip:disabled {
   justify-content: center;
   gap: 4px;
   width: 100%;
-  height: 58px;
+  height: 62px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   background: transparent;
   cursor: pointer;
   font-size: 12px;
@@ -902,34 +896,38 @@ button.goal-chip:disabled {
   opacity: 0.4;
 }
 .calendar-stamp {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  color: var(--color-ink);
-  font-weight: 700;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: block;
 }
-.stamp-remaining {
-  background: var(--color-stamp);
-}
-.stamp-future {
-  border: 1.5px solid var(--color-line-2);
-  color: var(--color-muted);
-}
-.stamp-complete {
-  background: var(--color-ink);
-  color: var(--color-bg);
-}
-.calendar-stamp svg {
+.stamp-fill,
+.calendar-stamp > svg {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+}
+.stamp-check {
   fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
+  stroke: #ffffff;
+  stroke-width: 2.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.stamp-check,
+.stamp-count-shadow {
+  filter: drop-shadow(0 1px 1px rgba(17, 19, 24, 0.36));
+}
+.stamp-outline {
+  fill: none;
+  stroke: none;
+}
+@media (prefers-contrast: more) {
+  .stamp-outline {
+    stroke: var(--color-muted);
+    stroke-width: 1.4;
+  }
 }
 .calendar-number {
   min-width: 24px;
@@ -952,10 +950,10 @@ button.goal-chip:disabled {
   gap: 8px;
   min-height: 34px;
   padding: 0 8px;
-  border-radius: 9px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  border-radius: 8px;
 }
 .todo-menu-item span {
   color: var(--color-muted);
@@ -964,7 +962,7 @@ button.goal-chip:disabled {
 }
 .todo-menu-item[data-highlighted] {
   background: var(--color-box);
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .todo-menu-item[data-disabled] {
@@ -984,17 +982,17 @@ button.goal-chip:disabled {
   width: 380px;
   max-width: calc(100vw - 48px);
   padding: 16px;
-  border-radius: 12px;
   background: var(--color-surface);
-  box-shadow:
-    0 14px 36px rgba(22, 24, 29, 0.16),
-    0 0 0 1px var(--color-line);
   animation: menu-appear 0.14s ease-out;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .dark .date-popover {
   box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
+    0 16px 40px rgba(17, 19, 24, 0.16),
+    0 0 0 1px rgba(17, 19, 24, 0.05);
 }
 .date-popover-heading {
   margin-bottom: 12px;
@@ -1003,7 +1001,8 @@ button.goal-chip:disabled {
 /* 5단계: 루틴 모달도 기존 입력·이름표·버튼과 동일한 토큰을 사용한다. */
 .routine-modal {
   max-width: 440px;
-  border-radius: 16px;
+  border-radius: 22px;
+  box-shadow: 0 24px 64px rgba(17, 19, 24, 0.18);
 }
 .routine-form {
   display: flex;
@@ -1018,6 +1017,7 @@ button.goal-chip:disabled {
   display: flex;
   align-items: center;
   gap: 8px;
+  border-radius: 18px;
 }
 .routine-heading,
 .routine-list-row {
@@ -1047,7 +1047,7 @@ button.goal-chip:disabled {
 .routine-fieldset legend {
   margin: 0 0 8px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .routine-choices {
   display: flex;
@@ -1059,9 +1059,9 @@ button.goal-chip:disabled {
   border: 0;
   border-radius: 999px;
   cursor: pointer;
+  background: transparent;
 }
 .routine-goal-option[aria-pressed='true'] {
-  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 .routine-goal-option:hover {
@@ -1081,8 +1081,8 @@ button.goal-chip:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
-  border-radius: 12px;
-  background: var(--color-box);
+  border-radius: 999px;
+  background: var(--color-chip);
 }
 .routine-segments .button {
   min-height: 34px;
@@ -1090,9 +1090,9 @@ button.goal-chip:disabled {
   color: var(--color-ink-2);
 }
 .routine-segments .button[aria-checked='true'] {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  outline: 2px solid var(--color-focus);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  font-weight: 800;
 }
 .routine-dates {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1132,7 +1132,7 @@ button.goal-chip:disabled {
 }
 .routine-danger,
 .routine-danger:hover {
-  background: #c4332c;
+  background: var(--color-danger-fill);
   color: #ffffff;
 }
 .routine-list-header,
@@ -1158,14 +1158,14 @@ button.goal-chip:disabled {
   text-align: center;
 }
 .routine-list-group {
-  margin-top: 32px;
+  margin-top: 26px;
 }
 .routine-list-group:first-child {
   margin-top: 0;
 }
 .routine-group-rows {
   margin-top: 12px;
-  padding-left: 48px;
+  padding-left: 0;
 }
 .routine-list-row {
   min-height: 58px;
@@ -1177,7 +1177,7 @@ button.goal-chip:disabled {
 .routine-list-copy strong {
   display: block;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .routine-row-actions {
   opacity: 0;
@@ -1190,7 +1190,7 @@ button.goal-chip:disabled {
 .routine-finished {
   margin-top: 32px;
   padding-top: 26px;
-  border-top: 1px solid var(--color-line);
+  border-top: 0;
 }
 .routine-finished-heading {
   justify-content: space-between;
@@ -1216,19 +1216,19 @@ button.goal-chip:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 58px;
   padding: 4px 0;
-  border-radius: 8px;
-  background: var(--color-side);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-muted);
   font-variant-numeric: tabular-nums;
   text-align: center;
+  min-height: 62px;
+  border-radius: 14px;
+  background: transparent;
 }
 .routine-scope-day.scope-done {
-  background: var(--color-ink);
-  color: var(--color-bg);
+  background: transparent;
+  color: var(--color-ink-2);
 }
 
 .offline-status {
@@ -1243,7 +1243,7 @@ button.goal-chip:disabled {
 .goal-chip[aria-disabled='true'] {
   background: var(--color-box);
   color: var(--color-muted);
-  border-color: var(--color-field);
+  border-color: var(--color-chip);
   cursor: not-allowed;
 }
 .todo-check[aria-disabled='true'] svg {
@@ -1253,7 +1253,7 @@ button.goal-chip:disabled {
 /* 설정 시안: 두 열의 그룹과 표면 카드로 정보 구조를 분리한다. */
 .settings-sheet {
   max-width: 1120px;
-  background: var(--color-side);
+  background: var(--color-bg);
 }
 .settings-header {
   display: grid;
@@ -1279,16 +1279,16 @@ button.goal-chip:disabled {
 .settings-group h3 {
   margin: 0 0 12px;
   font-size: 14px;
-  font-weight: 700;
   color: var(--color-ink-2);
+  font-weight: 800;
 }
 .settings-card {
   width: 100%;
   overflow: hidden;
   border: 0;
-  border-radius: 12px;
-  background: var(--color-surface);
   color: var(--color-ink);
+  background: var(--color-chip);
+  border-radius: 18px;
 }
 .settings-card-row {
   display: flex;
@@ -1316,17 +1316,17 @@ button.goal-chip:disabled {
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: 12px;
-  background: var(--color-box);
+  border-radius: 999px;
+  background: var(--color-bg);
 }
 .settings-segment .button {
   min-width: 76px;
   color: var(--color-ink-2);
 }
 .settings-segment .button[aria-checked='true'] {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  box-shadow: 0 1px 2px rgba(22, 24, 29, 0.14);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  font-weight: 800;
 }
 .settings-link-row {
   display: grid;
@@ -1356,12 +1356,12 @@ button.goal-chip:disabled {
   min-width: 34px;
   height: 34px;
   padding: 0 8px;
-  border-radius: 9px;
-  background: var(--color-box);
   color: var(--color-ink);
   font: inherit;
-  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  border-radius: 14px;
+  background: var(--color-bg);
+  font-weight: 700;
 }
 .settings-info-link {
   width: 100%;
@@ -1384,6 +1384,7 @@ button.goal-chip:disabled {
   align-items: flex-start;
 }
 .sortable-row-handle {
+  align-items: center;
   gap: 4px;
 }
 .sortable-content {
@@ -1396,7 +1397,7 @@ button.goal-chip:disabled {
   touch-action: none;
 }
 .sortable-row-activator:focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 .sortable-dragging .sortable-row-activator {
@@ -1405,14 +1406,13 @@ button.goal-chip:disabled {
 .sortable-dragging {
   position: relative;
   z-index: 1;
-  background: var(--color-side);
+  background: var(--color-bg);
   border-radius: 12px;
 }
 .drag-handle,
 .drag-spacer {
   flex: 0 0 32px;
   width: 32px;
-  margin-top: 4px;
 }
 .drag-handle {
   touch-action: none;
@@ -1423,10 +1423,7 @@ button.goal-chip:disabled {
 .drag-handle svg {
   width: 22px;
   height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
+  fill: currentColor;
 }
 .goal-counts {
   flex: 1;
@@ -1519,14 +1516,11 @@ body,
   flex-direction: column;
   gap: 16px;
 }
-.stamp-empty {
-  background: var(--color-stamp-empty);
-}
 .day-menu {
-  width: 380px;
   max-width: calc(100vw - 48px);
   max-height: var(--radix-dropdown-menu-content-available-height);
   overflow-y: auto;
+  width: 272px;
 }
 .day-menu .todo-menu-item {
   flex-direction: column;
@@ -1554,7 +1548,6 @@ body,
   .week-strip {
     flex-shrink: 0;
     padding: 0 16px 16px;
-    border-bottom: 1px solid var(--color-line);
   }
   .app-toolbar {
     padding: 8px 16px;
@@ -1590,6 +1583,12 @@ body,
     flex-direction: column;
     gap: 4px;
   }
+  .goal-manager-body .sortable-row-handle {
+    align-items: flex-start;
+  }
+  .goal-manager-body .drag-handle {
+    margin-top: 12px;
+  }
   .goal-row-actions {
     opacity: 1;
   }
@@ -1623,4 +1622,246 @@ body,
 
 .scroll-sheet {
   overflow: hidden;
+}
+
+/* M8: 대비 높이기에서는 씨앗 path에만 외곽선을 그린다. */
+@media (prefers-contrast: more) {
+  .sprout-empty {
+    stroke: var(--color-muted);
+    stroke-width: 1.4px;
+  }
+}
+
+.goal-chip-surface {
+  background: var(--color-bg);
+}
+.goal-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 999px;
+  background: var(--goal-color);
+}
+.goal-chip > span:last-child:not(.goal-dot) {
+  color: var(--color-ink);
+}
+
+.todo-check {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+}
+.sprout-check {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sprout-empty {
+  fill: var(--color-box);
+  stroke: none;
+}
+.sprout-filled {
+  fill: var(--goal-color);
+  stroke: none;
+}
+.sprout-mark,
+.sprout-dash {
+  fill: none;
+  stroke: var(--goal-check);
+  stroke-width: 2.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sprout-dash {
+  stroke: var(--color-muted);
+}
+.sprout-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: check-appear 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.35);
+}
+.todo-check[aria-disabled='true'] {
+  background: transparent;
+}
+@media (prefers-contrast: more) {
+  .sprout-empty {
+    stroke: var(--color-muted);
+    stroke-width: 1.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sprout-pop {
+    animation: none;
+  }
+}
+
+.todo-skipped .todo-title,
+.routine-skipped-label {
+  color: var(--color-muted);
+}
+.routine-skipped-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.button.button:disabled {
+  background: var(--color-box);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.input:focus {
+  box-shadow: inset 0 0 0 1.5px var(--color-ink);
+}
+
+.auth-form .input {
+  height: 48px;
+}
+
+.calendar-navigation .button:not(:last-child) {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
+}
+
+.day-navigation .button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px var(--color-line-2);
+}
+
+.dark .routine-modal {
+  box-shadow: 0 24px 64px rgba(17, 19, 24, 0.18);
+}
+
+.routine-actions .button {
+  height: 40px;
+}
+
+.week-strip {
+  border-bottom: 0;
+}
+
+.brand-marks {
+  width: 104px;
+  height: 24px;
+}
+
+.auth-panel .version-details {
+  margin-top: 16px;
+}
+
+.login-screen {
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: calc(48px + 24px);
+}
+
+.login-panel {
+  min-width: 0;
+}
+
+.login-panel .auth-heading .brand {
+  margin-bottom: 24px;
+}
+
+.login-description {
+  color: var(--color-ink-2);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.login-description strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.login-help {
+  margin-top: 32px;
+}
+
+.login-panel .otp-slot {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  min-height: 48px;
+  aspect-ratio: 1;
+}
+
+.login-actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.login-actions .button {
+  padding: 0;
+  color: var(--color-ink-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-countdown {
+  margin-left: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-editor-modal {
+  max-width: 440px;
+}
+
+.goal-add-screen .goal-editor-actions .button {
+  height: 40px;
+}
+
+.color-option:focus-visible {
+  outline: 2px solid var(--color-ink);
+}
+
+.goal-edit-screen .goal-destructive {
+  border-top: 0;
+  background: var(--color-chip);
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.goal-edit-screen .goal-editor-actions .button {
+  height: 40px;
+}
+
+.goal-delete-modal p {
+  color: var(--color-ink-2);
+}
+
+.goal-delete-modal .routine-actions {
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.routine-goal-option[aria-pressed='true'] .goal-chip {
+  box-shadow: inset 0 0 0 2px var(--goal-color);
+}
+
+.routine-goal-option:focus-visible {
+  outline: 2px solid var(--color-ink);
+}
+
+.routine-form .input {
+  height: 44px;
+}
+
+.calendar-navigation .button:not(:last-child),
+.day-navigation .button {
+  font-size: 20px;
 }

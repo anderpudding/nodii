@@ -1,77 +1,84 @@
 # 디자인 토큰
 
-> 근거: `DESIGN.md`. 값이 바뀌면 이 파일을 먼저 고치고 코드를 따라 고칩니다.
+> 디자인 시스템 **v2** (2026-10-27). 근거: `DESIGN.md`. 값이 바뀌면 이 파일을 먼저 고치고 코드를 따라 고칩니다.
+> v1에서 바뀐 것: 사이드바 회색·`line-2` 테두리·파란 `focus`를 걷어 내고 `chip`·`box`를 새로 둡니다. 목표 색 프리셋은 한 단계 선명하게 바꿨습니다(블루는 유지).
 
 ## 1. 색
 
 | 토큰 | 라이트 | 다크 | 쓰는 곳 |
 | --- | --- | --- | --- |
-| `bg` | `#FFFFFF` | `#131417` | 창 바탕, 하루 목록 |
-| `side` | `#F7F8FA` | `#1A1C20` | 사이드바, 입력 중인 줄, 설정 창 바탕 |
-| `surface` | `#FFFFFF` | `#1D1F23` | 시트·모달·메뉴 표면 |
-| `ink` | `#16181D` | `#F1F2F4` | 본문, 주요 버튼 바탕 |
-| `ink-2` | `#4B5160` | `#B4B9C2` | 보조 설명, 아이콘 |
-| `muted` | `#646A76` | `#9AA0AA` | 라벨, 비활성 설명 |
-| `line` | `#E9EBEF` | `#26292E` | 구분선 |
-| `line-2` | `#DADDE2` | `#353941` | 앞날 도장 테두리, 취소선 |
-| `field` | `#8F95A0` | `#70757F` | 입력칸·빈 체크 테두리 (대비 3:1) |
-| `box-fill` | `#F1F2F5` | `#1E2024` | 빈 체크 안쪽 |
-| `stamp` | `#ECEEF1` | `#2A2D33` | 캘린더 남은 개수 도장 |
-| `stamp-empty` | `#F4F5F7` | `#212429` | 항목이 없는 날의 빈 도장 상자 (CAL-02) |
-| `banner` | `#F2F4F7` | `#1F2227` | 지난 미완료 배너 |
-| `focus` | `#2A63C9` | `#7AA7FF` | 포커스 링, 선택된 옵션 |
-| `danger` | `#C4332C` | `#FF7A70` | 삭제, 오류 |
-| `sun` | `#C4332C` | `#FF7A70` | 일요일 숫자 |
-| `sat` | `#2A63C9` | `#7AA7FF` | 토요일 숫자 |
+| `bg` | `#FFFFFF` | `#0F1013` | 창·화면 바탕 **하나**. 사이드바도 같은 색 |
+| `surface` | `#FFFFFF` | `#1A1C21` | 시트·모달·메뉴 표면 |
+| `chip` | `#F2F3F6` | `#1E2026` | 목표 이름표, 보조 버튼(모바일 오늘 포함), 입력칸, 세그먼트 트랙, 설정 묶음 |
+| `box` | `#E6E8EC` | `#2B2E35` | 빈 체크 상자, 하나도 못 끝낸 날의 남은 개수 도장(지난날·오늘) |
+| `stamp-soft` | `#F2F3F6` | `#1E2026` | 하나도 못 끝낸 앞날 도장, 항목 없는 날의 빈 도장(CAL-02) |
+| `ink` | `#111318` | `#F3F4F6` | 본문, 주 버튼 바탕, 선택된 날짜, 키보드 포커스 링 |
+| `ink-2` | `#3E4350` | `#B9BEC8` | 보조 글자, 끝낸 할 일 제목 |
+| `muted` | `#626877` | `#9097A3` | 라벨, 앞날 도장 숫자, 비활성 설명 (`chip` 위에서도 4.5:1) |
+| `line` | `#ECEEF1` | `#22252B` | 꼭 필요한 곳의 구분선(메뉴 항목 사이 등). 기본은 쓰지 않음 |
+| `line-2` | `#DFE2E7` | `#30333A` | 원형 아이콘 버튼의 1px 선 |
+| `danger` | `#D6303A` | `#FF6B6B` | 삭제, 오류 글자 |
+| `danger-fill` | `#D6303A` | `#D6303A` | 흰 글자를 올리는 삭제 버튼·밀기 칸 |
+| `sun` / `sat` | `#D6303A` / `#2563EB` | `#FF7A7A` / `#7AA7FF` | 일요일·토요일 숫자 |
+| `toast-action` | `#9DB8FF` | `#2F5BD8` | 토스트의 "실행 취소" |
 | `warn-bg` / `warn-ink` | `#FFF4DB` / `#8A5A00` | `#3A2F17` / `#F2C66D` | 오프라인 표시 |
 
-- 잉크 버튼 위 글자는 `bg` 색, 위험 버튼(`#C4332C`) 위 글자는 흰색입니다.
-- 스크림(모달 뒤 어둡게): 라이트 `rgba(22,24,29,0.32)`, 다크 `rgba(0,0,0,0.5)`.
-- 그림자: 모달 `0 24px 64px rgba(22,24,29,0.22)`, 메뉴 `0 14px 36px rgba(22,24,29,0.16)` + 1px 링. 다크는 검정 불투명도를 올리고 흰색 7% 링을 더합니다. **테두리와 그림자를 함께 쓰지 않습니다**(메뉴만 예외).
+- 없앤 토큰: `side`(→ `bg`), `field`(입력칸 테두리 → `chip` 채움), `stamp-empty`(→ `stamp-soft`), `banner`, `focus`(→ `ink`).
+- 잉크 버튼 위 글자는 `bg`, `danger-fill` 위 글자는 흰색.
+- 스크림: 라이트 `rgba(17,19,24,0.36)`, 다크 `rgba(0,0,0,0.55)`.
+- 그림자: 시트 `0 -16px 48px rgba(17,19,24,0.16)`, 모달 `0 24px 64px rgba(17,19,24,0.18)`, 메뉴 `0 16px 40px rgba(17,19,24,0.16)` + 1px 5% 링, 토스트 `0 12px 32px rgba(17,19,24,0.24)`. **그림자는 떠 있는 것(시트·모달·메뉴·토스트)에만 씁니다.** 카드·목록·버튼에는 그림자도 테두리도 없습니다.
 
 ## 2. 목표 색 프리셋
 
-| 이름 | HEX | 이름 | HEX |
-| --- | --- | --- | --- |
-| 코랄 | `#F0715A` | 틸 | `#33A9B8` |
-| 오렌지 | `#F59E3B` | 블루 | `#4F7CFF` |
-| 옐로 | `#E9C23A` | 인디고 | `#6C6FE0` |
-| 라임 | `#8CC152` | 퍼플 | `#A06CD5` |
-| 그린 | `#3FB28A` | 핑크 | `#E86BA6` |
-| | | 그레이 | `#8E8B84` |
+| 이름 | HEX | 체크 | 이름 | HEX | 체크 |
+| --- | --- | --- | --- | --- | --- |
+| 코랄 | `#F2553F` | 흰색 | 틸 | `#0FA3B1` | 흰색 |
+| 오렌지 | `#E67300` | 흰색 | 블루 | `#4F7CFF` | 흰색 |
+| 옐로 | `#FFC329` | 먹색 | 인디고 | `#5B5CF6` | 흰색 |
+| 라임 | `#8BD444` | 먹색 | 퍼플 | `#9B5CFF` | 흰색 |
+| 그린 | `#12A66A` | 흰색 | 핑크 | `#FF3D8B` | 흰색 |
+| | | | 그레이 | `#8A8F99` | 흰색 |
 
-기본 목표("할 일", AUTH-04)는 **블루 `#4F7CFF`**로 만듭니다. 가입 트리거(설계서 §4.3)가 쓰는 값과 같아야 하므로, 이 프리셋의 블루는 트리거 값에 맞춰 둡니다.
+- 흰 체크가 3:1을 넘도록 코랄·오렌지·그린·틸·핑크를 고른 값입니다. 옐로·라임은 먹색 체크(`checkColor`).
+- 기본 목표("할 일", AUTH-04)는 **블루 `#4F7CFF`** 그대로입니다. 가입 트리거(설계서 §4.3) 값과 같아야 합니다.
+- **이미 저장된 목표 색은 바꾸지 않습니다.** 프리셋 표만 바뀌고, 예전 프리셋 값으로 만든 목표는 그 값 그대로 보입니다(마이그레이션 없음).
 
 ## 3. 타이포그래피
 
-글꼴: `Pretendard Variable`, 폴백 `-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif`.
+글꼴: `Pretendard Variable`(데스크톱), Pretendard 정적 OTF(모바일). 폴백 `-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif`.
 
 | 용도 | 크기 / 굵기 | 자간 |
 | --- | --- | --- |
-| 날짜 제목 | 28 / 700 | -0.7px |
-| 시트·모달 제목 | 20 / 700 | -0.4px |
-| 할 일 제목, 입력칸 | 15 / 400 | 0 |
-| 목표 이름표, 버튼 | 14 / 700 | -0.1px |
+| 모바일 큰 제목(관리 화면) | 30 / 800 | -1px |
+| 날짜 제목(데스크톱) | 28 / 800 | -0.9px |
+| 월 제목 | 21~22 / 800 | -0.6~-0.7px |
+| 시트·모달 제목 | 19~20 / 800 | -0.3px |
+| 할 일 제목, 입력칸 | 16(모바일) · 15(데스크톱) / 400 | 0 |
+| 목표 이름표, 버튼 | 14 / 800 | -0.2px |
 | 보조 설명 | 13 / 500 | 0 |
-| 라벨, 캘린더 숫자 | 12 / 600 | 0 |
+| 라벨, 요일, 캘린더 숫자 | 12 / 700 | 0 |
 
-행간은 본문 1.45~1.6, 제목 1.2~1.25. 숫자에는 `tabular-nums`.
+- 행간은 본문 1.45~1.6, 제목 1.2~1.25. 숫자에는 `tabular-nums`.
+- **800 굵기**: 데스크톱은 가변 폰트라 그대로 됩니다. 모바일은 정적 4벌(400~700)뿐이라 `Pretendard-ExtraBold.otf`를 같은 서브셋 절차(§7)로 추가합니다(약 0.75MB). 추가 전까지는 700으로 대체해도 레이아웃은 깨지지 않습니다.
 
-## 4. 모서리 · 간격
+## 4. 모양 · 간격
 
-- 모서리: 체크 7 · 캘린더 도장 8 · 버튼과 입력 9~11 · 메뉴 12 · 카드와 시트 12~14 · 모달 16 · 이름표와 알약 999.
-- 간격(px): 4 아이콘과 글자 · 8 칩 사이 · 12 체크와 제목 · 16 카드 안쪽 · 26 목표 묶음 사이 · 48 목록 좌우 여백.
-- 사이드바 너비 380, 최소 창 크기 880×600(설계서 §7).
+- 체크·도장 모양: **싹이**(새싹)(`components.md` 체크 · 모양 정의). 모서리 값 대신 정해진 path를 씁니다.
+- 모서리: 입력칸 14 · 묶음 18 · 메뉴 14 · 모달 22 · 바텀 시트 26 · **버튼·이름표·토스트·세그먼트 999(알약)** · 아이콘 버튼 999(원).
+- 아이콘 버튼: 원 32(데스크톱 월 이동·설정)·36(날짜 이동·하루 메뉴), `line-2` 1px 안쪽 선. 모바일 상단 줄의 `⋯`·설정은 선 없는 글리프(44pt 영역).
+- 간격(px): 7 이름표 점과 글자 · 8 칩 사이 · 12 체크와 제목 · 16 묶음 안쪽 · 26 목표 묶음 사이(데스크톱) · 16(모바일) · 48 목록 좌우 여백.
+- 사이드바 너비 380(바탕은 `bg`, 경계선 없음), 최소 창 크기 400×600(설계서 §7). 폭 760 미만에서는 사이드바 대신 주간 스트립을 표시합니다(CAL-07).
 
 ## 5. 모션
 
 | 대상 | 시간 / 이징 |
 | --- | --- |
-| 배경·테두리 상태 변화 | 0.15s ease-out |
-| 체크 눌림 | 0.12s ease-out, `scale(0.86)` |
+| 배경 상태 변화 | 0.15s ease-out |
+| 체크 눌림 | 0.12s ease-out, `scale(0.86)`(데스크톱)·`scale(0.88)`(모바일) |
 | 체크 표시 등장 | 0.28s `cubic-bezier(0.2, 0.9, 0.3, 1.35)` |
 | 메뉴 열림 | 0.14s ease-out, 위로 4px |
 | 토스트 | 0.24s `cubic-bezier(0.16, 1, 0.3, 1)`, 아래서 10px |
+| 모바일 누름 | 0.12s, 투명도 0.55 |
 
 `@media (prefers-reduced-motion: reduce)`에서 모두 끕니다.
 
@@ -83,51 +90,53 @@
 
 @theme {
   --color-bg: #ffffff;
-  --color-side: #f7f8fa;
   --color-surface: #ffffff;
-  --color-ink: #16181d;
-  --color-ink-2: #4b5160;
-  --color-muted: #646a76;
-  --color-line: #e9ebef;
-  --color-line-2: #dadde2;
-  --color-field: #8f95a0;
-  --color-box: #f1f2f5;
-  --color-stamp: #eceef1;
-  --color-stamp-empty: #f4f5f7;
-  --color-banner: #f2f4f7;
-  --color-focus: #2a63c9;
-  --color-danger: #c4332c;
-  --color-sun: #c4332c;
-  --color-sat: #2a63c9;
+  --color-chip: #f2f3f6;
+  --color-box: #e6e8ec;
+  --color-stamp-soft: #f2f3f6;
+  --color-ink: #111318;
+  --color-ink-2: #3e4350;
+  --color-muted: #626877;
+  --color-line: #eceef1;
+  --color-line-2: #dfe2e7;
+  --color-danger: #d6303a;
+  --color-danger-fill: #d6303a;
+  --color-sun: #d6303a;
+  --color-sat: #2563eb;
+  --color-toast-action: #9db8ff;
   --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
 }
 
 .dark {
-  --color-bg: #131417;
-  --color-side: #1a1c20;
-  --color-surface: #1d1f23;
-  --color-ink: #f1f2f4;
-  --color-ink-2: #b4b9c2;
-  --color-muted: #9aa0aa;
-  --color-line: #26292e;
-  --color-line-2: #353941;
-  --color-field: #70757f;
-  --color-box: #1e2024;
-  --color-stamp: #2a2d33;
-  --color-stamp-empty: #212429;
-  --color-banner: #1f2227;
-  --color-focus: #7aa7ff;
-  --color-danger: #ff7a70;
-  --color-sun: #ff7a70;
+  --color-bg: #0f1013;
+  --color-surface: #1a1c21;
+  --color-chip: #1e2026;
+  --color-box: #2b2e35;
+  --color-stamp-soft: #1e2026;
+  --color-ink: #f3f4f6;
+  --color-ink-2: #b9bec8;
+  --color-muted: #9097a3;
+  --color-line: #22252b;
+  --color-line-2: #30333a;
+  --color-danger: #ff6b6b;
+  --color-danger-fill: #d6303a;
+  --color-sun: #ff7a7a;
   --color-sat: #7aa7ff;
+  --color-toast-action: #2f5bd8;
 }
 
 :root { color-scheme: light dark; }
-::selection { background: color-mix(in srgb, var(--color-focus) 22%, transparent); }
-:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+::selection { background: rgba(155, 92, 255, 0.22); }
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+
+/* 시스템 "대비 높이기"를 켠 사람에게만 빈 체크·빈 도장에 3:1 테두리 (DESIGN.md §7) */
+@media (prefers-contrast: more) {
+  .check[aria-pressed="false"], .stamp-soft { box-shadow: inset 0 0 0 1.5px var(--color-muted); }
+}
 ```
 
 테마는 `.dark` 클래스를 `<html>`에 붙여 전환합니다. 설정값은 기기별 로컬 저장(`plugin-store`, 지시서 I5), 시스템 값은 `matchMedia('(prefers-color-scheme: dark)')`로 따라갑니다.
+`::selection`의 퍼플은 장식이 아니라 선택 영역 표시이고, `color-mix()`를 쓰지 않도록 rgba로 고정했습니다(macOS 12 WebView).
 
 ## 7. 글꼴 번들
 
@@ -170,8 +179,8 @@ FONT_SUBSET_PYTHON=/path/to/fonttools-python node scripts/subset.js --check
 ## 8. 모바일 M2b 상호작용 보완
 
 - `MobileMenu` 메뉴 줄 최소 높이 56pt, 왼쪽 글리프 20pt (`mobile-screens.md`).
-- `MobileUndo` 토스트 최소 높이 52pt, 좌우 16pt, 모서리 14pt, safe area 또는 고정 추가 바 위 10pt.
-- `segBg`는 기존 `side`, `toastBg`/`toastInk`는 기존 `ink`/`bg` 역할로 해석한다. 실행 취소 글자는 데스크톱처럼 토스트 글자색을 쓴다. 새로운 HEX를 추가하지 않는다.
-- 삭제 칸은 두 테마 모두 채움용 `#C4332C` + 흰색을 쓴다 (§1 위험 버튼 규칙). 다크의 `danger=#FF7A70`는 오류·삭제 글자용이며 흰 글자 채움에는 쓰지 않는다.
+- `MobileUndo` 토스트 최소 높이 54pt, 좌우 16pt, 모서리 999(알약), safe area 위 10pt.
+- 세그먼트 트랙은 `chip`(회색 묶음 안에서는 `bg`), `toastBg`/`toastInk`는 `ink`/`bg` 역할로 해석한다. **실행 취소 글자는 데스크톱·모바일 모두 `toast-action`**을 쓴다(2026-10-27 사용자 결정). 모바일에서는 `colors.toastAction`으로 대응한다. 본문과 일반 닫기는 `bg` 글자색을 쓴다. 새로운 HEX를 추가하지 않는다.
+- 삭제 칸은 두 테마 모두 `danger-fill`(`#D6303A`) + 흰색을 쓴다. 다크의 `danger=#FF6B6B`는 오류·삭제 글자용이며 흰 글자 채움에는 쓰지 않는다.
 - 길게 누른 줄의 확대는 `scale(1.02)`, 시간은 기존 눌림 120ms. 문서의 "살짝 커짐"을 2%로 보완하며 레이아웃에는 영향을 주지 않는다. 모션 감소 시 확대하지 않는다. 실기기 느낌 확인 후 조정할 수 있다.
 - 밀기 한 칸 너비는 기존 36pt 칩 높이의 2배인 72pt. 수평 12pt 이후 활성화, 활성화 전 수직 8pt 초과 시 실패, 전체 실행은 행 너비의 65%. 속도만으로 실행하지 않는다. 짧은 밀기는 닫고, 왼쪽 두 칸(144pt)을 드러내되 65% 미만이면 버튼을 누를 수 있게 유지한다.

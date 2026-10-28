@@ -168,7 +168,11 @@ export function GoalEditor({
         style={[
           s.input,
           { borderWidth: 1.5 },
-          { color: colors.ink, borderColor: focused === 'name' ? colors.ink : colors.field },
+          {
+            color: colors.ink,
+            backgroundColor: colors.chip,
+            borderColor: focused === 'name' ? colors.ink : colors.chip,
+          },
         ]}
       />
       <Text style={[s.label, { color: colors.ink2 }]}>{t('goal.color')}</Text>
@@ -178,13 +182,17 @@ export function GoalEditor({
             key={preset.color}
             label={t(preset.name)}
             compact
+            borderless
             multiple
             selected={color.toUpperCase() === preset.color}
             accessibilityLabel={t('goal.preset', { name: t(preset.name) })}
             disabled={blocked}
             onPress={() => setColor(preset.color)}
           >
-            <GoalBadge goal={{ ...draft, name: t(preset.name), color: preset.color }} />
+            <GoalBadge
+              goal={{ ...draft, name: t(preset.name), color: preset.color }}
+              selected={color.toUpperCase() === preset.color}
+            />
           </RoutineOption>
         ))}
       </View>
@@ -202,11 +210,12 @@ export function GoalEditor({
           { borderWidth: 1.5 },
           {
             color: colors.ink,
+            backgroundColor: colors.chip,
             borderColor: !isHexColor(color)
               ? colors.danger
               : focused === 'color'
                 ? colors.ink
-                : colors.field,
+                : colors.chip,
           },
         ]}
       />

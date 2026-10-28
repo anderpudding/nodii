@@ -64,11 +64,11 @@ export function RoutineRow({
         id === 'toggle'
           ? goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14)
           : id === 'stop'
-            ? lightColors.danger
-            : colors.side,
+            ? lightColors.dangerFill
+            : colors.chip,
       color:
         id === 'toggle'
-          ? goalInk(goal.color, colors.bg, isDark)
+          ? goalInk(goal.color, goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14), isDark)
           : id === 'stop'
             ? lightColors.bg
             : colors.ink,

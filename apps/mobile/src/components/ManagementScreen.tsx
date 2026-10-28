@@ -55,14 +55,14 @@ export function ManagementScreen({
         style={[
           styles.screen,
           {
-            backgroundColor: colors.side,
+            backgroundColor: colors.bg,
             paddingTop: insets.top,
             paddingBottom: Math.max(insets.bottom, m.space.lg),
           },
         ]}
       >
         <View style={styles.header}>
-          <Button secondary label={back} onPress={onClose} />
+          <Button secondary quiet label={back} onPress={onClose} />
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             {title}
           </Text>
@@ -70,17 +70,14 @@ export function ManagementScreen({
         {swipeRows ? <SwipeRows>{scroll}</SwipeRows> : scroll}
         {footer && (
           <View
-            style={[
-              styles.footer,
-              { backgroundColor: colors.surface, borderTopColor: colors.line },
-            ]}
+            style={[styles.footer, { backgroundColor: colors.bg, borderTopColor: colors.line }]}
           >
             {footer}
           </View>
         )}
         <ToastPortal
           bottom={
-            footer ? m.height.field + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg) : 0
+            footer ? m.height.button + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg) : 0
           }
         />
       </View>
@@ -92,10 +89,18 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'flex-start',
     paddingHorizontal: m.space.lg,
-    gap: m.space.lg,
-    paddingBottom: m.space.lg,
+    gap: m.space.sm,
   },
-  title: { fontFamily: m.fontBold, fontSize: m.type.title, letterSpacing: m.letterSpacing.title },
-  content: { padding: m.space.lg, gap: m.space.group },
+  title: {
+    fontFamily: m.fontExtraBold,
+    fontSize: m.type.title,
+    letterSpacing: m.letterSpacing.title,
+  },
+  content: {
+    paddingHorizontal: m.space.lg,
+    paddingTop: m.space.sm,
+    paddingBottom: m.space.lg,
+    gap: m.space.group,
+  },
   footer: { padding: m.space.lg, borderTopWidth: m.border },
 });

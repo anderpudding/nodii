@@ -11,12 +11,14 @@ export function WeekStrip({
   today,
   selectedDate,
   summary,
+  stampColors,
   onSelect,
 }: {
   dates: ISODate[];
   today: ISODate;
   selectedDate: ISODate;
   summary: Map<ISODate, DaySummary>;
+  stampColors?: Map<ISODate, string[]>;
   onSelect(date: ISODate): void;
 }) {
   const { colors } = useTheme();
@@ -40,7 +42,7 @@ export function WeekStrip({
         onAccessibilityAction={(event) =>
           move(event.nativeEvent.actionName === 'decrement' ? -1 : 1)
         }
-        style={[styles.strip, { backgroundColor: colors.side, borderBottomColor: colors.line }]}
+        style={[styles.strip, { backgroundColor: colors.bg, borderBottomColor: colors.line }]}
       >
         {dates.map((date) => (
           <DayCell
@@ -49,6 +51,7 @@ export function WeekStrip({
             today={today}
             selected={date === selectedDate}
             summary={summary.get(date)}
+            goalColors={stampColors?.get(date)}
             onPress={() => onSelect(date)}
           />
         ))}
@@ -61,6 +64,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: m.space.sm,
     paddingBottom: m.space.sm,
-    borderBottomWidth: m.border,
+    borderBottomWidth: 0,
   },
 });

@@ -79,7 +79,7 @@ export function Goals({ client, onClose }: { client: NodiiClient; onClose(): voi
       {!online && (
         <Text style={[s.supporting, { color: colors.muted }]}>{t('sync.writeDisabled')}</Text>
       )}
-      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+      <View style={[s.card, { backgroundColor: colors.chip, borderColor: colors.line }]}>
         {(archived ? archive : active).map((goal, index) => (
           <GoalRow
             key={goal.id}
@@ -108,12 +108,14 @@ export function Goals({ client, onClose }: { client: NodiiClient; onClose(): voi
       {!archived && (
         <>
           <Text style={[s.supporting, { color: colors.muted }]}>{t('goal.swipeHelp')}</Text>
-          <RoutineOption
-            inline
-            label={t('goal.archived.title')}
-            description={t('settings.management.count', { count: archive.length })}
-            onPress={() => setArchived(true)}
-          />
+          <View style={[s.card, { backgroundColor: colors.chip }]}>
+            <RoutineOption
+              inline
+              label={t('goal.archived.title')}
+              description={t('settings.management.count', { count: archive.length })}
+              onPress={() => setArchived(true)}
+            />
+          </View>
         </>
       )}
       {editing !== undefined && (
@@ -203,7 +205,7 @@ function GoalRow({
       id,
       swipe: id === 'archive' && last ? null : swipe,
       label: labels[id],
-      background: colors.side,
+      background: colors.bg,
       color: colors.ink,
       run: () => run(id),
     })),
@@ -216,9 +218,10 @@ function GoalRow({
         s.row,
         s.horizontal,
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.chip,
+          paddingVertical: m.space.sm,
           borderColor: colors.line,
-          borderWidth: m.selectionRing,
+          borderWidth: 0,
         },
       ]}
     >
@@ -254,7 +257,7 @@ function GoalRow({
           },
         ]}
       >
-        <GoalBadge goal={goal} />
+        <GoalBadge goal={goal} onChip />
         <View style={{ flex: 1 }}>
           <Text style={[s.supporting, { color: colors.muted }]}>
             {contents ? t('goal.contents', { ...contents }) : t('goal.counts.loading')}

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { addDays, monthKeyOf, occursOn, type Profile, type Routine } from '@nodii/core';
 import { useMonthRoutineLogs, type NodiiClient, type RoutineRecord } from '@nodii/api';
+import { CalendarStamp } from '../calendar/CalendarStamp';
 import { Button } from '../../components/ui/button';
 import { formatCalendarDate } from '../calendar/CalendarGrid';
 import { formatRoutineRule } from './format-rule';
@@ -9,6 +10,7 @@ import { formatRoutineRule } from './format-rule';
 export function RoutineScope({
   before,
   after,
+  goalColor,
   today,
   client,
   profile,
@@ -17,6 +19,7 @@ export function RoutineScope({
   onCancel,
 }: {
   before: RoutineRecord;
+  goalColor?: string;
   after: Routine;
   today: string;
   client: NodiiClient;
@@ -94,6 +97,16 @@ export function RoutineScope({
                   className={`routine-scope-day${state === '끝냄' ? ' scope-done' : ''}`}
                   aria-label={`${formatCalendarDate(date)} ${state}`}
                 >
+                  <CalendarStamp
+                    summary={
+                      occurs && state !== '건너뜀'
+                        ? { total: 1, remaining: state === '끝냄' ? 0 : 1 }
+                        : undefined
+                    }
+                    future={date > today}
+                    today={date === today}
+                    colors={goalColor ? [goalColor] : []}
+                  />
                   <span>
                     {Number(date.slice(5, 7))}/{Number(date.slice(8))}
                   </span>

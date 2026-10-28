@@ -405,7 +405,7 @@ it('목표 생성·이름과 프리셋 변경·보관·보관 해제를 화면�
   const listDialog = await screen.findByRole('dialog', { name: '목표 관리' });
   const renamed = await within(listDialog).findByRole('button', { name: '독서 편집' });
   await waitFor(() => expect((renamed as HTMLButtonElement).disabled).toBe(false));
-  expect(created.color).toBe('#A06CD5');
+  expect(created.color).toBe('#9B5CFF');
   expect(created.name).toBe('독서');
   await user.click(
     within(renamed.closest('.goal-manager-row')!).getByRole('button', { name: '보관' }),

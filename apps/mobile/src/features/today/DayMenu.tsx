@@ -7,6 +7,7 @@ import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
+import { ActionIcon } from '../../components/ActionIcon';
 import { DatePickSheet } from './DatePickSheet';
 import { dayMenuReasons } from './day-menu-model';
 import type { useDayActions } from './useDayActions';
@@ -145,8 +146,8 @@ export function DayMenu({
                   },
                 ]}
               >
-                <MenuGlyph
-                  kind={entry.glyph}
+                <ActionIcon
+                  action={entry.glyph}
                   color={
                     entry.reason ? colors.muted : entry.id === 'delete' ? colors.danger : colors.ink
                   }
@@ -195,15 +196,6 @@ export function DayMenu({
     </>
   );
 }
-function MenuGlyph({ kind, color }: { kind: 'import' | 'move' | 'delete'; color: string }) {
-  return (
-    <View accessible={false} style={styles.glyph}>
-      <View style={[styles.outline, { borderColor: color }]} />
-      <View style={[styles.glyphLine, { backgroundColor: color }]} />
-      {kind === 'import' && <View style={[styles.arrow, { borderColor: color }]} />}
-    </View>
-  );
-}
 const styles = StyleSheet.create({
   trigger: {
     minHeight: m.height.touch,
@@ -227,24 +219,4 @@ const styles = StyleSheet.create({
   label: { fontFamily: m.fontMedium, fontSize: m.type.body },
   supporting: { fontFamily: m.fontMedium, fontSize: m.type.supporting },
   divider: { height: m.border, marginVertical: m.space.sm },
-  glyph: {
-    width: m.glyph.icon,
-    height: m.glyph.icon,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  outline: {
-    width: m.space.lg,
-    height: m.space.lg,
-    borderWidth: m.selectionRing,
-    borderRadius: m.selectionRing,
-  },
-  glyphLine: { position: 'absolute', top: m.space.xs, height: m.selectionRing, width: m.space.lg },
-  arrow: {
-    width: m.space.sm,
-    height: m.space.sm,
-    borderRightWidth: m.selectionRing,
-    borderBottomWidth: m.selectionRing,
-    transform: [{ rotate: '45deg' }],
-  },
 });
