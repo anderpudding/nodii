@@ -108,12 +108,14 @@ export function Goals({ client, onClose }: { client: NodiiClient; onClose(): voi
       {!archived && (
         <>
           <Text style={[s.supporting, { color: colors.muted }]}>{t('goal.swipeHelp')}</Text>
-          <RoutineOption
-            inline
-            label={t('goal.archived.title')}
-            description={t('settings.management.count', { count: archive.length })}
-            onPress={() => setArchived(true)}
-          />
+          <View style={[s.card, { backgroundColor: colors.chip }]}>
+            <RoutineOption
+              inline
+              label={t('goal.archived.title')}
+              description={t('settings.management.count', { count: archive.length })}
+              onPress={() => setArchived(true)}
+            />
+          </View>
         </>
       )}
       {editing !== undefined && (
@@ -217,6 +219,7 @@ function GoalRow({
         s.horizontal,
         {
           backgroundColor: colors.chip,
+          paddingVertical: m.space.sm,
           borderColor: colors.line,
           borderWidth: 0,
         },
