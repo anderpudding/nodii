@@ -28,8 +28,7 @@ export const useUIStore = create<UIState>((set) => ({
       calendarMonth: monthKeyOf(state.selectedDate),
     })),
   showMonth: (calendarMonth) => set({ calendarMonth }),
-  selectDate: (selectedDate) =>
-    set({ selectedDate, calendarMonth: monthKeyOf(selectedDate), monthExpanded: false }),
+  selectDate: (selectedDate) => set({ selectedDate, calendarMonth: monthKeyOf(selectedDate) }),
   updateToday: (next) =>
     set((state) => ({
       today: next,
