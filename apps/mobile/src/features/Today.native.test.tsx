@@ -601,7 +601,7 @@ it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 �
   ).toBe(false);
 });
 
-it('월간은 필요한 35칸을 펼치고 이전·다음 달과 VoiceOver로 이동한 뒤 선택하면 접힌다', async () => {
+it('월간은 필요한 35칸을 펼치고 다른 달의 날짜나 오늘을 선택해도 월간을 유지한다', async () => {
   await mount();
   fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
   const grid = await screen.findByTestId('month-grid');
@@ -621,10 +621,38 @@ it('월간은 필요한 35칸을 펼치고 이전·다음 달과 VoiceOver로 �
   expect(StyleSheet.flatten(day.props.style).opacity).toBe(0.4);
   fireEvent.press(day);
   expect(useUIStore.getState().selectedDate).toBe('2026-09-27');
-  expect(screen.queryByTestId('month-grid')).toBeNull();
+  expect(useUIStore.getState().calendarMonth).toBe('2026-09');
+  expect(screen.getByTestId('month-grid')).toBeTruthy();
+  expect(
+    screen.getByRole('radio', { name: t('mobile.view.month') }).props.accessibilityState.checked,
+  ).toBe(true);
   fireEvent.press(screen.getByRole('button', { name: t('day.today') }));
   expect(useUIStore.getState().selectedDate).toBe(useUIStore.getState().today);
+  expect(useUIStore.getState().calendarMonth).toBe('2026-10');
+  expect(screen.getByTestId('month-grid')).toBeTruthy();
+  fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.week') }));
+  expect(screen.queryByTestId('month-grid')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: t('day.today') }));
+  expect(
+    screen.getByRole('radio', { name: t('mobile.view.week') }).props.accessibilityState.checked,
+  ).toBe(true);
 });
+
+it.each(['2026-10', '2026-11'])(
+  '월간 %s에서 오늘을 누르면 오늘의 달로 이동하며 M 선택을 유지한다',
+  async (month) => {
+    await mount();
+    fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
+    act(() => useUIStore.getState().showMonth(month));
+    fireEvent.press(screen.getByRole('button', { name: t('day.today') }));
+    expect(useUIStore.getState().selectedDate).toBe('2026-10-10');
+    expect(useUIStore.getState().calendarMonth).toBe('2026-10');
+    expect(
+      screen.getByRole('radio', { name: t('mobile.view.month') }).props.accessibilityState.checked,
+    ).toBe(true);
+    expect(screen.getByTestId('month-grid')).toBeTruthy();
+  },
+);
 
 it('VoiceOver 옮기기에서 다음 달을 고르면 겹치는 모든 캐시를 패치하고 원래 키로 복원한다', async () => {
   const original = { ...row('one', '장보기'), date: '2026-10-01' };
