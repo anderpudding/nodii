@@ -83,7 +83,7 @@ export function RoutineList({
   const ended = ordered.filter((row) => row.endDate !== null && row.endDate < today);
   const failed = routines.isError || goals.isError;
   const loading = routines.isPending || goals.isPending;
-  const barHeight = m.height.field + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg);
+  const barHeight = m.height.button + m.space.lg * 2 + Math.max(insets.bottom, m.space.lg);
   return (
     <Modal visible animationType="none" onRequestClose={onClose}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -94,7 +94,13 @@ export function RoutineList({
       >
         <ToastInset bottom={barHeight} />
         <View style={styles.header}>
-          <Button label={backLabel} secondary onPress={onClose} />
+          <Button
+            label={backLabel.startsWith('‹') ? backLabel : `‹ ${backLabel}`}
+            accessibilityLabel={backLabel}
+            secondary
+            quiet
+            onPress={onClose}
+          />
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             {t('routine.manage')}
           </Text>
@@ -268,6 +274,7 @@ function ManagementRow({
             {
               borderColor: colors.chip,
               borderBottomColor: colors.line,
+              backgroundColor: colors.chip,
               opacity: pressed ? m.pressedOpacity : 1,
             },
           ]}
@@ -314,9 +321,13 @@ function ManagementRow({
 }
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { paddingHorizontal: m.space.lg, gap: m.space.lg, alignItems: 'flex-start' },
-  title: { fontFamily: m.fontExtraBold, fontSize: m.type.title },
-  content: { paddingHorizontal: m.space.lg, gap: m.space.group, paddingTop: m.space.lg },
+  header: { paddingHorizontal: m.space.lg, gap: m.space.sm, alignItems: 'flex-start' },
+  title: {
+    fontFamily: m.fontExtraBold,
+    fontSize: m.type.title,
+    letterSpacing: m.letterSpacing.title,
+  },
+  content: { paddingHorizontal: m.space.lg, gap: m.space.group, paddingTop: m.space.sm },
   group: { gap: m.space.md },
   label: { fontFamily: m.fontExtraBold, fontSize: m.type.supporting },
   supporting: {
@@ -329,7 +340,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: m.space.md,
-    padding: m.space.lg,
+    paddingHorizontal: m.space.lg,
+    paddingVertical: m.space.md,
     borderWidth: 0,
     borderBottomWidth: m.border,
   },
