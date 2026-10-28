@@ -13,6 +13,7 @@ import {
   SPROUT_LEAVES,
   SPROUT_CHECK,
   SPROUT_NUMBER,
+  checkColor,
   type DaySummary,
 } from '@nodii/core';
 import { metrics as m, useHighContrast, useTheme } from '../../../lib/theme';
@@ -36,7 +37,17 @@ export function Stamp({
   const id = useId().replace(/:/g, '');
   const done = !!summary?.total && summary.remaining === 0;
   const palette = [...new Set(goalColors)].slice(0, 4);
-  const fill = done
+  const partial = !!summary?.remaining && summary.total > summary.remaining && palette.length > 0;
+  const colored = done || partial;
+  const countColor = partial
+    ? (goalColors.map(checkColor).find((color) => color !== '#FFFFFF') ?? '#FFFFFF')
+    : future
+      ? colors.muted
+      : today
+        ? colors.ink
+        : colors.ink2;
+  const shadow = done || (partial && countColor === '#FFFFFF');
+  const fill = colored
     ? palette.length > 1
       ? `url(#${id}-fill)`
       : (palette[0] ?? colors.ink)
@@ -46,7 +57,7 @@ export function Stamp({
   return (
     <Svg width={m.glyph.stamp} height={m.glyph.stamp} viewBox="0 0 24 24" accessible={false}>
       <Defs>
-        {done && palette.length > 1 && (
+        {colored && palette.length > 1 && (
           <LinearGradient id={`${id}-fill`} x1="0%" y1="0%" x2="100%" y2="100%">
             {palette.flatMap((color, i) => [
               <Stop key={`${i}-start`} offset={i / palette.length} stopColor={color} />,
@@ -54,7 +65,7 @@ export function Stamp({
             ])}
           </LinearGradient>
         )}
-        {done && (
+        {shadow && (
           <Filter id={`${id}-shadow`}>
             <FeDropShadow
               dx={0}
@@ -70,7 +81,7 @@ export function Stamp({
         testID="stamp-body"
         d={SPROUT_BODY + (done ? SPROUT_LEAVES : '')}
         fill={fill}
-        stroke={!done && highContrast ? colors.muted : 'none'}
+        stroke={!colored && highContrast ? colors.muted : 'none'}
         strokeWidth={1.4}
       />
       {done ? (
@@ -92,7 +103,8 @@ export function Stamp({
             {...SPROUT_NUMBER}
             fontFamily={m.fontExtraBold}
             textAnchor="middle"
-            fill={future ? colors.muted : today ? colors.ink : colors.ink2}
+            fill={countColor}
+            filter={shadow ? `url(#${id}-shadow)` : undefined}
           >
             {summary.remaining}
           </Text>

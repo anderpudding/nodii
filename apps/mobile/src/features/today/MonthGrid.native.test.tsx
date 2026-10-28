@@ -70,6 +70,7 @@ it('주 시작 요일과 표시 월이 바뀌면 주수를 다시 계산한다',
   expect(within(screen.getByTestId('month-grid')).getAllByRole('button')).toHaveLength(28);
 });
 it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴다', async () => {
+  const stampColors = new Map<ISODate, string[]>([['2026-10-10', ['#4F7CFF']]]);
   const summary = new Map<ISODate, DaySummary>([
     ['2026-10-10', { total: 2, remaining: 1 }],
     ['2026-10-11', { total: 1, remaining: 0 }],
@@ -81,6 +82,7 @@ it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴
         today="2026-10-10"
         selectedDate="2026-10-10"
         summary={summary}
+        stampColors={stampColors}
         onSelect={() => {}}
       />
       <MonthGrid
@@ -89,6 +91,7 @@ it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴
         today="2026-10-10"
         selectedDate="2026-10-10"
         summary={summary}
+        stampColors={stampColors}
         onSelect={() => {}}
         onMove={() => {}}
       />
@@ -115,6 +118,7 @@ it('같은 날짜는 주간·월간에서 같은 도장·알약 스타일을 쓴
       .map((path) => ({ d: path.props.d, fill: path.props.fill })),
   );
   expect(stamps[0]).toEqual(stamps[1]);
+  expect(stamps[0]).toContainEqual(expect.objectContaining({ fill: '#4F7CFF' }));
   expect(stamps[0]).not.toHaveLength(0);
 });
 it('달 밀기 제스처는 격자에만 있고 수직 스크롤에는 달을 넘기지 않는다', async () => {
