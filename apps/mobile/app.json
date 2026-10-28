@@ -10,6 +10,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.sungjunlee.Nodii",
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png",
+        "tinted": "./assets/icon-tinted.png"
+      },
       "deploymentTarget": "16.4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
