@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -101,11 +101,14 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
   await user.click(screen.getByRole('button', { name: '코드 받기' }));
   await user.click(await screen.findByLabelText('6자리 인증 코드'));
   await user.paste('123456');
-  await user.click(await screen.findByRole('button', { name: '설정' }));
-  expect(screen.getByText('user@example.com')).toBeTruthy();
+  // AUTH-03: 설정 버튼을 찾을 때 42칸 캘린더의 버튼까지 반복 탐색하지 않는다.
+  const toolbar = within(await screen.findByRole('banner'));
+  await user.click(await toolbar.findByRole('button', { name: '설정' }));
+  const settings = within(await screen.findByRole('dialog', { name: '설정' }));
+  expect(settings.getByText('user@example.com')).toBeTruthy();
   await waitFor(() => expect(startRefresh).toHaveBeenCalled());
   queryClient.setQueryData(['private-test'], ['private-data']);
-  await user.click(screen.getByRole('button', { name: '로그아웃' }));
+  await user.click(settings.getByRole('button', { name: '로그아웃' }));
   expect(await screen.findByLabelText('이메일')).toBeTruthy();
   expect(queryClient.getQueryData(['private-test'])).toBeUndefined();
   expect((await client.auth.getSession()).data.session).toBeNull();
@@ -115,7 +118,8 @@ it('로그인 → 메인 → 로그아웃에 따라 캐시와 인증 저장소�
   await user.click(screen.getByRole('button', { name: '코드 받기' }));
   await user.click(await screen.findByLabelText('6자리 인증 코드'));
   await user.paste('123456');
-  await screen.findByRole('button', { name: '설정' });
+  const nextToolbar = within(await screen.findByRole('banner'));
+  await nextToolbar.findByRole('button', { name: '설정' });
   await waitFor(() => expect(startRefresh.mock.calls.length).toBeGreaterThan(startsBeforeLogin));
 });
 it.each([
