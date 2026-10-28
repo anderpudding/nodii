@@ -125,9 +125,14 @@ export function Login({
           {t(state.step === 'code' ? 'auth.code.title' : 'auth.title')}
         </Text>
         <Text style={[styles.description, { color: colors.ink2 }]}>
-          {state.step === 'code'
-            ? t('auth.code.description', { email: state.codeEmail })
-            : t('auth.description')}
+          {state.step === 'code' ? (
+            <>
+              <Text style={[styles.emailAddress, { color: colors.ink }]}>{state.codeEmail}</Text>
+              {t('auth.code.description', { email: '' })}
+            </>
+          ) : (
+            t('auth.description')
+          )}
         </Text>
         {state.step !== 'code' ? (
           <>
@@ -260,24 +265,31 @@ export function Login({
             onPress={() => void request(state.step === 'code' ? 'code' : 'email')}
           />
           {state.step === 'code' && (
-            <>
+            <View style={styles.codeActions}>
               <Button
-                secondary
-                label={
-                  remaining > 0
-                    ? t('auth.resendCountdown', { seconds: remaining })
-                    : t('auth.resend')
-                }
-                disabled={state.pending || remaining > 0}
-                onPress={() => void request('resend')}
-              />
-              <Button
+                quiet
                 secondary
                 label={t('auth.changeEmail')}
                 disabled={state.pending}
                 onPress={() => dispatch({ type: 'changeEmail' })}
               />
-            </>
+              {remaining > 0 ? (
+                <Text style={[styles.countdown, { color: colors.muted }]}>
+                  {t('auth.resendCountdown', {
+                    minutes: Math.floor(remaining / 60),
+                    seconds: String(remaining % 60).padStart(2, '0'),
+                  })}
+                </Text>
+              ) : (
+                <Button
+                  quiet
+                  secondary
+                  label={t('auth.resend')}
+                  disabled={state.pending}
+                  onPress={() => void request('resend')}
+                />
+              )}
+            </View>
           )}
         </View>
         {state.step !== 'code' && !review && (
@@ -311,6 +323,7 @@ const styles = StyleSheet.create({
     marginTop: m.space.md,
     marginBottom: m.space.lg + m.space.sm,
   },
+  emailAddress: { fontFamily: m.fontBold, fontWeight: '700' },
   label: {
     fontFamily: m.fontBold,
     fontSize: m.type.label,
@@ -362,6 +375,22 @@ const styles = StyleSheet.create({
     marginTop: m.space.md,
   },
   actions: { marginTop: m.space.group, gap: m.space.sm },
+  codeActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: m.space.sm,
+  },
+  countdown: {
+    fontFamily: m.fontMedium,
+    fontSize: m.type.supporting,
+    lineHeight: m.type.supporting * m.lineHeight.body,
+    fontVariant: ['tabular-nums'],
+    marginLeft: 'auto',
+    maxWidth: '100%',
+    textAlign: 'right',
+  },
   help: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,

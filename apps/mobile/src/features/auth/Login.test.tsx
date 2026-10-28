@@ -32,6 +32,8 @@ it('이메일 발송·6자리 자동 제출·오류 후 다시 입력을 처리�
   });
   fireEvent.click(screen.getByRole('button', { name: t('auth.send') }));
   await screen.findByLabelText(t('auth.code.label'));
+  expect(screen.getByRole('heading', { name: '코드를 보냈어요' })).toBeTruthy();
+  expect(screen.getByText('a@example.com')).toBeTruthy();
   expect(screen.queryByText(t('auth.email.help'))).toBeNull();
   expect(sendOtp).toHaveBeenCalledWith(client, 'a@example.com');
   const input = screen.getByLabelText(t('auth.code.label'));
@@ -50,14 +52,16 @@ it('재전송은 60초 이후만 허용하고 다른 이메일에서 돌아와�
   render(<Login client={client} reviewAccountEmail="" />);
   fireEvent.change(screen.getByLabelText(t('auth.email')), { target: { value: 'a@example.com' } });
   await act(async () => fireEvent.click(screen.getByRole('button', { name: t('auth.send') })));
-  const resend = screen.getByRole('button', { name: t('auth.resendCountdown', { seconds: 60 }) });
-  expect(resend.getAttribute('aria-disabled')).toBe('true');
+  expect(screen.getByText('1:00 뒤에 다시 받을 수 있어요')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: t('auth.resend') })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: t('auth.changeEmail') }));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: t('auth.send') })));
   expect(sendOtp).toHaveBeenCalledTimes(1);
   await act(async () => vi.advanceTimersByTime(60000));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: t('auth.resend') })));
   expect(sendOtp).toHaveBeenCalledTimes(2);
+  expect(screen.getByText('1:00 뒤에 다시 받을 수 있어요')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: t('auth.resend') })).toBeNull();
 });
 it('설정된 심사 이메일만 비밀번호를 표시하고 OTP 요청 없이 로그인한다', async () => {
   render(<Login client={client} reviewAccountEmail="review@example.com" />);
