@@ -76,3 +76,23 @@ it('항목 없는 날도 빈 도장을 그리고 다른 달은 상자와 날짜�
   expect(outside.classList.contains('calendar-outside')).toBe(true);
   expect(outside.querySelector('.stamp-empty')).toBeTruthy();
 });
+
+it.each([false, true])('월간/주간(%s) 일부 완료 색을 표시하고 접근성 이름을 유지한다', (weekly) => {
+  render(
+    <CalendarGrid
+      month="2026-09"
+      week={weekly ? { start: '2026-09-13', onChange: () => {} } : undefined}
+      selectedDate="2026-09-17"
+      today="2026-09-17"
+      weekStart={0}
+      summary={new Map([['2026-09-17', { total: 2, remaining: 1 }]])}
+      stampColors={new Map([['2026-09-17', ['#9B5CFF']]])}
+      onSelect={() => {}}
+      onMonthChange={() => {}}
+    />,
+  );
+  const day = screen.getByRole('button', { name: '2026년 9월 17일, 남은 할 일 1개' });
+  expect(screen.getAllByRole('gridcell')).toHaveLength(weekly ? 7 : 42);
+  expect(day.querySelector('.stamp-partial text')?.textContent).toBe('1');
+  expect(day.querySelector<HTMLElement>('.stamp-fill')?.style.background).toBe('rgb(155, 92, 255)');
+});

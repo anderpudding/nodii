@@ -4,6 +4,7 @@ import {
   SPROUT_LEAVES,
   SPROUT_CHECK,
   SPROUT_NUMBER,
+  checkColor,
   stampFill,
   type DaySummary,
 } from '@nodii/core';
@@ -22,21 +23,28 @@ export function CalendarStamp({
 }) {
   const id = useId();
   const complete = !!summary?.total && summary.remaining === 0;
+  const partial = !!summary?.remaining && summary.total > summary.remaining && colors.length > 0;
+  const colored = complete || partial;
   const state = complete
     ? 'complete'
-    : summary?.remaining
-      ? future
-        ? 'future'
-        : 'remaining'
-      : 'empty';
+    : partial
+      ? 'partial'
+      : summary?.remaining
+        ? future
+          ? 'future'
+          : 'remaining'
+        : 'empty';
   const shape = SPROUT_BODY + (complete ? SPROUT_LEAVES : '');
+  const countColor = partial
+    ? (colors.map(checkColor).find((color) => color !== '#FFFFFF') ?? '#FFFFFF')
+    : `var(--color-${future ? 'muted' : today ? 'ink' : 'ink-2'})`;
   return (
     <span aria-hidden="true" className={`calendar-stamp stamp-${state}`}>
       <span
         className="stamp-fill"
         style={{
           background:
-            complete && colors.length
+            colored && colors.length
               ? stampFill(colors)
               : `var(--color-${complete ? 'ink' : state === 'remaining' ? 'box' : 'stamp-soft'})`,
           clipPath: `url(#${id})`,
@@ -48,7 +56,7 @@ export function CalendarStamp({
             <path d={shape} transform="scale(1.25)" />
           </clipPath>
         </defs>
-        {!complete && <path d={SPROUT_BODY} className="stamp-outline" />}
+        {!colored && <path d={SPROUT_BODY} className="stamp-outline" />}
         {complete ? (
           <path d={SPROUT_CHECK} className="stamp-check" />
         ) : (
@@ -56,7 +64,8 @@ export function CalendarStamp({
             <text
               {...SPROUT_NUMBER}
               textAnchor="middle"
-              fill={`var(--color-${future ? 'muted' : today ? 'ink' : 'ink-2'})`}
+              fill={countColor}
+              className={partial && countColor === '#FFFFFF' ? 'stamp-count-shadow' : undefined}
             >
               {summary.remaining}
             </text>

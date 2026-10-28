@@ -30,3 +30,42 @@ it('완료는 목표 색 하드 스톱과 잎·흰 체크를, 나머지는 씨�
   expect(container.querySelector('.stamp-empty text')).toBeNull();
   expect(container.querySelector('clipPath path')?.getAttribute('d')).toBe(SPROUT_BODY);
 });
+
+it.each([
+  { name: '지난날', future: false, today: false },
+  { name: '오늘', future: false, today: true },
+  { name: '앞날', future: true, today: false },
+])('$name 일부 완료는 색 씨앗·흰 숫자만 그리고 잎·체크·대비 외곽선은 생략한다', (date) => {
+  const { container } = render(
+    <CalendarStamp
+      {...date}
+      summary={{ total: 3, remaining: 1 }}
+      colors={['#4F7CFF', '#9B5CFF']}
+    />,
+  );
+  expect(container.querySelector('.stamp-partial')).toBeTruthy();
+  expect(container.querySelector('.stamp-fill')?.getAttribute('style')).toContain(
+    'linear-gradient(135deg',
+  );
+  expect(container.querySelector('clipPath path')?.getAttribute('d')).toBe(SPROUT_BODY);
+  expect(container.querySelector('.stamp-check')).toBeNull();
+  expect(container.querySelector('.stamp-outline')).toBeNull();
+  const count = container.querySelector('text');
+  expect(count?.textContent).toBe('1');
+  expect(count?.getAttribute('fill')).toBe('#FFFFFF');
+  expect(count?.classList.contains('stamp-count-shadow')).toBe(true);
+});
+
+it.each([
+  ['#FFC329'],
+  ['#8BD444'],
+  ['#4F7CFF', '#FFC329'],
+  ['#4F7CFF', '#9B5CFF', '#12A66A', '#FF3D8B', '#FFC329'],
+])('밝은 완료 색이 섞인 일부 완료는 먹색 숫자에 그림자를 두지 않는다 (%s)', (...colors) => {
+  const { container } = render(
+    <CalendarStamp future today={false} summary={{ total: 3, remaining: 2 }} colors={colors} />,
+  );
+  expect(container.querySelector('.stamp-partial')).toBeTruthy();
+  expect(container.querySelector('text')?.getAttribute('fill')).toBe('#111318');
+  expect(container.querySelector('.stamp-count-shadow')).toBeNull();
+});
