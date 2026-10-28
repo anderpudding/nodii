@@ -601,11 +601,11 @@ it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 �
   ).toBe(false);
 });
 
-it('월 제목으로 42칸을 펼치고 이전·다음 달과 VoiceOver로 이동한 뒤 선택하면 접힌다', async () => {
+it('월간은 필요한 35칸을 펼치고 이전·다음 달과 VoiceOver로 이동한 뒤 선택하면 접힌다', async () => {
   await mount();
   fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
   const grid = await screen.findByTestId('month-grid');
-  expect(within(grid).getAllByRole('button')).toHaveLength(42);
+  expect(within(grid).getAllByRole('button')).toHaveLength(35);
   fireEvent(screen.getByTestId('month-grid'), 'accessibilityAction', {
     nativeEvent: { actionName: 'increment' },
   });

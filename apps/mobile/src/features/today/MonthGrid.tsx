@@ -1,9 +1,10 @@
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { StyleSheet, Text, View } from 'react-native';
-import { addDays, monthGridRange, monthKeyOf, type DaySummary, type ISODate } from '@nodii/core';
+import { monthKeyOf, type DaySummary, type ISODate } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { DayCell } from './DayCell';
+import { mobileMonthWeeks } from './calendar-model';
 
 /** CAL-01/MOB-02: 달 밀기는 격자 안에서만 받으며 행 밀기의 responder와 겹치지 않는다. */
 export function MonthGrid({
@@ -26,7 +27,7 @@ export function MonthGrid({
   onMove(direction: -1 | 1): void;
 }) {
   const { colors } = useTheme();
-  const { from } = monthGridRange(month, weekStart);
+  const weeks = mobileMonthWeeks(month, weekStart);
   const pan = Gesture.Pan()
     .activeOffsetX([-m.space.md, m.space.md])
     .failOffsetY([-m.space.sm, m.space.sm])
@@ -50,7 +51,7 @@ export function MonthGrid({
         style={[styles.grid, { backgroundColor: colors.bg, borderBottomColor: colors.line }]}
       >
         <View style={styles.week}>
-          {Array.from({ length: 7 }, (_, i) => addDays(from, i)).map((date, i) => (
+          {weeks[0]!.map((date, i) => (
             <Text
               key={date}
               style={[
@@ -71,9 +72,9 @@ export function MonthGrid({
             </Text>
           ))}
         </View>
-        {Array.from({ length: 6 }, (_, week) => (
-          <View key={week} style={styles.week}>
-            {Array.from({ length: 7 }, (_, day) => addDays(from, week * 7 + day)).map((date) => (
+        {weeks.map((week) => (
+          <View key={week[0]} style={styles.week}>
+            {week.map((date) => (
               <DayCell
                 key={date}
                 date={date}
