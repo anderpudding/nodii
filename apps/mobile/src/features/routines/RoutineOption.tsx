@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: m.height.field,
+    paddingVertical: m.space.sm,
     borderRadius: 0,
     borderBottomWidth: m.border,
   },
