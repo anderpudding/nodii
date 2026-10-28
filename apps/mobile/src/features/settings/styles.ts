@@ -4,7 +4,8 @@ export const settingsStyles = StyleSheet.create({
   group: { gap: m.space.sm },
   card: { borderRadius: m.radius.card, borderWidth: 0, overflow: 'hidden' },
   row: {
-    padding: m.space.lg,
+    paddingHorizontal: m.space.lg,
+    paddingVertical: m.space.sm,
     gap: m.space.sm,
     minHeight: m.height.field,
     borderBottomWidth: m.border,
@@ -26,8 +27,8 @@ export const settingsStyles = StyleSheet.create({
     flexDirection: 'row',
     flexShrink: 1,
     flexWrap: 'wrap',
-    gap: m.space.sm,
-    padding: m.space.xs,
+    gap: 0,
+    padding: 0,
     borderRadius: m.radius.pill,
   },
 });

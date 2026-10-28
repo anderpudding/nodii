@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     padding: m.space.xs,
     borderRadius: m.radius.pill,
   },
-  segment: { flex: 1, borderRadius: m.radius.pill },
+  segment: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', borderRadius: m.radius.pill },
   inline: {
     flexDirection: 'row',
     alignItems: 'center',

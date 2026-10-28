@@ -111,6 +111,7 @@ export function Settings({
                 <RoutineOption
                   key={value}
                   segment
+                  compact
                   label={t(value ? 'settings.monday' : 'settings.sunday')}
                   selected={profile.weekStart === value}
                   disabled={!online || week.isPending}
@@ -129,6 +130,7 @@ export function Settings({
                 <RoutineOption
                   key={value}
                   segment
+                  compact
                   label={t(`settings.theme.${value}`)}
                   selected={preference === value}
                   disabled={themeSaving}
