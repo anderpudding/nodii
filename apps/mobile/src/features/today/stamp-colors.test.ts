@@ -2,8 +2,8 @@ import { expect, it } from 'vitest';
 import { summarizeMonth, type DayRangeInput } from '@nodii/core';
 import { completedStampColors } from './stamp-colors';
 
-it('완료 항목의 목표 정렬 순서만 쓰고 건너뛴 루틴과 미완료 날은 제외한다', () => {
-  const input: DayRangeInput = {
+function stampInput(): DayRangeInput {
+  return {
     from: '2026-09-17',
     to: '2026-09-18',
     timeZone: 'UTC',
@@ -40,8 +40,47 @@ it('완료 항목의 목표 정렬 순서만 쓰고 건너뛴 루틴과 미완�
     ],
     logs: [{ routineId: 'r', date: '2026-09-17', status: 'skipped' }],
   };
+}
+
+it('완료 항목의 목표 정렬 순서만 쓰고 건너뛴 루틴과 완료 없는 날은 제외한다', () => {
+  const input = stampInput();
   const summary = summarizeMonth(input);
   const result = completedStampColors(input, summary);
   expect(result.get('2026-09-17')).toEqual(['#12A66A', '#4F7CFF']);
   expect(result.has('2026-09-18')).toBe(false);
+});
+
+it('일부 끝낸 날은 완료한 할 일의 목표 색만 모은다', () => {
+  const input = stampInput();
+  input.todos = input.todos.map((todo) => (todo.id === 'g' ? { ...todo, isDone: false } : todo));
+  const summary = summarizeMonth(input);
+  expect(summary.get('2026-09-17')).toEqual({ total: 2, remaining: 1 });
+  expect(completedStampColors(input, summary).get('2026-09-17')).toEqual(['#4F7CFF']);
+});
+
+it('할 일이 남아 있어도 완료한 루틴의 목표 색을 모은다', () => {
+  const input = stampInput();
+  input.logs = [...input.logs, { routineId: 'r', date: '2026-09-18', status: 'done' }];
+  const summary = summarizeMonth(input);
+  expect(summary.get('2026-09-18')).toEqual({ total: 2, remaining: 1 });
+  expect(completedStampColors(input, summary).get('2026-09-18')).toEqual(['#9B5CFF']);
+});
+
+it('완료가 없거나 건너뛰기만 있으면 색 맵에 넣지 않는다', () => {
+  const input = stampInput();
+  input.todos = input.todos.map((todo) => ({ ...todo, isDone: false }));
+  expect(completedStampColors(input, summarizeMonth(input)).size).toBe(0);
+  input.todos = [];
+  input.logs = [
+    { routineId: 'r', date: '2026-09-17', status: 'skipped' },
+    { routineId: 'r', date: '2026-09-18', status: 'skipped' },
+  ];
+  expect(completedStampColors(input, summarizeMonth(input)).size).toBe(0);
+});
+
+it('집계에만 날짜가 있어도 빈 목표 색 배열은 넣지 않는다', () => {
+  const input = { ...stampInput(), todos: [], routines: [] };
+  expect(
+    completedStampColors(input, new Map([['2026-09-17', { total: 1, remaining: 0 }]])).size,
+  ).toBe(0);
 });
