@@ -39,12 +39,13 @@ describe('이메일 OTP 로그인 (AUTH-01/07)', () => {
     );
     const { user, client } = setup();
     await receiveCode(user);
+    expect(screen.getByRole('heading', { name: '코드를 보냈어요' })).toBeTruthy();
+    expect(screen.getByText('user@example.com').tagName).toBe('STRONG');
     expect(otp).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'user@example.com', create_user: true }),
     );
-    expect(
-      (screen.getByRole('button', { name: /코드 다시 받기/ }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByText('1:00 뒤에 다시 받을 수 있어요')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '코드 다시 받기' })).toBeNull();
     expect((screen.getByRole('button', { name: '로그인' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
@@ -73,20 +74,11 @@ describe('이메일 OTP 로그인 (AUTH-01/07)', () => {
       vi.setSystemTime(Date.now() + 61000);
     });
     // 실제 interval은 fake timers 전 생성됐으므로 Date를 앞으로 옮긴 뒤 다음 tick을 기다린다.
-    await waitFor(
-      () =>
-        expect(
-          (screen.getByRole('button', { name: /코드 다시 받기/ }) as HTMLButtonElement).disabled,
-        ).toBe(false),
-      { timeout: 2000 },
-    );
+    await screen.findByRole('button', { name: '코드 다시 받기' }, { timeout: 2000 });
     fireEvent.click(screen.getByRole('button', { name: '코드 다시 받기' }));
     await waitFor(() => expect(sent).toHaveBeenCalledTimes(2));
-    await waitFor(() =>
-      expect(
-        (screen.getByRole('button', { name: /코드 다시 받기/ }) as HTMLButtonElement).disabled,
-      ).toBe(true),
-    );
+    await screen.findByText('1:00 뒤에 다시 받을 수 있어요');
+    expect(screen.queryByRole('button', { name: '코드 다시 받기' })).toBeNull();
   });
   it.each([
     ['invalid_code', '코드가 맞지 않아요. 메일의 숫자를 다시 확인해 주세요.'],

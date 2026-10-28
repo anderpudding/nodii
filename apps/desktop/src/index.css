@@ -1759,6 +1759,57 @@ body,
   margin-top: 16px;
 }
 
+.login-screen {
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: calc(48px + 24px);
+}
+
+.login-panel {
+  min-width: 0;
+}
+
+.login-panel .auth-heading .brand {
+  margin-bottom: 24px;
+}
+
+.login-description {
+  color: var(--color-ink-2);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.login-description strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.login-panel .otp-slot {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  min-height: 48px;
+  aspect-ratio: 1;
+}
+
+.login-actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.login-actions .button {
+  padding: 0;
+  color: var(--color-ink-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-countdown {
+  margin-left: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .goal-editor-modal {
   max-width: 440px;
 }
