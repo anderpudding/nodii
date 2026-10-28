@@ -20,6 +20,7 @@ import { t } from '@nodii/i18n';
 import { metrics as m, useReducedMotion, useTheme } from '../../../lib/theme';
 import { ToastPortal } from '../../components/Toast';
 import { Button } from '../../components/Button';
+import { ActionIcon } from '../../components/ActionIcon';
 import { actionLabel, todoActions, type TodoAction } from './actions';
 import { GoalBadge } from './GoalBadge';
 import { submissionTitle } from './model';
@@ -131,6 +132,7 @@ export function TodoMenu({
                 <Button
                   label={t('mobile.add.cancel')}
                   secondary
+                  quiet
                   disabled={saving}
                   onPress={close}
                 />
@@ -139,7 +141,7 @@ export function TodoMenu({
                 </Text>
                 <Button
                   label={t('mobile.rename.save')}
-                  secondary
+                  quiet
                   busy={saving}
                   disabled={!online || saving || locked || !normalizeTitle(draft)}
                   onPress={() => void submit()}
@@ -222,7 +224,7 @@ export function TodoMenu({
                     },
                   ]}
                 >
-                  <ActionGlyph action={id} color={id === 'delete' ? colors.danger : colors.ink} />
+                  <ActionIcon action={id} color={id === 'delete' ? colors.danger : colors.ink} />
                   <View style={{ flex: 1 }}>
                     <Text
                       style={[
@@ -253,7 +255,7 @@ export function TodoMenu({
                   },
                 ]}
               >
-                <Text style={[styles.itemText, { color: colors.ink2 }]}>
+                <Text style={[styles.cancelText, { color: colors.ink }]}>
                   {t('mobile.add.cancel')}
                 </Text>
               </Pressable>
@@ -265,24 +267,6 @@ export function TodoMenu({
     </Modal>
   );
 }
-// 20pt 단색 선 글리프: 외부 아이콘 의존성을 추가하지 않고 동일한 획으로 그린다.
-function ActionGlyph({ action, color }: { action: TodoAction; color: string }) {
-  return (
-    <View accessible={false} style={styles.glyph}>
-      {action === 'toggle' ? (
-        <View style={[styles.tick, { borderColor: color }]} />
-      ) : action === 'rename' ? (
-        <View style={[styles.pencil, { borderColor: color }]} />
-      ) : (
-        <>
-          <View style={[styles.outline, { borderColor: color, borderRadius: m.selectionRing }]} />
-          <View style={[styles.topLine, { backgroundColor: color }]} />
-          {action === 'move' && <View style={[styles.calendarLine, { backgroundColor: color }]} />}
-        </>
-      )}
-    </View>
-  );
-}
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { flex: 1, minHeight: m.height.touch },
@@ -291,6 +275,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: m.radius.sheet,
     paddingHorizontal: m.space.lg,
     flexShrink: 1,
+    boxShadow: '0 -16px 48px rgba(17,19,24,0.16)',
   },
   handleTouch: { minHeight: m.height.touch, alignItems: 'center', justifyContent: 'center' },
   handle: { width: m.handle.width, height: m.handle.height, borderRadius: m.radius.pill },
@@ -313,7 +298,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.xs,
     paddingVertical: m.space.sm,
   },
-  itemText: { fontFamily: m.fontMedium, fontSize: m.type.body },
+  itemText: { fontFamily: m.fontFamily, fontSize: m.type.body },
+  cancelText: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   cancel: {
     minHeight: m.height.button,
     alignItems: 'center',
@@ -333,31 +319,4 @@ const styles = StyleSheet.create({
     fontSize: m.type.body,
   },
   supporting: { fontFamily: m.fontMedium, fontSize: m.type.supporting },
-  glyph: {
-    width: m.glyph.icon,
-    height: m.glyph.icon,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tick: {
-    width: m.space.sm,
-    height: m.space.md,
-    borderRightWidth: m.selectionRing,
-    borderBottomWidth: m.selectionRing,
-    transform: [{ rotate: '45deg' }],
-  },
-  pencil: {
-    width: m.space.sm,
-    height: m.glyph.icon,
-    borderWidth: m.selectionRing,
-    transform: [{ rotate: '45deg' }],
-  },
-  outline: { width: m.space.lg, height: m.space.lg, borderWidth: m.selectionRing },
-  topLine: { position: 'absolute', top: 0, width: m.space.lg, height: m.selectionRing },
-  calendarLine: {
-    position: 'absolute',
-    top: m.space.sm,
-    width: m.space.lg,
-    height: m.selectionRing,
-  },
 });
