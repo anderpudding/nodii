@@ -169,8 +169,9 @@ export function SettingsSheet({
   const [themePending, setThemePending] = useState(false);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [appVersion, setAppVersion] = useState(
-    isTauri() ? t('settings.version.checking') : version,
+  // 언어 전환 때 조회 상태 문구가 이전 언어로 남지 않도록 값과 상태만 보관한다.
+  const [appVersion, setAppVersion] = useState<string | null | undefined>(
+    isTauri() ? undefined : version,
   );
   const online = useConnectivity();
   const goals = useGoals(client);
@@ -180,7 +181,7 @@ export function SettingsSheet({
     if (isTauri())
       void getVersion()
         .then(setAppVersion)
-        .catch(() => setAppVersion(t('settings.version.failed')));
+        .catch(() => setAppVersion(null));
   }, []);
   if (deleting)
     return (
@@ -390,7 +391,13 @@ export function SettingsSheet({
               ))}
               <div className="settings-card-row">
                 <span>{t('settings.version')}</span>
-                <span className="settings-value version-details">{appVersion}</span>
+                <span className="settings-value version-details">
+                  {appVersion === undefined
+                    ? t('settings.version.checking')
+                    : appVersion === null
+                      ? t('settings.version.failed')
+                      : appVersion}
+                </span>
               </div>
             </div>
           </section>

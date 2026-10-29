@@ -1865,3 +1865,60 @@ body,
 .day-navigation .button {
   font-size: 20px;
 }
+
+/* I3: 영어 확장 문구만 줄바꿈해 한국어의 기존 배치를 보존한다 (SET-06). */
+html[lang='en'] .goal-sheet-header {
+  flex-wrap: wrap;
+}
+html[lang='en'] .goal-header-actions {
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+html[lang='en'] .goal-destructive > div,
+html[lang='en'] .archive-description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 759px) {
+  html[lang='en'] .goal-manager-row {
+    flex-wrap: wrap;
+  }
+  html[lang='en'] .goal-row-main {
+    flex-basis: 100%;
+  }
+  html[lang='en'] .goal-row-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* 보관함의 세 열도 확장된 제목과 뒤로 버튼이 서로 겹치지 않게 한다. */
+html[lang='en'] .archive-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+html[lang='en'] .goal-delete-modal p {
+  overflow-wrap: anywhere;
+}
+
+/* 규칙 요약은 sentence case, 세그먼트의 보이는 이름만 Title Case로 표시한다. */
+html[lang='en'] .routine-segments .button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
+  text-transform: capitalize;
+}
+html[lang='en'] .routine-scope-day > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+html[lang='en'] .settings-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html[lang='en'] .settings-header > [aria-hidden='true'] {
+  display: none;
+}

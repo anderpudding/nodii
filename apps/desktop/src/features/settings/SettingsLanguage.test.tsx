@@ -72,7 +72,13 @@ it('App에서 재구독해 날짜·요일·언어 줄을 바꾸고 열린 시트
   expect(screen.getByRole('heading', { name: 'Wed, October 28' })).toBeTruthy();
   expect(screen.getByRole('columnheader', { name: 'Wed' })).toBeTruthy();
   expect(screen.getByRole('radiogroup', { name: 'Language' })).toBeTruthy();
-  expect(screen.getByRole('radio', { name: 'System' })).toBeTruthy();
+  expect(
+    within(screen.getByRole('radiogroup', { name: 'Language' })).getByRole('radio', {
+      name: 'System',
+    }),
+  ).toBeTruthy();
+  expect(within(sheet).getByRole('heading', { name: 'Settings' })).toBeTruthy();
+  expect(sheet.textContent?.replace('한국어', '')).not.toMatch(/[가-힣]/);
   expect(screen.getByRole('dialog')).toBe(sheet);
   expect(document.activeElement).toBe(english);
   await waitFor(() => expect(english.hasAttribute('disabled')).toBe(false));

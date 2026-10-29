@@ -46,10 +46,20 @@ async function authenticate<T extends { error: unknown }>(request: () => Promise
   }
 }
 
-/** AUTH-01: 가입 여부와 관계없이 같은 OTP 흐름을 사용한다. */
-export async function sendOtp(client: NodiiClient, email: string): Promise<void> {
+/** AUTH-01/04: 신규 계정의 기본 목표에만 가입 시 언어를 전달하고 기존 두 인자 호출도 유지한다. */
+export async function sendOtp(
+  client: NodiiClient,
+  email: string,
+  signupLocale?: 'ko' | 'en',
+): Promise<void> {
   await authenticate(() =>
-    client.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } }),
+    client.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: true,
+        ...(signupLocale === undefined ? {} : { data: { signup_locale: signupLocale } }),
+      },
+    }),
   );
 }
 
