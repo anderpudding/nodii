@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { BrandMark } from '../../components/ui/brand-mark';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
@@ -57,7 +58,7 @@ export function Login({
     event.preventDefault();
     if (busy.current) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setError('이메일 주소를 다시 확인해 주세요.');
+      setError(t('auth.email.invalid'));
       return;
     }
     if (!review && remaining > 0) {
@@ -120,6 +121,7 @@ export function Login({
     }
   }
 
+  const [codePrefix, codeSuffix] = t('auth.code.description').split('{email}');
   return (
     <main className="center-screen login-screen">
       <section className="auth-panel login-panel" aria-labelledby="login-title">
@@ -127,15 +129,16 @@ export function Login({
           <p className="brand">
             <BrandMark />
           </p>
-          <h1 id="login-title">{codeEmail ? '코드를 보냈어요' : 'Nodii 시작하기'}</h1>
+          <h1 id="login-title">{codeEmail ? t('auth.code.title') : t('auth.title')}</h1>
           <p className="login-description">
             {codeEmail ? (
               <>
-                <strong className="email-address">{codeEmail}</strong>으로 보낸 6자리 코드를 입력해
-                주세요. 메일이 안 보이면 스팸함도 확인해 주세요.
+                {codePrefix}
+                <strong className="email-address">{codeEmail}</strong>
+                {codeSuffix}
               </>
             ) : (
-              '이메일로 받은 6자리 코드로 로그인해요. 처음이면 가입도 함께 돼요.'
+              t('auth.description')
             )}
           </p>
         </header>
@@ -147,7 +150,7 @@ export function Login({
             aria-busy={pending}
           >
             <div className="field-group">
-              <label htmlFor="email">이메일</label>
+              <label htmlFor="email">{t('auth.email')}</label>
               <Input
                 id="email"
                 type="email"
@@ -167,7 +170,7 @@ export function Login({
             </div>
             {review && (
               <div className="field-group">
-                <label htmlFor="password">비밀번호</label>
+                <label htmlFor="password">{t('auth.password')}</label>
                 <Input
                   id="password"
                   type="password"
@@ -188,7 +191,13 @@ export function Login({
               size="auth"
               disabled={pending || !email.trim() || (review && !password)}
             >
-              {pending ? (review ? '로그인 중…' : '보내는 중…') : review ? '로그인' : '코드 받기'}
+              {pending
+                ? review
+                  ? t('auth.loggingIn')
+                  : t('auth.sending')
+                : review
+                  ? t('auth.login')
+                  : t('auth.send')}
             </Button>
           </form>
         ) : (
@@ -202,12 +211,12 @@ export function Login({
           >
             <div className="field-group">
               <label htmlFor="otp" className="sr-only">
-                인증 코드
+                {t('auth.code')}
               </label>
               <InputOTP
                 id="otp"
                 ref={tokenInput}
-                aria-label="6자리 인증 코드"
+                aria-label={t('auth.code.label')}
                 autoFocus
                 maxLength={6}
                 pattern={REGEXP_ONLY_DIGITS}
@@ -231,7 +240,7 @@ export function Login({
               </p>
             )}
             <Button type="submit" size="auth" disabled={pending || token.length !== 6}>
-              {pending ? '확인하는 중…' : '로그인'}
+              {pending ? t('auth.verifying') : t('auth.login')}
             </Button>
             <div className="auth-actions login-actions">
               <Button
@@ -243,26 +252,24 @@ export function Login({
                   setError('');
                 }}
               >
-                다른 이메일로
+                {t('auth.changeEmail')}
               </Button>
               {remaining > 0 ? (
                 <p className="supporting login-countdown">
-                  {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} 뒤에 다시
-                  받을 수 있어요
+                  {t('auth.resendCountdown', {
+                    minutes: Math.floor(remaining / 60),
+                    seconds: String(remaining % 60).padStart(2, '0'),
+                  })}
                 </p>
               ) : (
                 <Button variant="ghost" disabled={pending} onClick={() => void resend()}>
-                  코드 다시 받기
+                  {t('auth.resend')}
                 </Button>
               )}
             </div>
           </form>
         )}
-        {!codeEmail && !review && (
-          <p className="supporting login-help">
-            코드는 10분 동안 쓸 수 있어요. 메일이 안 보이면 스팸함도 확인해 주세요.
-          </p>
-        )}
+        {!codeEmail && !review && <p className="supporting login-help">{t('auth.email.help')}</p>}
       </section>
     </main>
   );
