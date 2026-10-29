@@ -48,14 +48,15 @@
 | 루틴 | routine | 관리 화면은 `Manage Routines` |
 | 보관 / 보관 해제 / 보관한 목표 | Archive / Unarchive / Archived Goals | 기록을 지우는 삭제와 구별 |
 | 건너뛰기 / 이날은 건너뛰기 | Skip / Skip This Day | 오늘만은 `Skip Today` |
-| 그만하기 | Stop | 오늘부터는 `Stop from Today` |
+| 그만하기 | Stop | 오늘부터는 `Stop as of Today` |
 | 옮기기 / 날짜 옮기기 | Move / Move to Another Day | `Move to Tomorrow` / `Move to Today` |
-| 가져오기 (지난 미완료) | Bring Over | 메뉴는 `Bring Over 3 Unfinished Todos`, 설명에서는 `Bring over …` |
+| 가져오기 (지난 미완료) | Bring Over | 메뉴는 `Bring Over 3 Unfinished Todos to Today`, 설명에서는 `Bring over …` |
 | 미완료 | unfinished | |
 | 완료 / 끝냄 | done | 체크 상태. 동작은 `Mark as Done` / `Mark as Unfinished` |
 | 완료 기록 | completion records | 체크 상태 이름과 기록을 구별 |
 | 기록 | records | 캘린더에 표시되는 항목은 문맥에 따라 entries |
-| 끝난 루틴 | ended routines | 완료 체크와 혼동하지 않게 종료를 뜻함 |
+| 끝난 루틴 | past routines | 진행 중인 active routines와 대비되는 이전 루틴 |
+| 예정 (루틴 미리보기) | Due | 오늘 또는 앞으로 예정된 반복 |
 | 오늘 / 내일 / 다음 주 | Today / Tomorrow / Next Week | |
 | 실행 취소 | Undo | |
 | 인증 코드 | code / 6-digit code | 로그인은 `Log In`, 로그아웃은 `Log Out` |

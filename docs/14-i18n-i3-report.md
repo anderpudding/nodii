@@ -38,7 +38,8 @@
 | 목표 관리 / 루틴 관리 | Manage Goals / Manage Routines | 동작을 드러내는 관리 화면 이름 |
 | 완료하기 / 완료 취소 | Mark as Done / Mark as Unfinished | 확인 창의 Done과 체크 동작을 구분 |
 | 완료 기록 | completion records | 상태 이름 done과 기록 명사를 구분 |
-| 끝난 루틴 | ended routines | 완료 체크가 아니라 종료된 반복임을 표현 |
+| 끝난 루틴 | past routines | 현재 진행 중인 active routines와 대비되는 이전 루틴 |
+| 예정 (루틴 미리보기) | Due | 오늘 또는 앞으로 예정된 반복, 좁은 셀에서도 단어 분절 방지 |
 | 순서 바꾸기 | Reorder | 드래그·키보드 순서 변경에 공통 사용 |
 | 이름 수정 / 일반 수정 | Rename / Edit | 할 일 제목 변경과 일반 편집의 문맥 차이 |
 | 날짜 선택 | Choose Date | 달력에서 날짜를 고르는 동작 |
@@ -46,23 +47,25 @@
 | 자동 | Automatic | 기존 모바일 원문의 “시스템”과 구분 |
 | 다시 확인 | Check Again | 다시 시도 Try Again과 원문 차이 유지 |
 
-## 검수 필요
+## 검수 필요 (후속 재검토 반영)
 
-다음은 선택한 번역을 구현에 반영했지만 사람이 자연스러움·의미를 확인할 후보입니다. 모바일 실제 화면은 I5에서 확인합니다.
+2026-10-29 후속 검토에서 아래 11항목의 사용처를 다시 확인했습니다. **7항목을 수정하고 4항목은 유지**했습니다. 연결된 단수형·설명·토스트까지 영어 28키를 다듬었습니다. 한국어 카탈로그·기존 테스트의 한국어 기대값·동작·레이아웃은 변경하지 않았습니다. 아래 표는 현재 반영된 문구와 판단 근거입니다. 실제 iOS 화면·VoiceOver 검수는 I5에 남습니다.
 
-| 키 | 한국어 | 영어 | 고민한 점 |
+| 키 | 한국어 | 현재 영어 | 재검토 결과 |
 | --- | --- | --- | --- |
-| `auth.title` | Nodii 시작하기 | Get Started with Nodii | 신규 가입과 기존 로그인 모두 포함하는 제목의 자연스러움 |
-| `day.menu.import` | 지난 미완료 할 일 {count}개 가져오기 | Bring Over {count} Unfinished Todos | 용어집의 Bring Over를 따름. “지난”이라는 범위가 첫 사용에 충분히 이해되는지 |
-| `routine.endToday` | 오늘부터 그만하기 | Stop from Today | 오늘도 표시에서 제외하는 종료를 짧게 전달하는지 |
-| `routine.scope.title` | 반복 규칙을 바꿨어요. 어디부터 적용할까요? | Where Should the New Repeat Rule Apply? | 변경 사실을 new rule로 압축한 대화상자 제목 |
-| `routine.scope.all` | 과거 날짜까지 모두 | All Dates, Including the Past | 짧은 대안보다 과거 포함 의미를 우선했음 |
-| `routine.partialSplit.retry` | 규칙은 바뀌었지만 종료일을 저장하지 못했어요. 다시 시도로 종료일만 저장할 수 있어요. | The rule has changed, but we couldn't save the end date. Try again to save only the end date. | 부분 성공의 의미와 재시도 범위가 분명한지 |
-| `routine.ended` | 끝난 루틴 {count}개 | {count} ended routines | stopped보다 end date 종료까지 포괄하는 ended를 선택 |
-| `routine.scope.legend` | 끝냄: 완료 기록 · 기록 없음: 지난 미완료 · 예정: 앞으로 할 루틴 | Done: completion record · No record: past unfinished routine · Planned: upcoming routine | 짧은 범례에서 past unfinished routine 표현의 이해도 |
-| `goal.reorder.position` | {position}번째로 옮기기 · {name} | Move to position {position} · {name} | 모바일 숫자 순서 접근성 안내를 서수 대신 position으로 표현 |
-| `mobile.guide.hold` | 줄을 길게 눌러 보세요 | Touch and hold a row | 모바일 제스처 용어·톤은 실제 iOS에서 검수 필요 |
-| `mobile.spike.core` | 공유 코드 · {date} · 반복 {occurs} | Shared code · {date} · Repeat {occurs} | 현재 사용처 없는 M0 진단 문구, 표시/숨김은 Visible/Hidden으로 번역 |
+| `auth.title` | Nodii 시작하기 | Get Started with Nodii | 유지. 처음 쓰는 사람과 기존 사용자의 진입을 모두 포괄하는 일반적인 제목. 설명에서는 첫 로그인 시 계정이 생성된다는 점을 명확하게 수정 |
+| `day.menu.import` | 지난 미완료 할 일 {count}개 가져오기 | Bring Over {count} Unfinished Todos to Today | 수정. Bring Over 용어를 유지하면서 목적지가 오늘이라는 점을 명시. 단수 키도 함께 수정 |
+| `routine.endToday` | 오늘부터 그만하기 | Stop as of Today | 수정. Stop from Today의 어색한 전치사 조합을 교체. 설명·제목·토스트에서도 오늘부터 표시가 멈추고 과거 기록이 남는다는 범위를 일관되게 표현 |
+| `routine.scope.title` | 반복 규칙을 바꿨어요. 어디부터 적용할까요? | When Should the New Rule Take Effect? | 수정. 위치를 묻는 Where 대신 적용 시작 시점을 묻는 When으로 변경 |
+| `routine.scope.all` | 과거 날짜까지 모두 | All Dates, Including the Past | 유지. 과거도 바뀐다는 정보를 명시하며, 짧게 줄이면 적용 범위가 모호해짐 |
+| `routine.partialSplit.retry` | 규칙은 바뀌었지만 종료일을 저장하지 못했어요. 다시 시도로 종료일만 저장할 수 있어요. | The new rule was applied, but the end date wasn't saved. Try again to save just the end date. | 수정. 규칙 적용 성공·종료일 저장 실패·재시도 범위를 세 부분으로 명확하게 전달. 모바일의 partialSplit도 같은 표현 사용 |
+| `routine.ended` | 끝난 루틴 {count}개 | {count} past routines | 수정. ended routines의 직역을 active/past 구분으로 변경. 단수·데스크톱 구역 제목도 일치시킴 |
+| `routine.scope.legend` | 끝냄: 완료 기록 · 기록 없음: 지난 미완료 · 예정: 앞으로 할 루틴 | Done: marked as done · No record: unfinished on a past day · Due: scheduled for today or later | 수정. past unfinished routine을 평이하게 풀고 데스크톱 미리보기에서 오늘도 예정에 포함되는 동작을 반영. 예정 상태 이름은 좁은 셀에도 읽기 쉬운 Due로 통일 |
+| `goal.reorder.position` | {position}번째로 옮기기 · {name} | Move to position {position} · {name} | 유지. position 뒤의 숫자로 위치가 명확하며 서수 접미사 없이도 자연스러운 접근성 안내 |
+| `mobile.guide.hold` | 줄을 길게 눌러 보세요 | Touch and hold a row | 유지. 길게 누르는 제스처를 정확히 설명. 실제 iOS 글자 크기·VoiceOver는 I5에서 확인 |
+| `mobile.spike.core` | 공유 코드 · {date} · 반복 {occurs} | Shared code · {date} · Routine occurrence: {occurs} | 수정. Repeat Visible/Hidden이라는 모호한 조합을 날짜별 루틴 표시 여부를 나타내는 진단 라벨로 변경. 현재 사용처 없는 M0 진단 키 |
+
+추가로 로그인 설명의 “you'll sign up too”는 **“we'll create an account for you”**로, 만료 코드 설명의 “expired (10 minutes)”는 **“expired after 10 minutes”**로 바꿨습니다. 루틴의 지난 기록 보존·말일 대체·보관 목표의 영향·완료/건너뛰기 기록 삭제 설명도 자연스럽게 다듬었습니다. `routine.until`은 실제 `endDate`가 **마지막 표시일**이므로 **Last day: {date}**로 표시합니다. `routine.unskipped`는 종료된 루틴을 재개한다는 오해를 주던 Resumed 대신 **Undid skip for '{title}'**로 바꿨습니다.
 
 ## 레이아웃 수정 목록
 
@@ -166,3 +169,12 @@ Vite 프로덕션 빌드에서는 DEV가 false이므로 플래그가 1이어도 
 - 원문에 있는 “자동”은 Automatic, “시스템”은 System으로 구분했습니다. 요약과 세그먼트가 공유하는 `routine.daily`는 지시서의 **Every day**를 유지하고 세그먼트의 시각적 Title Case만 CSS로 적용했습니다.
 - 한국어 화면 보존을 위해 레이아웃 보강을 영어에만 제한했습니다. OS 네이티브 date 입력까지 앱 설정 언어를 강제할 필요가 있다면 실제 WKWebView 확인 후 별도 결정이 필요합니다. 이번 단계에서 새 날짜 선택 컴포넌트나 플러그인은 도입하지 않았습니다.
 - 새 의존성·토큰·HEX·폰트·DB 변경은 없습니다. I2에서 남긴 OS 언어 감지/서명 빌드 수동 확인을 이번 브라우저 검사로 완료 처리하지 않았습니다.
+
+## 후속 영어 문구 재검토 검증 (2026-10-29)
+
+- SET-06·ROUT-09/10: 검수 표 11항목과 연결 문구를 재검토해 **28개 영어 값** 수정. 기본/복수형 키 집합·자리표시자·한국어 조사 제외 규칙·원문의 따옴표와 문장 끝 문장부호는 유지했습니다.
+- `auth.title`, `routine.scope.all`, `goal.reorder.position`, `mobile.guide.hold`는 문맥에 맞아 유지했습니다. 용어집의 오늘부터 종료와 끝난 루틴을 각각 **Stop as of Today**, **past routines**로 갱신했습니다.
+- 후속 작업 기준 `f2642de` 대비 `catalog.ko.ts` 및 모든 기존 테스트 파일 변경 **0개**. 새 의존성·UI/모바일/API/DB 코드 변경 없음. 번역만 바뀌므로 기존 검사로 검증하고 문구 자체를 반복하는 테스트는 추가하지 않았습니다.
+- `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과: 기존과 같은 **674개**(core167·i18n33·api80·desktop152·mobile Vitest137/RNTL105). 키 순서·자리표시자·문장 끝 문장부호 보존도 후속 기준과 비교했습니다.
+- Chrome/Playwright 모의 데이터로 로그인·가져오기 메뉴·루틴 목록/종료·말일 안내·적용 범위 상단/하단을 **1120×740 / 400×740, 영어/pseudo 총 28캡처**로 재확인했습니다. 첫 검사에서 종료 설명의 pseudo 패딩이 400px 폭을 넘어서, CSS 변경 없이 문장을 줄였습니다. 예정 상태 Planned도 Due로 줄여 일반 영어의 셀 단어 분절을 없앴습니다. 최종 검사 오류·가로 넘침 **0건**, 스크린샷으로 줄바꿈도 확인했습니다. 스크린샷·임시 검증 스크립트는 커밋하지 않았습니다.
+- 새로 필요한 제품 결정은 없습니다. 실제 Tauri 메뉴/OS 날짜 입력, iOS·VoiceOver와 영어 문구 사람 검수는 기존 수동 확인 범위를 유지합니다. 이번 후속에서 DB 검증(DB 변경 없음)·서명 빌드·웹 프로덕션 재빌드·iOS export·원격 CI는 실행하지 않았습니다. 새 의존성은 없습니다.
