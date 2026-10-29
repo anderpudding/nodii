@@ -1,4 +1,4 @@
-import { t } from '@nodii/i18n';
+import { getLocale, t } from '@nodii/i18n';
 import { BrandMark } from '../../components/ui/brand-mark';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
@@ -72,7 +72,7 @@ export function Login({
     try {
       if (review) await signInReviewAccount(client, normalizedEmail, password);
       else {
-        await sendOtp(client, normalizedEmail);
+        await sendOtp(client, normalizedEmail, getLocale());
         startCooldown(normalizedEmail);
         setCodeEmail(normalizedEmail);
       }
@@ -109,7 +109,7 @@ export function Login({
     setPending(true);
     setError('');
     try {
-      await sendOtp(client, codeEmail);
+      await sendOtp(client, codeEmail, getLocale());
       startCooldown(codeEmail);
       setToken('');
     } catch (failure) {
