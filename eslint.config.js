@@ -35,6 +35,23 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   {
+    files: ['apps/desktop/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.*', 'apps/desktop/src/test/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'warn',
+        ...[
+          'Literal[value=/[가-힣]/]',
+          'TemplateElement[value.raw=/[가-힣]/]',
+          'JSXText[value=/[가-힣]/]',
+        ].map((selector) => ({
+          selector,
+          message: 'UI 문구는 @nodii/i18n 카탈로그에 넣고 t()로 쓰세요 (docs/14-i18n-plan.md)',
+        })),
+      ],
+    },
+  },
+  {
     files: ['**/*.config.{js,ts}', 'scripts/**/*.js'],
     languageOptions: { globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
