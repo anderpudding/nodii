@@ -3,6 +3,13 @@
 <!-- Tauri가 생성하는 Info.plist에 합쳐진다. HTTPS만 사용하므로 암호화 수출 규정 해당 없음 (NFR-13) -->
 <plist version="1.0">
 <dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>ko</string>
+  </array>
   <key>ITSAppUsesNonExemptEncryption</key>
   <false/>
 </dict>
