@@ -60,9 +60,9 @@ Codex에 한 단계씩 넘긴다. 각 단계는 `pnpm typecheck && pnpm test`가
 | 단계 | 내용 | 완료 기준 | 기간(주 15~20h) |
 |---|---|---|---|
 | **I1** 데스크톱 문구 추출 | 데스크톱 61개 파일의 리터럴을 카탈로그 키로 옮기고 `t()`로 교체. 모바일과 같은 뜻의 문구는 키 공유(`common.*`, `goal.*` 등), 데스크톱 전용은 `desktop.*` 접두사 대신 기능 접두사 유지. 접근성 라벨·툴팁·토스트·빈 상태·오류 문구 포함 | 테스트 제외 데스크톱 `src`에서 한글 리터럴 검색 결과 0 (주석 제외). 화면 변화 없음 | ~1주 |
-| **I2** 로케일 인프라 | `Locale = 'ko' \| 'en'`, `LocaleProvider`/`useLocale`, `t(key, params, locale)`, 복수형 `_one/_other`, `formatDate`·`formatMonth`·`formatWeekday` 헬퍼를 `@nodii/i18n`에 추가. `'ko-KR'` 고정 3곳 교체, `<html lang>` 동기화, 설정 화면에 언어 선택(System/한국어/English) | 언어를 바꾸면 즉시 전체 UI·날짜가 바뀐다(영어 칸은 임시로 키 그대로 노출돼도 됨) | ~1주 |
+| **I2** 로케일 인프라 | `@nodii/i18n`에 `Locale`·`resolveLocale`·로케일 저장소, 영어→한국어 대체, 복수형 `_one/_other`(`t()` 시그니처 유지), `formatISODate`·`weekdayName`. 데스크톱 `'ko-KR'` 고정 3곳 교체, 언어 설정(시스템/한국어/English, 기기 저장)과 실행 중 전환(`App`에서 `useLocale` 구독, 메뉴 재설치), `<html lang>` 동기화, `Info.plist` 언어 선언(I4에서 앞당김). 지시서: `docs/codex/stage-i2-locale-infra.md` | 언어를 바꾸면 재시작 없이 날짜·요일·메뉴·언어 설정이 바뀐다(나머지 영어는 I3, I2 단독 출시 안 함) | ~1주 |
 | **I3** 영어 카탈로그 | `catalog.en.ts` 작성 (`satisfies Record<MessageKey, string>`), 용어집 적용, 복수형 키 채우기. 개발용 **pseudo 로케일**로 잘림·넘침 점검 후 레이아웃 수정 | 영어로 전 화면 순회 시 잘림·한국어 잔존 없음 | ~1주 |
-| **I4** 출시 준비 (macOS) | `Info.plist`에 `CFBundleLocalizations`(en, ko)·`CFBundleDevelopmentRegion`(en) 추가, 메뉴바 영어 확인. App Store Connect에 English 메타데이터·스크린샷 추가, **기본 언어를 English로 변경** 검토. 인증 메일 병기. 지원/개인정보 페이지는 이미 영어 | 스토어 페이지 "Languages"에 English·Korean 표시, 영어 OS에서 첫 실행부터 영어 | ~0.5주 + 심사 |
+| **I4** 출시 준비 (macOS) | `Info.plist` 언어 선언(I2에서 추가)이 스토어 빌드에 들어갔는지·메뉴바 영어 확인. App Store Connect에 English 메타데이터·스크린샷 추가, **기본 언어를 English로 변경** 검토. 인증 메일 병기. 지원/개인정보 페이지는 이미 영어 | 스토어 페이지 "Languages"에 English·Korean 표시, 영어 OS에서 첫 실행부터 영어 | ~0.5주 + 심사 |
 | **I5** iOS 반영 | 모바일 `'ko-KR'` 고정 8곳 교체, `expo-localization`으로 OS 언어, 모바일 전용 문구 영어화, iOS `Info.plist`의 권한 문구 현지화(있다면), App Store Connect iOS 메타데이터 | iOS도 영어로 전 화면 순회 OK | ~1주 |
 
 ## 6. 테스트
