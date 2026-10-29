@@ -328,18 +328,11 @@ export const ko = {
   // date
   'date.tomorrow': '내일',
   'date.nextWeek': '다음 주',
-  'date.weekday.short.0': '일',
-  'date.weekday.short.1': '월',
-  'date.weekday.short.2': '화',
-  'date.weekday.short.3': '수',
-  'date.weekday.short.4': '목',
-  'date.weekday.short.5': '금',
-  'date.weekday.short.6': '토',
 
   // routine
   'routine.partialSplit':
     '새 규칙은 적용됐지만 종료일을 저장하지 못했어요. 다시 시도하면 종료일만 저장해요.',
-  'routine.weekday.label': '{day}요일',
+  'routine.weekday.label': '{day}',
   'routine.manage': '루틴 관리',
   'routine.create': '루틴 만들기',
   'routine.edit': '루틴 편집',

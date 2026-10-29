@@ -1,4 +1,4 @@
-import { t } from '@nodii/i18n';
+import { formatISODate, t } from '@nodii/i18n';
 import { weekdayShort } from '../../lib/weekday';
 import { useId, useRef, useState } from 'react';
 import { addDays, monthGridRange, monthKeyOf, weekdayOf, type DaySummary } from '@nodii/core';
@@ -11,9 +11,7 @@ export function formatCalendarDate(
   date: string,
   options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' },
 ) {
-  return new Intl.DateTimeFormat('ko-KR', { ...options, timeZone: 'UTC' }).format(
-    new Date(`${date}T00:00:00Z`),
-  );
+  return formatISODate(date, options);
 }
 interface CalendarProps {
   month: string;

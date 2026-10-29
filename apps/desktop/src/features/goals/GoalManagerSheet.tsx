@@ -1,4 +1,4 @@
-import { t } from '@nodii/i18n';
+import { getLocale, intlLocale, t } from '@nodii/i18n';
 import { useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
 import { compareSortKey, keyBetween, lastSortKey } from '@nodii/core';
@@ -102,7 +102,7 @@ function ArchivedGoalRow({
 }) {
   const archive = useArchiveGoal(client, goal.id, { onError: notifyError });
   const archivedDate = goal.archivedAt
-    ? new Intl.DateTimeFormat('ko-KR', {
+    ? new Intl.DateTimeFormat(intlLocale(getLocale()), {
         month: 'long',
         day: 'numeric',
         timeZone: 'UTC',
