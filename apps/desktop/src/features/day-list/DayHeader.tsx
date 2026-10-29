@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, type ReactNode } from 'react';
 import { addDays } from '@nodii/core';
 import { Button } from '../../components/ui/button';
@@ -49,27 +50,24 @@ export function DayHeader({
   return (
     <header className="day-header">
       <div>
-        <h1>
-          {label}
-          {selectedDate === today ? ' · 오늘' : ''}
-        </h1>
+        <h1>{selectedDate === today ? t('day.heading.today', { date: label }) : label}</h1>
         <p className="supporting">
           {total
-            ? `${selectedDate === today ? '오늘, ' : ''}${total}개 중 ${done}개 끝냄`
-            : '할 일 없음'}
+            ? t(selectedDate === today ? 'day.summary.today' : 'day.summary', { total, done })
+            : t('day.empty')}
         </p>
       </div>
       <div className="day-navigation">
         <Button
           variant="ghost"
-          aria-label="이전 날"
+          aria-label={t('day.previous')}
           onClick={() => selectDate(addDays(selectedDate, -1))}
         >
           ‹
         </Button>
         <Button
           variant="ghost"
-          aria-label="다음 날"
+          aria-label={t('day.next')}
           onClick={() => selectDate(addDays(selectedDate, 1))}
         >
           ›

@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useIsMutating } from '@tanstack/react-query';
 import { SortableList } from '../../components/ui/sortable-list';
 import { reorderedKey } from '../../lib/reorder';
@@ -104,7 +105,7 @@ export function DayList({
                     );
                     if (sortKey) reorder.mutate({ todo, sortKey });
                   } catch {
-                    toast.error('순서를 바꾸지 못했어요. 목록을 새로 열고 다시 시도해 주세요.');
+                    toast.error(t('common.reorder.failed'));
                   }
                 }}
               >

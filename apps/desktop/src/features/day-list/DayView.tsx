@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useMemo } from 'react';
 import { buildDay, monthKeyOf, type Profile } from '@nodii/core';
 import {
@@ -16,7 +17,7 @@ import { DayMenu } from './DayMenu';
 /** 조회 중에도 목록의 자리를 유지해 빈 창을 보여주지 않는다. */
 export function DaySkeleton() {
   return (
-    <div role="status" aria-label="하루 목록 불러오는 중" className="day-skeleton">
+    <div role="status" aria-label={t('day.loading')} className="day-skeleton">
       <div />
       <div />
       <div />
@@ -64,10 +65,10 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
           />
         }
       />
-      <div className="day-list-scroll" tabIndex={0} role="region" aria-label="목표별 할 일 목록">
+      <div className="day-list-scroll" tabIndex={0} role="region" aria-label={t('day.list')}>
         {(goals.isError && !goals.data) || (todos.isError && !todos.data) ? (
           <div className="day-empty">
-            <p role="alert">하루 목록을 불러오지 못했어요.</p>
+            <p role="alert">{t('day.failed')}</p>
             <Button
               variant="outline"
               onClick={() => {
@@ -75,7 +76,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
                 void todos.refetch();
               }}
             >
-              다시 시도
+              {t('common.tryAgain')}
             </Button>
           </div>
         ) : !goals.data || !todos.data ? (
@@ -85,7 +86,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
             {(routines.isError || logs.isError) && (
               <div className="day-empty">
                 <p role="alert" className="supporting">
-                  루틴 기록을 불러오지 못했어요.
+                  {t('day.logs.failed')}
                 </p>
                 <Button
                   variant="ghost"
@@ -94,7 +95,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
                     void logs.refetch();
                   }}
                 >
-                  다시 시도
+                  {t('common.tryAgain')}
                 </Button>
               </div>
             )}

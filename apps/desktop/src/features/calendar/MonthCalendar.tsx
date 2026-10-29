@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { monthGridRange, monthKeyOf, summarizeMonth, type Profile } from '@nodii/core';
 import {
@@ -58,7 +59,7 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
     logs.data,
   ]);
   return (
-    <section className="sidebar-calendar" aria-label="월간 캘린더">
+    <section className="sidebar-calendar" aria-label={t('calendar.month')}>
       <CalendarGrid
         month={month}
         selectedDate={selectedDate}
@@ -72,7 +73,7 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
       {todos.isError || goals.isError || routines.isError || logs.isError ? (
         <div>
           <p role="alert" className="supporting">
-            캘린더를 불러오지 못했어요.
+            {t('calendar.failed')}
           </p>
           <Button
             variant="ghost"
@@ -83,12 +84,12 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
               void logs.refetch();
             }}
           >
-            다시 시도
+            {t('common.tryAgain')}
           </Button>
         </div>
       ) : todos.isPending ? (
         <p role="status" className="supporting">
-          캘린더를 불러오고 있어요.
+          {t('calendar.loading')}
         </p>
       ) : null}
     </section>
