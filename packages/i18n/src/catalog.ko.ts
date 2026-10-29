@@ -340,6 +340,30 @@ export const ko = {
   'app.update.title': '새 버전이 필요해요',
   'app.update.data': '기록한 데이터는 그대로 유지돼요.',
   'app.update.pending': 'App Store 링크를 준비하고 있어요.',
+
+  // menu
+  'menu.about': 'Nodii 정보',
+  'menu.settings': '설정…',
+  'menu.services': '서비스',
+  'menu.hide': 'Nodii 가리기',
+  'menu.hideOthers': '기타 가리기',
+  'menu.showAll': '모두 보기',
+  'menu.quit': 'Nodii 종료',
+  'menu.file': '파일',
+  'menu.newTodo': '새 할 일',
+  'menu.closeWindow': '창 닫기',
+  'menu.edit': '편집',
+  'menu.redo': '다시 실행',
+  'menu.cut': '잘라내기',
+  'menu.copy': '복사',
+  'menu.paste': '붙여넣기',
+  'menu.selectAll': '모두 선택',
+  'menu.view': '보기',
+  'menu.fullscreen': '전체 화면',
+  'menu.window': '윈도우',
+  'menu.minimize': '최소화',
+  'menu.maximize': '확대/축소',
+  'menu.bringAllToFront': '모두 앞으로 가져오기',
 } as const;
 
 export type MessageKey = keyof typeof ko;
