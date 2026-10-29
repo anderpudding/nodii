@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { getLocale, intlLocale, resolveLocale, setLocale, subscribeLocale } from './locale';
 import { formatISODate, weekdayName } from './format-date';
 import { ko } from './catalog.ko';
-import { createTranslator, t } from './translate';
+import { createTranslator } from './translate';
 
 afterEach(() => setLocale('ko'));
 
@@ -38,6 +38,7 @@ it('변경만 알리고 구독을 해제한다', () => {
 });
 
 it('영어 누락 키는 자리표시자 규칙을 유지한 한국어로 대체한다', () => {
+  const t = createTranslator({ ko, en: { 'settings.language': 'Language' } });
   setLocale('en');
   expect(t('settings.language')).toBe('Language');
   expect(t('goal.total', { count: 2 })).toBe('목표 2개');
