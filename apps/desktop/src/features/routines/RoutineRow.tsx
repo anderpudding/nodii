@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useConnectivity } from '../../lib/connectivity';
 import { useEffect, useRef, useState } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
@@ -61,10 +62,10 @@ export function RoutineRow({
     focusGoal.current = true;
     more.current?.closest('section')?.querySelector<HTMLButtonElement>('.goal-chip')?.focus();
     const request = setLog.mutateAsync({ routineId: routine.id, date, status: 'skipped' });
-    const id = toast('이날은 건너뛰었어요', {
+    const id = toast(t('routine.skipped.summary'), {
       duration: 5000,
       action: {
-        label: '실행 취소',
+        label: t('todo.undo'),
         onClick: () => {
           void request
             .then(() => setLog.mutate({ routineId: routine.id, date, status: null }))
@@ -81,20 +82,20 @@ export function RoutineRow({
     return (
       <>
         <Item className="todo-menu-item" disabled={busy} onSelect={skip}>
-          이날은 건너뛰기
+          {t('routine.skip.day')}
         </Item>
         <Item className="todo-menu-item" disabled={busy} onSelect={onEdit}>
-          루틴 수정
+          {t('routine.edit.action')}
         </Item>
         <Item
           className="todo-menu-item"
           disabled={busy || (routine.endDate !== null && routine.endDate < today)}
           onSelect={() => onStop(false)}
         >
-          오늘부터 그만하기
+          {t('routine.endToday')}
         </Item>
         <Item className="todo-menu-item danger-text" disabled={busy} onSelect={() => onStop(true)}>
-          삭제
+          {t('todo.action.delete')}
         </Item>
       </>
     );
@@ -119,7 +120,7 @@ export function RoutineRow({
             type="button"
             className="todo-check check"
             aria-disabled={!online || undefined}
-            aria-label={`${routine.title} 완료`}
+            aria-label={t('todo.completion.label', { title: routine.title })}
             aria-pressed={done}
             disabled={busy}
             onClick={() =>
@@ -129,7 +130,7 @@ export function RoutineRow({
             <SproutCheck done={done} skipped={skipped} />
           </button>
           <span className="todo-title">{routine.title}</span>
-          {skipped && <span className="routine-skipped-label">건너뜀</span>}
+          {skipped && <span className="routine-skipped-label">{t('routine.skipped.label')}</span>}
           <DropdownMenu.Root
             open={dropdownOpen}
             onOpenChange={(open) => {
@@ -142,7 +143,7 @@ export function RoutineRow({
                 ref={more}
                 variant="ghost"
                 className="todo-more"
-                aria-label={`${routine.title} 메뉴`}
+                aria-label={t('common.menuNamed', { name: routine.title })}
                 disabled={busy}
               >
                 ⋯
@@ -154,7 +155,7 @@ export function RoutineRow({
                 align="end"
                 sideOffset={4}
                 collisionPadding={8}
-                aria-label="루틴 메뉴"
+                aria-label={t('routine.menu')}
                 onCloseAutoFocus={restoreFocus}
               >
                 {content('dropdown')}
@@ -168,7 +169,7 @@ export function RoutineRow({
           <ContextMenu.Content
             className="todo-menu"
             collisionPadding={8}
-            aria-label="루틴 메뉴"
+            aria-label={t('routine.menu')}
             onCloseAutoFocus={restoreFocus}
           >
             {content('context')}

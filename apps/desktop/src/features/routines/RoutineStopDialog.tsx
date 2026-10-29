@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useRef, useState } from 'react';
 import {
   useRoutineWritePending,
@@ -39,10 +40,10 @@ export function RoutineStopDialog({
     const request = deleteAll
       ? remove.mutateAsync({ routine })
       : end.mutateAsync({ routine, today });
-    const id = toast(deleteAll ? '루틴을 삭제했어요' : '오늘부터 루틴을 그만해요', {
+    const id = toast(deleteAll ? t('routine.stop.deleted') : t('routine.stop.ended'), {
       duration: 5000,
       action: {
-        label: '실행 취소',
+        label: t('todo.undo'),
         onClick: () => {
           void request
             .then(() =>
@@ -69,19 +70,19 @@ export function RoutineStopDialog({
     >
       <div className="routine-form">
         <h2 id="routine-stop-title">
-          {confirmDelete ? '루틴을 완전히 삭제할까요?' : '오늘부터 그만할까요?'}
+          {confirmDelete ? t('routine.delete.title') : t('routine.stop.title')}
         </h2>
         <p className="routine-wrap">{routine.title}</p>
         <p id="routine-stop-description" className="supporting">
           {confirmDelete
-            ? '루틴 1개가 모든 날짜에서 사라지고, 이 루틴의 완료·건너뛰기 기록도 더 이상 보이지 않아요.'
+            ? t('routine.delete.description')
             : routine.startDate >= today
-              ? '아직 지난 날짜가 없는 루틴 1개가 목록에서 사라져요. 실행 취소로 되돌릴 수 있어요.'
-              : '어제까지의 기록과 표시는 캘린더에 그대로 남아요.'}
+              ? t('routine.stop.noPast')
+              : t('routine.endDescription')}
         </p>
         <div className="routine-actions">
           <Button ref={cancel} data-initial-focus variant="ghost" onClick={onClose}>
-            취소
+            {t('common.cancel')}
           </Button>
           {!confirmDelete && (
             <Button
@@ -90,7 +91,7 @@ export function RoutineStopDialog({
               disabled={busy}
               onClick={() => setConfirmDelete(true)}
             >
-              완전 삭제
+              {t('routine.delete.action')}
             </Button>
           )}
           <Button
@@ -98,7 +99,7 @@ export function RoutineStopDialog({
             disabled={busy || (!confirmDelete && ended)}
             onClick={() => perform(confirmDelete)}
           >
-            {confirmDelete ? '완전 삭제' : '오늘부터 그만하기'}
+            {confirmDelete ? t('routine.delete.action') : t('routine.endToday')}
           </Button>
         </div>
       </div>
