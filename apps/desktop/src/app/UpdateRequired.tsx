@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { BrandMark } from '../components/ui/brand-mark';
 import { useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
@@ -23,7 +24,7 @@ export function UpdateRequired({
       else
         window.open(`https://apps.apple.com/app/id${appStoreId}`, '_blank', 'noopener,noreferrer');
     } catch {
-      setError('App Store를 열지 못했어요. 다시 시도해 주세요.');
+      setError(t('mobile.update.failed'));
     }
   }
   return (
@@ -34,11 +35,11 @@ export function UpdateRequired({
             <BrandMark />
             Nodii
           </p>
-          <h1 id="update-title">새 버전이 필요해요</h1>
+          <h1 id="update-title">{t('app.update.title')}</h1>
           <p className="supporting">
-            App Store에서 업데이트해 주세요.
+            {t('mobile.update.title')}
             <br />
-            기록한 데이터는 그대로 유지돼요.
+            {t('app.update.data')}
           </p>
         </header>
         <Button
@@ -47,13 +48,11 @@ export function UpdateRequired({
           disabled={!validId}
           onClick={() => void openStore()}
         >
-          App Store에서 업데이트
+          {t('mobile.update.action')}
         </Button>
-        {!validId && (
-          <p className="supporting version-details">App Store 링크를 준비하고 있어요.</p>
-        )}
+        {!validId && <p className="supporting version-details">{t('app.update.pending')}</p>}
         <p className="supporting version-details">
-          지금 버전 {currentVersion} · 필요한 버전 {minimumVersion}
+          {t('app.update.versions', { current: currentVersion, minimum: minimumVersion })}
         </p>
         {error && (
           <p className="error-message" role="alert">

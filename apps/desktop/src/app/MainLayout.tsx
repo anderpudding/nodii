@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { WeekStrip } from '../features/calendar/WeekStrip';
 import { useEffect, useState } from 'react';
@@ -35,9 +36,9 @@ export function MainLayout({
   const connectionStatus = useConnectionStatus();
   const connectionMessage =
     connectionStatus === 'offline'
-      ? '오프라인이라 보기만 할 수 있어요'
+      ? t('sync.offline')
       : connectionStatus === 'sync-disconnected'
-        ? '동기화가 잠시 끊겼어요'
+        ? t('sync.disconnected')
         : null;
   const [goalView, setGoalView] = useState<'list' | 'archive' | null>(null);
   const [routinesOpen, setRoutinesOpen] = useState(false);
@@ -61,22 +62,22 @@ export function MainLayout({
 
   return (
     <div className="app-shell">
-      <aside className="sidebar" aria-label="캘린더와 관리 메뉴">
+      <aside className="sidebar" aria-label={t('app.sidebar')}>
         {profile && <MonthCalendar client={client} profile={profile} />}
-        <nav className="management" aria-label="관리">
+        <nav className="management" aria-label={t('app.management')}>
           <Button variant="ghost" onClick={() => setGoalView('list')}>
             <GoalIcon className="management-icon" />
-            목표 관리
+            {t('goal.manage')}
           </Button>
           <Button variant="ghost" disabled={!profile} onClick={() => setRoutinesOpen(true)}>
             <RoutineIcon className="management-icon" />
-            루틴 관리
+            {t('routine.manage')}
           </Button>
         </nav>
       </aside>
       <div className="day-panel">
         <header className="app-toolbar">
-          <div aria-label="연결 상태" role="status">
+          <div aria-label={t('app.connection')} role="status">
             {connectionMessage && (
               <span className="offline-status" title={connectionMessage}>
                 {connectionMessage}
@@ -86,7 +87,7 @@ export function MainLayout({
           <Button
             className="wide-settings"
             variant="ghost"
-            aria-label="설정"
+            aria-label={t('settings.title')}
             aria-haspopup="dialog"
             onClick={() => setSettingsOpen(true)}
           >
@@ -95,7 +96,7 @@ export function MainLayout({
           <div className="narrow-settings">
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <Button variant="ghost" aria-label="설정 및 관리">
+                <Button variant="ghost" aria-label={t('app.settingsManagement')}>
                   <SettingsIcon className="toolbar-icon" />
                 </Button>
               </DropdownMenu.Trigger>
@@ -110,21 +111,21 @@ export function MainLayout({
                     className="todo-menu-item"
                     onSelect={() => setGoalView('list')}
                   >
-                    목표 관리
+                    {t('goal.manage')}
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     className="todo-menu-item"
                     disabled={!profile}
                     onSelect={() => setRoutinesOpen(true)}
                   >
-                    루틴 관리
+                    {t('routine.manage')}
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator className="todo-menu-separator" />
                   <DropdownMenu.Item
                     className="todo-menu-item"
                     onSelect={() => setSettingsOpen(true)}
                   >
-                    설정
+                    {t('settings.title')}
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
@@ -137,9 +138,9 @@ export function MainLayout({
             <DayView client={client} profile={profile} />
           ) : profileError ? (
             <div>
-              <p role="alert">날짜 설정을 불러오지 못했어요.</p>
+              <p role="alert">{t('app.profile.failed')}</p>
               <Button variant="outline" onClick={retryProfile}>
-                다시 시도
+                {t('common.tryAgain')}
               </Button>
             </div>
           ) : (

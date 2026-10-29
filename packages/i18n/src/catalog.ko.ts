@@ -77,6 +77,7 @@ export const ko = {
   'settings.support': '지원 페이지',
   'settings.link.pending': '준비 중',
   'settings.link.failed': '페이지를 열지 못했어요. 다시 시도해 주세요.',
+  'settings.theme.loadFailed': '테마 설정을 불러오지 못했어요',
   'goal.manage': '목표 관리',
   'goal.counts.loading': '개수를 불러오고 있어요',
   'goal.counts.failed': '개수를 불러오지 못했어요. 다시 시도해 주세요.',
@@ -86,6 +87,8 @@ export const ko = {
   'sync.cache.saveFailed': '이 기기에 데이터를 보관하지 못했어요',
   'sync.cache.restoreFailed': '보관된 데이터를 불러오지 못했어요. 연결되면 다시 불러올게요.',
   'sync.cache.clearFailed': '보관된 데이터를 지우지 못했어요. 다시 시도해 주세요.',
+  'sync.disconnected': '동기화가 잠시 끊겼어요',
+  'sync.cache.clearDeviceFailed': '이 기기의 캐시를 지우지 못했어요',
 
   'auth.brand': 'Nodii',
   'auth.title': 'Nodii 시작하기',
@@ -292,6 +295,18 @@ export const ko = {
   'common.dismiss': '닫기',
   'common.tryAgain': '다시 시도',
   'common.retry': '다시 확인',
+  'common.saveFailed': '저장하지 못했어요',
+  'common.item': '항목',
+  'common.sort.row': '정렬 가능한 할 일',
+  'common.sort.handle': '정렬 손잡이',
+  'common.sort.label': '{name} 순서 변경',
+  'common.sort.instructions':
+    '스페이스로 순서 변경을 시작하고 위아래 방향키로 이동한 뒤 스페이스로 놓으세요. Esc로 취소할 수 있어요.',
+  'common.sort.started': '{name} 순서 변경을 시작했어요.',
+  'common.sort.over': '{name}을 {over} 위치로 옮겨요.',
+  'common.sort.outside': '목록 밖이에요.',
+  'common.sort.dropped': '{name}을 놓았어요.',
+  'common.sort.cancelled': '순서 변경을 취소했어요.',
   'mobile.spike.eyebrow': 'NODII · M0',
   'mobile.spike.title': '연결 준비 확인',
   'mobile.spike.description': '공유 코드와 기기 기능이 잘 이어지는지 확인해요.',
@@ -309,6 +324,22 @@ export const ko = {
   'mobile.spike.core': '공유 코드 · {date} · 반복 {occurs}',
   'mobile.spike.core.occurs': '표시',
   'mobile.spike.core.notOccurs': '숨김',
+
+  // app
+  'app.update.versions': '지금 버전 {current} · 필요한 버전 {minimum}',
+  'app.config.title': '연결 설정이 필요해요',
+  'app.config.description': '개발 환경의 Supabase 주소와 공개 키를 설정한 뒤 다시 실행해 주세요.',
+  'app.menu.failed': '메뉴를 준비하지 못했어요. 앱을 다시 열어 주세요.',
+  'app.session.checking': '로그인 정보를 확인하고 있어요…',
+  'app.profile.failed': '날짜 설정을 불러오지 못했어요.',
+  'app.sidebar': '캘린더와 관리 메뉴',
+  'app.management': '관리',
+  'app.connection': '연결 상태',
+  'app.settingsManagement': '설정 및 관리',
+  'app.error.description': '기록한 데이터는 그대로 있어요. 다시 시도해 주세요.',
+  'app.update.title': '새 버전이 필요해요',
+  'app.update.data': '기록한 데이터는 그대로 유지돼요.',
+  'app.update.pending': 'App Store 링크를 준비하고 있어요.',
 } as const;
 
 export type MessageKey = keyof typeof ko;

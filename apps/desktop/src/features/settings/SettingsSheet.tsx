@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -336,17 +337,17 @@ export function SettingsSheet({
           <section className="settings-group" aria-labelledby="info-settings">
             <h3 id="info-settings">정보</h3>
             <div className="settings-card info-list">
-              {links.map(({ label, url }) => (
+              {links.map(({ labelKey, url }) => (
                 <button
                   type="button"
                   className="settings-card-row settings-info-link"
-                  key={label}
+                  key={labelKey}
                   disabled={!url}
                   onClick={() => {
                     if (url) void openLink(url).catch(() => toast.error('링크를 열지 못했어요'));
                   }}
                 >
-                  <span>{label}</span>
+                  <span>{t(labelKey)}</span>
                   <span aria-hidden="true">{url ? '↗' : '준비 중'}</span>
                 </button>
               ))}

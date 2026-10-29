@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { Component, type ReactNode } from 'react';
 import { Button } from '../components/ui/button';
 
@@ -22,16 +23,16 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           <header className="auth-heading">
             <p className="brand">Nodii</p>
             <h1 id="error-title" role="alert">
-              문제가 생겼어요
+              {t('mobile.error.title')}
             </h1>
-            <p className="supporting">기록한 데이터는 그대로 있어요. 다시 시도해 주세요.</p>
+            <p className="supporting">{t('app.error.description')}</p>
           </header>
           <Button
             size="auth"
             className="full-width"
             onClick={() => this.setState({ failed: false })}
           >
-            다시 시도
+            {t('common.tryAgain')}
           </Button>
         </section>
       </main>
