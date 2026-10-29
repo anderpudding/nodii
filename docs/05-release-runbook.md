@@ -95,9 +95,12 @@ supabase migration list                           # Local과 Remote 열이 모�
 
 ### 2.3 이메일 템플릿
 **Authentication → Emails → Templates**
-- [ ] **Magic Link**(기존 사용자) — 제목 `Nodii 로그인 코드`, 본문 `supabase/templates/otp.html`
-- [ ] **Confirm signup**(새 사용자) — 제목 `Nodii 가입 코드`, 같은 본문
-- [ ] 두 템플릿 모두 **`{{ .Token }}`** 포함 (링크만 있으면 코드가 가지 않음)
+- [ ] **Magic Link**(기존 사용자) — 제목 `Nodii 로그인 코드 · Your Nodii login code`
+- [ ] **Confirm signup**(새 사용자) — 제목 `Nodii 가입 코드 · Your Nodii sign-up code`
+- [ ] 두 템플릿의 본문에 병기된 `supabase/templates/otp.html`을 **그대로** 붙여 넣음. 제목줄 → 코드 → 한국어 안내 → 구분선 → 영어 안내 순서이며 **`{{ .Token }}`은 정확히 한 번** 포함 (링크만 있으면 코드가 가지 않음)
+- [ ] 저장 뒤 실제 새 주소로 **가입 코드**, 기존 계정으로 **로그인 코드**를 각각 받아 제목·6자리 코드·한국어/영어 안내·10분 유효 시간을 확인. Gmail·iCloud의 라이트/다크 메일 화면도 확인
+
+로컬 `config.toml` 변경은 클라우드 템플릿을 바꾸지 않습니다. 위 대시보드 입력은 사람이 따로 수행합니다.
 
 ### 2.4 커스텀 SMTP (NFR-15)
 - [ ] **Authentication → Emails → SMTP Settings**: 발신 `no-reply@mail.nodii.app`, 이름 `Nodii`, Host `smtp.resend.com`, Port `465`, Username `resend`
@@ -182,11 +185,23 @@ select key, value from public.app_config;   -- min_macos_app_version = 출시 �
 - [ ] 데모 계정의 예시 데이터로 촬영 (실제 개인 데이터 금지)
 - [ ] 스크린샷에 Mac이 아닌 기기 모양이나 다른 회사 상표가 없음
 
+### 4.4 영어 현지화 (I4 · macOS)
+
+1. [ ] 로컬 `store-assets/screenshots-v2/store-text.en.md`의 추천안·다른 안·글자 수와 영어 문구를 검수. `macos-en/`의 2880×1800 스크린샷 6장도 확인. 재생성은 같은 폴더의 `generator/README.md` 참고 (모두 git 제외)
+2. [ ] **App Store Connect → 앱 정보 → 현지화**에 **English (U.S.)**를 추가하고 승인한 이름·부제를 입력. iOS·macOS가 함께 쓰는 앱 정보이므로, 아직 한국어만 지원하는 iOS의 영어 스토어 노출에도 맞는 이름·부제인지 확인. iOS 영어 설명·스크린샷은 I5에서 준비
+3. [ ] **macOS 버전 페이지 → English (U.S.)**에 프로모션 텍스트·설명·키워드·새로운 기능을 `store-text.en.md`에서 입력하고, `macos-en/`의 01~06 순서로 스크린샷 업로드. 한국어 새로운 기능은 초안의 별도 한국어 절을 검수해 반영
+4. [ ] 지원 URL은 `https://nodii.app/support.html`, 개인정보처리방침 URL은 `https://nodii.app/privacy.html`의 기존 영어 페이지 사용
+5. [ ] **Primary Language(기본 언어)는 유지.** iOS와 앱 정보를 함께 쓰며 iOS는 아직 한국어만 지원하므로 English 전환은 **I5**에서 수행 (확정)
+6. [ ] 새 빌드 처리 뒤 스토어 페이지의 **언어(Languages)**에 **English·Korean**이 모두 표시되는지 확인. 이 목록은 스토어 문구가 아니라 바이너리의 `CFBundleLocalizations` 등 번들 선언에서 결정됨
+7. [ ] 한국어·English (U.S.) 스토어 미리보기에서 문구·스크린샷·URL·현재 기본 언어를 최종 확인
+
 ---
 
 ## 5. 릴리스 순서
 
 ### 5.1 일반 릴리스 (설계서 §11)
+I4에서는 먼저 §2.3의 **클라우드 병기 메일 템플릿 교체·실제 수신 확인**, §4.4의 **영어 자료 검수·입력**을 수행합니다. 메일 교체는 새 앱 출시 전에도 가능합니다. 기존 앱 사용자에게도 같은 코드와 두 언어 안내가 갈 뿐이므로 호환 문제는 없습니다. 기본 언어는 유지합니다. 다음 버전 번호는 사람이 결정한 뒤 아래 릴리스 절차를 진행합니다.
+
 1. [ ] (필요하면) **하위 호환** 마이그레이션을 클라우드에 적용 (2.1)
 2. [ ] `bash scripts/bump-version.sh X.Y.Z` → 안내된 명령으로 커밋·태그 푸시
 3. [ ] CI(`Release`)가 App Store Connect에 업로드 (1.5)
@@ -233,6 +248,16 @@ TestFlight 설치본 기준. 결과는 날짜와 함께 `docs/03-implementation-
 - [ ] 메인 창을 닫은 뒤 Dock 아이콘을 누르면 창이 다시 열리거나 앱이 종료됨 (창 없는 상태로 남지 않음)
 - [ ] 계정 삭제 (AUTH-06): 설정 → 계정 삭제 → 로그인 화면 → 같은 이메일로 다시 가입하면 빈 계정으로 시작
 - [ ] 설치 파일 크기 15MB 이하 (App Store Connect 빌드의 파일 크기, NFR-04), 대기 메모리 150MB 이하 (활성 상태 보기)
+
+### 6.5 영어 출시 확인 (SET-06 · AUTH-01/04)
+
+- [ ] 실행 중인 Nodii를 종료한 뒤 `open -n /실제/경로/Nodii.app --args -AppleLanguages '(en-US)'`로 실행. macOS 시스템 설정은 바꾸지 않고 앱 언어는 **System**으로 두어 영어 날짜 머리글·요일·메뉴바 확인. 한국어 비교는 종료 후 `-AppleLanguages '(ko-KR)'`로 실행
+- [ ] 설정에서 **System → 한국어 → English → System** 전환 시 날짜·요일·열린 설정·네이티브 메뉴가 즉시 바뀌고 입력 상태가 유지되는지 확인. 한국어와 English를 각각 선택하고 완전히 종료·재실행하여 기기 설정 유지 확인
+- [ ] 영어 신규 주소로 가입: 병기된 가입 메일 수신·6자리 코드 입력·기본 목표 **Todos** 생성 확인. 기존 한국어 목표는 언어를 바꿔도 자동 번역되지 않음. 한국어 신규 가입은 **할 일** 확인
+- [ ] 기존 계정의 병기 로그인 메일도 받아 코드가 한 번만 나오고 10분 안내가 두 언어로 보이는지 확인 (§2.3). Gmail·iCloud의 다크 모드도 확인
+- [ ] 영어로 로그인 → 할 일 추가·완료·옮기기·삭제/실행 취소 → 하루 메뉴 → 캘린더 → 목표/Archive → 루틴/Skip → 설정 순회. 넓은 창·400×600·라이트/다크에서 잘림·겹침 확인
+- [ ] 메뉴바의 About Nodii·Settings…·Edit·Window, 단축키·복사/붙여넣기와 OS 날짜 입력 확인. 브라우저 모의 화면 검사는 이 네이티브 검증을 대신하지 않음
+- [ ] §4.4의 새 빌드·스토어 미리보기에서 English·Korean 표시와 기본 언어 유지 확인. 날짜·실행한 빌드·결과를 진행 기록에 남김
 
 ---
 
