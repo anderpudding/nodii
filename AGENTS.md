@@ -23,25 +23,25 @@ MVP는 **macOS 전용 데스크톱 앱**(Tauri v2)이고 **Mac App Store**로 �
 MVP 기능: 이메일 OTP 로그인 · 목표(카테고리) · 날짜별 할 일 · 월간 캘린더 · 루틴(반복 할 일) · 실시간 동기화 · 설정.
 MVP 제외: 타이머, 일기, 소셜, 위젯, 푸시, 모바일 앱, **오프라인 쓰기**, Google/Apple 로그인, 앱 자체 업데이트.
 
-UI 언어는 **한국어**입니다. 사용자에게 보이는 문구는 모두 한국어로, 짧고 친근한 존댓말(예: "저장하지 못했어요 · 다시 시도")로 씁니다.
+UI는 **한국어·영어**를 지원하고 기본은 OS 언어를 따릅니다(`ko*`는 한국어, 그 외는 영어). 한국어 문구는 짧고 친근한 존댓말(예: "저장하지 못했어요 · 다시 시도")로 씁니다. I2에서는 언어 설정 외 영어 문구가 한국어로 대체되며, 전체 영어 카탈로그는 I3에서 채웁니다.
 사용자에게 보이는 문구는 `@nodii/i18n` 카탈로그에 넣고 `t()`로 씁니다. 컴포넌트에 문구 리터럴을 두지 않습니다(근거: `docs/14-i18n-plan.md`).
 
 ---
 
 ## 2. 기술 스택 (이미 설치된 버전 기준)
 
-| 영역                | 사용                                                  | 비고                                                                                       |
-| ------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 모노레포            | pnpm 10 workspaces, Node 22                           | `pnpm-workspace.yaml`                                                                      |
-| 언어                | TypeScript 6 (strict)                                 | `tsconfig.base.json`                                                                       |
-| 데스크톱            | Tauri v2, Rust 셸 최소                                | 플러그인: `store`, `opener`만                                                              |
-| UI                  | React 19, Vite 8, Tailwind CSS v4                     | 이후 추가: Radix/shadcn, dnd-kit                                                           |
-| 서버 상태 / UI 상태 | TanStack Query / Zustand                              | 2~3단계에서 추가                                                                           |
-| 날짜                | `core`의 자체 ISODate 유틸                            | 표시용 포맷은 `Intl.DateTimeFormat('ko-KR')`. date-fns는 꼭 필요할 때만 `apps/desktop`에서 |
-| 정렬 키             | `fractional-indexing`                                 | 설계서 §4.4                                                                                |
-| 백엔드              | Supabase (`@supabase/supabase-js` v2)                 | 로컬: Supabase CLI + Docker                                                                |
-| 테스트              | Vitest 5 (+coverage-v8), Testing Library + MSW, pgTAP |                                                                                            |
-| 린트/포맷           | ESLint 10 (flat config), Prettier 3                   |                                                                                            |
+| 영역                | 사용                                                  | 비고                                                                                                      |
+| ------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 모노레포            | pnpm 10 workspaces, Node 22                           | `pnpm-workspace.yaml`                                                                                     |
+| 언어                | TypeScript 6 (strict)                                 | `tsconfig.base.json`                                                                                      |
+| 데스크톱            | Tauri v2, Rust 셸 최소                                | 플러그인: `store`, `opener`만                                                                             |
+| UI                  | React 19, Vite 8, Tailwind CSS v4                     | 이후 추가: Radix/shadcn, dnd-kit                                                                          |
+| 서버 상태 / UI 상태 | TanStack Query / Zustand                              | 2~3단계에서 추가                                                                                          |
+| 날짜                | `core`의 자체 ISODate 유틸                            | `@nodii/i18n`의 `formatISODate`·`weekdayName` (현재 로케일). date-fns는 꼭 필요할 때만 `apps/desktop`에서 |
+| 정렬 키             | `fractional-indexing`                                 | 설계서 §4.4                                                                                               |
+| 백엔드              | Supabase (`@supabase/supabase-js` v2)                 | 로컬: Supabase CLI + Docker                                                                               |
+| 테스트              | Vitest 5 (+coverage-v8), Testing Library + MSW, pgTAP |                                                                                                           |
+| 린트/포맷           | ESLint 10 (flat config), Prettier 3                   |                                                                                                           |
 
 새 의존성은 **필요할 때만** 추가하고, 추가한 이유를 보고에 적습니다. `packages/core`에는 런타임 의존성을 넣지 않는 것이 원칙입니다(`fractional-indexing` 같은 순수 라이브러리는 예외로 허용, 보고에 명시).
 

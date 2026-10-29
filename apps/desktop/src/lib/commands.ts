@@ -102,7 +102,7 @@ export function appMenuOptions(): MenuOptions {
     ],
   };
 }
-/** 앱 수명 동안 메뉴를 한 번만 설치하며 브라우저에서는 IPC를 호출하지 않는다. */
+/** 현재 로케일의 메뉴로 교체하며 브라우저에서는 IPC를 호출하지 않는다. */
 export async function installAppMenu() {
   if (!isTauri()) return;
   const { Menu } = await import('@tauri-apps/api/menu');

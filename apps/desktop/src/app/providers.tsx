@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { startConnectivity } from '../lib/connectivity';
+import { startLanguage } from '../lib/language';
 import { startTheme } from '../lib/theme';
 import { CACHE_MAX_AGE } from '../lib/query-persister';
 
@@ -12,6 +13,7 @@ export function Providers({ children }: { children: ReactNode }) {
   );
   useEffect(startConnectivity, []);
   useEffect(startTheme, []);
+  useEffect(startLanguage, []);
   return (
     <QueryClientProvider client={queryClient}>
       {children}

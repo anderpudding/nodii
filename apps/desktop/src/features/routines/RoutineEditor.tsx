@@ -1,4 +1,4 @@
-import { t, type MessageKey } from '@nodii/i18n';
+import { t, weekdayName, type MessageKey } from '@nodii/i18n';
 import { useId, useState } from 'react';
 import {
   keyBetween,
@@ -332,7 +332,9 @@ export function RoutineEditor({
                     <Button
                       key={day}
                       variant={draft.byWeekday?.includes(day) ? 'default' : 'outline'}
-                      aria-label={t('routine.weekday.label', { day: weekdayShort(day) })}
+                      aria-label={t('routine.weekday.label', {
+                        day: weekdayName(day as 0 | 1 | 2 | 3 | 4 | 5 | 6, 'long'),
+                      })}
                       aria-pressed={draft.byWeekday?.includes(day) ?? false}
                       onClick={() => toggle('byWeekday', day)}
                     >

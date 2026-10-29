@@ -106,6 +106,12 @@ export const ko = {
   'settings.support': '지원 페이지',
   'settings.link.pending': '준비 중',
   'settings.link.failed': '페이지를 열지 못했어요. 다시 시도해 주세요.',
+  'settings.language': '언어',
+  'settings.language.system': '시스템',
+  'settings.language.ko': '한국어',
+  'settings.language.en': 'English',
+  'settings.language.loadFailed': '언어 설정을 불러오지 못했어요',
+  'settings.language.saveFailed': '언어를 저장하지 못했어요',
   'settings.theme.loadFailed': '테마 설정을 불러오지 못했어요',
   'settings.delete.checking': '삭제할 개수를 확인하고 있어요…',
   'settings.delete.title': '계정을 삭제할까요?',
@@ -322,18 +328,11 @@ export const ko = {
   // date
   'date.tomorrow': '내일',
   'date.nextWeek': '다음 주',
-  'date.weekday.short.0': '일',
-  'date.weekday.short.1': '월',
-  'date.weekday.short.2': '화',
-  'date.weekday.short.3': '수',
-  'date.weekday.short.4': '목',
-  'date.weekday.short.5': '금',
-  'date.weekday.short.6': '토',
 
   // routine
   'routine.partialSplit':
     '새 규칙은 적용됐지만 종료일을 저장하지 못했어요. 다시 시도하면 종료일만 저장해요.',
-  'routine.weekday.label': '{day}요일',
+  'routine.weekday.label': '{day}',
   'routine.manage': '루틴 관리',
   'routine.create': '루틴 만들기',
   'routine.edit': '루틴 편집',

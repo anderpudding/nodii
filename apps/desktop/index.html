@@ -18,6 +18,20 @@
         );
       }
     </script>
+    <script>
+      try {
+        const preference = localStorage.getItem('nodii-language');
+        const language = (navigator.languages ?? [navigator.language])[0] ?? '';
+        document.documentElement.lang =
+          preference === 'ko' || preference === 'en'
+            ? preference
+            : language.toLowerCase().startsWith('ko')
+              ? 'ko'
+              : 'en';
+      } catch {
+        document.documentElement.lang = 'ko';
+      }
+    </script>
     <title>Nodii</title>
   </head>
   <body>

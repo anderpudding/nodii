@@ -30,12 +30,12 @@
 | 결정 | 선택 | 이유 |
 |---|---|---|
 | 라이브러리 | **자체 `t()` 유지 + 복수형만 추가** (확정 2026-10-28) | 카탈로그가 작고 이미 두 앱이 의존. i18next는 언어가 3개 이상이 되거나 ICU 문법이 필요해질 때 검토 |
-| 복수형 | 키 접미사 `_one` / `_other` + `Intl.PluralRules` | i18next와 같은 관례라 나중에 옮기기 쉽다. 한국어는 `_other`만 채운다 |
+| 복수형 | 키 접미사 `_one` / `_other` + `Intl.PluralRules` | i18next와 같은 관례라 나중에 옮기기 쉽다. 영어 카탈로그에만 `키_one`/`키_other`를 두고, 한국어는 기본 키만 쓴다 (I2 구현) |
 | 언어 결정 | 설정값(`system` / `ko` / `en`) → `system`이면 OS 언어 → `ko*`면 한국어, 그 외 영어 | 사용자 대부분은 OS를 따르고, 바꾸고 싶은 사람만 설정에서 바꾼다 |
-| 언어 설정 저장 | 기기 로컬 (데스크톱 `localStorage`, 모바일 AsyncStorage) | 서버 스키마 변경 없음. 기기마다 다른 언어도 자연스럽다 |
-| 언어 전환 시점 | 설정에서 바꾸면 **즉시 반영** (React context로 로케일 공급) | 재시작 요구는 어색하다 |
+| 언어 설정 저장 | 기기 로컬 (데스크톱: plugin-store `settings.json` 원본 + `localStorage` 미러, 테마와 같은 구조 / 모바일: AsyncStorage) (확정 2026-10-28) | 서버 스키마 변경 없음. 기기마다 다른 언어도 자연스럽다 |
+| 언어 전환 시점 | 설정에서 바꾸면 **즉시 반영** (`@nodii/i18n`의 모듈 로케일 저장소 + 데스크톱 `App`에서 `useSyncExternalStore` 구독, I2 구현) | 재시작 요구는 어색하다 |
 | 기본/대체 언어 | 영어 | 한국어 외 모든 사용자에게 영어가 맞다 |
-| 인증 메일 | **한 통에 두 언어** (제목 `Nodii 로그인 코드 · Your Nodii login code`, 본문 한국어 → 영어) | Supabase 템플릿은 사용자별 분기가 번거롭고, 코드 메일은 짧아서 병기로 충분 |
+| 인증 메일 | **한 통에 두 언어** (제목 `Nodii 로그인 코드 · Your Nodii login code`, 본문 한국어 → 영어) (확정 2026-10-28) | Supabase 템플릿은 사용자별 분기가 번거롭고, 코드 메일은 짧아서 병기로 충분 |
 
 ## 4. 용어집 (영어 톤: 짧고 친근하게, 문장형 버튼 지양)
 
@@ -60,16 +60,16 @@ Codex에 한 단계씩 넘긴다. 각 단계는 `pnpm typecheck && pnpm test`가
 | 단계 | 내용 | 완료 기준 | 기간(주 15~20h) |
 |---|---|---|---|
 | **I1** 데스크톱 문구 추출 | 데스크톱 61개 파일의 리터럴을 카탈로그 키로 옮기고 `t()`로 교체. 모바일과 같은 뜻의 문구는 키 공유(`common.*`, `goal.*` 등), 데스크톱 전용은 `desktop.*` 접두사 대신 기능 접두사 유지. 접근성 라벨·툴팁·토스트·빈 상태·오류 문구 포함 | 테스트 제외 데스크톱 `src`에서 한글 리터럴 검색 결과 0 (주석 제외). 화면 변화 없음 | ~1주 |
-| **I2** 로케일 인프라 | `Locale = 'ko' \| 'en'`, `LocaleProvider`/`useLocale`, `t(key, params, locale)`, 복수형 `_one/_other`, `formatDate`·`formatMonth`·`formatWeekday` 헬퍼를 `@nodii/i18n`에 추가. `'ko-KR'` 고정 3곳 교체, `<html lang>` 동기화, 설정 화면에 언어 선택(System/한국어/English) | 언어를 바꾸면 즉시 전체 UI·날짜가 바뀐다(영어 칸은 임시로 키 그대로 노출돼도 됨) | ~1주 |
+| **I2** 로케일 인프라 | `@nodii/i18n`에 `Locale`·`resolveLocale`·로케일 저장소, 영어→한국어 대체, 복수형 `_one/_other`(`t()` 시그니처 유지), `formatISODate`·`weekdayName`. 데스크톱 `'ko-KR'` 고정 3곳 교체, 언어 설정(시스템/한국어/English, 기기 저장)과 실행 중 전환(`App`에서 `useLocale` 구독, 메뉴 재설치), `<html lang>` 동기화, `Info.plist` 언어 선언(I4에서 앞당김). 지시서: `docs/codex/stage-i2-locale-infra.md` | 언어를 바꾸면 재시작 없이 날짜·요일·메뉴·언어 설정이 바뀐다(나머지 영어는 I3, I2 단독 출시 안 함) | ~1주 |
 | **I3** 영어 카탈로그 | `catalog.en.ts` 작성 (`satisfies Record<MessageKey, string>`), 용어집 적용, 복수형 키 채우기. 개발용 **pseudo 로케일**로 잘림·넘침 점검 후 레이아웃 수정 | 영어로 전 화면 순회 시 잘림·한국어 잔존 없음 | ~1주 |
-| **I4** 출시 준비 (macOS) | `Info.plist`에 `CFBundleLocalizations`(en, ko)·`CFBundleDevelopmentRegion`(en) 추가, 메뉴바 영어 확인. App Store Connect에 English 메타데이터·스크린샷 추가, **기본 언어를 English로 변경** 검토. 인증 메일 병기. 지원/개인정보 페이지는 이미 영어 | 스토어 페이지 "Languages"에 English·Korean 표시, 영어 OS에서 첫 실행부터 영어 | ~0.5주 + 심사 |
+| **I4** 출시 준비 (macOS) | `Info.plist` 언어 선언(I2에서 추가)이 스토어 빌드에 들어갔는지·메뉴바 영어 확인. App Store Connect에 English 메타데이터·스크린샷 추가, **기본 언어를 English로 변경** 검토. 인증 메일 병기. 지원/개인정보 페이지는 이미 영어 | 스토어 페이지 "Languages"에 English·Korean 표시, 영어 OS에서 첫 실행부터 영어 | ~0.5주 + 심사 |
 | **I5** iOS 반영 | 모바일 `'ko-KR'` 고정 8곳 교체, `expo-localization`으로 OS 언어, 모바일 전용 문구 영어화, iOS `Info.plist`의 권한 문구 현지화(있다면), App Store Connect iOS 메타데이터 | iOS도 영어로 전 화면 순회 OK | ~1주 |
 
 ## 6. 테스트
 
 - **키 동등성:** `en`과 `ko`의 키 집합이 같다 (타입 + 런타임 테스트 둘 다).
 - **자리표시자 동등성:** 같은 키의 `{param}` 집합이 두 언어에서 같다. 번역하다 `{count}`를 지우는 실수를 잡는다.
-- **복수형:** `t('goal.total', { count: 1 }, 'en') === '1 goal'`, `count: 2`면 `'2 goals'`.
+- **복수형:** 로케일이 `en`일 때 `t('goal.total', { count: 1 }) === '1 goal'`, `count: 2`면 `'2 goals'`.
 - **날짜:** 같은 날짜가 `ko`에서 `10월 28일`, `en`에서 `Oct 28`로 나온다 (UTC 고정).
 - **잔존 한국어 검사:** CI 스크립트로 데스크톱 `src`(테스트 제외)의 한글 리터럴을 찾으면 실패. I1 이후 회귀 방지.
 - **수동:** macOS 시스템 언어를 English로 바꾸고 첫 실행 → 로그인 → 목표·할 일·루틴·캘린더·설정 순회.
@@ -85,6 +85,6 @@ Codex에 한 단계씩 넘긴다. 각 단계는 `pnpm typecheck && pnpm test`가
 
 ## 8. 다음 액션
 
-1. ~~자체 `t()` 유지~~ 확정. 남은 확인: 언어 설정 로컬 저장(I2 전), 메일 병기(I4 전)
+1. §3 결정 사항 모두 확정 (자체 `t()` 유지, 언어 설정 기기 로컬 저장, 인증 메일 한·영 병기)
 2. `docs/codex/stage-i1-desktop-strings.md`로 I1 진행
 3. I3 전에 용어집(§4) 확정

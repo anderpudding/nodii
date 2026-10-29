@@ -1,3 +1,4 @@
+import { setLocale } from '@nodii/i18n';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from './server';
@@ -5,6 +6,9 @@ import { server } from './server';
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 // jsdom은 삭제된 초점을 Document로 돌려 window blur를 잘못 발생시킨다.
 beforeEach(() => {
+  setLocale('ko');
+  localStorage.setItem('nodii-language', 'ko');
+  document.documentElement.lang = 'ko';
   document.body.tabIndex = -1;
   document.body.focus();
 });
@@ -12,6 +16,8 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   localStorage.clear();
+  setLocale('ko');
+  document.documentElement.lang = 'ko';
   vi.useRealTimers();
 });
 afterAll(() => server.close());

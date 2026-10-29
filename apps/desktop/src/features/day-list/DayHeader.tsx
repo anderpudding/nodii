@@ -1,4 +1,4 @@
-import { t } from '@nodii/i18n';
+import { formatISODate, t } from '@nodii/i18n';
 import { useEffect, type ReactNode } from 'react';
 import { addDays } from '@nodii/core';
 import { Button } from '../../components/ui/button';
@@ -41,12 +41,11 @@ export function DayHeader({
     window.addEventListener('keydown', move);
     return () => window.removeEventListener('keydown', move);
   }, [selectDate]);
-  const label = new Intl.DateTimeFormat('ko-KR', {
+  const label = formatISODate(selectedDate, {
     month: 'long',
     day: 'numeric',
     weekday: 'short',
-    timeZone: 'UTC',
-  }).format(new Date(`${selectedDate}T00:00:00Z`));
+  });
   return (
     <header className="day-header">
       <div>

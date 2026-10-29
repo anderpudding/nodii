@@ -20,6 +20,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { logout } from '../../lib/logout';
 import { links, openLink } from '../../lib/links';
+import { setLanguage, useLanguage } from '../../lib/language';
 import { setTheme, useTheme, type Theme } from '../../lib/theme';
 import { notifyError } from '../../lib/notify-error';
 import { useConnectivity } from '../../lib/connectivity';
@@ -163,6 +164,8 @@ export function SettingsSheet({
 }) {
   const cache = useQueryClient();
   const theme = useTheme();
+  const language = useLanguage();
+  const [languagePending, setLanguagePending] = useState(false);
   const [themePending, setThemePending] = useState(false);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -274,6 +277,38 @@ export function SettingsSheet({
                         void setTheme(value as Theme)
                           .catch(() => toast.error(t('settings.theme.saveFailed')))
                           .finally(() => setThemePending(false));
+                      }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="settings-card-row">
+                <span id="language-label">{t('settings.language')}</span>
+                <div
+                  className="settings-segment"
+                  role="radiogroup"
+                  aria-labelledby="language-label"
+                >
+                  {(
+                    [
+                      ['system', t('settings.language.system')],
+                      ['ko', t('settings.language.ko')],
+                      ['en', t('settings.language.en')],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <Button
+                      key={value}
+                      variant="ghost"
+                      role="radio"
+                      aria-checked={language === value}
+                      disabled={languagePending}
+                      onClick={() => {
+                        setLanguagePending(true);
+                        void setLanguage(value)
+                          .catch(() => toast.error(t('settings.language.saveFailed')))
+                          .finally(() => setLanguagePending(false));
                       }}
                     >
                       {label}
