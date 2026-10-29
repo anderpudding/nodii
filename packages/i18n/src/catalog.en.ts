@@ -1,7 +1,7 @@
 import type { MessageKey } from './catalog.ko';
 import type { PluralKey } from './translate';
 
-export const en: Partial<Record<MessageKey | PluralKey, string>> = {
+export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>> = {
   // goal
   'goal.preset.coral': 'Coral',
   'goal.preset.orange': 'Orange',
