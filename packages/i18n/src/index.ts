@@ -12,3 +12,4 @@ export {
 export { formatISODate, weekdayName } from './format-date';
 export { withParticle, type KoreanParticlePair } from './particle';
 export { formatList, ordinal } from './format-list';
+export { pseudoLocalize, setPseudoLocale } from './pseudo';

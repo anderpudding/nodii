@@ -1,5 +1,6 @@
 import { ko, type MessageKey } from './catalog.ko';
 import { en } from './catalog.en';
+import { isPseudoLocale, pseudoLocalize } from './pseudo';
 import { getLocale, intlLocale, type Locale } from './locale';
 
 export type MessageParams = Readonly<Record<string, string | number>>;
@@ -20,7 +21,9 @@ export function createTranslator(catalogs: { ko: Record<MessageKey, string>; en:
       const rule = new Intl.PluralRules(intlLocale(locale)).select(params.count);
       message = catalog[`${key}_${rule}`] ?? message;
     }
-    return (message ?? catalogs.ko[key]).replace(/\{([^}]+)\}/g, (placeholder, name: string) => {
+    const template = message ?? catalogs.ko[key];
+    const displayed = locale === 'en' && isPseudoLocale() ? pseudoLocalize(template) : template;
+    return displayed.replace(/\{([^}]+)\}/g, (placeholder, name: string) => {
       const value = params[name];
       return value === undefined ? placeholder : String(value);
     });
