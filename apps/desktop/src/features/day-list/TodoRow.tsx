@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useConnectivity } from '../../lib/connectivity';
 import { useEffect, useRef, useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
@@ -75,10 +76,10 @@ export function TodoRow({
     titleRef.current?.closest('section')?.querySelector<HTMLButtonElement>('.goal-chip')?.focus();
     // 즉시 실행 취소를 표시하되 복원 요청은 삭제 응답 뒤에 보내 역전을 막는다.
     const deletion = remove.mutateAsync({ todo });
-    const toastId = toast('할 일을 삭제했어요', {
+    const toastId = toast(t('todo.deleted.summary'), {
       duration: 5000,
       action: {
-        label: '실행 취소',
+        label: t('todo.undo'),
         onClick: () => {
           void deletion
             .then(() => remove.mutate({ todo, restore: true }))
@@ -107,7 +108,7 @@ export function TodoRow({
         type="button"
         className="todo-check check"
         aria-disabled={!online || undefined}
-        aria-label={`${todo.title} 완료`}
+        aria-label={t('todo.completion.label', { title: todo.title })}
         aria-pressed={todo.isDone}
         disabled={pending}
         onClick={() => toggle.mutate(todo)}
@@ -118,7 +119,7 @@ export function TodoRow({
         <input
           ref={inputRef}
           className="todo-edit"
-          aria-label="할 일 제목 수정"
+          aria-label={t('todo.rename.label')}
           maxLength={TITLE_MAX_LENGTH}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

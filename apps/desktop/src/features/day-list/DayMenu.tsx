@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useId, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
@@ -71,24 +72,24 @@ export function DayMenu({
   );
   const imports = planOverdueMove({ overdue: overdue.data ?? [], todayItems: items, goals, today });
   const reason = !online
-    ? '오프라인이라 보기만 할 수 있어요'
+    ? t('sync.offline')
     : writes || preparing
-      ? '저장이 끝나면 쓸 수 있어요'
+      ? t('day.menu.busy')
       : !ready
-        ? '목록을 불러온 뒤 쓸 수 있어요'
+        ? t('day.menu.loading')
         : '';
   const importReason =
     reason ||
     (selectedDate !== today
-      ? '오늘 화면에서만 쓸 수 있어요'
+      ? t('day.menu.todayOnly')
       : overdue.isError
-        ? '지난 할 일을 불러오지 못했어요'
+        ? t('day.menu.overdueFailed')
         : overdue.isPending
-          ? '지난 할 일을 불러오고 있어요'
+          ? t('day.menu.overdueLoading')
           : !imports.length
-            ? '가져올 할 일이 없어요'
+            ? t('day.menu.noOverdue')
             : '');
-  const targetReason = reason || (!targets.length ? '미완료 할 일이 없어요' : '');
+  const targetReason = reason || (!targets.length ? t('day.menu.noIncomplete') : '');
   useEffect(() => {
     if (!open) return;
     const close = (event: Event) => {
@@ -104,7 +105,7 @@ export function DayMenu({
     const toastId = toast(message, {
       duration: 5000,
       action: {
-        label: '실행 취소',
+        label: t('todo.undo'),
         onClick: () => {
           void request
             .then(async () => {
@@ -187,7 +188,7 @@ export function DayMenu({
         originals,
         moves,
         date,
-        `${originals.length}개를 ${formatCalendarDate(date)}로 옮겼어요`,
+        t('day.menu.moved', { count: originals.length, date: formatCalendarDate(date) }),
       );
     } catch (error) {
       notifyError(error, () => {
@@ -203,10 +204,10 @@ export function DayMenu({
     setConfirm(false);
     requestAnimationFrame(() => more.current?.focus());
     const request = remove.mutateAsync({ todos: originals });
-    const toastId = toast(`${originals.length}개를 삭제했어요`, {
+    const toastId = toast(t('day.menu.deleted', { count: originals.length }), {
       duration: 5000,
       action: {
-        label: '실행 취소',
+        label: t('todo.undo'),
         onClick: () => {
           void request
             .then((saved) => remove.mutate({ todos: saved, restore: true }))
@@ -224,7 +225,7 @@ export function DayMenu({
         <DropdownMenu.Root open={open} onOpenChange={setOpen}>
           <Popover.Anchor asChild>
             <DropdownMenu.Trigger asChild>
-              <Button ref={more} variant="ghost" aria-label="하루 메뉴">
+              <Button ref={more} variant="ghost" aria-label={t('day.menu.open')}>
                 ⋯
               </Button>
             </DropdownMenu.Trigger>
@@ -235,7 +236,7 @@ export function DayMenu({
               align="end"
               sideOffset={4}
               collisionPadding={8}
-              aria-label="하루 메뉴"
+              aria-label={t('day.menu.open')}
               onCloseAutoFocus={(event) => {
                 if (picker || confirm) event.preventDefault();
                 if (confirm)
@@ -257,11 +258,11 @@ export function DayMenu({
                     originals,
                     imports,
                     today,
-                    `${imports.length}개를 오늘로 가져왔어요`,
+                    t('day.menu.imported', { count: imports.length }),
                   );
                 }}
               >
-                지난 미완료 할 일 {imports.length}개 가져오기
+                {t('day.menu.import', { count: imports.length })}
                 {importReason && <span>{importReason}</span>}
               </DropdownMenu.Item>
               {overdue.isError && selectedDate === today && (
@@ -269,7 +270,7 @@ export function DayMenu({
                   className="todo-menu-item"
                   onSelect={() => void overdue.refetch()}
                 >
-                  다시 시도
+                  {t('common.tryAgain')}
                 </DropdownMenu.Item>
               )}
               <DropdownMenu.Item
@@ -280,7 +281,8 @@ export function DayMenu({
                   setPicker(true);
                 }}
               >
-                미완료 할 일 다른 날로 옮기기{targetReason && <span>{targetReason}</span>}
+                {t('day.menu.move')}
+                {targetReason && <span>{targetReason}</span>}
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="todo-menu-separator" />
               <DropdownMenu.Item
@@ -288,7 +290,8 @@ export function DayMenu({
                 disabled={!!targetReason}
                 onSelect={() => setConfirm(true)}
               >
-                미완료 할 일 전체 삭제{targetReason && <span>{targetReason}</span>}
+                {t('day.menu.delete')}
+                {targetReason && <span>{targetReason}</span>}
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
@@ -317,9 +320,9 @@ export function DayMenu({
             requestAnimationFrame(() => more.current?.focus());
           }}
         >
-          <h2 id={`${id}-title`}>미완료 할 일 {targets.length}개를 삭제할까요?</h2>
+          <h2 id={`${id}-title`}>{t('day.menu.delete.confirm', { count: targets.length })}</h2>
           <p id={`${id}-description`} className="supporting">
-            완료한 할 일과 루틴은 남아요.
+            {t('day.menu.delete.description')}
           </p>
           <div className="routine-actions">
             <Button
@@ -330,10 +333,10 @@ export function DayMenu({
                 requestAnimationFrame(() => more.current?.focus());
               }}
             >
-              취소
+              {t('mobile.add.cancel')}
             </Button>
             <Button className="routine-danger" disabled={!!targetReason} onClick={deleteTodos}>
-              삭제
+              {t('todo.action.delete')}
             </Button>
           </div>
         </Sheet>

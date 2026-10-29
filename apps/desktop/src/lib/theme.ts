@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useSyncExternalStore } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { load } from '@tauri-apps/plugin-store';
@@ -56,7 +57,7 @@ export function startTheme() {
           localStorage.setItem(key, theme);
         }
       })
-      .catch(() => toast.error('테마 설정을 불러오지 못했어요'));
+      .catch(() => toast.error(t('settings.theme.loadFailed')));
   return () => {
     active = false;
     media.removeEventListener('change', update);

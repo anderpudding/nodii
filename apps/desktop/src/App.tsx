@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { AppGate } from './app/AppGate';
 import { Providers } from './app/providers';
 import { supabase } from './lib/supabase';
@@ -12,10 +13,8 @@ export function App() {
         <main className="center-screen">
           <section className="auth-panel">
             <p className="brand">Nodii</p>
-            <h1>연결 설정이 필요해요</h1>
-            <p className="supporting">
-              개발 환경의 Supabase 주소와 공개 키를 설정한 뒤 다시 실행해 주세요.
-            </p>
+            <h1>{t('app.config.title')}</h1>
+            <p className="supporting">{t('app.config.description')}</p>
           </section>
         </main>
       )}

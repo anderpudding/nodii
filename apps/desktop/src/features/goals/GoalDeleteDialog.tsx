@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useQuery, useIsMutating } from '@tanstack/react-query';
 import {
   countGoalContents,
@@ -47,20 +48,22 @@ export function GoalDeleteDialog({
       }}
     >
       <div className="routine-form">
-        <h2 id="delete-goal-title">‘{goal.name}’ 목표를 삭제할까요?</h2>
+        <h2 id="delete-goal-title">{t('goal.delete.confirm', { name: goal.name })}</h2>
         {counts.data ? (
           <p>
-            할 일 {counts.data.todos}개와 루틴 {counts.data.routines}개가 모든 날짜에서 함께
-            삭제돼요. 지난 기록을 남기려면 보관을 써 주세요.
+            {t('goal.delete.description', {
+              todos: counts.data.todos,
+              routines: counts.data.routines,
+            })}
           </p>
         ) : (
           <p role="status">
-            {counts.isError ? '개수를 불러오지 못했어요.' : '삭제할 개수를 확인하고 있어요…'}
+            {counts.isError ? t('goal.counts.error') : t('settings.delete.checking')}
           </p>
         )}
         {counts.isError && (
           <Button variant="outline" onClick={() => void counts.refetch()}>
-            다시 시도
+            {t('common.tryAgain')}
           </Button>
         )}
         <div className="routine-actions">
@@ -72,19 +75,19 @@ export function GoalDeleteDialog({
                 archive.mutate(goal, {
                   onSuccess: (saved) => {
                     (onArchived ?? onClose)();
-                    toast('목표를 보관했어요', {
+                    toast(t('goal.archived.summary'), {
                       duration: 5000,
-                      action: { label: '실행 취소', onClick: () => archive.mutate(saved) },
+                      action: { label: t('todo.undo'), onClick: () => archive.mutate(saved) },
                     });
                   },
                 })
               }
             >
-              대신 보관하기
+              {t('goal.delete.archiveInstead')}
             </Button>
           )}
           <Button data-initial-focus variant="outline" disabled={pending} onClick={onClose}>
-            취소
+            {t('mobile.add.cancel')}
           </Button>
           <Button
             className="routine-danger"
@@ -93,12 +96,12 @@ export function GoalDeleteDialog({
               remove.mutate(goal, {
                 onSuccess: () => {
                   (onDeleted ?? onClose)();
-                  toast('목표를 삭제했어요');
+                  toast(t('goal.deleted.summary'));
                 },
               })
             }
           >
-            삭제
+            {t('todo.action.delete')}
           </Button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { SproutCheck } from '../../components/ui/sprout-check';
 import { useConnectivity } from '../../lib/connectivity';
 import { toast } from 'sonner';
@@ -53,8 +54,8 @@ export function AddTodoInput({
       </span>
       <input
         autoFocus
-        aria-label={`${goalName} 새 할 일`}
-        placeholder="할 일을 적어 주세요"
+        aria-label={t('todo.add.label', { name: goalName })}
+        placeholder={t('todo.add.placeholder')}
         value={title}
         maxLength={TITLE_MAX_LENGTH}
         onChange={(event) => setTitle(event.target.value)}
@@ -74,7 +75,7 @@ export function AddTodoInput({
               return;
             }
             if (!online) {
-              toast.error('오프라인이라 저장할 수 없어요');
+              toast.error(t('sync.writeDisabled'));
               return;
             }
             onAdd(normalized);
@@ -82,7 +83,7 @@ export function AddTodoInput({
           }
         }}
       />
-      <span className="input-hint">Enter로 추가, Esc로 닫기</span>
+      <span className="input-hint">{t('todo.add.keyboard')}</span>
     </div>
   );
 }

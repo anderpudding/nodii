@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
@@ -18,4 +19,4 @@ createRoot(root).render(
   </StrictMode>,
 );
 
-void installAppMenu().catch(() => toast.error('메뉴를 준비하지 못했어요. 앱을 다시 열어 주세요.'));
+void installAppMenu().catch(() => toast.error(t('app.menu.failed')));

@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useState, useLayoutEffect, type ReactNode } from 'react';
 import { QueryClient, useQueryClient, useIsRestoring, type Query } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -59,7 +60,7 @@ export function UserCache({ userId, children }: { userId: string; children: Reac
         void cache.invalidateQueries();
       }}
       onError={() => {
-        toast.error('보관된 데이터를 불러오지 못했어요. 연결되면 다시 불러올게요.');
+        toast.error(t('sync.cache.restoreFailed'));
       }}
     >
       <Restored>{children}</Restored>

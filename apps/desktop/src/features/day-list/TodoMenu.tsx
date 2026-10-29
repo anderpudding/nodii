@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -94,10 +95,10 @@ export function TodoMenu({
         null,
       );
       const request = move.mutateAsync({ todo, date, sortKey });
-      const toastId = toast(`${formatCalendarDate(date)}로 옮겼어요`, {
+      const toastId = toast(t('todo.moved.summary', { date: formatCalendarDate(date) }), {
         duration: 5000,
         action: {
-          label: '실행 취소',
+          label: t('todo.undo'),
           onClick: () => {
             void request
               .then((saved) => move.mutate({ todo: saved, date: todo.date, sortKey: todo.sortKey }))
@@ -123,14 +124,14 @@ export function TodoMenu({
   }
   const actions = [
     {
-      label: '수정',
+      label: t('common.rename'),
       run: () => {
         focusTarget.current = 'edit';
         onEdit();
       },
     },
     {
-      label: '내일로',
+      label: t('todo.move.tomorrow'),
       detail: formatCalendarDate(addDays(todo.date, 1)),
       run: () => {
         void moveTo(addDays(todo.date, 1));
@@ -140,14 +141,14 @@ export function TodoMenu({
       ? []
       : [
           {
-            label: '오늘로',
+            label: t('todo.move.today'),
             detail: formatCalendarDate(today),
             run: () => {
               void moveTo(today);
             },
           },
         ]),
-    { label: '날짜 선택', run: openPicker },
+    { label: t('todo.move.pick'), run: openPicker },
   ];
   function content(kind: 'context' | 'dropdown') {
     const Item = kind === 'context' ? ContextMenu.Item : DropdownMenu.Item;
@@ -169,7 +170,7 @@ export function TodoMenu({
             onDelete();
           }}
         >
-          삭제
+          {t('todo.action.delete')}
         </Item>
       </>
     );
@@ -205,7 +206,7 @@ export function TodoMenu({
                     ref={more}
                     variant="ghost"
                     className="todo-more"
-                    aria-label={`${todo.title} 메뉴`}
+                    aria-label={t('common.menuNamed', { name: todo.title })}
                     disabled={busy}
                   >
                     ⋯
@@ -218,7 +219,7 @@ export function TodoMenu({
                   align="end"
                   sideOffset={4}
                   collisionPadding={8}
-                  aria-label="할 일 메뉴"
+                  aria-label={t('todo.menu')}
                   onCloseAutoFocus={onCloseAutoFocus}
                 >
                   {content('dropdown')}
@@ -232,7 +233,7 @@ export function TodoMenu({
             <ContextMenu.Content
               className="todo-menu"
               collisionPadding={8}
-              aria-label="할 일 메뉴"
+              aria-label={t('todo.menu')}
               onCloseAutoFocus={onCloseAutoFocus}
             >
               {content('context')}

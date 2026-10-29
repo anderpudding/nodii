@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from '../../components/ui/button';
 import { CalendarGrid } from '../calendar/CalendarGrid';
@@ -14,7 +15,7 @@ export function TodoDatePicker({
         align="end"
         sideOffset={8}
         collisionPadding={8}
-        aria-label="옮길 날짜 선택"
+        aria-label={t('todo.move.picker')}
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           requestAnimationFrame(() =>
@@ -27,9 +28,9 @@ export function TodoDatePicker({
         }}
       >
         <div className="date-popover-heading">
-          <p className="supporting">옮길 날짜를 고르세요</p>
+          <p className="supporting">{t('todo.move.help')}</p>
           <Popover.Close asChild>
-            <Button variant="ghost">취소</Button>
+            <Button variant="ghost">{t('mobile.add.cancel')}</Button>
           </Popover.Close>
         </div>
         <CalendarGrid {...calendar} />

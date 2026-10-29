@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import type { ReactNode } from 'react';
 import {
   DndContext,
@@ -57,7 +58,7 @@ function SortableItem({
     id: item.id,
     disabled: { draggable: disabled || item.draggable === false, droppable: disabled },
     attributes:
-      activator === 'row' ? { role: 'group', roleDescription: '정렬 가능한 할 일' } : undefined,
+      activator === 'row' ? { role: 'group', roleDescription: t('common.sort.row') } : undefined,
     transition: { duration: 150, easing: 'ease-out' },
   });
   return (
@@ -80,8 +81,8 @@ function SortableItem({
             ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
-            aria-roledescription="정렬 손잡이"
-            aria-label={`${item.label} 순서 변경`}
+            aria-roledescription={t('common.sort.handle')}
+            aria-label={t('common.sort.label', { name: item.label })}
             disabled={disabled}
           >
             <svg viewBox="0 0 22 22" aria-hidden="true">
@@ -100,7 +101,7 @@ function SortableItem({
         {...(rowActivator ? attributes : {})}
         {...(rowActivator ? listeners : {})}
         data-drag-handle={rowActivator ? true : undefined}
-        aria-label={rowActivator ? `${item.label} 순서 변경` : undefined}
+        aria-label={rowActivator ? t('common.sort.label', { name: item.label }) : undefined}
       >
         {children}
       </div>
@@ -125,7 +126,8 @@ export function SortableList({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-  const label = (id: string | number) => items.find((item) => item.id === id)?.label ?? '항목';
+  const label = (id: string | number) =>
+    items.find((item) => item.id === id)?.label ?? t('common.item');
   return (
     <DndContext
       sensors={sensors}
@@ -133,16 +135,19 @@ export function SortableList({
       modifiers={activator === 'row' ? verticalAxisModifiers : undefined}
       accessibility={{
         screenReaderInstructions: {
-          draggable:
-            '스페이스로 순서 변경을 시작하고 위아래 방향키로 이동한 뒤 스페이스로 놓으세요. Esc로 취소할 수 있어요.',
+          draggable: t('common.sort.instructions'),
         },
         announcements: {
-          onDragStart: ({ active }) => `${label(active.id)} 순서 변경을 시작했어요.`,
+          onDragStart: ({ active }) => t('common.sort.started', { name: label(active.id) }),
           onDragOver: ({ active, over }) =>
-            over ? `${label(active.id)}을 ${label(over.id)} 위치로 옮겨요.` : '목록 밖이에요.',
+            over
+              ? t('common.sort.over', { name: label(active.id), over: label(over.id) })
+              : t('common.sort.outside'),
           onDragEnd: ({ active, over }) =>
-            over ? `${label(active.id)}을 놓았어요.` : '순서 변경을 취소했어요.',
-          onDragCancel: () => '순서 변경을 취소했어요.',
+            over
+              ? t('common.sort.dropped', { name: label(active.id) })
+              : t('common.sort.cancelled'),
+          onDragCancel: () => t('common.sort.cancelled'),
         },
       }}
       onDragEnd={({ active, over }) => {

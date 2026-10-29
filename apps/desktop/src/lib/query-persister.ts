@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import type { AuthStorage } from '@nodii/api';
 import type { QueryClient } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
@@ -77,7 +78,7 @@ export function userCache(cache: QueryClient, userId: string): ActiveCache {
           await userDeletions.get(userId);
           await base.persistClient(client);
         } catch {
-          toast.error('이 기기에 데이터를 보관하지 못했어요', { id: 'cache-storage-error' });
+          toast.error(t('sync.cache.saveFailed'), { id: 'cache-storage-error' });
         }
       },
     },

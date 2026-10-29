@@ -1,3 +1,4 @@
+import { t, type MessageKey } from '@nodii/i18n';
 import { useId, useState } from 'react';
 import {
   keyBetween,
@@ -27,27 +28,27 @@ import { Button } from '../../components/ui/button';
 import { notifyError } from '../../lib/notify-error';
 import { useUIStore } from '../../stores/ui';
 import { GoalChip, goalStyle } from '../goals/GoalChip';
-import { weekdays } from './format-rule';
+import { weekdayShort } from '../../lib/weekday';
 import { RoutineScope } from './RoutineScope';
 import { RoutineStopDialog } from './RoutineStopDialog';
 
 const errors: Record<
   Extract<RoutineRuleValidation, { ok: false }>['reason'],
-  { field: string; message: string }
+  { field: string; messageKey: MessageKey }
 > = {
   repeat_every_invalid: {
     field: 'interval',
-    message: '간격은 1부터 365까지 정수로 입력해 주세요.',
+    messageKey: 'routine.validation.repeatEvery',
   },
-  weekday_required: { field: 'weekdays', message: '요일을 하나 이상 골라 주세요.' },
-  weekday_invalid: { field: 'weekdays', message: '일요일부터 토요일 중에 골라 주세요.' },
-  weekday_not_allowed: { field: 'weekdays', message: '요일은 매주 반복에서만 골라 주세요.' },
-  monthday_required: { field: 'monthdays', message: '날짜를 하나 이상 골라 주세요.' },
-  monthday_invalid: { field: 'monthdays', message: '1일부터 31일 중에 골라 주세요.' },
-  monthday_not_allowed: { field: 'monthdays', message: '날짜는 매월 반복에서만 골라 주세요.' },
-  start_date_invalid: { field: 'start', message: '시작일을 입력해 주세요.' },
-  end_date_invalid: { field: 'end', message: '올바른 종료일을 입력해 주세요.' },
-  end_before_start: { field: 'end', message: '종료일은 시작일보다 빠를 수 없어요.' },
+  weekday_required: { field: 'weekdays', messageKey: 'routine.validation.weekdayRequired' },
+  weekday_invalid: { field: 'weekdays', messageKey: 'routine.validation.weekday' },
+  weekday_not_allowed: { field: 'weekdays', messageKey: 'routine.validation.weekdayNotAllowed' },
+  monthday_required: { field: 'monthdays', messageKey: 'routine.validation.monthdayRequired' },
+  monthday_invalid: { field: 'monthdays', messageKey: 'routine.validation.monthday' },
+  monthday_not_allowed: { field: 'monthdays', messageKey: 'routine.validation.monthdayNotAllowed' },
+  start_date_invalid: { field: 'start', messageKey: 'routine.validation.start' },
+  end_date_invalid: { field: 'end', messageKey: 'routine.validation.end' },
+  end_before_start: { field: 'end', messageKey: 'routine.validation.endBeforeStart' },
 };
 /** 기존 규칙을 초안으로 편집하고 저장할 때만 캐시에 반영한다 (ROUT-01~04,08). */
 export function RoutineEditor({
@@ -115,10 +116,7 @@ export function RoutineEditor({
         { before: routine, after, today },
         {
           onSuccess: (result) => {
-            if ('endDateError' in result)
-              toast.error(
-                '규칙은 바뀌었지만 종료일을 저장하지 못했어요. 다시 시도로 종료일만 저장할 수 있어요.',
-              );
+            if ('endDateError' in result) toast.error(t('routine.partialSplit.retry'));
             onClose();
           },
         },
@@ -139,7 +137,7 @@ export function RoutineEditor({
   function fieldError(field: string) {
     return error?.field === field ? (
       <p id={`${id}-${field}-error`} role="alert" className="error-message">
-        {error.message}
+        {t(error.messageKey)}
       </p>
     ) : null;
   }
@@ -195,25 +193,25 @@ export function RoutineEditor({
           }}
         >
           <header className="routine-heading">
-            <h2 id="routine-editor-title">{routine ? '루틴 편집' : '루틴 만들기'}</h2>
+            <h2 id="routine-editor-title">{routine ? t('routine.edit') : t('routine.create')}</h2>
             <Button variant="ghost" disabled={busy} onClick={onClose}>
-              닫기
+              {t('mobile.add.discard.action')}
             </Button>
           </header>
           <div className="sheet-body routine-form-body">
             <div className="field-group">
-              <label htmlFor={`${id}-title`}>제목</label>
+              <label htmlFor={`${id}-title`}>{t('routine.titleLabel')}</label>
               <Input
                 id={`${id}-title`}
                 value={draft.title}
                 maxLength={TITLE_MAX_LENGTH}
                 disabled={busy}
-                placeholder="어떤 일을 반복할까요?"
+                placeholder={t('routine.title.placeholder')}
                 onChange={(e) => patch({ title: e.target.value })}
               />
             </div>
             <fieldset className="routine-fieldset" disabled={busy}>
-              <legend>목표</legend>
+              <legend>{t('routine.goal')}</legend>
               <div className="routine-choices">
                 {activeGoals.map((item) => (
                   <button
@@ -228,15 +226,15 @@ export function RoutineEditor({
                   </button>
                 ))}
               </div>
-              {!goal && <p className="error-message">활성 목표를 골라 주세요.</p>}
+              {!goal && <p className="error-message">{t('routine.goal.required')}</p>}
             </fieldset>
             {goals.isError && (
               <Button variant="ghost" onClick={() => void goals.refetch()}>
-                목표를 불러오지 못했어요 · 다시 시도
+                {t('routine.goal.failed')}
               </Button>
             )}
             <fieldset className="routine-fieldset" disabled={busy}>
-              <legend id={`${id}-frequency`}>반복</legend>
+              <legend id={`${id}-frequency`}>{t('routine.repeat')}</legend>
               <div
                 className="routine-segments"
                 role="radiogroup"
@@ -272,17 +270,17 @@ export function RoutineEditor({
                       })
                     }
                   >
-                    {['매일', '매주', '매월'][i]}
+                    {[t('routine.daily'), t('routine.weekly'), t('routine.monthly')][i]}
                   </Button>
                 ))}
               </div>
             </fieldset>
             <div className="field-group">
-              <label htmlFor={`${id}-interval`}>반복 간격</label>
+              <label htmlFor={`${id}-interval`}>{t('routine.repeat.interval')}</label>
               <div className="routine-interval">
                 <Button
                   variant="outline"
-                  aria-label="반복 간격 줄이기"
+                  aria-label={t('routine.decrease')}
                   disabled={busy || draft.repeatEvery <= 1}
                   onClick={() => patch({ repeatEvery: Math.max(1, draft.repeatEvery - 1) })}
                 >
@@ -304,7 +302,7 @@ export function RoutineEditor({
                 />
                 <Button
                   variant="outline"
-                  aria-label="반복 간격 늘리기"
+                  aria-label={t('routine.increase')}
                   disabled={busy || draft.repeatEvery >= 365}
                   onClick={() =>
                     patch({ repeatEvery: Math.min(365, (draft.repeatEvery || 0) + 1) })
@@ -314,10 +312,10 @@ export function RoutineEditor({
                 </Button>
                 <span>
                   {draft.freq === 'daily'
-                    ? '일마다'
+                    ? t('routine.interval.days')
                     : draft.freq === 'weekly'
-                      ? '주마다'
-                      : '개월마다'}
+                      ? t('routine.interval.weeks')
+                      : t('routine.interval.months')}
                 </span>
               </div>
               {fieldError('interval')}
@@ -328,17 +326,17 @@ export function RoutineEditor({
                 disabled={busy}
                 aria-describedby={error?.field === 'weekdays' ? `${id}-weekdays-error` : undefined}
               >
-                <legend>요일</legend>
+                <legend>{t('routine.weekdays')}</legend>
                 <div className="routine-days">
                   {Array.from({ length: 7 }, (_, i) => (i + profile.weekStart) % 7).map((day) => (
                     <Button
                       key={day}
                       variant={draft.byWeekday?.includes(day) ? 'default' : 'outline'}
-                      aria-label={`${weekdays[day]}요일`}
+                      aria-label={t('routine.weekday.label', { day: weekdayShort(day) })}
                       aria-pressed={draft.byWeekday?.includes(day) ?? false}
                       onClick={() => toggle('byWeekday', day)}
                     >
-                      {weekdays[day]}
+                      {weekdayShort(day)}
                     </Button>
                   ))}
                 </div>
@@ -353,13 +351,13 @@ export function RoutineEditor({
                   error?.field === 'monthdays' ? `${id}-monthdays-error` : undefined
                 }
               >
-                <legend>날짜</legend>
+                <legend>{t('routine.monthdays')}</legend>
                 <div className="routine-days">
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                     <Button
                       key={day}
                       variant={draft.byMonthday?.includes(day) ? 'default' : 'outline'}
-                      aria-label={`${day}일`}
+                      aria-label={t('routine.monthday.label', { day })}
                       aria-pressed={draft.byMonthday?.includes(day) ?? false}
                       onClick={() => toggle('byMonthday', day)}
                     >
@@ -368,12 +366,12 @@ export function RoutineEditor({
                   ))}
                 </div>
                 {fieldError('monthdays')}
-                <p className="supporting">없는 달은 말일에 표시돼요.</p>
+                <p className="supporting">{t('routine.monthEnd.help')}</p>
               </fieldset>
             )}
             <div className="routine-dates">
               <div className="field-group">
-                <label htmlFor={`${id}-start`}>시작일</label>
+                <label htmlFor={`${id}-start`}>{t('routine.start')}</label>
                 <Input
                   id={`${id}-start`}
                   type="date"
@@ -386,7 +384,7 @@ export function RoutineEditor({
                 {fieldError('start')}
               </div>
               <div className="field-group">
-                <label htmlFor={`${id}-end`}>종료일 (선택)</label>
+                <label htmlFor={`${id}-end`}>{t('routine.end.optional')}</label>
                 <Input
                   id={`${id}-end`}
                   type="date"
@@ -401,16 +399,16 @@ export function RoutineEditor({
             </div>
             {routines.isError && (
               <Button variant="ghost" onClick={() => void routines.refetch()}>
-                루틴을 불러오지 못했어요 · 다시 시도
+                {t('routine.load.retry')}
               </Button>
             )}
           </div>
           <div className="routine-actions">
             <Button variant="ghost" disabled={busy} onClick={onClose}>
-              취소
+              {t('mobile.add.cancel')}
             </Button>
             <Button type="submit" disabled={!canSave}>
-              {busy ? '저장 중…' : '저장'}
+              {busy ? t('common.saving') : t('mobile.rename.save')}
             </Button>
           </div>
           {routine && (
@@ -420,7 +418,7 @@ export function RoutineEditor({
                 disabled={busy || (routine.endDate !== null && routine.endDate < today)}
                 onClick={() => setStop('end')}
               >
-                오늘부터 그만하기
+                {t('routine.endToday')}
               </Button>
               <Button
                 variant="ghost"
@@ -428,7 +426,7 @@ export function RoutineEditor({
                 disabled={busy}
                 onClick={() => setStop('delete')}
               >
-                완전 삭제
+                {t('routine.delete.action')}
               </Button>
             </div>
           )}

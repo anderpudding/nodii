@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useState } from 'react';
 import { compareVersion } from '@nodii/core';
 import {
@@ -30,7 +31,7 @@ function updateAuthRefresh(client: NodiiClient, enabled: boolean) {
   refreshQueues.set(
     client,
     next.catch(() => {
-      toast.error('로그인 상태를 갱신하지 못했어요. 앱을 다시 열어 주세요.');
+      toast.error(t('mobile.session.refreshFailed'));
     }),
   );
 }
@@ -118,7 +119,7 @@ export function AppGate({
       if (!active) return;
       if (previousUser && previousUser !== next?.user.id) {
         void detachPersistedCache(queryClient).catch(() =>
-          toast.error('이 기기의 캐시를 지우지 못했어요'),
+          toast.error(t('sync.cache.clearDeviceFailed')),
         );
         queryClient.clear();
       }
@@ -176,7 +177,7 @@ export function AppGate({
     return (
       <main className="center-screen">
         <p role="status" className="supporting">
-          Nodii를 준비하고 있어요…
+          {t('mobile.preparing')}
         </p>
       </main>
     );
@@ -192,14 +193,14 @@ export function AppGate({
     return (
       <main className="center-screen">
         <section className="auth-panel">
-          <p role="alert">로그인 정보를 불러오지 못했어요.</p>
+          <p role="alert">{t('mobile.session.failed')}</p>
           <Button
             onClick={() => {
               setSessionError(false);
               setAttempt((value) => value + 1);
             }}
           >
-            다시 시도
+            {t('common.tryAgain')}
           </Button>
         </section>
       </main>
@@ -208,7 +209,7 @@ export function AppGate({
     return (
       <main className="center-screen">
         <p role="status" className="supporting">
-          로그인 정보를 확인하고 있어요…
+          {t('app.session.checking')}
         </p>
       </main>
     );

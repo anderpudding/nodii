@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { isTauri } from '@tauri-apps/api/core';
 import type { MenuOptions } from '@tauri-apps/api/menu';
 
@@ -38,64 +39,64 @@ export function appMenuOptions(): MenuOptions {
       {
         text: 'Nodii',
         items: [
-          { text: 'Nodii 정보', item: { About: null } },
+          { text: t('menu.about'), item: { About: null } },
           {
             id: 'settings',
-            text: '설정…',
+            text: t('menu.settings'),
             accelerator: 'CmdOrCtrl+,',
             action: () => dispatchCommand('settings'),
           },
           { item: 'Separator' },
-          { text: '서비스', item: 'Services' },
-          { text: 'Nodii 가리기', item: 'Hide' },
-          { text: '기타 가리기', item: 'HideOthers' },
-          { text: '모두 보기', item: 'ShowAll' },
+          { text: t('menu.services'), item: 'Services' },
+          { text: t('menu.hide'), item: 'Hide' },
+          { text: t('menu.hideOthers'), item: 'HideOthers' },
+          { text: t('menu.showAll'), item: 'ShowAll' },
           { item: 'Separator' },
-          { text: 'Nodii 종료', item: 'Quit' },
+          { text: t('menu.quit'), item: 'Quit' },
         ],
       },
       {
-        text: '파일',
+        text: t('menu.file'),
         items: [
           {
             id: 'new-todo',
-            text: '새 할 일',
+            text: t('menu.newTodo'),
             accelerator: 'CmdOrCtrl+N',
             action: () => dispatchCommand('new-todo'),
           },
-          { text: '창 닫기', item: 'CloseWindow' },
+          { text: t('menu.closeWindow'), item: 'CloseWindow' },
         ],
       },
       {
-        text: '편집',
+        text: t('menu.edit'),
         items: [
-          { text: '실행 취소', item: 'Undo' },
-          { text: '다시 실행', item: 'Redo' },
+          { text: t('todo.undo'), item: 'Undo' },
+          { text: t('menu.redo'), item: 'Redo' },
           { item: 'Separator' },
-          { text: '잘라내기', item: 'Cut' },
-          { text: '복사', item: 'Copy' },
-          { text: '붙여넣기', item: 'Paste' },
-          { text: '모두 선택', item: 'SelectAll' },
+          { text: t('menu.cut'), item: 'Cut' },
+          { text: t('menu.copy'), item: 'Copy' },
+          { text: t('menu.paste'), item: 'Paste' },
+          { text: t('menu.selectAll'), item: 'SelectAll' },
         ],
       },
       {
-        text: '보기',
+        text: t('settings.view'),
         items: [
           {
             id: 'today',
-            text: '오늘',
+            text: t('day.today'),
             accelerator: 'CmdOrCtrl+T',
             action: () => dispatchCommand('today'),
           },
-          { text: '전체 화면', item: 'Fullscreen' },
+          { text: t('menu.fullscreen'), item: 'Fullscreen' },
         ],
       },
       {
-        text: '윈도우',
+        text: t('menu.window'),
         items: [
-          { text: '최소화', item: 'Minimize' },
-          { text: '확대/축소', item: 'Maximize' },
-          { text: '모두 앞으로 가져오기', item: 'BringAllToFront' },
+          { text: t('menu.minimize'), item: 'Minimize' },
+          { text: t('menu.maximize'), item: 'Maximize' },
+          { text: t('menu.bringAllToFront'), item: 'BringAllToFront' },
         ],
       },
     ],

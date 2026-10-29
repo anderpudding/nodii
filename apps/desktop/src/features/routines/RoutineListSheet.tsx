@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useState } from 'react';
 import { useIsMutating, useMutationState } from '@tanstack/react-query';
 import { compareSortKey, type Profile } from '@nodii/core';
@@ -62,22 +63,22 @@ export function RoutineListSheet({
       className="scroll-sheet routine-list-sheet"
     >
       <header className="routine-list-header">
-        <h2 id="routine-list-title">루틴 관리</h2>
+        <h2 id="routine-list-title">{t('routine.manage')}</h2>
         <div className="routine-list-actions">
           <Button
             variant="outline"
             disabled={busy || !goals.data?.some((g) => !g.archivedAt)}
             onClick={() => setEditor('new')}
           >
-            <span aria-hidden="true">＋</span> 새 루틴
+            <span aria-hidden="true">＋</span> {t('routine.new')}
           </Button>
-          <Button onClick={onClose}>완료</Button>
+          <Button onClick={onClose}>{t('common.done')}</Button>
         </div>
       </header>
       <div className="sheet-body routine-list-body">
         {goals.isError || routines.isError ? (
           <>
-            <p role="alert">루틴을 불러오지 못했어요.</p>
+            <p role="alert">{t('routine.failed')}</p>
             <Button
               variant="outline"
               onClick={() => {
@@ -85,17 +86,15 @@ export function RoutineListSheet({
                 void routines.refetch();
               }}
             >
-              다시 시도
+              {t('common.tryAgain')}
             </Button>
           </>
         ) : !goals.data || !routines.data ? (
-          <p role="status">루틴을 불러오고 있어요.</p>
+          <p role="status">{t('routine.loading')}</p>
         ) : (
           <>
             {!routines.data.some((r) => r.endDate === null || r.endDate >= today) && (
-              <p className="supporting routine-list-empty">
-                아직 진행 중인 루틴이 없어요. 반복하고 싶은 일을 추가해 보세요.
-              </p>
+              <p className="supporting routine-list-empty">{t('routine.empty')}</p>
             )}
             {[...goals.data]
               .sort((a, b) => compareSortKey(a.sortKey, b.sortKey))
@@ -108,9 +107,7 @@ export function RoutineListSheet({
                     <section className="routine-list-group" key={goal.id} aria-label={goal.name}>
                       <GoalChip goal={goal} />
                       {goal.archivedAt && (
-                        <p className="supporting">
-                          보관한 목표예요. 보관 이후 날짜에는 나타나지 않아요.
-                        </p>
+                        <p className="supporting">{t('routine.goal.archived')}</p>
                       )}
                       <div className="routine-group-rows">
                         {rows.map((routine) => (
@@ -118,8 +115,10 @@ export function RoutineListSheet({
                             <div className="routine-list-copy">
                               <strong className="routine-wrap">{routine.title}</strong>
                               <p className="supporting">
-                                {formatRoutineRule(routine, profile.weekStart)},{' '}
-                                {formatCalendarDate(routine.startDate)}부터
+                                {t('routine.list.summary', {
+                                  rule: formatRoutineRule(routine, profile.weekStart),
+                                  date: formatCalendarDate(routine.startDate),
+                                })}
                               </p>
                             </div>
                             <div className="routine-row-actions">
@@ -127,17 +126,17 @@ export function RoutineListSheet({
                                 variant="ghost"
                                 disabled={busy || pendingIds.includes(routine.id)}
                                 onClick={() => setEditor(routine)}
-                                aria-label={`${routine.title} 편집`}
+                                aria-label={t('common.editNamed', { name: routine.title })}
                               >
-                                편집
+                                {t('menu.edit')}
                               </Button>
                               <Button
                                 variant="ghost"
                                 disabled={busy || pendingIds.includes(routine.id)}
                                 onClick={() => setEnding(routine)}
-                                aria-label={`${routine.title} 그만두기`}
+                                aria-label={t('routine.stop.label', { title: routine.title })}
                               >
-                                그만두기
+                                {t('routine.stop')}
                               </Button>
                             </div>
                           </div>
@@ -150,8 +149,8 @@ export function RoutineListSheet({
             {finished.length > 0 && (
               <section className="routine-finished">
                 <div className="routine-finished-heading">
-                  <h3>끝난 루틴</h3>
-                  <p className="supporting">기록은 캘린더에 남아 있어요.</p>
+                  <h3>{t('routine.ended.title')}</h3>
+                  <p className="supporting">{t('routine.recordsRemain.help')}</p>
                 </div>
                 <div className="routine-group-rows">
                   {finished.map((routine) => (

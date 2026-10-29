@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useMemo, useState } from 'react';
 import { addDays, monthKeyOf, summarizeMonth, weekdayOf, type Profile } from '@nodii/core';
 import {
@@ -66,7 +67,7 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
   ]);
   const queries = [goals, routines, firstTodos, lastTodos, firstLogs, lastLogs];
   return (
-    <section className="week-strip" aria-label="주간 캘린더">
+    <section className="week-strip" aria-label={t('calendar.week')}>
       <CalendarGrid
         month={monthKeyOf(date)}
         selectedDate={selectedDate}
@@ -81,7 +82,7 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
       {queries.some((query) => query.isError) ? (
         <div>
           <p role="alert" className="supporting">
-            캘린더를 불러오지 못했어요.
+            {t('calendar.failed')}
           </p>
           <Button
             variant="ghost"
@@ -89,12 +90,12 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
               for (const query of queries) void query.refetch();
             }}
           >
-            다시 시도
+            {t('common.tryAgain')}
           </Button>
         </div>
       ) : queries.some((query) => query.isPending) ? (
         <p role="status" className="supporting">
-          캘린더를 불러오고 있어요.
+          {t('calendar.loading')}
         </p>
       ) : null}
     </section>

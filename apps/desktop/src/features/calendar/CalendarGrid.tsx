@@ -1,3 +1,5 @@
+import { t } from '@nodii/i18n';
+import { weekdayShort } from '../../lib/weekday';
 import { useId, useRef, useState } from 'react';
 import { addDays, monthGridRange, monthKeyOf, weekdayOf, type DaySummary } from '@nodii/core';
 import { adjacentMonthKey } from '@nodii/api';
@@ -57,7 +59,7 @@ export function CalendarGrid({
         <div className="calendar-navigation">
           <Button
             variant="ghost"
-            aria-label={week ? '이전 주' : '이전 달'}
+            aria-label={week ? t('calendar.previousWeek') : t('calendar.previousMonth')}
             onClick={() =>
               week
                 ? week.onChange(addDays(week.start, -7))
@@ -68,7 +70,7 @@ export function CalendarGrid({
           </Button>
           <Button
             variant="ghost"
-            aria-label={week ? '다음 주' : '다음 달'}
+            aria-label={week ? t('calendar.nextWeek') : t('calendar.nextMonth')}
             onClick={() =>
               week
                 ? week.onChange(addDays(week.start, 7))
@@ -85,7 +87,7 @@ export function CalendarGrid({
               onSelect(today);
             }}
           >
-            오늘
+            {t('day.today')}
           </Button>
         </div>
       </div>
@@ -93,7 +95,7 @@ export function CalendarGrid({
         <div role="row" className="calendar-week">
           {weekdays.map((day) => (
             <div role="columnheader" className={`calendar-weekday weekday-${day}`} key={day}>
-              {['일', '월', '화', '수', '목', '금', '토'][day]}
+              {weekdayShort(day)}
             </div>
           ))}
         </div>
@@ -102,7 +104,16 @@ export function CalendarGrid({
             {days.slice(weekIndex * 7, weekIndex * 7 + 7).map((date, column) => {
               const counts = summary?.get(date);
               const completed = !!counts?.total && counts.remaining === 0;
-              const label = `${formatCalendarDate(date, { year: 'numeric', month: 'long', day: 'numeric' })}${counts?.total ? (completed ? ', 모두 끝냄' : `, 남은 할 일 ${counts.remaining}개`) : ''}`;
+              const formattedDate = formatCalendarDate(date, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              });
+              const label = counts?.total
+                ? completed
+                  ? t('calendar.done', { date: formattedDate })
+                  : t('calendar.remainingTodos', { date: formattedDate, count: counts.remaining })
+                : formattedDate;
               return (
                 <div role="gridcell" aria-selected={date === selectedDate} key={date}>
                   <button

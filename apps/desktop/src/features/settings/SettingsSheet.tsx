@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -55,13 +56,9 @@ function DeleteAccount({
         accountRemoved = true;
       }
       await logout(client, cache, undefined, true);
-      toast.success('계정을 삭제했어요');
+      toast.success(t('settings.deleted'));
     } catch {
-      toast.error(
-        accountRemoved
-          ? '이 기기의 정보를 지우지 못했어요. 다시 시도해 주세요.'
-          : '계정을 삭제하지 못했어요. 다시 시도해 주세요.',
-      );
+      toast.error(accountRemoved ? t('settings.delete.deviceFailed') : t('settings.delete.failed'));
     } finally {
       setPending(false);
     }
@@ -77,27 +74,28 @@ function DeleteAccount({
       }}
     >
       <div className="routine-form">
-        <h2 id="delete-account-title">계정을 삭제할까요?</h2>
-        <p id="delete-account-description">
-          모든 목표·할 일·루틴이 영구 삭제되고 되돌릴 수 없어요.
-        </p>
+        <h2 id="delete-account-title">{t('settings.delete.title')}</h2>
+        <p id="delete-account-description">{t('settings.delete.description')}</p>
         {counts.data ? (
           <p className="supporting">
-            목표 {counts.data.goals}개 · 할 일 {counts.data.todos}개 · 루틴 {counts.data.routines}
-            개와 모든 완료 기록이 삭제돼요.
+            {t('settings.delete.contents', {
+              goals: counts.data.goals,
+              todos: counts.data.todos,
+              routines: counts.data.routines,
+            })}
           </p>
         ) : (
           <p role="status">
-            {counts.isError ? '삭제할 개수를 불러오지 못했어요.' : '삭제할 개수를 확인하고 있어요…'}
+            {counts.isError ? t('settings.delete.error') : t('settings.delete.checking')}
           </p>
         )}
         {counts.isError && (
           <Button variant="outline" onClick={() => void counts.refetch()}>
-            다시 시도
+            {t('common.tryAgain')}
           </Button>
         )}
         <label className="field-group">
-          이메일 주소를 다시 입력해 주세요
+          {t('settings.delete.email')}
           <Input
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
@@ -112,7 +110,7 @@ function DeleteAccount({
             onChange={(event) => setUnderstood(event.target.checked)}
             disabled={pending || deleted}
           />{' '}
-          되돌릴 수 없다는 걸 이해했어요
+          {t('settings.delete.acknowledge')}
         </label>
         <div className="routine-actions">
           <Button
@@ -121,7 +119,7 @@ function DeleteAccount({
             disabled={pending || deleted}
             onClick={onClose}
           >
-            취소
+            {t('mobile.add.cancel')}
           </Button>
           <Button
             className="routine-danger"
@@ -137,7 +135,11 @@ function DeleteAccount({
             }
             onClick={() => void remove()}
           >
-            {pending ? '삭제 중…' : deleted ? '이 기기 정보 지우기' : '계정 삭제'}
+            {pending
+              ? t('settings.deleting')
+              : deleted
+                ? t('settings.delete.clearDevice')
+                : t('settings.delete')}
           </Button>
         </div>
       </div>
@@ -164,7 +166,9 @@ export function SettingsSheet({
   const [themePending, setThemePending] = useState(false);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [appVersion, setAppVersion] = useState(isTauri() ? '확인 중…' : version);
+  const [appVersion, setAppVersion] = useState(
+    isTauri() ? t('settings.version.checking') : version,
+  );
   const online = useConnectivity();
   const goals = useGoals(client);
   const archivedGoals = (goals.data ?? []).filter((goal) => goal.archivedAt).length;
@@ -173,7 +177,7 @@ export function SettingsSheet({
     if (isTauri())
       void getVersion()
         .then(setAppVersion)
-        .catch(() => setAppVersion('확인하지 못했어요'));
+        .catch(() => setAppVersion(t('settings.version.failed')));
   }, []);
   if (deleting)
     return (
@@ -187,24 +191,24 @@ export function SettingsSheet({
     <Sheet labelledBy="settings-title" className="settings-sheet" onClose={onClose}>
       <header className="settings-header">
         <span aria-hidden="true" />
-        <h2 id="settings-title">설정</h2>
-        <Button variant="ghost" aria-label="설정 닫기" onClick={onClose}>
-          완료
+        <h2 id="settings-title">{t('settings.title')}</h2>
+        <Button variant="ghost" aria-label={t('settings.close')} onClick={onClose}>
+          {t('common.done')}
         </Button>
       </header>
       <div className="sheet-body settings-grid">
         <div className="settings-column">
           <section className="settings-group" aria-labelledby="account-settings">
-            <h3 id="account-settings">계정</h3>
+            <h3 id="account-settings">{t('settings.account')}</h3>
             <div className="settings-card">
               <div className="settings-card-row">
-                <span>이메일</span>
+                <span>{t('auth.email')}</span>
                 <span className="email-address settings-value">{session.user.email}</span>
               </div>
               <div className="settings-card-row">
                 <div>
-                  <strong>로그아웃</strong>
-                  <p className="supporting">이 맥에 저장된 데이터도 함께 지워져요.</p>
+                  <strong>{t('auth.logout')}</strong>
+                  <p className="supporting">{t('settings.logout.device')}</p>
                 </div>
                 <Button
                   variant="outline"
@@ -213,29 +217,29 @@ export function SettingsSheet({
                     setPending(true);
                     void logout(client, cache)
                       .then(({ localOnly }) => {
-                        if (localOnly) toast.success('이 기기에서 로그아웃했어요');
+                        if (localOnly) toast.success(t('auth.logout.local'));
                       })
-                      .catch(() => toast.error('로그아웃하지 못했어요. 다시 시도해 주세요.'))
+                      .catch(() => toast.error(t('auth.logout.failed')))
                       .finally(() => setPending(false));
                   }}
                 >
-                  {pending ? '로그아웃 중…' : '로그아웃'}
+                  {pending ? t('settings.loggingOut') : t('auth.logout')}
                 </Button>
               </div>
             </div>
           </section>
 
           <section className="settings-group" aria-labelledby="view-settings">
-            <h3 id="view-settings">보기</h3>
+            <h3 id="view-settings">{t('settings.view')}</h3>
             <div className="settings-card">
               <div className="settings-card-row">
-                <span id="week-start-label">주 시작 요일</span>
+                <span id="week-start-label">{t('settings.weekStart')}</span>
                 <div
                   className="settings-segment"
                   role="radiogroup"
                   aria-labelledby="week-start-label"
                 >
-                  {(['일요일', '월요일'] as const).map((label, value) => (
+                  {([t('settings.sunday'), t('settings.monday')] as const).map((label, value) => (
                     <Button
                       key={label}
                       variant="ghost"
@@ -250,13 +254,13 @@ export function SettingsSheet({
                 </div>
               </div>
               <div className="settings-card-row">
-                <span id="theme-label">테마</span>
+                <span id="theme-label">{t('settings.theme')}</span>
                 <div className="settings-segment" role="radiogroup" aria-labelledby="theme-label">
                   {(
                     [
-                      ['system', '시스템'],
-                      ['light', '라이트'],
-                      ['dark', '다크'],
+                      ['system', t('settings.theme.os')],
+                      ['light', t('settings.theme.light')],
+                      ['dark', t('settings.theme.dark')],
                     ] as const
                   ).map(([value, label]) => (
                     <Button
@@ -268,7 +272,7 @@ export function SettingsSheet({
                       onClick={() => {
                         setThemePending(true);
                         void setTheme(value as Theme)
-                          .catch(() => toast.error('테마를 저장하지 못했어요'))
+                          .catch(() => toast.error(t('settings.theme.saveFailed')))
                           .finally(() => setThemePending(false));
                       }}
                     >
@@ -281,31 +285,29 @@ export function SettingsSheet({
           </section>
 
           <section className="settings-group" aria-labelledby="goal-settings">
-            <h3 id="goal-settings">목표</h3>
+            <h3 id="goal-settings">{t('routine.goal')}</h3>
             <button
               type="button"
               className="settings-card settings-link-row"
               onClick={onOpenArchivedGoals}
             >
-              <span>보관한 목표</span>
-              <span className="settings-value">{archivedGoals}개</span>
+              <span>{t('goal.archived.title')}</span>
+              <span className="settings-value">{t('common.count', { count: archivedGoals })}</span>
               <span aria-hidden="true">›</span>
             </button>
           </section>
 
           <section className="settings-group" aria-labelledby="delete-account-settings">
-            <h3 id="delete-account-settings">계정 삭제</h3>
+            <h3 id="delete-account-settings">{t('settings.delete')}</h3>
             <div className="settings-card settings-card-row">
-              <p className="supporting settings-delete-copy">
-                목표, 할 일, 루틴 기록을 모두 지우고 계정을 없애요.
-              </p>
+              <p className="supporting settings-delete-copy">{t('settings.delete.help')}</p>
               <Button
                 variant="outline"
                 className="danger-text"
                 disabled={!online || pending}
                 onClick={() => setDeleting(true)}
               >
-                계정 삭제
+                {t('settings.delete')}
               </Button>
             </div>
           </section>
@@ -313,13 +315,13 @@ export function SettingsSheet({
 
         <div className="settings-column">
           <section className="settings-group" aria-labelledby="shortcut-settings">
-            <h3 id="shortcut-settings">단축키</h3>
+            <h3 id="shortcut-settings">{t('settings.shortcuts')}</h3>
             <div className="settings-card shortcut-list">
               {[
-                ['새 할 일', ['⌘', 'N']],
-                ['오늘로 이동', ['⌘', 'T']],
-                ['이전 날, 다음 날', ['←', '→']],
-                ['설정 열기', ['⌘', ',']],
+                [t('menu.newTodo'), ['⌘', 'N']],
+                [t('settings.shortcuts.today'), ['⌘', 'T']],
+                [t('settings.shortcuts.day'), ['←', '→']],
+                [t('settings.shortcuts.settings'), ['⌘', ',']],
               ].map(([label, keys]) => (
                 <div className="settings-card-row" key={label as string}>
                   <span>{label as string}</span>
@@ -334,24 +336,25 @@ export function SettingsSheet({
           </section>
 
           <section className="settings-group" aria-labelledby="info-settings">
-            <h3 id="info-settings">정보</h3>
+            <h3 id="info-settings">{t('settings.info')}</h3>
             <div className="settings-card info-list">
-              {links.map(({ label, url }) => (
+              {links.map(({ labelKey, url }) => (
                 <button
                   type="button"
                   className="settings-card-row settings-info-link"
-                  key={label}
+                  key={labelKey}
                   disabled={!url}
                   onClick={() => {
-                    if (url) void openLink(url).catch(() => toast.error('링크를 열지 못했어요'));
+                    if (url)
+                      void openLink(url).catch(() => toast.error(t('settings.link.openFailed')));
                   }}
                 >
-                  <span>{label}</span>
-                  <span aria-hidden="true">{url ? '↗' : '준비 중'}</span>
+                  <span>{t(labelKey)}</span>
+                  <span aria-hidden="true">{url ? '↗' : t('settings.link.pending')}</span>
                 </button>
               ))}
               <div className="settings-card-row">
-                <span>버전</span>
+                <span>{t('settings.version')}</span>
                 <span className="settings-value version-details">{appVersion}</span>
               </div>
             </div>

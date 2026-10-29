@@ -34,7 +34,8 @@
     "react-dom": "19.2.3",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.15",
+    "@nodii/i18n": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
