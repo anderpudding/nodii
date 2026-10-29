@@ -1912,3 +1912,13 @@ html[lang='en'] .routine-scope-day > span {
   max-width: 100%;
   overflow-wrap: anywhere;
 }
+
+html[lang='en'] .settings-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html[lang='en'] .settings-header > [aria-hidden='true'] {
+  display: none;
+}
