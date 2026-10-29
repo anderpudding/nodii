@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useConnectivity } from '../../lib/connectivity';
 import { toast } from 'sonner';
 import { checkColor, goalInk, type Goal } from '@nodii/core';
@@ -32,9 +33,9 @@ export function GoalChip({
       className={className}
       style={goalStyle(goal.color, surface)}
       aria-disabled={!online || undefined}
-      onClick={() => (online ? onAdd() : toast.error('오프라인이라 저장할 수 없어요'))}
+      onClick={() => (online ? onAdd() : toast.error(t('sync.writeDisabled')))}
       disabled={disabled}
-      aria-label={`${goal.name}에 할 일 추가`}
+      aria-label={t('mobile.goal.add', { name: goal.name })}
     >
       <span className="goal-dot" aria-hidden="true" />
       {goal.name}
