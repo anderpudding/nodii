@@ -37,21 +37,42 @@
 | 기본/대체 언어 | 영어 | 한국어 외 모든 사용자에게 영어가 맞다 |
 | 인증 메일 | **한 통에 두 언어** (제목 `Nodii 로그인 코드 · Your Nodii login code`, 본문 한국어 → 영어) (확정 2026-10-28) | Supabase 템플릿은 사용자별 분기가 번거롭고, 코드 메일은 짧아서 병기로 충분 |
 
-## 4. 용어집 (영어 톤: 짧고 친근하게, 문장형 버튼 지양)
+## 4. 용어집 (I3 확정 · 미국 영어)
+
+짧고 친근하게 쓰고 축약형을 사용한다. 메뉴·버튼·시트/대화상자 제목·세그먼트는 **Title Case**, 설명·도움말·토스트·오류·빈 상태·접근성 이름·placeholder는 **sentence case**다. 원문의 마침표·따옴표 모양·`…`·` · 다시 시도` 차이를 보존한다. 아래 명사는 문장 안에서 소문자로 쓴다.
 
 | 한국어 | 영어 | 메모 |
-|---|---|---|
-| 할 일 | Todo / todos | 버튼은 "Add todo" |
-| 목표 | Goal | |
-| 루틴 | Routine | |
-| 보관 / 보관 해제 | Archive / Unarchive | |
-| 건너뛰기 | Skip | |
-| 미루기·옮기기 | Move to… | |
-| 오늘 | Today | |
+| --- | --- | --- |
+| 할 일 | todo / todos | 버튼은 `Add Todo` |
+| 목표 | goal | 관리 화면은 `Manage Goals` |
+| 루틴 | routine | 관리 화면은 `Manage Routines` |
+| 보관 / 보관 해제 / 보관한 목표 | Archive / Unarchive / Archived Goals | 기록을 지우는 삭제와 구별 |
+| 건너뛰기 / 이날은 건너뛰기 | Skip / Skip This Day | 오늘만은 `Skip Today` |
+| 그만하기 | Stop | 오늘부터는 `Stop from Today` |
+| 옮기기 / 날짜 옮기기 | Move / Move to Another Day | `Move to Tomorrow` / `Move to Today` |
+| 가져오기 (지난 미완료) | Bring Over | 메뉴는 `Bring Over 3 Unfinished Todos`, 설명에서는 `Bring over …` |
+| 미완료 | unfinished | |
+| 완료 / 끝냄 | done | 체크 상태. 동작은 `Mark as Done` / `Mark as Unfinished` |
+| 완료 기록 | completion records | 체크 상태 이름과 기록을 구별 |
+| 기록 | records | 캘린더에 표시되는 항목은 문맥에 따라 entries |
+| 끝난 루틴 | ended routines | 완료 체크와 혼동하지 않게 종료를 뜻함 |
+| 오늘 / 내일 / 다음 주 | Today / Tomorrow / Next Week | |
 | 실행 취소 | Undo | |
-| 인증 코드 | Code / 6-digit code | |
+| 인증 코드 | code / 6-digit code | 로그인은 `Log In`, 로그아웃은 `Log Out` |
+| 설정 | Settings | macOS 관례 |
+| 시스템 | System | 테마·언어 |
+| 자동 | Automatic | 모바일 기존 원문 “자동”에 대응 |
+| 계정 삭제 | Delete Account | |
+| 완전 삭제 | Delete Permanently | |
+| 다시 시도 / 다시 확인 | Try Again / Check Again | 오류 문장 안에서는 `Try again` / `Check again` |
+| 오프라인 | offline | |
+| 순서 바꾸기 | Reorder | 드래그 안내는 `Drag to reorder` |
+| 이름 수정 | Rename | 할 일 메뉴. 일반 편집은 `Edit` |
+| 날짜 선택 | Choose Date | 접근성 이름은 문맥을 포함한 sentence case |
+| 간격 | interval | `day interval` / `week interval` / `month interval` |
+| 개인정보처리방침 / 이용약관 / 지원 페이지 | Privacy Policy / Terms of Use / Support | |
 
-조사 헬퍼(`withParticle`)는 한국어 문구에서만 쓴다. 영어 카탈로그는 같은 키에 조사 없는 문장을 넣는다.
+조사 헬퍼(`withParticle`)는 한국어 문구에서만 쓴다. 영어 카탈로그는 `{particle}` 없이 같은 나머지 자리표시자를 유지한다. 여러 개수는 `Todos {todos} · Routines {routines}`처럼 쓴다. 번역 검수 후보와 문맥별 선택은 [I3 결과 보고](14-i18n-i3-report.md)에 기록한다.
 
 ## 5. 단계
 
