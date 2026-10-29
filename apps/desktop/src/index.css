@@ -1900,3 +1900,15 @@ html[lang='en'] .archive-header {
 html[lang='en'] .goal-delete-modal p {
   overflow-wrap: anywhere;
 }
+
+/* 규칙 요약은 sentence case, 세그먼트의 보이는 이름만 Title Case로 표시한다. */
+html[lang='en'] .routine-segments .button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
+  text-transform: capitalize;
+}
+html[lang='en'] .routine-scope-day > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
