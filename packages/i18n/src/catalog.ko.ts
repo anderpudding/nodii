@@ -505,6 +505,7 @@ export const ko = {
   'app.settingsManagement': '설정 및 관리',
   'app.error.description': '기록한 데이터는 그대로 있어요. 다시 시도해 주세요.',
   'app.update.title': '새 버전이 필요해요',
+  'app.update.instruction': 'App Store에서 업데이트해 주세요.',
   'app.update.data': '기록한 데이터는 그대로 유지돼요.',
   'app.update.pending': 'App Store 링크를 준비하고 있어요.',
 

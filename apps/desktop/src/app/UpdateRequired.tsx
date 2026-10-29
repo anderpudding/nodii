@@ -37,7 +37,7 @@ export function UpdateRequired({
           </p>
           <h1 id="update-title">{t('app.update.title')}</h1>
           <p className="supporting">
-            {t('mobile.update.title')}
+            {t('app.update.instruction')}
             <br />
             {t('app.update.data')}
           </p>
