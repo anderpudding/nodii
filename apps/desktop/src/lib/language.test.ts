@@ -138,3 +138,62 @@ it('언어가 바뀔 때 메뉴를 다시 설치하고 실패를 알린다', asy
     expect(error).toHaveBeenCalledWith('메뉴를 준비하지 못했어요. 앱을 다시 열어 주세요.'),
   );
 });
+
+it('잘못된 store 값은 system으로 복구하고 미러를 갱신한다', async () => {
+  native.value = true;
+  system(['en-CA']);
+  store.get.mockResolvedValueOnce('invalid');
+  start();
+  await vi.waitFor(() => expect(localStorage.getItem('nodii-language')).toBe('system'));
+  expect(getLocale()).toBe('en');
+});
+
+it('미러를 읽지 못하면 system으로 OS 언어를 적용한다', () => {
+  system(['en-CA']);
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementationOnce(() => {
+    throw new Error('blocked');
+  });
+  start();
+  expect(getLocale()).toBe('en');
+});
+
+it('먼저 시작한 저장의 실패가 나중에 고른 언어를 되돌리지 않는다', async () => {
+  native.value = true;
+  let fail!: (error: Error) => void;
+  store.save.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, reject) => {
+        fail = reject;
+      }),
+  );
+  const previous = setLanguage('en');
+  const rejected = expect(previous).rejects.toThrow('old save');
+  await vi.waitFor(() => expect(store.save).toHaveBeenCalledOnce());
+  await setLanguage('system');
+  fail(new Error('old save'));
+  await rejected;
+  expect(getLocale()).toBe('en');
+  expect(document.documentElement.lang).toBe('en');
+  expect(localStorage.getItem('nodii-language')).toBe('system');
+  system(['ko-KR']);
+  start();
+  expect(getLocale()).toBe('ko');
+});
+
+it('메뉴 설치를 직렬화해 빠른 전환의 마지막 로케일을 유지한다', async () => {
+  let finish!: () => void;
+  vi.mocked(installAppMenu).mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await setLanguage('en');
+  await vi.waitFor(() => expect(installAppMenu).toHaveBeenCalledOnce());
+  await setLanguage('ko');
+  await Promise.resolve();
+  expect(installAppMenu).toHaveBeenCalledOnce();
+  finish();
+  await vi.waitFor(() => expect(installAppMenu).toHaveBeenCalledTimes(2));
+  expect(getLocale()).toBe('ko');
+});
