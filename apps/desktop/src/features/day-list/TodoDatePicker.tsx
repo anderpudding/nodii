@@ -30,7 +30,7 @@ export function TodoDatePicker({
         <div className="date-popover-heading">
           <p className="supporting">{t('todo.move.help')}</p>
           <Popover.Close asChild>
-            <Button variant="ghost">{t('common.cancel')}</Button>
+            <Button variant="ghost">{t('mobile.add.cancel')}</Button>
           </Popover.Close>
         </div>
         <CalendarGrid {...calendar} />

@@ -333,7 +333,7 @@ export function DayMenu({
                 requestAnimationFrame(() => more.current?.focus());
               }}
             >
-              {t('common.cancel')}
+              {t('mobile.add.cancel')}
             </Button>
             <Button className="routine-danger" disabled={!!targetReason} onClick={deleteTodos}>
               {t('todo.action.delete')}

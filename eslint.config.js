@@ -39,7 +39,7 @@ export default defineConfig([
     ignores: ['**/*.test.*', 'apps/desktop/src/test/**'],
     rules: {
       'no-restricted-syntax': [
-        'warn',
+        'error',
         ...[
           'Literal[value=/[가-힣]/]',
           'TemplateElement[value.raw=/[가-힣]/]',

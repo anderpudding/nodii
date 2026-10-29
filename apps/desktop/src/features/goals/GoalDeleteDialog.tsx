@@ -87,7 +87,7 @@ export function GoalDeleteDialog({
             </Button>
           )}
           <Button data-initial-focus variant="outline" disabled={pending} onClick={onClose}>
-            {t('common.cancel')}
+            {t('mobile.add.cancel')}
           </Button>
           <Button
             className="routine-danger"

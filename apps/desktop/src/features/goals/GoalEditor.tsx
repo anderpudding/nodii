@@ -61,7 +61,7 @@ export function GoalEditor({
   const heading = goal ? t('goal.edit') : t('goal.add');
   const preview = {
     id,
-    name: name.trim() || goal?.name || t('goal.label'),
+    name: name.trim() || goal?.name || t('routine.goal'),
     color: isHexColor(color) ? color : goal?.color || initialColor,
     sortKey,
     archivedAt: goal?.archivedAt ?? null,
@@ -211,10 +211,10 @@ export function GoalEditor({
       </div>
       <div className="goal-editor-actions">
         <Button variant="ghost" disabled={writing} onClick={onBack}>
-          {t('common.cancel')}
+          {t('mobile.add.cancel')}
         </Button>
         <Button type="submit" disabled={!valid || writing}>
-          {writing ? t('common.saving') : goal ? t('common.save') : t('common.add')}
+          {writing ? t('common.saving') : goal ? t('mobile.rename.save') : t('mobile.add.action')}
         </Button>
       </div>
     </form>

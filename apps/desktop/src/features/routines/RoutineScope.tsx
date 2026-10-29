@@ -145,7 +145,7 @@ export function RoutineScope({
         </Button>
       )}
       <Button ref={cancel} variant="ghost" disabled={pending} onClick={onCancel}>
-        {t('common.cancel')}
+        {t('mobile.add.cancel')}
       </Button>
     </>
   );

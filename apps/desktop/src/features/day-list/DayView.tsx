@@ -68,7 +68,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
       <div className="day-list-scroll" tabIndex={0} role="region" aria-label={t('day.list')}>
         {(goals.isError && !goals.data) || (todos.isError && !todos.data) ? (
           <div className="day-empty">
-            <p role="alert">{t('day.failed')}</p>
+            <p role="alert">{t('mobile.today.failed')}</p>
             <Button
               variant="outline"
               onClick={() => {

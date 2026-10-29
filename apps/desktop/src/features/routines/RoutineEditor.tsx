@@ -211,7 +211,7 @@ export function RoutineEditor({
               />
             </div>
             <fieldset className="routine-fieldset" disabled={busy}>
-              <legend>{t('goal.label')}</legend>
+              <legend>{t('routine.goal')}</legend>
               <div className="routine-choices">
                 {activeGoals.map((item) => (
                   <button
@@ -405,10 +405,10 @@ export function RoutineEditor({
           </div>
           <div className="routine-actions">
             <Button variant="ghost" disabled={busy} onClick={onClose}>
-              {t('common.cancel')}
+              {t('mobile.add.cancel')}
             </Button>
             <Button type="submit" disabled={!canSave}>
-              {busy ? t('common.saving') : t('common.save')}
+              {busy ? t('common.saving') : t('mobile.rename.save')}
             </Button>
           </div>
           {routine && (

@@ -82,7 +82,7 @@ export function RoutineStopDialog({
         </p>
         <div className="routine-actions">
           <Button ref={cancel} data-initial-focus variant="ghost" onClick={onClose}>
-            {t('common.cancel')}
+            {t('mobile.add.cancel')}
           </Button>
           {!confirmDelete && (
             <Button

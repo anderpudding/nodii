@@ -80,7 +80,7 @@ export function appMenuOptions(): MenuOptions {
         ],
       },
       {
-        text: t('menu.view'),
+        text: t('settings.view'),
         items: [
           {
             id: 'today',
