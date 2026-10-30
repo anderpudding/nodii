@@ -222,7 +222,18 @@ function ManagementRow({
   const online = useOnline();
   const busy = useRoutineWritePending(routine.id);
   const [menu, setMenu] = useState(false);
-  const label = `${routine.title} · ${ruleLabel(routine)} · ${t(routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from', { date: routineDate(routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate) })}`;
+  const label = t('routine.row.label', {
+    title: routine.title,
+    rule: ruleLabel(routine),
+    period: t(
+      routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from',
+      {
+        date: routineDate(
+          routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate,
+        ),
+      },
+    ),
+  });
   function run(action: RoutineManagementAction) {
     if (busy || !online) return;
     if (action === 'edit') onEdit();

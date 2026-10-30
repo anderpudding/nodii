@@ -345,7 +345,7 @@ export const ko = {
   'routine.increase': '반복 간격 늘리기',
   'routine.weekdays': '요일',
   'routine.monthdays': '날짜',
-  'routine.weekdaySelect': '{day}요일 고르기',
+  'routine.weekdaySelect': '{day} 고르기',
   'routine.monthdaySelect': '{day}일 고르기',
   'routine.period': '기간',
   'routine.start': '시작일',
@@ -461,6 +461,7 @@ export const ko = {
   'routine.everyWeeks.days': '{every}주마다 {days}',
   'routine.monthly.days': '매월 {days}일',
   'routine.everyMonths.days': '{every}개월마다 {days}일',
+  'routine.row.label': '{title} · {rule} · {period}',
   'routine.list.summary': '{rule}, {date}부터',
 
   // common

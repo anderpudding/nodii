@@ -11,9 +11,8 @@ import {
   type Routine,
   type RoutineLog,
 } from '@nodii/core';
-import { t, formatISODate } from '@nodii/i18n';
+import { formatRoutineRule, formatISODate } from '@nodii/i18n';
 
-export const weekdays = ['일', '월', '화', '수', '목', '금', '토'] as const;
 /** ROUT-01~04: 입력을 정규화한 뒤 공용 규칙 검증 결과를 필드에 전달한다. */
 export function validateForm(draft: Routine, activeGoalIds: readonly string[]) {
   const rule = validateRoutineRule(draft);
@@ -32,15 +31,8 @@ export function shouldAskScope(before: Routine, after: Routine, today: ISODate) 
 export function weekdayOrder(weekStart: 0 | 1) {
   return Array.from({ length: 7 }, (_, i) => (i + weekStart) % 7);
 }
-/** ROUT-10: 반복 계산과 분리된 한국어 규칙 설명이다. */
-export function ruleLabel(rule: Routine) {
-  const every = rule.repeatEvery;
-  if (rule.freq === 'daily')
-    return t(every === 1 ? 'routine.daily' : 'routine.everyDays', { every });
-  if (rule.freq === 'weekly')
-    return `${t(every === 1 ? 'routine.weekly' : 'routine.everyWeeks', { every })} ${(rule.byWeekday ?? []).map((day) => weekdays[day]).join('·')}`;
-  return `${t(every === 1 ? 'routine.monthly' : 'routine.everyMonths', { every })} ${(rule.byMonthday ?? []).join('·')}${t('routine.dayUnit')}`;
-}
+// ROUT-10: 데스크톱과 동일한 문장 전체 키를 사용한다.
+export const ruleLabel = formatRoutineRule;
 /** 기간은 시각으로 바꾸지 않고 UTC 표시만 사용한다. */
 export function routineDate(date: ISODate) {
   return formatISODate(date, {

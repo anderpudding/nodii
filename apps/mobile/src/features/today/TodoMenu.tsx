@@ -1,3 +1,4 @@
+import { useLocale } from '../../../lib/use-locale';
 import { useOnline } from '../../../lib/connectivity';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -41,6 +42,7 @@ export function TodoMenu({
   onSave(title: string): Promise<void>;
   onClose(): void;
 }) {
+  const locale = useLocale();
   const { colors } = useTheme();
   const online = useOnline();
   const reduced = useReducedMotion();
@@ -62,7 +64,7 @@ export function TodoMenu({
       { text: t('mobile.add.discard.continue'), style: 'cancel' },
       { text: t('mobile.add.discard.action'), style: 'destructive', onPress: onClose },
     ]);
-  }, [saving, editing, draft, todo.title, onClose]);
+  }, [saving, editing, draft, todo.title, onClose, locale]);
   const pan = useMemo(
     () =>
       PanResponder.create({

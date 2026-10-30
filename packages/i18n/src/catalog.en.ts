@@ -485,6 +485,7 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'routine.everyWeeks.days': 'Every {every} weeks on {days}',
   'routine.monthly.days': 'Monthly on the {days}',
   'routine.everyMonths.days': 'Every {every} months on the {days}',
+  'routine.row.label': '{title} · {rule} · {period}',
   'routine.list.summary': '{rule}, from {date}',
 
   // common
