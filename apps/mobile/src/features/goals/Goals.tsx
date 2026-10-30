@@ -1,3 +1,4 @@
+import { useLargeEnglishText } from '../../../lib/use-large-english-text';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import {
@@ -211,12 +212,14 @@ function GoalRow({
     })),
     'none',
   );
+  const stacked = useLargeEnglishText();
   const body = (
     <View
       onLayout={(event) => onHeight(event.nativeEvent.layout.height)}
       style={[
         s.row,
         s.horizontal,
+        stacked && { flexDirection: 'column', alignItems: 'stretch' },
         {
           backgroundColor: colors.chip,
           paddingVertical: m.space.sm,
@@ -248,9 +251,12 @@ function GoalRow({
 
         style={({ pressed }) => [
           {
-            flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
+            flex: stacked ? undefined : 1,
+            flexGrow: stacked ? 0 : undefined,
+            flexShrink: stacked ? 0 : undefined,
+            flexBasis: stacked ? 'auto' : undefined,
+            flexDirection: stacked ? 'column' : 'row',
+            alignItems: stacked ? 'stretch' : 'center',
             gap: m.space.sm,
             minHeight: m.height.touch,
             opacity: pressed ? m.pressedOpacity : 1,
@@ -258,7 +264,7 @@ function GoalRow({
         ]}
       >
         <GoalBadge goal={goal} onChip />
-        <View style={{ flex: 1 }}>
+        <View style={stacked ? { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' } : { flex: 1 }}>
           <Text style={[s.supporting, { color: colors.muted }]}>
             {contents ? t('goal.contents', { ...contents }) : t('goal.counts.loading')}
           </Text>
