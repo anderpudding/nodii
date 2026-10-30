@@ -11,7 +11,7 @@ import {
   type Routine,
   type RoutineLog,
 } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { t, formatISODate } from '@nodii/i18n';
 
 export const weekdays = ['일', '월', '화', '수', '목', '금', '토'] as const;
 /** ROUT-01~04: 입력을 정규화한 뒤 공용 규칙 검증 결과를 필드에 전달한다. */
@@ -43,11 +43,10 @@ export function ruleLabel(rule: Routine) {
 }
 /** 기간은 시각으로 바꾸지 않고 UTC 표시만 사용한다. */
 export function routineDate(date: ISODate) {
-  return new Intl.DateTimeFormat('ko-KR', {
+  return formatISODate(date, {
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`));
+  });
 }
 /** ROUT-08: 14칸 결과도 occursOn으로 계산하고 기록을 삭제하는 것처럼 그리지 않는다. */
 export function scopePreview(

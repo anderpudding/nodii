@@ -25,7 +25,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { monthGridRange, monthKeyOf, type Profile } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { formatISODate, t } from '@nodii/i18n';
 import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
@@ -241,12 +241,10 @@ function TodayContent({
       ),
     [profile.timezone],
   );
-  const dateObject = new Date(`${selectedDate}T00:00:00Z`);
-  const monthLabel = new Intl.DateTimeFormat('ko-KR', {
+  const monthLabel = formatISODate(monthExpanded ? `${calendarMonth}-01` : selectedDate, {
     year: 'numeric',
     month: 'long',
-    timeZone: 'UTC',
-  }).format(monthExpanded ? new Date(`${calendarMonth}-01T00:00:00Z`) : dateObject);
+  });
   function revealInput(goalId: string) {
     const sectionIndex = sections.findIndex((section) => section.goal.id === goalId);
     const section = sections[sectionIndex];

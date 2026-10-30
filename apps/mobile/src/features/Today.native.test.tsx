@@ -49,7 +49,7 @@ import {
   type GoalRecord,
 } from '@nodii/api';
 import { type Todo } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { setLocale, t } from '@nodii/i18n';
 import { ToastProvider } from '../components/Toast';
 import { SwipeableRow } from '../components/gestures/SwipeableRow';
 import { useUIStore } from '../stores/ui';
@@ -1446,4 +1446,14 @@ it('다른 목표의 +는 그 목표 맨 아래에 입력을 열고 Enter로 연
     expect(screen.getByLabelText(t('todo.title'))).toBe(input);
     expect(input.props.value).toBe('');
   }
+});
+
+it('English 오늘 화면은 월 머리글·요일·날짜 접근성 라벨을 영어로 표시한다', async () => {
+  setLocale('en');
+  await mount();
+  expect(screen.getByRole('header', { name: 'October 2026' })).toBeTruthy();
+  expect(screen.getByText('Sat')).toBeTruthy();
+  expect(screen.getByRole('button', { name: /Sat, October 10.*2 left/ })).toBeTruthy();
+  fireEvent.press(screen.getByRole('radio', { name: 'Monthly view' }));
+  expect(within(screen.getByTestId('month-grid')).getByText('Sun')).toBeTruthy();
 });

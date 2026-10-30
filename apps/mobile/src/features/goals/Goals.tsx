@@ -9,7 +9,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { compareSortKey } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { t, intlLocale, getLocale } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { ManagementScreen } from '../../components/ManagementScreen';
@@ -265,9 +265,10 @@ function GoalRow({
           {archived && (
             <Text style={[s.supporting, { color: colors.muted }]}>
               {t('goal.archived.date', {
-                date: new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(
-                  new Date(goal.archivedAt!),
-                ),
+                date: new Intl.DateTimeFormat(intlLocale(getLocale()), {
+                  month: 'long',
+                  day: 'numeric',
+                }).format(new Date(goal.archivedAt!)),
               })}
             </Text>
           )}

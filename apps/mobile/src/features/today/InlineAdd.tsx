@@ -20,7 +20,7 @@ import {
   type TodoRecord,
 } from '@nodii/api';
 import { monthKeyOf, normalizeTitle, type Goal, type ISODate } from '@nodii/core';
-import { t, withParticle } from '@nodii/i18n';
+import { formatISODate, t, withParticle } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { useUIStore } from '../../stores/ui';
@@ -114,11 +114,10 @@ export function InlineAdd({
       busy.current = false;
     }
   }
-  const dateLabel = new Intl.DateTimeFormat('ko-KR', {
+  const dateLabel = formatISODate(date, {
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`));
+  });
   // M8: 입력 줄은 chip 채움과 같은 싹이 씨앗을 쓴다.
   return (
     <View style={styles.container}>

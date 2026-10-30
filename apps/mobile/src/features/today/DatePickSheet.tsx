@@ -10,7 +10,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { monthGridRange, monthKeyOf, type ISODate } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { formatISODate, t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { CalendarArrow } from '../../components/CalendarArrow';
@@ -101,11 +101,7 @@ export function DatePickSheet({
       <View style={styles.navigation}>
         <CalendarArrow direction={-1} onPress={() => setMonth(adjacentMonthKey(month, -1))} />
         <Text style={[styles.month, { color: colors.ink }]}>
-          {new Intl.DateTimeFormat('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            timeZone: 'UTC',
-          }).format(new Date(`${month}-01T00:00:00Z`))}
+          {formatISODate(`${month}-01`, { year: 'numeric', month: 'long' })}
         </Text>
         <CalendarArrow direction={1} onPress={() => setMonth(adjacentMonthKey(month, 1))} />
       </View>
