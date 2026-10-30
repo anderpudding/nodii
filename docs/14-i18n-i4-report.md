@@ -30,6 +30,8 @@
 
 이 환경에서 Auth HTTP로 새 `@nodii.test` 주소에 가입 OTP 요청 → Mailpit 제목/HTML 확인 → 코드 인증 → 같은 계정에 로그인 OTP 요청 → 두 번째 제목/HTML 확인 → 코드 인증을 모두 통과했습니다. 위 제목 두 개, 코드 한 번, 언어 블록 순서, 각 언어의 10분 안내와 요청하지 않은 메일 무시 안내를 검사했습니다. 이는 **로컬 수신 검증**이며 실제 SMTP/Gmail/iCloud 수신 검증은 아닙니다. 일회용 코드·세션·키는 보고서나 저장소에 남기지 않았습니다.
 
+후속 수정 뒤에도 같은 임시 로컬 환경에서 가입·로그인 메일을 각각 다시 받아, 첫 문장이 **“위 6자리 코드를 앱에 입력해 주세요. 코드는 10분 동안 유효해요.”**인지와 코드가 이 문장 위에 한 번만 나오는지 확인했습니다. 두 코드의 실제 인증까지 통과했고 임시 환경은 종료했습니다.
+
 참고한 기본 동작은 [Supabase 이메일 템플릿 공식 문서](https://supabase.com/docs/guides/auth/auth-email-templates)이며, [changelog](https://supabase.com/changelog)도 확인했습니다. Markdown 문서 조회는 도구의 content-type/DNS 제한으로 실패해 HTML 공식 문서로 확인했습니다.
 
 ## 번들 언어 선언과 실행 결과
@@ -107,14 +109,14 @@ open -n 'apps/desktop/src-tauri/target/release/bundle/macos/Nodii I4 Preview.app
 
 결과: `store-assets/screenshots-v2/macos-en/`. 모두 **2880×1800 PNG**이며 순서/파일명 접미사는 한국어와 같습니다. HTML 템플릿과 Playwright, 앱에 설치된 Pretendard를 사용했습니다. 실행 방법은 `store-assets/screenshots-v2/generator/README.md`, 측정은 `reference-pixels.json`, 검사 결과는 `screenshot-checks.json`, 모의 데이터는 `mock-data.json`입니다.
 
-| 파일                     | 영어 제목                               | 보라색 강조 단어 |
-| ------------------------ | --------------------------------------- | ---------------- |
-| nodii-mac-01-today.png   | Make room for every goal                | goal             |
-| nodii-mac-02-daymenu.png | Bring unfinished todos to today         | today            |
-| nodii-mac-03-routine.png | Set a routine. Let it repeat.           | routine          |
-| nodii-mac-04-goals.png   | Give every goal a color                 | color            |
-| nodii-mac-05-dark.png    | A calmer day in dark mode               | dark             |
-| nodii-mac-06-narrow.png  | A smaller window. / One week at a time. | week             |
+| 파일                     | 영어 제목                               | 강조 단어 | 원본에서 측정한 강조색 |
+| ------------------------ | --------------------------------------- | --------- | ---------------------- |
+| nodii-mac-01-today.png   | Make room for every goal                | goal      | `#7F4DD1`              |
+| nodii-mac-02-daymenu.png | Bring unfinished todos to today         | today     | `#A65607`              |
+| nodii-mac-03-routine.png | Set a routine. Let it repeat.           | routine   | `#107883`              |
+| nodii-mac-04-goals.png   | Give every goal a color                 | color     | `#4062C5`              |
+| nodii-mac-05-dark.png    | A calmer day in dark mode               | dark      | `#9B5CFF`              |
+| nodii-mac-06-narrow.png  | A smaller window. / One week at a time. | week      | `#B83069`              |
 
 - 한국어 **6장을 먼저 이미지로 열어** 여백·글자·강조색·프레임·모서리·그림자 범위를 측정했습니다. 앞 5장 창 외곽은 CSS 좌표 `(259,222)`, `922×649`; 6번은 `(919,89)`, `432×722`입니다. 타이틀바 28, 모서리 12, 내부 앱 화면은 각각 `920×619` / `430×692`입니다. 합성은 1440×900 CSS px의 DPR 2입니다.
 - 날짜는 한국어 원본과 같은 **2026-10-22(목)**, 주 시작 일요일, 42칸 그리드입니다. 오늘 **6개 중 3개 완료**, 하루 메뉴의 지난 미완료 **3개**, 활성 목표 **4개**, 보관 목표 **1개**를 맞췄습니다. 달력 42칸의 남은 개수/완료 색 상태도 원본을 기준으로 재구성했습니다.
@@ -127,7 +129,7 @@ open -n 'apps/desktop/src-tauri/target/release/bundle/macos/Nodii I4 Preview.app
 ## 지시서와 실제 자료 차이 / 결정이 필요한 사항
 
 1. **기본 언어 문서의 분기:** 앞서 만든 `8b25e48`(기본 언어 변경을 I5로 옮긴 계획 수정)은 `feat/i5-primary-language`에만 있고 시작 main에는 없습니다. main의 계획은 아직 I4에서 변경 검토라고 적습니다. 이번 단계는 구체적인 I4 지시서의 **기본 언어 유지·I5 전환 확정**을 따라 런북에 기록했습니다. 기존 커밋은 보존했고 이번 브랜치에 임의로 cherry-pick하거나 계획을 다시 수정하지 않았습니다. 이 계획 커밋의 통합은 남습니다.
-2. **원본 배경/배치:** 지시서는 모두 연보라·상단 문구라고 요약하지만, 실제 02는 연살구, 03은 연청록, 04는 연파랑, 05는 다크, 06은 연분홍이며 06은 좌측 문구/우측 창입니다. 원본의 배경·배치를 유지했습니다. 원본 강조색은 여러 색이지만 영어는 지시서가 명시한 **단어 하나의 보라색 강조**를 적용했습니다.
+2. **원본 배경/배치:** 지시서는 모두 연보라·상단 문구라고 요약하지만, 실제 02는 연살구, 03은 연청록, 04는 연파랑, 05는 다크, 06은 연분홍이며 06은 좌측 문구/우측 창입니다. 원본의 배경·배치를 유지했습니다. 초기 지시서의 “모두 보라색 강조”는 잘못된 설명이라는 후속 사용자 정정에 따라, 원본 6장의 제목 영역에서 단색 픽셀의 최빈 RGB를 측정해 **장별 강조색을 원본과 일치**시켰습니다. 측정 영역·샘플 픽셀 좌표·HEX/RGB·단색 픽셀 수를 `reference-pixels.json`의 `titleAccent`에 추가했고 생성기가 이 값을 직접 읽습니다. 배경색이나 새싹 장식의 색을 제목 색으로 오인하지 않도록 제목 영역만 측정했습니다.
 3. **원본 생성 소스 없음:** 한국어 PNG만 있으므로 원시 브라우저 viewport와 그림자 CSS의 수학적 동일성은 검증할 수 없습니다. 프레임 크기·위치는 측정해 맞췄고, 그림자는 확산 범위를 기준으로 재현했습니다. 영어의 원시 프리뷰는 넓은 창 1100×740 / 좁은 창 **490×788**, 최종 합성 내부 너비는 원본과 같은 920 / 430입니다. 430px 원시 창에서는 긴 영어 머리글/버튼이 다음 줄로 내려가 목록이 더 가려졌습니다. 제품 UI 수정 없이 6번에서 헤더와 보이는 행이 잘리지 않도록 원시 캡처 크기를 조정했습니다. **원시 창 폭까지 동일하다고 주장하지 않으며**, 원본 생성 소스가 있으면 그 viewport로 최종 재대조가 필요합니다.
 4. **메일/네이티브 검증 환경:** 저장소의 확인 메일 비활성 설정, 현재 Mailpit, 출시 CSP의 로컬 차단 때문에 위의 임시 환경과 별도 ID/CSP를 사용했습니다. 제품 설정을 바꾸지 않았고 실제 SMTP·정식 서명 앱 검증은 남겼습니다.
 5. **공유 앱 정보:** 이름·부제는 iOS/macOS가 함께 쓰므로 영어 현지화를 추가하면 iOS의 영어 스토어 노출에도 영향을 줄 수 있습니다. 추천안은 플랫폼 전용 영어 지원을 약속하지 않지만 iPhone UI는 아직 한국어입니다. 사람이 공유 이름·부제와 iOS 노출을 검수해야 합니다. 기본 언어 English 전환은 I5입니다.
@@ -176,3 +178,13 @@ pnpm은 기존 캐시의 **10.28.0**을 `/private/tmp/nodii-i2-bin` PATH로 사�
 - `0441aff` — `docs(release): add English localization steps to runbook`
 - 이 보고서·구현 계획은 세 번째 기록 커밋으로 분리합니다.
 - **새 의존성 없음.** 설치된 Playwright/Chrome/Pretendard 및 기존 로컬 Supabase만 사용합니다. 제품 코드·락파일·DB 스키마·생성 타입·네이티브 설정 변경 없음. `store-assets/`, 빌드, `docs/codex/`, `.hiring-panel/`은 커밋하지 않습니다.
+
+## I4 후속 수정 검증
+
+- AUTH-01: 코드 위치에 맞춰 한국어 첫 문장의 “아래”를 “위”로 수정하고 메일 확인 절에 반영했습니다. `e916798` — `fix(auth): match Korean code email wording to new layout (AUTH-01)`.
+- SET-06: 잘못된 “모두 보라색” 지시를 사용자 정정으로 대체했습니다. 한국어 6장을 다시 열고 제목 영역의 색을 측정하여 위 스크린샷 표의 장별 HEX, `reference-pixels.json`의 측정 영역/좌표/RGB/개수, 생성기와 README에 반영했습니다. 배치·문구·모의 데이터는 유지했습니다.
+- 영어 6장을 다시 생성해 각각 이미지로 검수했습니다. 모두 2880×1800이며, 계산된 CSS 색과 최종 PNG의 단색 제목 픽셀이 원본 측정색과 정확히 일치합니다. `generator/accent-checks.json`에 결과를 남겼습니다. DOM/입력값 한글·가로 넘침·브라우저 오류·외부 요청은 모두 0건입니다.
+- 이전 영어 이미지와 비교하면 01·02·04·06은 제목 영역 밖 픽셀이 동일하고 05는 전체 픽셀이 동일합니다. 03은 제목 외에 스크림/프레임 안티앨리어싱의 최대 RGB 1단계 차이만 있으며 배치나 문구 변경은 없습니다.
+- `pnpm lint`·`pnpm format:check`·`pnpm typecheck`·`pnpm test` 통과. 전체 **681개**입니다. 최초 전체 테스트는 기존 `SettingsLanguage.test.tsx`의 언어 전환 검사 1개가 5000ms 제한으로 실패했으며, DB/스크린샷 작업 종료 후 같은 `pnpm test`를 재실행해 전부 통과했습니다. 테스트 코드·시간 제한을 수정하지 않았습니다.
+- `pnpm db:reset && pnpm db:test && pnpm db:types` 통과: **159개**, 생성 타입 변경 없음. 수정 문구의 로컬 가입/로그인 메일 수신·본문/순서/코드 개수·코드 인증 통과. 메일 HTML·생성기·템플릿·README·보고서 개별 Prettier 및 `git diff --check`도 통과했습니다.
+- 새 의존성·제품 UI/카탈로그·스키마 변경 없음. `store-assets/`와 생성 결과는 커밋하지 않았으며, 클라우드/스토어/GitHub 설정·버전·태그·업로드·push를 건드리지 않았습니다. 이번 두 변경과 무관한 네이티브 빌드/언어 순회는 반복하지 않았고 실제 메일 앱·스토어 최종 검수는 기존 사람 확인 항목을 유지합니다.
