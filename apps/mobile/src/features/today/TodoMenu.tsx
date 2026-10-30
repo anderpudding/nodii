@@ -152,7 +152,12 @@ export function TodoMenu({
                   disabled={saving}
                   onPress={close}
                 />
-                <Text accessibilityRole="header" style={[styles.heading, { color: colors.ink }]}>
+                <Text
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  accessibilityRole="header"
+                  style={[styles.heading, { color: colors.ink }]}
+                >
                   {t('todo.action.rename')}
                 </Text>
                 <Button

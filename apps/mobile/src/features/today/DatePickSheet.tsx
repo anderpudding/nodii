@@ -137,7 +137,7 @@ export function DatePickSheet({
 }
 
 const styles = StyleSheet.create({
-  quick: { flexDirection: 'row', gap: m.space.sm },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: m.space.sm },
   navigation: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
   month: { flex: 1, textAlign: 'center', fontFamily: m.fontBold, fontSize: m.type.button },
   supporting: { fontFamily: m.fontMedium, fontSize: m.type.supporting },

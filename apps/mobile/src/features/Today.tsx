@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,7 +26,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { monthGridRange, monthKeyOf, type Profile } from '@nodii/core';
-import { formatISODate, t } from '@nodii/i18n';
+import { formatISODate, getLocale, t } from '@nodii/i18n';
 import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { ToastInset } from '../components/Toast';
@@ -115,6 +116,8 @@ function TodayContent({
   const { colors } = useTheme();
   const online = useOnline();
   const insets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
+  const enlargedEnglish = getLocale() === 'en' && fontScale > 1;
   const {
     selectedDate,
     today,
@@ -261,84 +264,95 @@ function TodayContent({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.root, { backgroundColor: colors.bg }]}
     >
-      <View
-        testID="today-top"
-        style={[styles.top, { backgroundColor: colors.bg, paddingTop: insets.top }]}
-      >
-        <Text
-          accessibilityRole="header"
-          style={[styles.month, styles.heading, { color: colors.ink }]}
-        >
-          {monthLabel}
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('day.today')}
-          hitSlop={m.space.xs}
-          onPress={() => selectDate(today)}
-          style={({ pressed }) => [
-            styles.today,
-            { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
-          ]}
-        >
-          <Text style={[styles.label, { color: colors.ink }]}>{t('day.today')}</Text>
-        </Pressable>
-        <View
-          accessibilityRole="radiogroup"
-          style={[styles.segment, { backgroundColor: colors.chip }]}
-        >
-          {([false, true] as const).map((expanded) => (
-            <Pressable
-              key={String(expanded)}
-              hitSlop={{ top: m.space.xs, bottom: m.space.xs }}
-              accessibilityRole="radio"
-              accessibilityLabel={t(expanded ? 'mobile.view.month' : 'mobile.view.week')}
-              accessibilityState={{ checked: monthExpanded === expanded }}
-              onPress={() => setMonthExpanded(expanded)}
-              style={({ pressed }) => [
-                styles.option,
-                {
-                  backgroundColor: 'transparent',
-                  opacity: pressed ? m.pressedOpacity : 1,
-                },
-              ]}
+      <View testID="today-top" style={{ backgroundColor: colors.bg, paddingTop: insets.top }}>
+        {enlargedEnglish && (
+          <Text
+            accessibilityRole="header"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={[styles.heading, { color: colors.ink, paddingHorizontal: m.space.sm }]}
+          >
+            {monthLabel}
+          </Text>
+        )}
+        <View style={styles.top}>
+          {!enlargedEnglish && (
+            <Text
+              accessibilityRole="header"
+              style={[styles.month, styles.heading, { color: colors.ink }]}
             >
-              <Text
-                style={[
-                  styles.label,
-                  styles.segmentLetter,
+              {monthLabel}
+            </Text>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('day.today')}
+            hitSlop={m.space.xs}
+            onPress={() => selectDate(today)}
+            style={({ pressed }) => [
+              styles.today,
+              { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
+            ]}
+          >
+            <Text style={[styles.label, { color: colors.ink }]}>{t('day.today')}</Text>
+          </Pressable>
+          <View
+            accessibilityRole="radiogroup"
+            style={[styles.segment, { backgroundColor: colors.chip }]}
+          >
+            {([false, true] as const).map((expanded) => (
+              <Pressable
+                key={String(expanded)}
+                hitSlop={{ top: m.space.xs, bottom: m.space.xs }}
+                accessibilityRole="radio"
+                accessibilityLabel={t(expanded ? 'mobile.view.month' : 'mobile.view.week')}
+                accessibilityState={{ checked: monthExpanded === expanded }}
+                onPress={() => setMonthExpanded(expanded)}
+                style={({ pressed }) => [
+                  styles.option,
                   {
-                    color: monthExpanded === expanded ? colors.bg : colors.ink2,
-                    backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
+                    backgroundColor: 'transparent',
+                    opacity: pressed ? m.pressedOpacity : 1,
                   },
                 ]}
               >
-                {expanded ? 'M' : 'W'}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  style={[
+                    styles.label,
+                    styles.segmentLetter,
+                    {
+                      color: monthExpanded === expanded ? colors.bg : colors.ink2,
+                      backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
+                    },
+                  ]}
+                >
+                  {expanded ? 'M' : 'W'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <DayMenu
+            key={selectedDate}
+            client={client}
+            date={selectedDate}
+            today={today}
+            goals={goals.data ?? []}
+            items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
+            ready={!loading && !failed}
+            weekStart={profile.weekStart}
+            timeZone={profile.timezone}
+            actions={dayActions}
+          />
+          <Pressable
+            onPress={() => setSettings(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.title')}
+            accessibilityState={{ expanded: settings }}
+            style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
+          >
+            <SettingsIcon color={colors.ink2} />
+          </Pressable>
         </View>
-        <DayMenu
-          key={selectedDate}
-          client={client}
-          date={selectedDate}
-          today={today}
-          goals={goals.data ?? []}
-          items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
-          ready={!loading && !failed}
-          weekStart={profile.weekStart}
-          timeZone={profile.timezone}
-          actions={dayActions}
-        />
-        <Pressable
-          onPress={() => setSettings(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('settings.title')}
-          accessibilityState={{ expanded: settings }}
-          style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
-        >
-          <SettingsIcon color={colors.ink2} />
-        </Pressable>
       </View>
       {!online && (
         <Text

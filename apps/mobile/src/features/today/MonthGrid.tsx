@@ -54,6 +54,8 @@ export function MonthGrid({
           {weeks[0]!.map((date, i) => (
             <Text
               key={date}
+              numberOfLines={1}
+              adjustsFontSizeToFit
               style={[
                 styles.weekday,
                 {
