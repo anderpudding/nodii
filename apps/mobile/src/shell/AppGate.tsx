@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Linking, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  AppState,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { readStoredSession, type NodiiClient, type Session } from '@nodii/api';
-import { t, type MessageKey } from '@nodii/i18n';
+import { getLocale, t, type MessageKey } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
 import { logout } from '../../lib/logout';
@@ -162,6 +170,25 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     }
   }
 
+  const updateBody =
+    gate.status === 'update' ? (
+      <>
+        <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+          {t('mobile.update.title')}
+        </Text>
+        <Text style={[styles.description, { color: colors.ink2 }]}>
+          {t('mobile.update.description')}
+        </Text>
+        <Text style={[styles.description, { color: colors.muted }]}>
+          {t('mobile.update.versions', {
+            current: gate.info.current,
+            minimum: gate.info.minimum,
+          })}
+        </Text>
+        <Button label={t('mobile.update.action')} onPress={() => void openStore()} />
+      </>
+    ) : null;
+
   return (
     <SafeAreaView
       edges={gate.status === 'ready' && gate.session ? ['left', 'right'] : undefined}
@@ -193,21 +220,13 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
           />
         </View>
       ) : gate.status === 'update' ? (
-        <View style={styles.center}>
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-            {t('mobile.update.title')}
-          </Text>
-          <Text style={[styles.description, { color: colors.ink2 }]}>
-            {t('mobile.update.description')}
-          </Text>
-          <Text style={[styles.description, { color: colors.muted }]}>
-            {t('mobile.update.versions', {
-              current: gate.info.current,
-              minimum: gate.info.minimum,
-            })}
-          </Text>
-          <Button label={t('mobile.update.action')} onPress={() => void openStore()} />
-        </View>
+        getLocale() === 'en' ? (
+          <ScrollView style={styles.root} contentContainerStyle={styles.updateContent}>
+            {updateBody}
+          </ScrollView>
+        ) : (
+          <View style={styles.center}>{updateBody}</View>
+        )
       ) : gate.session ? (
         <UserData key={gate.session.user.id} client={client} userId={gate.session.user.id}>
           <Today
@@ -229,6 +248,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, padding: m.space.group, justifyContent: 'center', gap: m.space.lg },
+  updateContent: { flexGrow: 1, padding: m.space.group, justifyContent: 'center', gap: m.space.lg },
   title: {
     fontFamily: m.fontBold,
     fontSize: m.type.title,
