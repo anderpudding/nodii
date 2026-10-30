@@ -1,3 +1,4 @@
+import { getLocale } from '@nodii/i18n';
 import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { metrics as m, useTheme } from '../../../lib/theme';
@@ -50,6 +51,7 @@ export function RoutineOption({
         styles.option,
         compact && styles.compact,
         segment && styles.segment,
+        segment && getLocale() === 'en' && { flexShrink: 1 },
         inline && styles.inline,
         inline && descriptionBelow && styles.stacked,
         {
@@ -69,8 +71,11 @@ export function RoutineOption({
     >
       {!children && (
         <Text
+          numberOfLines={getLocale() === 'en' && (compact || segment) ? 2 : undefined}
+          adjustsFontSizeToFit={getLocale() === 'en' && (compact || segment)}
           style={[
             styles.label,
+            getLocale() === 'en' && { flexShrink: 1 },
             inline && styles.inlineLabel,
             {
               color: disabled

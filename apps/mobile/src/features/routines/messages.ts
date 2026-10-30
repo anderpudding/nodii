@@ -7,6 +7,6 @@ export type RoutineToastKey =
 export function routineToastMessage(key: RoutineToastKey, title: string) {
   return t(key, {
     title,
-    particle: withParticle(title, '을/를').slice(title.length),
+    particle: withParticle(title).slice(title.length),
   });
 }

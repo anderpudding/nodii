@@ -45,7 +45,7 @@ function Restored({
         if (!controller.signal.aborted) cache.setQueryData(['profile', userId], profile);
       })
       .catch(() => {
-        if (!controller.signal.aborted) toast(t('mobile.profile.failed'));
+        if (!controller.signal.aborted) toast(() => t('mobile.profile.failed'));
       });
     return () => controller.abort();
   }, [client, userId, cache, restoring, online, toast]);
@@ -86,7 +86,7 @@ export function UserData({
         },
       }),
       userId,
-      () => toast(t('sync.cache.saveFailed')),
+      () => toast(() => t('sync.cache.saveFailed')),
     ),
   );
   useLayoutEffect(() => {
@@ -107,7 +107,7 @@ export function UserData({
       onSuccess={() => {
         void entry.cache.invalidateQueries();
       }}
-      onError={() => toast(t('sync.cache.restoreFailed'))}
+      onError={() => toast(() => t('sync.cache.restoreFailed'))}
     >
       <Restored client={client} userId={userId}>
         {children}

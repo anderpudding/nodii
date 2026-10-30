@@ -1,3 +1,4 @@
+import { useLargeEnglishText } from '../../../lib/use-large-english-text';
 import { StatusBar } from 'expo-status-bar';
 import { useOnline } from '../../../lib/connectivity';
 import { useMemo, useState } from 'react';
@@ -11,7 +12,7 @@ import {
   type RoutineRecord,
 } from '@nodii/api';
 import { compareSortKey, type Goal, type ISODate } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { getLocale, t } from '@nodii/i18n';
 import { lightColors, metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import { ToastInset, ToastPortal } from '../../components/Toast';
@@ -101,7 +102,12 @@ export function RoutineList({
             quiet
             onPress={onClose}
           />
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+          <Text
+            numberOfLines={getLocale() === 'en' ? 2 : undefined}
+            adjustsFontSizeToFit={getLocale() === 'en'}
+            accessibilityRole="header"
+            style={[styles.title, { color: colors.ink }]}
+          >
             {t('routine.manage')}
           </Text>
         </View>
@@ -222,7 +228,17 @@ function ManagementRow({
   const online = useOnline();
   const busy = useRoutineWritePending(routine.id);
   const [menu, setMenu] = useState(false);
-  const label = `${routine.title} · ${ruleLabel(routine)} · ${t(routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from', { date: routineDate(routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate) })}`;
+  const stacked = useLargeEnglishText();
+  const period = t(
+    routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from',
+    {
+      date: routineDate(
+        routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate,
+      ),
+    },
+  );
+  const detail = t('routine.row.detail', { rule: ruleLabel(routine), period });
+  const label = t('routine.row.label', { title: routine.title, rule: ruleLabel(routine), period });
   function run(action: RoutineManagementAction) {
     if (busy || !online) return;
     if (action === 'edit') onEdit();
@@ -271,6 +287,7 @@ function ManagementRow({
           }}
           style={({ pressed }) => [
             styles.row,
+            stacked && { flexDirection: 'column', alignItems: 'stretch' },
             {
               borderColor: colors.chip,
               borderBottomColor: colors.line,
@@ -280,25 +297,19 @@ function ManagementRow({
           ]}
         >
           <GoalBadge goal={goal} onChip />
-          <View style={styles.rowContent}>
+          <View
+            style={[
+              styles.rowContent,
+              stacked && { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+            ]}
+          >
             <Text style={[styles.rowTitle, { color: colors.ink }]}>{routine.title}</Text>
-            <Text style={[styles.supporting, { color: colors.muted }]}>
-              {ruleLabel(routine)} ·{' '}
-              {t(
-                routine.endDate && routine.endDate < todayForLabel
-                  ? 'routine.until'
-                  : 'routine.from',
-                {
-                  date: routineDate(
-                    routine.endDate && routine.endDate < todayForLabel
-                      ? routine.endDate
-                      : routine.startDate,
-                  ),
-                },
-              )}
-            </Text>
+            <Text style={[styles.supporting, { color: colors.muted }]}>{detail}</Text>
           </View>
-          <Text accessible={false} style={[styles.rowTitle, { color: colors.muted }]}>
+          <Text
+            accessible={false}
+            style={[styles.rowTitle, { color: colors.muted }, stacked && { display: 'none' }]}
+          >
             ›
           </Text>
         </Pressable>

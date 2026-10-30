@@ -147,3 +147,24 @@ it('계정 삭제 서버 실패는 로그인 상태를 정리하지 않고 오�
   await screen.findByText('계정을 삭제하지 못했어요. 다시 시도해 주세요.');
   expect(onDeleted).not.toHaveBeenCalled();
 });
+
+it('English를 고르면 설정 화면과 선택 상태를 유지하고 저장 실패는 이전 선택을 보존한다', async () => {
+  await mount();
+  const opened = screen.getByTestId('settings-screen');
+  fireEvent.press(screen.getByRole('radio', { name: 'English' }));
+  await screen.findByText('Language');
+  expect(
+    screen.UNSAFE_getByProps({ accessibilityRole: 'radiogroup' }).props.accessibilityLabel,
+  ).toBe('Language');
+  expect(screen.getByTestId('settings-screen')).toBe(opened);
+  expect(screen.getByRole('radio', { name: 'English' }).props.accessibilityState.selected).toBe(
+    true,
+  );
+  expect(AsyncStorage.setItem).toHaveBeenCalledWith('nodii.language', 'en');
+  jest.mocked(AsyncStorage.setItem).mockRejectedValueOnce(new Error('disk'));
+  fireEvent.press(screen.getByRole('radio', { name: '한국어' }));
+  await screen.findByText("Couldn't save your language");
+  expect(screen.getByRole('radio', { name: 'English' }).props.accessibilityState.selected).toBe(
+    true,
+  );
+});

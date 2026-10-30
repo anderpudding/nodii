@@ -16,7 +16,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { BrandMark } from '../../components/BrandMark';
-import { t } from '@nodii/i18n';
+import { t, getLocale } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import {
@@ -43,6 +43,7 @@ export function Login({
   const { colors } = useTheme();
   const email = state.email.trim().toLowerCase();
   const review = isReviewEmail(email, reviewAccountEmail);
+  const [codeBefore, codeAfter] = t('auth.code.description').split('{email}');
   const remaining = cooldownRemaining(state, state.step === 'code' ? state.codeEmail : email, now);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -75,7 +76,7 @@ export function Login({
         await signInReviewAccount(client, email, state.password);
         dispatch({ type: 'success' });
       } else {
-        await sendOtp(client, destination);
+        await sendOtp(client, destination, getLocale());
         const timestamp = Date.now();
         setNow(timestamp);
         dispatch({ type: 'sent', email: destination, now: timestamp });
@@ -127,8 +128,9 @@ export function Login({
         <Text style={[styles.description, { color: colors.ink2 }]}>
           {state.step === 'code' ? (
             <>
+              {codeBefore}
               <Text style={[styles.emailAddress, { color: colors.ink }]}>{state.codeEmail}</Text>
-              {t('auth.code.description', { email: '' })}
+              {codeAfter}
             </>
           ) : (
             t('auth.description')

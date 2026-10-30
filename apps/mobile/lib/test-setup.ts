@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 vi.mock('@react-native-async-storage/async-storage', () => {
   const values = new Map<string, string>();
   return {
@@ -12,4 +12,11 @@ vi.mock('@react-native-async-storage/async-storage', () => {
       }),
     },
   };
+});
+
+vi.mock('expo-localization', () => ({ getLocales: vi.fn(() => [{ languageTag: 'ko-KR' }]) }));
+import { setLocale, setPseudoLocale } from '@nodii/i18n';
+beforeEach(() => {
+  setLocale('ko');
+  setPseudoLocale(false);
 });

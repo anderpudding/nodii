@@ -1,3 +1,4 @@
+import { getLocale } from '@nodii/i18n';
 import {
   createContext,
   useCallback,
@@ -19,6 +20,7 @@ import { ActionIcon } from '../ActionIcon';
 export interface RowAction {
   id: string;
   label: string;
+  visualLabel?: string;
   background: string;
   color: string;
   run(): void;
@@ -212,7 +214,13 @@ export function SwipeableRow({
         >
           <View style={[styles.leadingContent, { width: actionWidth }]}>
             <ActionIcon action={leading.id} color={leading.color} />
-            <Text style={[styles.label, { color: leading.color }]}>{leading.label}</Text>
+            <Text
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
+              style={[styles.label, { color: leading.color }]}
+            >
+              {leading.visualLabel ?? leading.label}
+            </Text>
           </View>
         </Animated.View>
       )}
@@ -243,7 +251,13 @@ export function SwipeableRow({
             ]}
           >
             <ActionIcon action={action.id} color={action.color} />
-            <Text style={[styles.label, { color: action.color }]}>{action.label}</Text>
+            <Text
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
+              style={[styles.label, { color: action.color }]}
+            >
+              {action.visualLabel ?? action.label}
+            </Text>
           </Pressable>
         ))}
       </Animated.View>

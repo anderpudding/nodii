@@ -1,3 +1,4 @@
+import { useLargeEnglishText } from '../../../lib/use-large-english-text';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import {
@@ -9,7 +10,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { compareSortKey } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { t, intlLocale, getLocale } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { ManagementScreen } from '../../components/ManagementScreen';
@@ -153,7 +154,7 @@ function GoalRow({
   const toast = useToast();
   const actions = useGoalActions(client, goal);
   const deleting = useRef(false);
-  const remove = useDeleteGoal(client, { onError: () => toast(t('todo.save.failed')) });
+  const remove = useDeleteGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
   const [menu, setMenu] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const archived = !!goal.archivedAt;
@@ -166,7 +167,7 @@ function GoalRow({
   function run(id: GoalAction) {
     if (!online || actions.pending) return;
     if ((id === 'archive' || id === 'delete') && actions.last()) {
-      toast(t('goal.lastActive'));
+      toast(() => t('goal.lastActive'));
       return;
     }
     setMenu(false);
@@ -211,12 +212,14 @@ function GoalRow({
     })),
     'none',
   );
+  const stacked = useLargeEnglishText();
   const body = (
     <View
       onLayout={(event) => onHeight(event.nativeEvent.layout.height)}
       style={[
         s.row,
         s.horizontal,
+        stacked && { flexDirection: 'column', alignItems: 'stretch' },
         {
           backgroundColor: colors.chip,
           paddingVertical: m.space.sm,
@@ -248,9 +251,12 @@ function GoalRow({
 
         style={({ pressed }) => [
           {
-            flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
+            flex: stacked ? undefined : 1,
+            flexGrow: stacked ? 0 : undefined,
+            flexShrink: stacked ? 0 : undefined,
+            flexBasis: stacked ? 'auto' : undefined,
+            flexDirection: stacked ? 'column' : 'row',
+            alignItems: stacked ? 'stretch' : 'center',
             gap: m.space.sm,
             minHeight: m.height.touch,
             opacity: pressed ? m.pressedOpacity : 1,
@@ -258,16 +264,17 @@ function GoalRow({
         ]}
       >
         <GoalBadge goal={goal} onChip />
-        <View style={{ flex: 1 }}>
+        <View style={stacked ? { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' } : { flex: 1 }}>
           <Text style={[s.supporting, { color: colors.muted }]}>
             {contents ? t('goal.contents', { ...contents }) : t('goal.counts.loading')}
           </Text>
           {archived && (
             <Text style={[s.supporting, { color: colors.muted }]}>
               {t('goal.archived.date', {
-                date: new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(
-                  new Date(goal.archivedAt!),
-                ),
+                date: new Intl.DateTimeFormat(intlLocale(getLocale()), {
+                  month: 'long',
+                  day: 'numeric',
+                }).format(new Date(goal.archivedAt!)),
               })}
             </Text>
           )}
@@ -294,7 +301,7 @@ function GoalRow({
           disabled={!online || actions.pending}
           trailing={swipe.trailing}
           onMenu={() => setMenu(true)}
-          onUnavailableSwipe={last ? () => toast(t('goal.lastActive')) : undefined}
+          onUnavailableSwipe={last ? () => toast(() => t('goal.lastActive')) : undefined}
           onReorder={(distance) => void actions.reorder(dropIndex(distance))}
         >
           {body}

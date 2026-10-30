@@ -1,7 +1,8 @@
+import { selectPluralRule } from './plural-rule';
 import { ko, type MessageKey } from './catalog.ko';
 import { en } from './catalog.en';
 import { isPseudoLocale, pseudoLocalize } from './pseudo';
-import { getLocale, intlLocale, type Locale } from './locale';
+import { getLocale, type Locale } from './locale';
 
 export type MessageParams = Readonly<Record<string, string | number>>;
 export type PluralKey = `${MessageKey}_${Intl.LDMLPluralRule}`;
@@ -18,7 +19,7 @@ export function createTranslator(catalogs: { ko: Record<MessageKey, string>; en:
       typeof params.count === 'number' &&
       catalogs.ko[key].includes('{count}')
     ) {
-      const rule = new Intl.PluralRules(intlLocale(locale)).select(params.count);
+      const rule = selectPluralRule(params.count, locale);
       message = catalog[`${key}_${rule}`] ?? message;
     }
     const template = message ?? catalogs.ko[key];

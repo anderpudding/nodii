@@ -1,3 +1,4 @@
+import { SheetHeader } from '../../components/SheetHeader';
 import { useOnline } from '../../../lib/connectivity';
 import { useRef, useState } from 'react';
 import { Alert, Keyboard, Text, TextInput, View } from 'react-native';
@@ -23,7 +24,7 @@ import {
   type Routine,
   type RoutineFreq,
 } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { t, weekdayName } from '@nodii/i18n';
 import { useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
@@ -34,7 +35,7 @@ import { GoalBadge } from '../today/GoalBadge';
 import { RoutineOption } from './RoutineOption';
 import { RoutineScope } from './RoutineScope';
 import { routineStyles as s } from './styles';
-import { routineDate, shouldAskScope, validateForm, weekdayOrder, weekdays } from './model';
+import { routineDate, shouldAskScope, validateForm, weekdayOrder } from './model';
 
 /** ROUT-01~04/08: 공용 규칙 검증과 기존 날짜 시트·쓰기 훅만 사용한다. */
 export function RoutineEditor({
@@ -98,7 +99,7 @@ export function RoutineEditor({
   const [partialSplit, setPartialSplit] = useState<RoutineRecord | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const guard = useRef(false);
-  const errors = { onError: () => toast(t('todo.save.failed')) };
+  const errors = { onError: () => toast(() => t('todo.save.failed')) };
   const create = useCreateRoutine(client, newId, errors);
   const update = useUpdateRoutine(client, routine?.id ?? newId, errors);
   const split = useSplitRoutine(client, newId, errors);
@@ -255,25 +256,29 @@ export function RoutineEditor({
         keyboard
         onClose={close}
         header={
-          <View style={s.header}>
-            <Button
-              label={t('mobile.add.cancel')}
-              secondary
-              quiet
-              disabled={blocked}
-              onPress={close}
-            />
-            <Text accessibilityRole="header" style={[s.heading, { color: colors.ink }]}>
-              {t(routine ? 'routine.edit' : 'routine.create')}
-            </Text>
-            <Button
-              label={t('mobile.rename.save')}
-              quiet
-              disabled={!online || blocked || !validation.valid}
-              busy={blocked}
-              onPress={() => void save()}
-            />
-          </View>
+          <SheetHeader
+            title={t(routine ? 'routine.edit' : 'routine.create')}
+            headerStyle={s.header}
+            titleStyle={[s.heading, { color: colors.ink }]}
+            leading={
+              <Button
+                label={t('mobile.add.cancel')}
+                secondary
+                quiet
+                disabled={blocked}
+                onPress={close}
+              />
+            }
+            trailing={
+              <Button
+                label={t('mobile.rename.save')}
+                quiet
+                disabled={!online || blocked || !validation.valid}
+                busy={blocked}
+                onPress={() => void save()}
+              />
+            }
+          />
         }
       >
         <View style={s.group}>
@@ -337,7 +342,7 @@ export function RoutineEditor({
             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
               <RoutineOption
                 key={freq}
-                label={t(`routine.${freq}`)}
+                label={t(freq === 'daily' ? 'mobile.routine.daily' : `routine.${freq}`)}
                 selected={draft.freq === freq}
                 disabled={blocked}
                 onPress={() => changeFreq(freq)}
@@ -361,11 +366,13 @@ export function RoutineEditor({
             />
             <Text style={[s.supporting, { color: colors.ink }]}>
               {t(
-                draft.freq === 'daily'
-                  ? 'routine.everyDays'
-                  : draft.freq === 'weekly'
-                    ? 'routine.everyWeeks'
-                    : 'routine.everyMonths',
+                draft.repeatEvery === 1
+                  ? `mobile.routine.interval.${draft.freq}`
+                  : draft.freq === 'daily'
+                    ? 'routine.everyDays'
+                    : draft.freq === 'weekly'
+                      ? 'routine.everyWeeks'
+                      : 'routine.everyMonths',
                 { every: draft.repeatEvery },
               )}
             </Text>
@@ -392,7 +399,11 @@ export function RoutineEditor({
               ).map((day) => (
                 <RoutineOption
                   key={day}
-                  label={draft.freq === 'weekly' ? weekdays[day]! : `${day}`}
+                  label={
+                    draft.freq === 'weekly'
+                      ? weekdayName(day as 0 | 1 | 2 | 3 | 4 | 5 | 6, 'short')
+                      : `${day}`
+                  }
                   labelColor={
                     draft.freq === 'weekly'
                       ? day === 0
@@ -406,7 +417,12 @@ export function RoutineEditor({
                   filled
                   accessibilityLabel={t(
                     draft.freq === 'weekly' ? 'routine.weekdaySelect' : 'routine.monthdaySelect',
-                    { day: draft.freq === 'weekly' ? weekdays[day]! : day },
+                    {
+                      day:
+                        draft.freq === 'weekly'
+                          ? weekdayName(day as 0 | 1 | 2 | 3 | 4 | 5 | 6, 'long')
+                          : day,
+                    },
                   )}
                   selected={
                     (draft.freq === 'weekly' ? draft.byWeekday : draft.byMonthday)?.includes(day) ??

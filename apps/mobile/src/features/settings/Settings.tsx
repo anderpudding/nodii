@@ -5,6 +5,7 @@ import { useGoals, useRoutines, useUpdateWeekStart, type NodiiClient } from '@no
 import type { Profile } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
+import { saveLanguage, useLanguagePreference } from '../../../lib/language-preference';
 import { saveTheme, useThemePreference } from '../../../lib/theme-preference';
 import { useTheme } from '../../../lib/theme';
 import { mobileLinks } from '../../../lib/links';
@@ -40,10 +41,12 @@ export function Settings({
   const toast = useToast();
   const [page, setPage] = useState<'goals' | 'routines' | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [languageSaving, setLanguageSaving] = useState(false);
+  const language = useLanguagePreference((state) => state.preference);
   const [themeSaving, setThemeSaving] = useState(false);
   const preference = useThemePreference((state) => state.preference);
   const week = useUpdateWeekStart(client, profile.id, {
-    onError: () => toast(t('todo.save.failed')),
+    onError: () => toast(() => t('todo.save.failed')),
   });
   const goals = useGoals(client);
   const routines = useRoutines(client);
@@ -52,7 +55,7 @@ export function Settings({
     try {
       await Linking.openURL(url);
     } catch {
-      toast(t('settings.link.failed'));
+      toast(() => t('settings.link.failed'));
     }
   }
   function group(title: string, children: ReactNode) {
@@ -137,8 +140,33 @@ export function Settings({
                   onPress={() => {
                     setThemeSaving(true);
                     void saveTheme(value)
-                      .catch(() => toast(t('settings.theme.failed')))
+                      .catch(() => toast(() => t('settings.theme.failed')))
                       .finally(() => setThemeSaving(false));
+                  }}
+                />
+              ))}
+            </View>,
+          )}
+          {row(
+            t('settings.language'),
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel={t('settings.language')}
+              style={[s.segment, { backgroundColor: colors.bg }]}
+            >
+              {(['system', 'ko', 'en'] as const).map((value) => (
+                <RoutineOption
+                  key={value}
+                  segment
+                  compact
+                  label={t(`settings.language.${value}`)}
+                  selected={language === value}
+                  disabled={languageSaving}
+                  onPress={() => {
+                    setLanguageSaving(true);
+                    void saveLanguage(value)
+                      .catch(() => toast(() => t('settings.language.saveFailed')))
+                      .finally(() => setLanguageSaving(false));
                   }}
                 />
               ))}

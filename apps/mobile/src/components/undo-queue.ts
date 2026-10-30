@@ -1,7 +1,7 @@
 export const undoLifetime = 5000;
 export interface ToastEntry {
   id: number;
-  text: string;
+  text: string | (() => string);
   expiresAt: number;
   undo?: () => Promise<void>;
   busy?: boolean;

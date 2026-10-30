@@ -33,7 +33,7 @@ export function RoutineStop({
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const guard = useRef(false);
-  const options = { onError: () => toast(t('todo.save.failed')) };
+  const options = { onError: () => toast(() => t('todo.save.failed')) };
   const end = useEndRoutine(client, routine.id, options);
   const remove = useDeleteRoutine(client, routine.id, options);
   const pending = useRoutineWritePending(routine.id);

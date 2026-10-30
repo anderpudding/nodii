@@ -11,7 +11,7 @@ export function useGoalActions(client: NodiiClient, goal: GoalRecord) {
   const cache = useQueryClient();
   const toast = useToast();
   const guard = useRef(false);
-  const options = { onError: () => toast(t('todo.save.failed')) };
+  const options = { onError: () => toast(() => t('todo.save.failed')) };
   const archive = useArchiveGoal(client, goal.id, options);
   const update = useUpdateGoal(client, goal.id, options);
   const pending = useIsMutating({ mutationKey: ['write', 'goal'] }) > 0;
@@ -25,7 +25,7 @@ export function useGoalActions(client: NodiiClient, goal: GoalRecord) {
     if (!onlineManager.isOnline() || guard.current || pending) throw new Error('goal_busy');
     const row = latest();
     if (archived && last()) {
-      toast(t('goal.lastActive'));
+      toast(() => t('goal.lastActive'));
       if (undo) throw new Error('last_active_goal');
       return;
     }
@@ -34,8 +34,9 @@ export function useGoalActions(client: NodiiClient, goal: GoalRecord) {
     try {
       await archive.mutateAsync(row);
       if (!undo)
-        toast(t(archived ? 'goal.archived' : 'goal.unarchived', { name: goal.name }), () =>
-          setArchived(!archived, true),
+        toast(
+          () => t(archived ? 'goal.archived' : 'goal.unarchived', { name: goal.name }),
+          () => setArchived(!archived, true),
         );
     } finally {
       guard.current = false;
@@ -59,9 +60,12 @@ export function useGoalActions(client: NodiiClient, goal: GoalRecord) {
         goal: before,
         changes: { sortKey: reorderedGoalKey(goals, goal.id, target) },
       });
-      toast(t('goal.reordered'), async () => {
-        await update.mutateAsync({ goal: latest(), changes: { sortKey: before.sortKey } });
-      });
+      toast(
+        () => t('goal.reordered'),
+        async () => {
+          await update.mutateAsync({ goal: latest(), changes: { sortKey: before.sortKey } });
+        },
+      );
     } catch {
       /* 공용 훅이 롤백과 오류 안내를 담당한다. */
     } finally {

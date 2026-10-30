@@ -121,7 +121,7 @@ export function DayMenu({
       </Pressable>
       {open && (
         <BottomSheet
-          title={t('day.menu.open')}
+          title={t('mobile.dayMenu.title')}
           testID="day-menu-sheet"
           bottomCancel
           onClose={() => setOpen(false)}

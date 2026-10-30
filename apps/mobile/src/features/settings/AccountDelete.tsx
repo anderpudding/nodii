@@ -41,7 +41,7 @@ export function AccountDelete({
       await deleteMyAccount(client);
       await onDeleted();
     } catch {
-      toast(t('settings.delete.failed'));
+      toast(() => t('settings.delete.failed'));
     } finally {
       guard.current = false;
       setSaving(false);

@@ -17,7 +17,9 @@
       },
       "deploymentTarget": "16.4",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleLocalizations": ["en", "ko"]
       }
     },
     "plugins": [
@@ -35,7 +37,8 @@
             "backgroundColor": "#0F1013"
           }
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
@@ -45,6 +48,10 @@
       "eas": {
         "projectId": "9a1cd883-1556-490a-87c2-1c3ca558f719"
       }
+    },
+    "locales": {
+      "en": "./locales/en.json",
+      "ko": "./locales/ko.json"
     }
   }
 }

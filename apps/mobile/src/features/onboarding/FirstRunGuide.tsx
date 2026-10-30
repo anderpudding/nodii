@@ -1,3 +1,4 @@
+import { SheetHeader } from '../../components/SheetHeader';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View } from 'react-native';
@@ -23,7 +24,7 @@ export function FirstRunGuide() {
       () => {
         if (!live) return;
         setVisible(true);
-        toast(t('mobile.guide.storageFailed'));
+        toast(() => t('mobile.guide.storageFailed'));
       },
     );
     return () => {
@@ -33,7 +34,7 @@ export function FirstRunGuide() {
   function close() {
     setVisible(false);
     void AsyncStorage.setItem(GUIDE_KEY, 'seen').catch(() =>
-      toast(t('mobile.guide.storageFailed')),
+      toast(() => t('mobile.guide.storageFailed')),
     );
   }
   if (!visible) return null;
@@ -43,12 +44,12 @@ export function FirstRunGuide() {
       testID="first-run-guide"
       onClose={close}
       header={
-        <View style={styles.header}>
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-            {t('mobile.guide.title')}
-          </Text>
-          <Button secondary label={t('mobile.guide.skip')} onPress={close} />
-        </View>
+        <SheetHeader
+          title={t('mobile.guide.title')}
+          headerStyle={styles.header}
+          titleStyle={[styles.title, { color: colors.ink }]}
+          trailing={<Button secondary label={t('mobile.guide.skip')} onPress={close} />}
+        />
       }
     >
       <View style={styles.lesson}>

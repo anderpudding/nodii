@@ -44,9 +44,9 @@ export function GoalEditor({
   const [focused, setFocused] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const guard = useRef(false);
-  const create = useCreateGoal(client, { onError: () => toast(t('todo.save.failed')) });
-  const update = useUpdateGoal(client, id, { onError: () => toast(t('todo.save.failed')) });
-  const remove = useDeleteGoal(client, { onError: () => toast(t('todo.save.failed')) });
+  const create = useCreateGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
+  const update = useUpdateGoal(client, id, { onError: () => toast(() => t('todo.save.failed')) });
+  const remove = useDeleteGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
   const counts = useGoalContents(client);
   const draft: GoalRecord = goal ?? {
     id,

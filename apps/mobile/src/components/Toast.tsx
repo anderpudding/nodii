@@ -1,3 +1,4 @@
+import { useLargeEnglishText } from '../../lib/use-large-english-text';
 import {
   createContext,
   useCallback,
@@ -10,11 +11,12 @@ import {
 } from 'react';
 import { Animated, Easing, Keyboard, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { t } from '@nodii/i18n';
+import { getLocale, t } from '@nodii/i18n';
+import { useLocale } from '../../lib/use-locale';
 import { metrics as m, useReducedMotion, useTheme } from '../../lib/theme';
 import { enqueueToast, expireToasts, undoLifetime, type ToastEntry } from './undo-queue';
 
-type ShowToast = (message: string, undo?: () => Promise<void>) => void;
+type ShowToast = (message: ToastEntry['text'], undo?: () => Promise<void>) => void;
 const ToastContext = createContext<ShowToast>(() => {});
 const ToastViewContext = createContext<{
   entries: ToastEntry[];
@@ -88,7 +90,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           item.id === id ? { ...item, busy: false, expiresAt: Date.now() + undoLifetime } : item,
         ),
       );
-      show(t('todo.undo.failed'));
+      show(() => t('todo.undo.failed'));
     } finally {
       restoring.current.delete(id);
     }
@@ -142,6 +144,7 @@ function ToastView({
   portal?: boolean;
   portalBottom?: number;
 }) {
+  useLocale();
   const { entries, bottom, dismiss, restore } = useContext(ToastViewContext);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -177,7 +180,7 @@ function ToastView({
             accessibilityLiveRegion="assertive"
             style={[styles.text, { color: colors.bg }]}
           >
-            {entry.text}
+            {typeof entry.text === 'function' ? entry.text() : entry.text}
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -187,12 +190,15 @@ function ToastView({
             onPress={() => (entry.undo ? restore(entry.id) : dismiss(entry.id))}
             style={({ pressed }) => [
               styles.action,
+              getLocale() === 'en' && { maxWidth: '50%', flexShrink: 1 },
               {
                 opacity: pressed || entry.busy ? m.pressedOpacity : 1,
               },
             ]}
           >
             <Text
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
               style={[styles.actionText, { color: entry.undo ? colors.toastAction : colors.bg }]}
             >
               {t(entry.undo ? 'todo.undo' : 'common.dismiss')}
@@ -205,6 +211,7 @@ function ToastView({
 }
 /** 모션 감소에서는 즉시, 그 외에는 토큰 시간에 맞춰 토스트를 올린다. */
 function ToastFrame({ children }: { children: ReactNode }) {
+  const enlargedEnglish = useLargeEnglishText();
   const { colors } = useTheme();
   const reduced = useReducedMotion();
   const [progress] = useState(() => new Animated.Value(1));
@@ -228,6 +235,7 @@ function ToastFrame({ children }: { children: ReactNode }) {
     <Animated.View
       style={[
         styles.toast,
+        enlargedEnglish && { borderRadius: m.radius.card },
         {
           backgroundColor: colors.ink,
           opacity: progress,

@@ -15,7 +15,7 @@ import {
   type RoutineRecord,
 } from '@nodii/api';
 import type { Goal, Routine } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { setLocale, t } from '@nodii/i18n';
 import { ToastProvider } from '../../components/Toast';
 import { RoutineEditor } from './RoutineEditor';
 import { RoutineStop } from './RoutineStop';
@@ -280,3 +280,27 @@ it.each(['end', 'delete'])(
     ]);
   },
 );
+
+it('English repeat segments and singular intervals use distinct labels', () => {
+  setLocale('en');
+  try {
+    mount();
+    expect(screen.getByRole('radio', { name: 'Daily' })).toBeTruthy();
+    expect(screen.getByText('Every day')).toBeTruthy();
+    fireEvent.press(screen.getByRole('radio', { name: 'Weekly' }));
+    expect(screen.getByText('Every week')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Increase repeat interval' }));
+    expect(screen.getByText('Every 2 weeks')).toBeTruthy();
+    fireEvent.press(screen.getByRole('radio', { name: 'Monthly' }));
+    expect(screen.getByText('Every 2 months')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Decrease repeat interval' }));
+    expect(screen.getByText('Every month')).toBeTruthy();
+    fireEvent.press(screen.getByRole('radio', { name: 'Daily' }));
+    expect(screen.getByText('Every day')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Increase repeat interval' }));
+    expect(screen.getByText('Every 2 days')).toBeTruthy();
+  } finally {
+    cleanup();
+    setLocale('ko');
+  }
+});

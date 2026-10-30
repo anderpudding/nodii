@@ -29,7 +29,7 @@ export function useTodoActions(
   const undoing = useRef(false);
   const options = {
     onError: () => {
-      if (!undoing.current) toast(t('todo.save.failed'));
+      if (!undoing.current) toast(() => t('todo.save.failed'));
     },
   };
   const toggle = useToggleTodo(client, weekStart, todo.id, options);
@@ -54,7 +54,7 @@ export function useTodoActions(
   function message(key: MessageKey, row: TodoRecord) {
     return t(key, {
       title: row.title,
-      particle: withParticle(row.title, '을/를').slice(row.title.length),
+      particle: withParticle(row.title).slice(row.title.length),
     });
   }
   async function locked<T>(request: () => Promise<T>, undo = false): Promise<T> {
@@ -95,18 +95,22 @@ export function useTodoActions(
       await locked(async () => {
         if (action === 'toggle') {
           await toggle.mutateAsync(before);
-          toast(message(before.isDone ? 'todo.untoggled' : 'todo.toggled', before), () =>
-            locked(async () => {
-              const latest = currentForUndo();
-              if (latest.isDone !== before.isDone) await toggle.mutateAsync(latest);
-            }, true),
+          toast(
+            () => message(before.isDone ? 'todo.untoggled' : 'todo.toggled', before),
+            () =>
+              locked(async () => {
+                const latest = currentForUndo();
+                if (latest.isDone !== before.isDone) await toggle.mutateAsync(latest);
+              }, true),
           );
         } else if (action === 'delete') {
           const saved = await remove.mutateAsync({ todo: before });
-          toast(message('todo.deleted', before), () =>
-            locked(async () => {
-              await remove.mutateAsync({ todo: current(saved), restore: true });
-            }, true),
+          toast(
+            () => message('todo.deleted', before),
+            () =>
+              locked(async () => {
+                await remove.mutateAsync({ todo: current(saved), restore: true });
+              }, true),
           );
         } else {
           const date = destination!;
@@ -136,11 +140,12 @@ export function useTodoActions(
           );
           await move.mutateAsync({ todo: before, date, sortKey });
           toast(
-            t('todo.moved', {
-              title: before.title,
-              particle: withParticle(before.title, '을/를').slice(before.title.length),
-              date: formatMoveDate(date),
-            }),
+            () =>
+              t('todo.moved', {
+                title: before.title,
+                particle: withParticle(before.title).slice(before.title.length),
+                date: formatMoveDate(date),
+              }),
             () =>
               locked(async () => {
                 await move.mutateAsync({
@@ -154,7 +159,7 @@ export function useTodoActions(
       });
     } catch {
       // 조회 실패도 쓰기 실패와 같은 안내를 갖고 훅이 맡은 롤백은 중복하지 않는다.
-      if (preparationFailed) toast(t('todo.save.failed'));
+      if (preparationFailed) toast(() => t('todo.save.failed'));
     }
   }
   async function saveTitle(title: string) {

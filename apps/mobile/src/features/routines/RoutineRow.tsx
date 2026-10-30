@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import type { NodiiClient } from '@nodii/api';
@@ -60,6 +61,8 @@ export function RoutineRow({
       id,
       swipe,
       label: routineActionLabel(id, done),
+      visualLabel:
+        id === 'toggle' ? t(done ? 'mobile.swipe.uncomplete' : 'common.done') : undefined,
       background:
         id === 'toggle'
           ? goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14)
