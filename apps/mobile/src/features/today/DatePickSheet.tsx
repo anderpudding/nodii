@@ -10,7 +10,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { monthGridRange, monthKeyOf, type ISODate } from '@nodii/core';
-import { formatISODate, t } from '@nodii/i18n';
+import { getLocale, formatISODate, t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { CalendarArrow } from '../../components/CalendarArrow';
@@ -87,7 +87,7 @@ export function DatePickSheet({
   // 추가 입력의 키보드는 날짜 선택을 가리지 않게 진입 버튼에서 먼저 내린다.
   return (
     <BottomSheet title={title} testID="date-pick-sheet" onClose={onClose}>
-      <View style={styles.quick}>
+      <View style={[styles.quick, getLocale() === 'en' && { flexWrap: 'wrap' }]}>
         {quickDates(today).map((value, i) => (
           <Button
             key={value}
@@ -137,7 +137,7 @@ export function DatePickSheet({
 }
 
 const styles = StyleSheet.create({
-  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: m.space.sm },
+  quick: { flexDirection: 'row', gap: m.space.sm },
   navigation: { flexDirection: 'row', alignItems: 'center', gap: m.space.sm },
   month: { flex: 1, textAlign: 'center', fontFamily: m.fontBold, fontSize: m.type.button },
   supporting: { fontFamily: m.fontMedium, fontSize: m.type.supporting },

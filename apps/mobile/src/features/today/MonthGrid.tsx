@@ -1,7 +1,7 @@
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { StyleSheet, Text, View } from 'react-native';
 import { monthKeyOf, weekdayOf, type DaySummary, type ISODate } from '@nodii/core';
-import { weekdayName, t } from '@nodii/i18n';
+import { getLocale, weekdayName, t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { DayCell } from './DayCell';
 import { mobileMonthWeeks } from './calendar-model';
@@ -54,8 +54,8 @@ export function MonthGrid({
           {weeks[0]!.map((date, i) => (
             <Text
               key={date}
-              numberOfLines={1}
-              adjustsFontSizeToFit
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
               style={[
                 styles.weekday,
                 {

@@ -60,8 +60,8 @@ export function DayCell({
     >
       {!monthly && (
         <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
+          numberOfLines={getLocale() === 'en' ? 1 : undefined}
+          adjustsFontSizeToFit={getLocale() === 'en'}
           style={[styles.label, { color: weekdayColor }]}
         >
           {weekdayName(weekdayOf(date) as 0 | 1 | 2 | 3 | 4 | 5 | 6, 'short')}
@@ -79,8 +79,8 @@ export function DayCell({
         ]}
       >
         <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
+          numberOfLines={getLocale() === 'en' ? 1 : undefined}
+          adjustsFontSizeToFit={getLocale() === 'en'}
           style={[styles.label, { color: selected ? colors.bg : dateColor }]}
         >
           {Number(date.slice(-2))}

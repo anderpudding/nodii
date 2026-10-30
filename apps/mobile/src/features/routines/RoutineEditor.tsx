@@ -1,3 +1,4 @@
+import { SheetHeader } from '../../components/SheetHeader';
 import { useOnline } from '../../../lib/connectivity';
 import { useRef, useState } from 'react';
 import { Alert, Keyboard, Text, TextInput, View } from 'react-native';
@@ -255,30 +256,29 @@ export function RoutineEditor({
         keyboard
         onClose={close}
         header={
-          <View style={s.header}>
-            <Button
-              label={t('mobile.add.cancel')}
-              secondary
-              quiet
-              disabled={blocked}
-              onPress={close}
-            />
-            <Text
-              numberOfLines={2}
-              adjustsFontSizeToFit
-              accessibilityRole="header"
-              style={[s.heading, { color: colors.ink }]}
-            >
-              {t(routine ? 'routine.edit' : 'routine.create')}
-            </Text>
-            <Button
-              label={t('mobile.rename.save')}
-              quiet
-              disabled={!online || blocked || !validation.valid}
-              busy={blocked}
-              onPress={() => void save()}
-            />
-          </View>
+          <SheetHeader
+            title={t(routine ? 'routine.edit' : 'routine.create')}
+            headerStyle={s.header}
+            titleStyle={[s.heading, { color: colors.ink }]}
+            leading={
+              <Button
+                label={t('mobile.add.cancel')}
+                secondary
+                quiet
+                disabled={blocked}
+                onPress={close}
+              />
+            }
+            trailing={
+              <Button
+                label={t('mobile.rename.save')}
+                quiet
+                disabled={!online || blocked || !validation.valid}
+                busy={blocked}
+                onPress={() => void save()}
+              />
+            }
+          />
         }
       >
         <View style={s.group}>

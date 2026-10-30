@@ -1,3 +1,4 @@
+import { SheetHeader } from './SheetHeader';
 import { useMemo, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
@@ -75,19 +76,16 @@ export function BottomSheet({
             <View style={[styles.handle, { backgroundColor: colors.ink, opacity: 0.2 }]} />
           </View>
           {header ?? (
-            <View style={styles.header}>
-              <Text
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                accessibilityRole="header"
-                style={[styles.title, { color: colors.ink }]}
-              >
-                {title}
-              </Text>
-              {!bottomCancel && (
-                <Button label={t('mobile.add.cancel')} secondary quiet onPress={onClose} />
-              )}
-            </View>
+            <SheetHeader
+              title={title}
+              headerStyle={styles.header}
+              titleStyle={[styles.title, { color: colors.ink }]}
+              trailing={
+                !bottomCancel && (
+                  <Button label={t('mobile.add.cancel')} secondary quiet onPress={onClose} />
+                )
+              }
+            />
           )}
           <ScrollView
             showsVerticalScrollIndicator={false}

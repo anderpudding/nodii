@@ -1,3 +1,4 @@
+import { getLocale } from '@nodii/i18n';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, type ReactNode } from 'react';
 import { Modal, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -64,8 +65,8 @@ export function ManagementScreen({
         <View style={styles.header}>
           <Button secondary quiet label={back} onPress={onClose} />
           <Text
-            numberOfLines={2}
-            adjustsFontSizeToFit
+            numberOfLines={getLocale() === 'en' ? 1 : undefined}
+            adjustsFontSizeToFit={getLocale() === 'en'}
             accessibilityRole="header"
             style={[styles.title, { color: colors.ink }]}
           >

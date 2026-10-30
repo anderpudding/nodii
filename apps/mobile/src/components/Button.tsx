@@ -1,3 +1,4 @@
+import { getLocale } from '@nodii/i18n';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { metrics as m, useTheme } from '../../lib/theme';
 
@@ -31,6 +32,7 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
+        getLocale() === 'en' && styles.fittingButton,
         {
           borderRadius: pill ? m.radius.pill : m.radius.button,
           minHeight: secondary || quiet ? m.height.touch : m.height.button,
@@ -53,8 +55,8 @@ export function Button({
         />
       ) : (
         <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
+          numberOfLines={getLocale() === 'en' ? 1 : undefined}
+          adjustsFontSizeToFit={getLocale() === 'en'}
           style={[
             styles.label,
             quiet && styles.quietLabel,
@@ -81,8 +83,6 @@ export function Button({
 const styles = StyleSheet.create({
   button: {
     minWidth: m.height.touch,
-    maxWidth: '100%',
-    flexShrink: 1,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: m.radius.button,
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.lg,
     paddingVertical: m.space.sm,
   },
+  fittingButton: { maxWidth: '100%', flexShrink: 1 },
   label: {
     fontFamily: m.fontExtraBold,
     fontSize: m.type.button,

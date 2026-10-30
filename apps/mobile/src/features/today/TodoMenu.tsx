@@ -1,3 +1,4 @@
+import { SheetHeader } from '../../components/SheetHeader';
 import { useLocale } from '../../../lib/use-locale';
 import { useOnline } from '../../../lib/connectivity';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -144,30 +145,29 @@ export function TodoMenu({
           </View>
           {editing ? (
             <>
-              <View style={styles.header}>
-                <Button
-                  label={t('mobile.add.cancel')}
-                  secondary
-                  quiet
-                  disabled={saving}
-                  onPress={close}
-                />
-                <Text
-                  numberOfLines={2}
-                  adjustsFontSizeToFit
-                  accessibilityRole="header"
-                  style={[styles.heading, { color: colors.ink }]}
-                >
-                  {t('todo.action.rename')}
-                </Text>
-                <Button
-                  label={t('mobile.rename.save')}
-                  quiet
-                  busy={saving}
-                  disabled={!online || saving || locked || !normalizeTitle(draft)}
-                  onPress={() => void submit()}
-                />
-              </View>
+              <SheetHeader
+                title={t('todo.action.rename')}
+                headerStyle={styles.header}
+                titleStyle={[styles.heading, { color: colors.ink }]}
+                leading={
+                  <Button
+                    label={t('mobile.add.cancel')}
+                    secondary
+                    quiet
+                    disabled={saving}
+                    onPress={close}
+                  />
+                }
+                trailing={
+                  <Button
+                    label={t('mobile.rename.save')}
+                    quiet
+                    busy={saving}
+                    disabled={!online || saving || locked || !normalizeTitle(draft)}
+                    onPress={() => void submit()}
+                  />
+                }
+              />
               <ScrollView keyboardShouldPersistTaps="always" contentContainerStyle={styles.editor}>
                 <TextInput
                   ref={input}

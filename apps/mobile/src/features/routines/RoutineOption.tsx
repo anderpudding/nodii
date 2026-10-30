@@ -1,3 +1,4 @@
+import { getLocale } from '@nodii/i18n';
 import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { metrics as m, useTheme } from '../../../lib/theme';
@@ -50,6 +51,7 @@ export function RoutineOption({
         styles.option,
         compact && styles.compact,
         segment && styles.segment,
+        segment && getLocale() === 'en' && { flexShrink: 1 },
         inline && styles.inline,
         inline && descriptionBelow && styles.stacked,
         {
@@ -69,10 +71,11 @@ export function RoutineOption({
     >
       {!children && (
         <Text
-          numberOfLines={compact || segment ? 2 : undefined}
-          adjustsFontSizeToFit={compact || segment}
+          numberOfLines={getLocale() === 'en' && (compact || segment) ? 2 : undefined}
+          adjustsFontSizeToFit={getLocale() === 'en' && (compact || segment)}
           style={[
             styles.label,
+            getLocale() === 'en' && { flexShrink: 1 },
             inline && styles.inlineLabel,
             {
               color: disabled
@@ -119,7 +122,7 @@ const styles = StyleSheet.create({
     padding: m.space.xs,
     borderRadius: m.radius.pill,
   },
-  segment: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', borderRadius: m.radius.pill },
+  segment: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', borderRadius: m.radius.pill },
   inline: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
   stacked: { flexDirection: 'column', alignItems: 'stretch', gap: m.space.xs },
   inlineLabel: { fontFamily: m.fontFamily, fontSize: m.type.body },
   value: { fontFamily: m.fontFamily, fontSize: m.type.body, flexShrink: 1 },
-  label: { flexShrink: 1, fontFamily: m.fontExtraBold, fontSize: m.type.button },
+  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,
