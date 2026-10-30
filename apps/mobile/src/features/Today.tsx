@@ -291,10 +291,17 @@ function TodayContent({
             onPress={() => selectDate(today)}
             style={({ pressed }) => [
               styles.today,
+              getLocale() === 'en' && { flexShrink: 1 },
               { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
             ]}
           >
-            <Text style={[styles.label, { color: colors.ink }]}>{t('day.today')}</Text>
+            <Text
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
+              style={[styles.label, { color: colors.ink }]}
+            >
+              {t('day.today')}
+            </Text>
           </Pressable>
           <View
             accessibilityRole="radiogroup"
