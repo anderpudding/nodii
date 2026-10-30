@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "Nodii",
+  "NSFaceIDUsageDescription": "Nodii에서 Face ID를 사용하도록 허용해 주세요.",
+  "NSLocalNetworkUsageDescription": "컴퓨터의 개발 서버에 연결하려면 로컬 네트워크 접근이 필요해요."
+}

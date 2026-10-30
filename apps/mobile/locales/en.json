@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "Nodii",
+  "NSFaceIDUsageDescription": "Allow Nodii to use Face ID.",
+  "NSLocalNetworkUsageDescription": "Nodii uses the local network to connect to a development server on your computer."
+}
