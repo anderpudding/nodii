@@ -1439,6 +1439,10 @@ body,
 #root {
   height: 100%;
 }
+/* 스크롤은 유지하되 경계에서 트랙패드 입력이 창 전체를 밀거나 튕기지 않게 한다. */
+* {
+  overscroll-behavior: none;
+}
 *,
 *::before,
 *::after {
