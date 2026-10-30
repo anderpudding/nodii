@@ -69,6 +69,8 @@ export function RoutineOption({
     >
       {!children && (
         <Text
+          numberOfLines={compact || segment ? 2 : undefined}
+          adjustsFontSizeToFit={compact || segment}
           style={[
             styles.label,
             inline && styles.inlineLabel,
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
     padding: m.space.xs,
     borderRadius: m.radius.pill,
   },
-  segment: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', borderRadius: m.radius.pill },
+  segment: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', borderRadius: m.radius.pill },
   inline: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
   stacked: { flexDirection: 'column', alignItems: 'stretch', gap: m.space.xs },
   inlineLabel: { fontFamily: m.fontFamily, fontSize: m.type.body },
   value: { fontFamily: m.fontFamily, fontSize: m.type.body, flexShrink: 1 },
-  label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
+  label: { flexShrink: 1, fontFamily: m.fontExtraBold, fontSize: m.type.button },
   supporting: {
     fontFamily: m.fontMedium,
     fontSize: m.type.supporting,

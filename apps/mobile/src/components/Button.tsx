@@ -53,6 +53,8 @@ export function Button({
         />
       ) : (
         <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
           style={[
             styles.label,
             quiet && styles.quietLabel,
@@ -79,6 +81,8 @@ export function Button({
 const styles = StyleSheet.create({
   button: {
     minWidth: m.height.touch,
+    maxWidth: '100%',
+    flexShrink: 1,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: m.radius.button,

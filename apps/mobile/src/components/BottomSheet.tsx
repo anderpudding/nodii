@@ -76,7 +76,12 @@ export function BottomSheet({
           </View>
           {header ?? (
             <View style={styles.header}>
-              <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+              <Text
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                accessibilityRole="header"
+                style={[styles.title, { color: colors.ink }]}
+              >
                 {title}
               </Text>
               {!bottomCancel && (

@@ -63,7 +63,12 @@ export function ManagementScreen({
       >
         <View style={styles.header}>
           <Button secondary quiet label={back} onPress={onClose} />
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+          <Text
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            accessibilityRole="header"
+            style={[styles.title, { color: colors.ink }]}
+          >
             {title}
           </Text>
         </View>
