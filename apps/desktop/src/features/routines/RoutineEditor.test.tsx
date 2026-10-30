@@ -1,3 +1,4 @@
+import { setLocale } from '@nodii/i18n';
 // 이 파일의 날짜별 UI fixture를 유지하고 실제 자정은 today.test.ts에서 검증한다.
 vi.mock('../../lib/today', () => ({ useTodayClock: vi.fn() }));
 import {
@@ -656,4 +657,17 @@ it('같은 루틴의 다른 날짜 로그는 독립적으로 체크할 수 있�
     });
   }
   await waitFor(() => expect(cache.isMutating()).toBe(0));
+});
+
+it('English repeat segments use Daily while the editable interval keeps its unit label', async () => {
+  setLocale('en');
+  const { user } = editor();
+  expect(screen.getByRole('radio', { name: 'Daily' })).toBeTruthy();
+  expect(screen.queryByRole('radio', { name: 'Every day' })).toBeNull();
+  expect(screen.getByRole('spinbutton', { name: 'Repeat interval' })).toHaveProperty('value', '1');
+  expect(screen.getByText('day interval')).toBeTruthy();
+  await user.click(screen.getByRole('radio', { name: 'Weekly' }));
+  expect(screen.getByText('week interval')).toBeTruthy();
+  await user.click(screen.getByRole('radio', { name: 'Monthly' }));
+  expect(screen.getByText('month interval')).toBeTruthy();
 });

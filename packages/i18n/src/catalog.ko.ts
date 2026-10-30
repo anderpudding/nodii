@@ -359,6 +359,7 @@ export const ko = {
   'routine.noEnd': '없음',
   'routine.clearEnd': '종료일 없애기',
   'routine.daily': '매일',
+  'routine.segment.daily': '매일',
   'routine.weekly': '매주',
   'routine.monthly': '매월',
   'routine.everyDays': '{every}일마다',

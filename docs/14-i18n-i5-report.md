@@ -145,3 +145,16 @@ VoiceOver의 영어 접근성 라벨·선택 상태는 네이티브 테스트와
 - 런북 **§4.3/§4.4**: 영어 문구·12장 사람이 검수 → English (U.S.) 버전 메타데이터 입력 → 사람이 빌드·제출·출시. **iOS 영어 빌드 출시 뒤에만** 앱 정보의 Primary Language를 English로 바꾸고, 먼저 한국어 현지화 완전성을 확인한다. 이어 macOS 영어 설명의 iPhone 문장을 수정한다.
 - 런북 **§8**: 새 바이너리의 언어 목록·권한 요청/폰트·설치 크기 및 실제 기기 성능을 확인한다.
 - 이번 단계에서는 App Store Connect 입력/기본 언어 변경/버전 변경/EAS 빌드·제출/push/DB·서버 변경/영상 제작/site 변경을 하지 않았다.
+
+
+## 9. I5 후속 · 반복 세그먼트와 단수 간격 (2026-10-30)
+
+같은 `feat/i18n-i5-ios` 브랜치에서 사용자 후속 지시를 적용했다(ROUT-10·SET-06).
+
+- **반복 세그먼트**: 모바일 `mobile.routine.daily`를 `Daily`로 바꾸고 데스크톱에는 `routine.segment.daily`를 추가했다(한국어 `매일`, 영어 `Daily`). 두 플랫폼 모두 `Daily / Weekly / Monthly`를 사용한다. 데스크톱 영어 세그먼트의 CSS `capitalize`를 제거했다. 규칙 요약의 `routine.daily = Every day`는 유지했다.
+- **간격 1**: 모바일 영어 세 키 `mobile.routine.interval.daily/weekly/monthly`를 `Every day / Every week / Every month`로 바꿨다. 간격 2 이상의 `Every 2 days/weeks/months`는 유지하고 네이티브 검사에서 증감·반복 종류 전환을 확인했다. 한국어의 기존 `{every}`는 보존해야 하므로 자리표시자 일치 검사는 이 세 키의 `every`만 정확히 예외 처리했다. 다른 키의 자리표시자 검사는 유지한다.
+- **실제 데스크톱의 차이**: 간격은 숫자 입력과 `day interval / week interval / month interval` 단위로 구성돼 있고 모바일의 `Every 1 week` 문구를 사용하지 않는다. 단위 표현은 유지했고 영어 UI 검사에서 숫자 1과 세 종류 단위를 확인했다. 별도 제품 결정이나 설계 변경은 없다.
+- **한국어 보존**: 후속 시작 커밋 대비 TypeScript AST 비교에서 기존 한국어 카탈로그 **501개 값 변경 0개**, 신규 `routine.segment.daily = 매일` 한 개만 추가했다. 기존 한국어 테스트 기대값과 모바일 레이아웃 코드에는 변경이 없다. 기존 규칙 요약 검사도 통과했다. 이번 후속에서는 한국어 화면을 새로 촬영하지 않았고, 생성기의 한국어 5화면 픽셀 차이 0은 기존 I5 촬영 자료 재검사 결과다.
+- **스크린샷 재생성**: 기존 I5의 장별 한국어 측정값·구성·제목을 사용해 iOS 18.5 / Expo Go 57.0.9의 iPhone 16 Pro Max·16 Pro에서 실제 루틴 편집 모달을 다시 캡처했다. `store-assets/screenshots-v2/ios-en/nodii-ios-03-routine.png`(1320×2868), `ios-6.3-en/nodii-ios-03-routine-6.3.png`(1206×2622) 두 장만 교체했다. 두 원본 캡처와 최종 PNG를 각각 열어 `Daily / Weekly / Monthly`, `Every week`를 확인했다. 바탕색 `#E0F3F5`·강조색 `#107883`·제목 2줄·부제 1줄·불투명·외부 요청 0 검증 통과. 전체 12장의 검증도 통과했고, 나머지 영어 **10장은 SHA-256 동일**하다. 선택 재생성을 지원하도록 로컬 생성기를 보완했고 자료·생성기는 계속 git 제외다.
+- **검증**: 영어 모바일/데스크톱 UI 검사 각 1개를 먼저 추가해 수정 전 실패, 수정 후 통과를 확인했다. i18n 34개·데스크톱 편집기/영어 규칙 20개·모바일 전체 검사 통과. 최종 `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` 통과: **700검사**(core167/i18n34/api82/desktop158/mobile Vitest148·Jest111). 기존 한국어 기대값을 바꾸지 않았다.
+- **의존성·미실행·사람 항목**: 새 의존성 없음. DB 변경이 없어 DB reset/test/types는 실행하지 않았다. 이번 문구 후속에서는 production export·prebuild·실제 Tauri 창·TestFlight·VoiceOver 음성·원격 CI를 재검증하지 않았다. 사람이 새 03번 PNG 두 장과 실제 배포 바이너리의 반복 전환/간격 읽기를 확인해야 한다. §8의 출시 전 사람 항목은 그대로 남는다. push·버전 변경·EAS·App Store Connect 조작은 하지 않았다.

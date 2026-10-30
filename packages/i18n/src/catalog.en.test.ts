@@ -29,11 +29,20 @@ it('영어 기본 키와 순서가 한국어와 같고 복수형은 count 문구
   expect(base).toEqual(Object.keys(ko));
 });
 
+// 단수 간격은 영어에서 숫자 없이 쓰지만 한국어의 기존 {every}는 보존한다.
+const numberlessIntervals = new Set<MessageKey>([
+  'mobile.routine.interval.daily',
+  'mobile.routine.interval.weekly',
+  'mobile.routine.interval.monthly',
+]);
+
 it('두 언어의 자리표시자가 같고 영어에는 한국어 조사가 없다', () => {
   for (const [key, message] of Object.entries(en)) {
     const parent = key.replace(/_one$/, '') as MessageKey;
     expect(placeholders(message), key).toEqual(
-      placeholders(ko[parent]).filter((name) => name !== 'particle'),
+      placeholders(ko[parent]).filter(
+        (name) => name !== 'particle' && !(name === 'every' && numberlessIntervals.has(parent)),
+      ),
     );
     expect(message, key).not.toContain('{particle}');
     expect(message.trim(), key).not.toBe('');

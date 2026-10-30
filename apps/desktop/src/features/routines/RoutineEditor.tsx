@@ -270,7 +270,7 @@ export function RoutineEditor({
                       })
                     }
                   >
-                    {[t('routine.daily'), t('routine.weekly'), t('routine.monthly')][i]}
+                    {[t('routine.segment.daily'), t('routine.weekly'), t('routine.monthly')][i]}
                   </Button>
                 ))}
               </div>
