@@ -93,10 +93,6 @@ export function TodoRow({
           accessibilityActions={todoActions.map(({ id }) => ({
             name: id,
             label: actionLabel(id, todo.isDone),
-            visualLabel:
-              id === 'toggle'
-                ? t(todo.isDone ? 'mobile.swipe.uncomplete' : 'common.done')
-                : undefined,
           }))}
           onToggle={check}
           onMenu={openMenu}

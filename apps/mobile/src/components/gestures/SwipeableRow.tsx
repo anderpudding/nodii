@@ -1,3 +1,4 @@
+import { getLocale } from '@nodii/i18n';
 import {
   createContext,
   useCallback,
@@ -213,7 +214,11 @@ export function SwipeableRow({
         >
           <View style={[styles.leadingContent, { width: actionWidth }]}>
             <ActionIcon action={leading.id} color={leading.color} />
-            <Text style={[styles.label, { color: leading.color }]}>
+            <Text
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
+              style={[styles.label, { color: leading.color }]}
+            >
               {leading.visualLabel ?? leading.label}
             </Text>
           </View>
@@ -229,7 +234,7 @@ export function SwipeableRow({
           <Pressable
             key={action.id}
             accessibilityRole="button"
-            accessibilityLabel={action.visualLabel ?? action.label}
+            accessibilityLabel={action.label}
             disabled={disabled}
             onPress={() => {
               close();
@@ -246,7 +251,11 @@ export function SwipeableRow({
             ]}
           >
             <ActionIcon action={action.id} color={action.color} />
-            <Text style={[styles.label, { color: action.color }]}>
+            <Text
+              numberOfLines={getLocale() === 'en' ? 1 : undefined}
+              adjustsFontSizeToFit={getLocale() === 'en'}
+              style={[styles.label, { color: action.color }]}
+            >
               {action.visualLabel ?? action.label}
             </Text>
           </Pressable>
