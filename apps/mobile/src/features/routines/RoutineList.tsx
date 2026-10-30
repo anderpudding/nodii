@@ -101,7 +101,12 @@ export function RoutineList({
             quiet
             onPress={onClose}
           />
-          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+          <Text
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            accessibilityRole="header"
+            style={[styles.title, { color: colors.ink }]}
+          >
             {t('routine.manage')}
           </Text>
         </View>

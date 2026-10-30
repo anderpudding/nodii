@@ -263,7 +263,12 @@ export function RoutineEditor({
               disabled={blocked}
               onPress={close}
             />
-            <Text accessibilityRole="header" style={[s.heading, { color: colors.ink }]}>
+            <Text
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              accessibilityRole="header"
+              style={[s.heading, { color: colors.ink }]}
+            >
               {t(routine ? 'routine.edit' : 'routine.create')}
             </Text>
             <Button
