@@ -1,4 +1,4 @@
-/* global jest, require */
+/* global jest, require, beforeEach */
 /* eslint-disable @typescript-eslint/no-require-imports -- Expo Jest의 CJS 초기화는 require를 사용한다. */
 require('react-native-gesture-handler/jestSetup');
 jest.mock('react-native-reanimated', () => {
@@ -19,3 +19,10 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(() => jest.fn()),
 }));
+
+jest.mock('expo-localization', () => ({ getLocales: jest.fn(() => [{ languageTag: 'ko-KR' }]) }));
+beforeEach(() => {
+  const { setLocale, setPseudoLocale } = require('@nodii/i18n');
+  setLocale('ko');
+  setPseudoLocale(false);
+});
