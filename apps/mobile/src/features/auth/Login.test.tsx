@@ -100,4 +100,7 @@ it('영어 가입 요청에 현재 로케일을 전달한다', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Get Code' }));
   await screen.findByLabelText('6-digit code');
   expect(sendOtp).toHaveBeenCalledWith(client, 'english@example.test', 'en');
+  expect(screen.getByText('english@example.test').parentElement?.textContent).toBe(
+    t('auth.code.description', { email: 'english@example.test' }),
+  );
 });
