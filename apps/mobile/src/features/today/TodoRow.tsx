@@ -1,3 +1,4 @@
+import { t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
@@ -53,6 +54,8 @@ export function TodoRow({
       id,
       swipe,
       label: actionLabel(id, todo.isDone),
+      visualLabel:
+        id === 'toggle' ? t(todo.isDone ? 'mobile.swipe.uncomplete' : 'common.done') : undefined,
       background:
         id === 'toggle'
           ? goalTint(goal.color, colors.bg, isDark ? 0.22 : 0.14)
@@ -90,6 +93,10 @@ export function TodoRow({
           accessibilityActions={todoActions.map(({ id }) => ({
             name: id,
             label: actionLabel(id, todo.isDone),
+            visualLabel:
+              id === 'toggle'
+                ? t(todo.isDone ? 'mobile.swipe.uncomplete' : 'common.done')
+                : undefined,
           }))}
           onToggle={check}
           onMenu={openMenu}

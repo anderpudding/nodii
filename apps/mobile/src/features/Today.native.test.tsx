@@ -1453,6 +1453,8 @@ it('English 오늘 화면은 월 머리글·요일·날짜 접근성 라벨을 �
   await mount();
   expect(screen.getByRole('header', { name: 'October 2026' })).toBeTruthy();
   expect(screen.getByText('Sat')).toBeTruthy();
+  const swipe = screen.UNSAFE_getAllByType(SwipeableRow).find((row) => row.props.id === 'one')!;
+  expect(swipe.props.leading).toMatchObject({ visualLabel: 'Done', label: 'Mark as Done' });
   expect(screen.getByRole('button', { name: /Sat, October 10.*2 left/ })).toBeTruthy();
   fireEvent.press(screen.getByRole('radio', { name: 'Monthly view' }));
   expect(within(screen.getByTestId('month-grid')).getByText('Sun')).toBeTruthy();

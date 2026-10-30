@@ -222,18 +222,16 @@ function ManagementRow({
   const online = useOnline();
   const busy = useRoutineWritePending(routine.id);
   const [menu, setMenu] = useState(false);
-  const label = t('routine.row.label', {
-    title: routine.title,
-    rule: ruleLabel(routine),
-    period: t(
-      routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from',
-      {
-        date: routineDate(
-          routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate,
-        ),
-      },
-    ),
-  });
+  const period = t(
+    routine.endDate && routine.endDate < todayForLabel ? 'routine.until' : 'routine.from',
+    {
+      date: routineDate(
+        routine.endDate && routine.endDate < todayForLabel ? routine.endDate : routine.startDate,
+      ),
+    },
+  );
+  const detail = t('routine.row.detail', { rule: ruleLabel(routine), period });
+  const label = t('routine.row.label', { title: routine.title, rule: ruleLabel(routine), period });
   function run(action: RoutineManagementAction) {
     if (busy || !online) return;
     if (action === 'edit') onEdit();
@@ -293,21 +291,7 @@ function ManagementRow({
           <GoalBadge goal={goal} onChip />
           <View style={styles.rowContent}>
             <Text style={[styles.rowTitle, { color: colors.ink }]}>{routine.title}</Text>
-            <Text style={[styles.supporting, { color: colors.muted }]}>
-              {ruleLabel(routine)} ·{' '}
-              {t(
-                routine.endDate && routine.endDate < todayForLabel
-                  ? 'routine.until'
-                  : 'routine.from',
-                {
-                  date: routineDate(
-                    routine.endDate && routine.endDate < todayForLabel
-                      ? routine.endDate
-                      : routine.startDate,
-                  ),
-                },
-              )}
-            </Text>
+            <Text style={[styles.supporting, { color: colors.muted }]}>{detail}</Text>
           </View>
           <Text accessible={false} style={[styles.rowTitle, { color: colors.muted }]}>
             ›

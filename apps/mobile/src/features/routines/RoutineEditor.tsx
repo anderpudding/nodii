@@ -337,7 +337,7 @@ export function RoutineEditor({
             {(['daily', 'weekly', 'monthly'] as const).map((freq) => (
               <RoutineOption
                 key={freq}
-                label={t(`routine.${freq}`)}
+                label={t(freq === 'daily' ? 'mobile.routine.daily' : `routine.${freq}`)}
                 selected={draft.freq === freq}
                 disabled={blocked}
                 onPress={() => changeFreq(freq)}
@@ -361,11 +361,13 @@ export function RoutineEditor({
             />
             <Text style={[s.supporting, { color: colors.ink }]}>
               {t(
-                draft.freq === 'daily'
-                  ? 'routine.everyDays'
-                  : draft.freq === 'weekly'
-                    ? 'routine.everyWeeks'
-                    : 'routine.everyMonths',
+                draft.repeatEvery === 1
+                  ? `mobile.routine.interval.${draft.freq}`
+                  : draft.freq === 'daily'
+                    ? 'routine.everyDays'
+                    : draft.freq === 'weekly'
+                      ? 'routine.everyWeeks'
+                      : 'routine.everyMonths',
                 { every: draft.repeatEvery },
               )}
             </Text>
