@@ -42,7 +42,7 @@ export function TodoMenu({
   onSave(title: string): Promise<void>;
   onClose(): void;
 }) {
-  const locale = useLocale();
+  useLocale();
   const { colors } = useTheme();
   const online = useOnline();
   const reduced = useReducedMotion();
@@ -54,17 +54,31 @@ export function TodoMenu({
   const [invalid, setInvalid] = useState(false);
   const input = useRef<TextInput>(null);
   const busy = useRef(false);
+  const discardTitle = t('mobile.add.discard.title');
+  const discardDescription = t('mobile.add.discard.description');
+  const discardContinue = t('mobile.add.discard.continue');
+  const discardAction = t('mobile.add.discard.action');
   const close = useCallback(() => {
     if (saving) return;
     if (!editing || draft === todo.title) {
       onClose();
       return;
     }
-    Alert.alert(t('mobile.add.discard.title'), t('mobile.add.discard.description'), [
-      { text: t('mobile.add.discard.continue'), style: 'cancel' },
-      { text: t('mobile.add.discard.action'), style: 'destructive', onPress: onClose },
+    Alert.alert(discardTitle, discardDescription, [
+      { text: discardContinue, style: 'cancel' },
+      { text: discardAction, style: 'destructive', onPress: onClose },
     ]);
-  }, [saving, editing, draft, todo.title, onClose, locale]);
+  }, [
+    saving,
+    editing,
+    draft,
+    todo.title,
+    onClose,
+    discardTitle,
+    discardDescription,
+    discardContinue,
+    discardAction,
+  ]);
   const pan = useMemo(
     () =>
       PanResponder.create({

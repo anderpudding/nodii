@@ -35,8 +35,13 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['apps/desktop/src/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.*', 'apps/desktop/src/test/**'],
+    files: ['apps/desktop/src/**/*.{ts,tsx}', 'apps/mobile/{app,src,lib}/**/*.{ts,tsx}'],
+    ignores: [
+      '**/*.test.*',
+      'apps/desktop/src/test/**',
+      'apps/mobile/src/test/**',
+      'apps/mobile/lib/test-setup.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',

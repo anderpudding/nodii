@@ -54,7 +54,7 @@ export function useTodoActions(
   function message(key: MessageKey, row: TodoRecord) {
     return t(key, {
       title: row.title,
-      particle: withParticle(row.title, '을/를').slice(row.title.length),
+      particle: withParticle(row.title).slice(row.title.length),
     });
   }
   async function locked<T>(request: () => Promise<T>, undo = false): Promise<T> {
@@ -143,7 +143,7 @@ export function useTodoActions(
             () =>
               t('todo.moved', {
                 title: before.title,
-                particle: withParticle(before.title, '을/를').slice(before.title.length),
+                particle: withParticle(before.title).slice(before.title.length),
                 date: formatMoveDate(date),
               }),
             () =>

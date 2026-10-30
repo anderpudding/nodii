@@ -9,8 +9,8 @@ function hasFinalConsonant(value: string): boolean {
   return (code - 0xac00) % 28 !== 0;
 }
 
-/** SET-06: 받침 여부에 맞는 조사를 붙여 화면마다 같은 규칙을 다시 만들지 않게 한다. */
-export function withParticle(value: string, pair: KoreanParticlePair): string {
+/** SET-06: 기본 목적격(을/를)과 받침 여부에 맞는 조사를 붙여 화면마다 같은 규칙을 다시 만들지 않게 한다. */
+export function withParticle(value: string, pair: KoreanParticlePair = '을/를'): string {
   const hasBatchim = hasFinalConsonant(value);
   const particle = pair === '을/를' ? (hasBatchim ? '을' : '를') : hasBatchim ? '이' : '가';
   return `${value}${particle}`;

@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTheme } from '../lib/theme';
+import { configurePseudoLocale } from '../lib/pseudo-locale';
 import { useLocale } from '../lib/use-locale';
 import { restoreLanguage, bindLanguage } from '../lib/language-preference';
 import { restoreTheme } from '../lib/theme-preference';
@@ -20,6 +21,8 @@ import { bindConnectivity } from '../lib/connectivity';
 import { ToastProvider } from '../src/components/Toast';
 import { ErrorBoundary } from '../src/shell/ErrorBoundary';
 import { STARTUP_TIMEOUT_MS, withStartupTimeout } from '../lib/startup-timeout';
+
+configurePseudoLocale(__DEV__, process.env.EXPO_PUBLIC_PSEUDO_LOCALE);
 
 // AUTH-02: 세션 복원이 끝나기 전에 네이티브 스플래시가 사라지지 않게 한다.
 void SplashScreen.preventAutoHideAsync().catch(() => {

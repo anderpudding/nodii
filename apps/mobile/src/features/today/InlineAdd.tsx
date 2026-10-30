@@ -73,7 +73,7 @@ export function InlineAdd({
       toast(() =>
         t('todo.add.failed', {
           title: failedTitle,
-          particle: withParticle(failedTitle, '을/를').slice(failedTitle.length),
+          particle: withParticle(failedTitle).slice(failedTitle.length),
         }),
       );
       setTitle((draft) => draft || failedTitle);
