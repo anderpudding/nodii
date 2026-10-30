@@ -16,7 +16,7 @@ import {
   type NodiiClient,
 } from '@nodii/api';
 import { BrandMark } from '../../components/BrandMark';
-import { t } from '@nodii/i18n';
+import { t, getLocale } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import {
@@ -75,7 +75,7 @@ export function Login({
         await signInReviewAccount(client, email, state.password);
         dispatch({ type: 'success' });
       } else {
-        await sendOtp(client, destination);
+        await sendOtp(client, destination, getLocale());
         const timestamp = Date.now();
         setNow(timestamp);
         dispatch({ type: 'sent', email: destination, now: timestamp });

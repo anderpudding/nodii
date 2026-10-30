@@ -2,7 +2,7 @@ import type * as Api from '@nodii/api';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { sendOtp, signInReviewAccount, verifyOtp, type NodiiClient } from '@nodii/api';
-import { t } from '@nodii/i18n';
+import { t, setLocale } from '@nodii/i18n';
 vi.mock('@nodii/api', async (original) => ({
   ...(await original<typeof Api>()),
   sendOtp: vi.fn(),
@@ -35,7 +35,7 @@ it('이메일 발송·6자리 자동 제출·오류 후 다시 입력을 처리�
   expect(screen.getByRole('heading', { name: '코드를 보냈어요' })).toBeTruthy();
   expect(screen.getByText('a@example.com')).toBeTruthy();
   expect(screen.queryByText(t('auth.email.help'))).toBeNull();
-  expect(sendOtp).toHaveBeenCalledWith(client, 'a@example.com');
+  expect(sendOtp).toHaveBeenCalledWith(client, 'a@example.com', 'ko');
   const input = screen.getByLabelText(t('auth.code.label'));
   expect(input.getAttribute('autocomplete')).toBe('one-time-code');
   fireEvent.change(input, { target: { value: '123456' } });
@@ -91,4 +91,13 @@ it('심사 설정이 없거나 이메일을 바꾸면 비밀번호를 노출하�
     target: { value: 'other@example.com' },
   });
   expect(screen.queryByLabelText(t('auth.password'))).toBeNull();
+});
+
+it('영어 가입 요청에 현재 로케일을 전달한다', async () => {
+  setLocale('en');
+  render(<Login client={client} reviewAccountEmail="" />);
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'english@example.test' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Get Code' }));
+  await screen.findByLabelText('6-digit code');
+  expect(sendOtp).toHaveBeenCalledWith(client, 'english@example.test', 'en');
 });
