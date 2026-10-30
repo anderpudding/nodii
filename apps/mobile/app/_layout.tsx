@@ -13,6 +13,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTheme } from '../lib/theme';
+import { useLocale } from '../lib/use-locale';
+import { restoreLanguage, bindLanguage } from '../lib/language-preference';
 import { restoreTheme } from '../lib/theme-preference';
 import { bindConnectivity } from '../lib/connectivity';
 import { ToastProvider } from '../src/components/Toast';
@@ -33,15 +35,19 @@ export default function RootLayout() {
   );
 }
 function RootContent() {
+  useLocale();
   const { colors } = useTheme();
   const [themeLoaded, setThemeLoaded] = useState(false);
+  const [languageError, setLanguageError] = useState(false);
   const [themeError, setThemeError] = useState(false);
   useEffect(() => {
-    void withStartupTimeout(restoreTheme())
-      .catch(() => setThemeError(true))
-      .finally(() => setThemeLoaded(true));
+    void Promise.all([
+      withStartupTimeout(restoreTheme()).catch(() => setThemeError(true)),
+      restoreLanguage().catch(() => setLanguageError(true)),
+    ]).finally(() => setThemeLoaded(true));
   }, []);
   useEffect(() => bindConnectivity(), []);
+  useEffect(() => bindLanguage(), []);
   const [fontsLoaded, fontError] = useFonts({
     'Pretendard-Regular': regular,
     'Pretendard-Medium': medium,
@@ -66,6 +72,11 @@ function RootContent() {
             {themeError && (
               <Text accessibilityRole="alert" style={{ color: colors.danger }}>
                 {t('settings.theme.failed')}
+              </Text>
+            )}
+            {languageError && (
+              <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+                {t('settings.language.loadFailed')}
               </Text>
             )}
             <Stack screenOptions={{ headerShown: false }} />

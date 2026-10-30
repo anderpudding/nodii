@@ -43,7 +43,7 @@ export function Settings({
   const [themeSaving, setThemeSaving] = useState(false);
   const preference = useThemePreference((state) => state.preference);
   const week = useUpdateWeekStart(client, profile.id, {
-    onError: () => toast(t('todo.save.failed')),
+    onError: () => toast(() => t('todo.save.failed')),
   });
   const goals = useGoals(client);
   const routines = useRoutines(client);
@@ -52,7 +52,7 @@ export function Settings({
     try {
       await Linking.openURL(url);
     } catch {
-      toast(t('settings.link.failed'));
+      toast(() => t('settings.link.failed'));
     }
   }
   function group(title: string, children: ReactNode) {
@@ -137,7 +137,7 @@ export function Settings({
                   onPress={() => {
                     setThemeSaving(true);
                     void saveTheme(value)
-                      .catch(() => toast(t('settings.theme.failed')))
+                      .catch(() => toast(() => t('settings.theme.failed')))
                       .finally(() => setThemeSaving(false));
                   }}
                 />

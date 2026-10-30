@@ -98,7 +98,7 @@ export function RoutineEditor({
   const [partialSplit, setPartialSplit] = useState<RoutineRecord | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const guard = useRef(false);
-  const errors = { onError: () => toast(t('todo.save.failed')) };
+  const errors = { onError: () => toast(() => t('todo.save.failed')) };
   const create = useCreateRoutine(client, newId, errors);
   const update = useUpdateRoutine(client, routine?.id ?? newId, errors);
   const split = useSplitRoutine(client, newId, errors);

@@ -28,7 +28,7 @@ export function useRoutineActions(
   const pending = useRoutineWritePending(routine.id, date);
   const log = useSetRoutineLog(client, weekStart, routine.id, date, {
     onError: () => {
-      if (!undoing.current) toast(t('todo.save.failed'));
+      if (!undoing.current) toast(() => t('todo.save.failed'));
     },
   });
   function currentStatus() {
@@ -71,16 +71,17 @@ export function useRoutineActions(
     try {
       await write(after);
       toast(
-        routineToastMessage(
-          action === 'skip'
-            ? after === 'skipped'
-              ? 'routine.skipped'
-              : 'routine.unskipped'
-            : after === 'done'
-              ? 'todo.toggled'
-              : 'todo.untoggled',
-          routine.title,
-        ),
+        () =>
+          routineToastMessage(
+            action === 'skip'
+              ? after === 'skipped'
+                ? 'routine.skipped'
+                : 'routine.unskipped'
+              : after === 'done'
+                ? 'todo.toggled'
+                : 'todo.untoggled',
+            routine.title,
+          ),
         async () => {
           // 이후의 편집·삭제·체크를 이전 실행 취소로 덮지 않는다.
           const active = cache

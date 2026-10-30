@@ -153,7 +153,7 @@ function GoalRow({
   const toast = useToast();
   const actions = useGoalActions(client, goal);
   const deleting = useRef(false);
-  const remove = useDeleteGoal(client, { onError: () => toast(t('todo.save.failed')) });
+  const remove = useDeleteGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
   const [menu, setMenu] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const archived = !!goal.archivedAt;
@@ -166,7 +166,7 @@ function GoalRow({
   function run(id: GoalAction) {
     if (!online || actions.pending) return;
     if ((id === 'archive' || id === 'delete') && actions.last()) {
-      toast(t('goal.lastActive'));
+      toast(() => t('goal.lastActive'));
       return;
     }
     setMenu(false);
@@ -294,7 +294,7 @@ function GoalRow({
           disabled={!online || actions.pending}
           trailing={swipe.trailing}
           onMenu={() => setMenu(true)}
-          onUnavailableSwipe={last ? () => toast(t('goal.lastActive')) : undefined}
+          onUnavailableSwipe={last ? () => toast(() => t('goal.lastActive')) : undefined}
           onReorder={(distance) => void actions.reorder(dropIndex(distance))}
         >
           {body}

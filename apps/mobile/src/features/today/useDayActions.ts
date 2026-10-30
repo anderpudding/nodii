@@ -113,12 +113,12 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
         requestStarted = true;
         await move.mutateAsync({ todos: originals, moves, date });
         toast(
-          t('day.menu.moved', { count: originals.length, date: formatMoveDate(date) }),
+          () => t('day.menu.moved', { count: originals.length, date: formatMoveDate(date) }),
           undoMove(originals, date),
         );
       });
     } catch (error) {
-      toast(t(dayActionErrorKey(error, requestStarted)));
+      toast(() => t(dayActionErrorKey(error, requestStarted)));
     }
   }
   async function importOverdue(originals: TodoRecord[], moves: TodoMove[], today: ISODate) {
@@ -138,10 +138,13 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
         }
         requestStarted = true;
         await imports.mutateAsync({ overdue: originals, moves, today });
-        toast(t('day.menu.imported', { count: originals.length }), undoMove(originals, today));
+        toast(
+          () => t('day.menu.imported', { count: originals.length }),
+          undoMove(originals, today),
+        );
       });
     } catch (error) {
-      toast(t(dayActionErrorKey(error, requestStarted)));
+      toast(() => t(dayActionErrorKey(error, requestStarted)));
     }
   }
   async function deleteTodos(originals: TodoRecord[]) {
@@ -153,14 +156,16 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
         if (!originalsStillActive(originals)) throw new DayActionGuardError('todos_changed');
         requestStarted = true;
         const saved = await remove.mutateAsync({ todos: originals });
-        toast(t('day.menu.deleted', { count: originals.length }), () =>
-          locked(dates, async () => {
-            await remove.mutateAsync({ todos: saved, restore: true });
-          }),
+        toast(
+          () => t('day.menu.deleted', { count: originals.length }),
+          () =>
+            locked(dates, async () => {
+              await remove.mutateAsync({ todos: saved, restore: true });
+            }),
         );
       });
     } catch (error) {
-      toast(t(dayActionErrorKey(error, requestStarted)));
+      toast(() => t(dayActionErrorKey(error, requestStarted)));
     }
   }
   return {

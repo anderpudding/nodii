@@ -11,10 +11,11 @@ import {
 import { Animated, Easing, Keyboard, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '@nodii/i18n';
+import { useLocale } from '../../lib/use-locale';
 import { metrics as m, useReducedMotion, useTheme } from '../../lib/theme';
 import { enqueueToast, expireToasts, undoLifetime, type ToastEntry } from './undo-queue';
 
-type ShowToast = (message: string, undo?: () => Promise<void>) => void;
+type ShowToast = (message: ToastEntry['text'], undo?: () => Promise<void>) => void;
 const ToastContext = createContext<ShowToast>(() => {});
 const ToastViewContext = createContext<{
   entries: ToastEntry[];
@@ -88,7 +89,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           item.id === id ? { ...item, busy: false, expiresAt: Date.now() + undoLifetime } : item,
         ),
       );
-      show(t('todo.undo.failed'));
+      show(() => t('todo.undo.failed'));
     } finally {
       restoring.current.delete(id);
     }
@@ -142,6 +143,7 @@ function ToastView({
   portal?: boolean;
   portalBottom?: number;
 }) {
+  useLocale();
   const { entries, bottom, dismiss, restore } = useContext(ToastViewContext);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -177,7 +179,7 @@ function ToastView({
             accessibilityLiveRegion="assertive"
             style={[styles.text, { color: colors.bg }]}
           >
-            {entry.text}
+            {typeof entry.text === 'function' ? entry.text() : entry.text}
           </Text>
           <Pressable
             accessibilityRole="button"

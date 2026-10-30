@@ -70,7 +70,7 @@ export function InlineAdd({
     // 입력을 요청 중 닫아도 훅의 오류 안내는 실행된다 (NFR-12).
     onError: () => {
       const failedTitle = submittedTitle.current;
-      toast(
+      toast(() =>
         t('todo.add.failed', {
           title: failedTitle,
           particle: withParticle(failedTitle, '을/를').slice(failedTitle.length),
@@ -93,7 +93,7 @@ export function InlineAdd({
       rows = cache.getQueryData<TodoRecord[]>(queryKeys.todos(monthKeyOf(date))) ?? [];
     } catch {
       busy.current = false;
-      toast(t('todo.save.failed'));
+      toast(() => t('todo.save.failed'));
       return;
     }
     const todo = newTodo(crypto.randomUUID(), goal.id, date, value, rows);

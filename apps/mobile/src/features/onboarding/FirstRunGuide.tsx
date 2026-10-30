@@ -23,7 +23,7 @@ export function FirstRunGuide() {
       () => {
         if (!live) return;
         setVisible(true);
-        toast(t('mobile.guide.storageFailed'));
+        toast(() => t('mobile.guide.storageFailed'));
       },
     );
     return () => {
@@ -33,7 +33,7 @@ export function FirstRunGuide() {
   function close() {
     setVisible(false);
     void AsyncStorage.setItem(GUIDE_KEY, 'seen').catch(() =>
-      toast(t('mobile.guide.storageFailed')),
+      toast(() => t('mobile.guide.storageFailed')),
     );
   }
   if (!visible) return null;

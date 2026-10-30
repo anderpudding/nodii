@@ -41,7 +41,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   useEffect(() => {
     if (!client) return;
     const lifecycle = bindAuthRefresh(client, AppState, () =>
-      toast(t('mobile.session.refreshFailed')),
+      toast(() => t('mobile.session.refreshFailed')),
     );
     refresh.current = lifecycle;
     return () => {
@@ -59,7 +59,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     function applySession(session: Session | null) {
       if (!live) return;
       if (previousUser && previousUser !== session?.user.id) {
-        void clearPersistedCache(query).catch(() => toast(t('sync.cache.clearFailed')));
+        void clearPersistedCache(query).catch(() => toast(() => t('sync.cache.clearFailed')));
         query.clear();
       }
       previousUser = session?.user.id;
@@ -115,12 +115,12 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     // 하루 화면의 실행 취소 정리가 끝난 뒤 로그인 화면에서 결과를 알린다.
     const message = logoutNotice.current;
     logoutNotice.current = null;
-    toast(t(message));
+    toast(() => t(message));
   }, [gate, toast]);
 
   const ready = !client || gate.status !== 'loading';
   useEffect(() => {
-    if (ready) void SplashScreen.hideAsync().catch(() => toast(t('mobile.session.failed')));
+    if (ready) void SplashScreen.hideAsync().catch(() => toast(() => t('mobile.session.failed')));
   }, [ready, toast]);
 
   async function signOut(accountDeleted = false) {
@@ -142,7 +142,7 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
         setGate({ status: 'ready', session: null });
       } else {
         refresh.current?.setSignedIn(true);
-        toast(t('auth.logout.failed'));
+        toast(() => t('auth.logout.failed'));
       }
     } finally {
       logoutBusy.current = false;
@@ -152,13 +152,13 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   async function openStore() {
     const url = appStoreUrl(mobileEnv.appStoreId);
     if (!url) {
-      toast(t('mobile.update.missing'));
+      toast(() => t('mobile.update.missing'));
       return;
     }
     try {
       await Linking.openURL(url);
     } catch {
-      toast(t('mobile.update.failed'));
+      toast(() => t('mobile.update.failed'));
     }
   }
 
