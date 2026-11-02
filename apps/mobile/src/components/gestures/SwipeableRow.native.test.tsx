@@ -62,7 +62,7 @@ function swipe(distance: number) {
 }
 it('짧게 밀면 쓰기를 하지 않고 충분한 왼쪽 밀기만 버튼을 노출한다', async () => {
   await mount();
-  swipe(80);
+  swipe(40);
   expect(leading).not.toHaveBeenCalled();
   expect(remove).not.toHaveBeenCalled();
   expect(screen.queryByRole('button', { name: '내일로' })).toBeNull();

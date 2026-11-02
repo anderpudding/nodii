@@ -9,7 +9,11 @@ describe('거리 임계값', () => {
     expect(swipeOutcome(-144, 360, 144)).toBe('open');
     expect(swipeOutcome(-233, 360, 144)).toBe('open');
   });
-  it('행의 65%부터 바로 실행하고 너비가 없으면 실행하지 않는다', () => {
+  it('오른쪽은 완료 칸(72pt)만 드러나도 바로 실행한다', () => {
+    expect(swipeOutcome(71, 360, 144)).toBe('close');
+    expect(swipeOutcome(72, 360, 144)).toBe('leading');
+  });
+  it('왼쪽은 행의 65%부터 바로 실행하고 너비가 없으면 실행하지 않는다', () => {
     expect(swipeOutcome(234, 360, 144)).toBe('leading');
     expect(swipeOutcome(-234, 360, 144)).toBe('trailing');
     expect(swipeOutcome(200, 0, 144)).toBe('close');

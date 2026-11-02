@@ -2,6 +2,8 @@ export const swipeRules = {
   horizontalActivation: 12,
   verticalFailure: 8,
   commitRatio: 0.65,
+  // 오른쪽 밀기(완료/되돌리기)는 되돌릴 수 있는 동작이라, [완료] 칸(72pt)이 다 드러나면 바로 실행한다.
+  leadingCommit: 72,
   longPressMs: 400,
 } as const;
 
@@ -10,7 +12,8 @@ export type SwipeOutcome = 'close' | 'open' | 'leading' | 'trailing';
 export function swipeOutcome(distance: number, width: number, railWidth: number): SwipeOutcome {
   'worklet';
   if (width <= 0) return 'close';
-  if (distance >= width * swipeRules.commitRatio) return 'leading';
+  if (distance >= Math.min(swipeRules.leadingCommit, width * swipeRules.commitRatio))
+    return 'leading';
   if (distance <= -width * swipeRules.commitRatio) return 'trailing';
   return distance <= -railWidth ? 'open' : 'close';
 }
