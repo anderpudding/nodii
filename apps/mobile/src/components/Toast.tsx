@@ -14,7 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getLocale, t } from '@nodii/i18n';
 import { useLocale } from '../../lib/use-locale';
 import { metrics as m, useReducedMotion, useTheme } from '../../lib/theme';
-import { enqueueToast, expireToasts, undoLifetime, type ToastEntry } from './undo-queue';
+import {
+  enqueueToast,
+  expireToasts,
+  undoLifetime,
+  visibleToast,
+  type ToastEntry,
+} from './undo-queue';
 
 type ShowToast = (message: ToastEntry['text'], undo?: () => Promise<void>) => void;
 const ToastContext = createContext<ShowToast>(() => {});
@@ -84,13 +90,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       await entry.undo();
       dismiss(id);
     } catch {
-      // 기존 훅은 데이터 롤백을 맡고 여기서는 복원 버튼을 다시 열어 둔다.
-      setEntries((previous) =>
-        previous.map((item) =>
-          item.id === id ? { ...item, busy: false, expiresAt: Date.now() + undoLifetime } : item,
-        ),
-      );
-      show(() => t('todo.undo.failed'));
+      // 기존 훅은 데이터 롤백을 맡고, 여기서는 실패 안내와 다시 시도할 [실행 취소]를 한 토스트로 보여 준다.
+      setEntries((previous) => [
+        ...previous.filter((item) => item.id !== id && item.busy),
+        {
+          ...entry,
+          text: () => t('todo.undo.failed'),
+          busy: false,
+          expiresAt: Date.now() + undoLifetime,
+        },
+      ]);
     } finally {
       restoring.current.delete(id);
     }
@@ -159,7 +168,8 @@ function ToastView({
       hide.remove();
     };
   }, []);
-  return entries.length ? (
+  const current = visibleToast(entries);
+  return current ? (
     <ScrollView
       style={[
         styles.stack,
@@ -175,7 +185,7 @@ function ToastView({
       contentContainerStyle={styles.stackContent}
       keyboardShouldPersistTaps="always"
     >
-      {entries.map((entry) => (
+      {[current].map((entry) => (
         <ToastFrame key={entry.id}>
           <Text
             accessibilityRole="alert"
