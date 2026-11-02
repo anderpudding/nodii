@@ -1,4 +1,4 @@
-export const undoLifetime = 4000;
+export const undoLifetime = 2500;
 export interface ToastEntry {
   id: number;
   text: string | (() => string);

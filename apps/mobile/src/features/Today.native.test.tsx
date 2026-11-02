@@ -519,7 +519,7 @@ it.each(['move', 'delete'] as const)(
   },
 );
 it('연속 세 삭제 후에는 마지막 실행 취소 토스트 하나만 남고 그 행만 복원한다', async () => {
-  // 실제 4초 만료는 큐 테스트로 검증한다.
+  // 실제 2.5초 만료는 큐 테스트로 검증한다.
   jest.spyOn(Date, 'now').mockReturnValue(new Date('2026-10-10T20:00:00Z').getTime());
   jest
     .mocked(listTodosInRange)
