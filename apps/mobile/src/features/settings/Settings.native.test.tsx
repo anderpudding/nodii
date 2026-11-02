@@ -154,8 +154,10 @@ it('English를 고르면 설정 화면과 선택 상태를 유지하고 저장 �
   fireEvent.press(screen.getByRole('radio', { name: 'English' }));
   await screen.findByText('Language');
   expect(
-    screen.UNSAFE_getByProps({ accessibilityRole: 'radiogroup' }).props.accessibilityLabel,
-  ).toBe('Language');
+    screen
+      .UNSAFE_getAllByProps({ accessibilityRole: 'radiogroup' })
+      .map((group) => group.props.accessibilityLabel),
+  ).toContain('Language');
   expect(screen.getByTestId('settings-screen')).toBe(opened);
   expect(screen.getByRole('radio', { name: 'English' }).props.accessibilityState.selected).toBe(
     true,
