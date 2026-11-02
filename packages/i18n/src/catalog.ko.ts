@@ -196,8 +196,9 @@ export const ko = {
   'mobile.guide.title': '두 가지만 알아두세요',
   'mobile.guide.swipe': '할 일 줄을 밀어 보세요',
   'mobile.guide.swipeDescription': '오른쪽으로 밀면 완료, 왼쪽으로 밀면 옮기기·삭제가 나와요.',
-  'mobile.guide.hold': '줄을 길게 눌러 보세요',
-  'mobile.guide.holdDescription': '같은 동작을 메뉴에서도 할 수 있어요. 밀지 않아도 괜찮아요.',
+  'mobile.guide.hold': '줄을 눌러 보세요',
+  'mobile.guide.holdDescription':
+    '같은 동작을 메뉴에서도 할 수 있어요. 길게 눌러 끌면 순서를 바꿀 수 있어요.',
   'mobile.guide.skip': '건너뛰기',
   'mobile.guide.done': '시작하기',
   'mobile.guide.storageFailed':

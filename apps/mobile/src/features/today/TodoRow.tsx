@@ -90,6 +90,7 @@ export function TodoRow({
         onMenu={openMenu}
         onReorder={onReorder ? (distance) => onReorder(todo, distance) : undefined}
         onDragChange={onDragChange}
+        holdMenu={false}
       >
         <DayRowContent
           title={todo.title}
