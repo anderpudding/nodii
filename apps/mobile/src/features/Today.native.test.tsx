@@ -446,7 +446,13 @@ it('이름 시트는 IME를 무시하고 제목을 낙관적으로 반영하며 
   expect(
     screen
       .UNSAFE_getAllByType(ScrollView)
-      .some((view) => StyleSheet.flatten(view.props.style)?.bottom === 310),
+      // 그림자 여백(paddingBottom)을 더한 위치가 토스트가 실제로 놓이는 높이다.
+      .some(
+        (view) =>
+          (StyleSheet.flatten(view.props.style)?.bottom ?? 0) +
+            (StyleSheet.flatten(view.props.contentContainerStyle)?.paddingBottom ?? 0) ===
+          310,
+      ),
   ).toBe(true);
   expect(input.props.value).toBe('우유 사기');
   expect(

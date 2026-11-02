@@ -167,7 +167,9 @@ function ToastView({
           bottom:
             (portal
               ? Math.max(portalBottom, insets.bottom, keyboardHeight)
-              : Math.max(bottom, insets.bottom, keyboardHeight)) + m.toastInset,
+              : Math.max(bottom, insets.bottom, keyboardHeight)) +
+            m.toastInset -
+            shadowRoom.bottom,
         },
       ]}
       contentContainerStyle={styles.stackContent}
@@ -258,15 +260,31 @@ function ToastFrame({ children }: { children: ReactNode }) {
 export function useToast() {
   return useContext(ToastContext);
 }
+// 스크롤 영역은 자기 경계 밖을 잘라 내므로, 그림자가 들어갈 여백을 영역 안에 둔다.
+// 여백이 없으면 잘린 그림자가 토스트 뒤에 회색 사각형으로 보인다.
+const shadowRoom = { top: m.space.lg, bottom: m.space.lg * 2 };
 const styles = StyleSheet.create({
-  stack: { position: 'absolute', left: m.space.lg, right: m.space.lg, maxHeight: '40%' },
-  stackContent: { gap: m.space.sm },
+  stack: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    maxHeight: '40%',
+    // 그림자 여백은 아래 화면의 터치를 막지 않는다.
+    pointerEvents: 'box-none',
+  },
+  stackContent: {
+    gap: m.space.sm,
+    paddingHorizontal: m.space.lg,
+    paddingTop: shadowRoom.top,
+    paddingBottom: shadowRoom.bottom,
+    pointerEvents: 'box-none',
+  },
   toast: {
     minHeight: m.height.button,
     paddingHorizontal: m.space.lg,
     paddingVertical: m.space.xs,
     borderRadius: m.radius.pill,
-    boxShadow: '0 12px 32px rgba(17,19,24,0.24)',
+    boxShadow: '0 8px 24px rgba(17,19,24,0.18)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: m.space.sm,
