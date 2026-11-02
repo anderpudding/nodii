@@ -118,6 +118,26 @@ beforeAll(() =>
 );
 afterAll(() => notifyManager.setNotifyFunction((notify) => notify()));
 beforeEach(async () => {
+  // 실행하는 날짜와 무관하게 2026-10-10을 오늘로 둔다. 타이머는 그대로 두고 Date만 고정한다.
+  jest.useFakeTimers({
+    now: new Date('2026-10-10T20:00:00Z'),
+    doNotFake: [
+      'hrtime',
+      'nextTick',
+      'performance',
+      'queueMicrotask',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+      'requestIdleCallback',
+      'cancelIdleCallback',
+      'setImmediate',
+      'clearImmediate',
+      'setInterval',
+      'clearInterval',
+      'setTimeout',
+      'clearTimeout',
+    ],
+  });
   jest.clearAllMocks();
   await AsyncStorage.setItem(GUIDE_KEY, 'seen');
   onlineManager.setOnline(true);
@@ -180,6 +200,7 @@ beforeEach(async () => {
   }));
 });
 afterEach(() => {
+  jest.useRealTimers();
   cleanup();
   onlineManager.setOnline(true);
   cache.clear();
@@ -446,7 +467,13 @@ it('이름 시트는 IME를 무시하고 제목을 낙관적으로 반영하며 
   expect(
     screen
       .UNSAFE_getAllByType(ScrollView)
-      .some((view) => StyleSheet.flatten(view.props.style)?.bottom === 310),
+      // 그림자 여백(paddingBottom)을 더한 위치가 토스트가 실제로 놓이는 높이다.
+      .some(
+        (view) =>
+          (StyleSheet.flatten(view.props.style)?.bottom ?? 0) +
+            (StyleSheet.flatten(view.props.contentContainerStyle)?.paddingBottom ?? 0) ===
+          310,
+      ),
   ).toBe(true);
   expect(input.props.value).toBe('우유 사기');
   expect(
@@ -512,8 +539,8 @@ it.each(['move', 'delete'] as const)(
     await screen.findByText(t('todo.save.failed'));
   },
 );
-it('연속 세 삭제 후 행이 언마운트되어도 각 실행 취소가 독립적으로 복원된다', async () => {
-  // 실제 5초 만료는 큐 테스트로 검증한다. 이 통합 검사는 조회 비용과 무관하게 복원 세 경로를 검증한다.
+it('연속 세 삭제 후에는 마지막 실행 취소 토스트 하나만 남고 그 행만 복원한다', async () => {
+  // 실제 2.5초 만료는 큐 테스트로 검증한다.
   jest.spyOn(Date, 'now').mockReturnValue(new Date('2026-10-10T20:00:00Z').getTime());
   jest
     .mocked(listTodosInRange)
@@ -541,16 +568,14 @@ it('연속 세 삭제 후 행이 언마운트되어도 각 실행 취소가 독�
     });
   }
   await waitFor(() =>
-    expect(screen.getAllByRole('button', { name: t('todo.undo') })).toHaveLength(3),
+    expect(screen.getAllByRole('button', { name: t('todo.undo') })).toHaveLength(1),
   );
-  for (const title of ['장보기', 'OS 과제', '독서']) {
-    fireEvent.press(screen.getAllByRole('button', { name: t('todo.undo') })[0]!);
-    await screen.findByRole('checkbox', { name: t('todo.complete', { title }) });
-  }
-  expect(jest.mocked(updateTodo).mock.calls.map((call) => call[2])).toEqual([
-    { deletedAt: null },
-    { deletedAt: null },
-    { deletedAt: null },
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByRole('checkbox', { name: t('todo.complete', { title: '독서' }) });
+  expect(screen.queryByTestId('todo-menu-one')).toBeNull();
+  expect(screen.queryByTestId('todo-menu-two')).toBeNull();
+  expect(jest.mocked(updateTodo).mock.calls.map((call) => [call[1], call[2]])).toEqual([
+    ['three', { deletedAt: null }],
   ]);
 }, 10000);
 it('복원 실패는 삭제 상태로 롤백하고 복원 작업을 잃지 않아 재시도할 수 있다', async () => {
@@ -576,7 +601,7 @@ it('복원 실패는 삭제 상태로 롤백하고 복원 작업을 잃지 않�
   fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
   await screen.findByTestId('todo-menu-one');
 });
-it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 서버에 쓰지 않는다', async () => {
+it('완료 후 삭제하면 완료 실행 취소는 사라지고 삭제 실행 취소만 남는다', async () => {
   jest.spyOn(Date, 'now').mockReturnValue(new Date('2026-10-10T20:00:00Z').getTime());
   await mount();
   fireEvent.press(screen.getByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }));
@@ -588,17 +613,16 @@ it('완료 후 삭제한 행은 이전 완료 실행 취소로 되살리거나 �
     }),
   );
   await waitFor(() =>
-    expect(screen.getAllByRole('button', { name: t('todo.undo') })).toHaveLength(2),
+    expect(screen.queryByText(t('todo.toggled', { title: '장보기', particle: '를' }))).toBeNull(),
   );
-  // 잘못된 구현은 지연 응답을 기다리는 동안 삭제한 행을 캐시에 다시 넣는다.
-  jest.mocked(updateTodo).mockImplementationOnce(() => new Promise(() => {}));
-  fireEvent.press(screen.getAllByRole('button', { name: t('todo.undo') })[0]!);
-  await screen.findByText(t('todo.undo.failed'));
-  expect(updateTodo).toHaveBeenCalledTimes(1);
-  expect(screen.queryByTestId('todo-menu-one')).toBeNull();
-  expect(
-    cache.getQueryData<TodoRecord[]>(queryKeys.todos('2026-10'))?.some((row) => row.id === 'one'),
-  ).toBe(false);
+  expect(screen.getAllByRole('button', { name: t('todo.undo') })).toHaveLength(1);
+  fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
+  await screen.findByTestId('todo-menu-one');
+  // 완료 한 번과 삭제 복원 한 번만 쓰고, 사라진 완료 실행 취소는 서버에 쓰지 않는다.
+  expect(jest.mocked(updateTodo).mock.calls.map((call) => call[2])).toEqual([
+    { isDone: true },
+    { deletedAt: null },
+  ]);
 });
 
 it('월간은 필요한 35칸을 펼치고 다른 달의 날짜나 오늘을 선택해도 월간을 유지한다', async () => {

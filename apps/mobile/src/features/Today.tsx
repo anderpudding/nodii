@@ -1,6 +1,15 @@
 import { completedStampColors } from './today/stamp-colors';
 import { useOnline } from '../../lib/connectivity';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   AppState,
   KeyboardAvoidingView,
@@ -11,6 +20,9 @@ import {
   Text,
   View,
   useWindowDimensions,
+  type StyleProp,
+  type ViewProps,
+  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,16 +32,20 @@ import {
   prefetchAdjacentMonths,
   useGoals,
   useMonthTodos,
+  useReorderTodo,
   useRoutines,
   useMonthRoutineLogs,
   type RoutineRecord,
   type NodiiClient,
+  type TodoRecord,
 } from '@nodii/api';
 import { monthGridRange, monthKeyOf, type Profile } from '@nodii/core';
 import { formatISODate, getLocale, t } from '@nodii/i18n';
 import { bindTodayClock } from '../../lib/today-clock';
 import { metrics as m, useTheme } from '../../lib/theme';
-import { ToastInset } from '../components/Toast';
+import { ToastInset, useToast } from '../components/Toast';
+import { droppedRowIndex } from '../components/gestures/swipe';
+import { reorderedTodoKey } from './today/reorder';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
 import { Button } from '../components/Button';
 import { SettingsIcon } from '../components/SettingsIcon';
@@ -173,6 +189,39 @@ function TodayContent({
         logs,
       ),
     [goals.data, rows, selectedDate, profile.timezone, routines.data, logs],
+  );
+  const toast = useToast();
+  const reorder = useReorderTodo(client, profile.weekStart, {
+    onError: () => toast(() => t('todo.save.failed')),
+  });
+  const rowHeights = useRef<Record<string, number>>({});
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  /** TODO-06: 끈 거리로 같은 목표 안의 놓일 자리를 고르고, 루틴도 이웃 키로 두고 한 행만 갱신한다. */
+  const moveTodo = useCallback(
+    (items: MobileDayItem[], todo: TodoRecord, distance: number) => {
+      if (reorder.isPending) return;
+      const source = items.findIndex((item) => item.id === todo.id);
+      if (source < 0) return;
+      const target = droppedRowIndex(
+        items.map((item) => rowHeights.current[item.id] ?? m.height.field),
+        source,
+        distance,
+      );
+      try {
+        const sortKey = reorderedTodoKey(
+          items.map((item) => ({
+            id: item.id,
+            sortKey: item.kind === 'todo' ? item.todo.sortKey : item.routine.sortKey,
+          })),
+          todo.id,
+          target,
+        );
+        if (sortKey) reorder.mutate({ todo, sortKey });
+      } catch {
+        toast(() => t('common.reorder.failed'));
+      }
+    },
+    [reorder, toast],
   );
   const summary = useMemo(
     () =>
@@ -374,182 +423,202 @@ function TodayContent({
       )}
       <ToastInset bottom={0} />
       <SwipeRows>
-        <SectionList
-          ref={list}
-          testID="day-list"
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          onContentSizeChange={() => {
-            if (adding) revealInput(adding);
-          }}
-          onScrollToIndexFailed={({ index, averageItemLength }) => {
-            // 아직 가상화된 긴 섹션의 끝을 측정하지 못했으면 근처를 먼저 렌더한다.
-            list.current
-              ?.getScrollResponder()
-              ?.scrollTo({ y: index * averageItemLength, animated: false });
-            if (++scrollAttempts.current > 2) return;
-            clearTimeout(scrollTimer.current);
-            scrollTimer.current = setTimeout(() => {
-              if (inputLocation.current)
-                list.current?.scrollToLocation({
-                  ...inputLocation.current,
-                  viewPosition: 1,
-                  animated: false,
-                });
-            }, m.motion.state);
-          }}
-          removeClippedSubviews={false}
-          ListHeaderComponent={
-            <View>
-              {monthExpanded ? (
-                <MonthGrid
-                  month={calendarMonth}
-                  weekStart={profile.weekStart}
-                  today={today}
-                  selectedDate={selectedDate}
-                  summary={summary}
-                  stampColors={stampColors}
-                  onSelect={selectDate}
-                  onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
-                />
-              ) : (
-                <WeekStrip
-                  dates={dates}
-                  today={today}
-                  selectedDate={selectedDate}
-                  summary={summary}
-                  stampColors={stampColors}
-                  onSelect={selectDate}
-                />
-              )}
-              {monthExpanded && (month.isError || monthLogs.isError) && (
-                <View style={styles.calendarError}>
-                  <Text
-                    accessibilityRole="alert"
-                    style={[styles.supporting, { color: colors.danger }]}
-                  >
-                    {t('mobile.calendar.failed')}
-                  </Text>
-                  <Button
-                    label={t('common.tryAgain')}
-                    secondary
-                    onPress={() => {
-                      void month.refetch();
-                      void monthLogs.refetch();
-                    }}
+        <DraggingRow.Provider value={draggingId}>
+          <SectionList
+            ref={list}
+            testID="day-list"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            onContentSizeChange={() => {
+              if (adding) revealInput(adding);
+            }}
+            onScrollToIndexFailed={({ index, averageItemLength }) => {
+              // 아직 가상화된 긴 섹션의 끝을 측정하지 못했으면 근처를 먼저 렌더한다.
+              list.current
+                ?.getScrollResponder()
+                ?.scrollTo({ y: index * averageItemLength, animated: false });
+              if (++scrollAttempts.current > 2) return;
+              clearTimeout(scrollTimer.current);
+              scrollTimer.current = setTimeout(() => {
+                if (inputLocation.current)
+                  list.current?.scrollToLocation({
+                    ...inputLocation.current,
+                    viewPosition: 1,
+                    animated: false,
+                  });
+              }, m.motion.state);
+            }}
+            removeClippedSubviews={false}
+            ListHeaderComponent={
+              <View>
+                {monthExpanded ? (
+                  <MonthGrid
+                    month={calendarMonth}
+                    weekStart={profile.weekStart}
+                    today={today}
+                    selectedDate={selectedDate}
+                    summary={summary}
+                    stampColors={stampColors}
+                    onSelect={selectDate}
+                    onMove={(direction) => showMonth(adjacentMonthKey(calendarMonth, direction))}
                   />
-                </View>
-              )}
-              <View
-                style={
-                  failed || loading || (!items.length && !activeGoal) ? styles.feedback : undefined
-                }
-              >
-                {failed ? (
-                  <View>
-                    <Text accessibilityRole="alert" style={{ color: colors.danger }}>
-                      {t('mobile.today.failed')}
-                    </Text>
-                    <Button label={t('common.tryAgain')} secondary onPress={retry} />
-                  </View>
-                ) : loading ? (
-                  <Text style={[styles.supporting, { color: colors.muted }]}>
-                    {t(online ? 'mobile.today.loading' : 'mobile.offline.noCache')}
-                  </Text>
-                ) : !items.length && !activeGoal ? (
-                  <View style={{ gap: m.space.sm }}>
-                    <Text style={[styles.supporting, { color: colors.muted }]}>
-                      {t('mobile.today.noGoals')}
+                ) : (
+                  <WeekStrip
+                    dates={dates}
+                    today={today}
+                    selectedDate={selectedDate}
+                    summary={summary}
+                    stampColors={stampColors}
+                    onSelect={selectDate}
+                  />
+                )}
+                {monthExpanded && (month.isError || monthLogs.isError) && (
+                  <View style={styles.calendarError}>
+                    <Text
+                      accessibilityRole="alert"
+                      style={[styles.supporting, { color: colors.danger }]}
+                    >
+                      {t('mobile.calendar.failed')}
                     </Text>
                     <Button
-                      label={t('settings.title')}
+                      label={t('common.tryAgain')}
                       secondary
-                      onPress={() => setSettings(true)}
+                      onPress={() => {
+                        void month.refetch();
+                        void monthLogs.refetch();
+                      }}
                     />
                   </View>
-                ) : null}
+                )}
+                <View
+                  style={
+                    failed || loading || (!items.length && !activeGoal)
+                      ? styles.feedback
+                      : undefined
+                  }
+                >
+                  {failed ? (
+                    <View>
+                      <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+                        {t('mobile.today.failed')}
+                      </Text>
+                      <Button label={t('common.tryAgain')} secondary onPress={retry} />
+                    </View>
+                  ) : loading ? (
+                    <Text style={[styles.supporting, { color: colors.muted }]}>
+                      {t(online ? 'mobile.today.loading' : 'mobile.offline.noCache')}
+                    </Text>
+                  ) : !items.length && !activeGoal ? (
+                    <View style={{ gap: m.space.sm }}>
+                      <Text style={[styles.supporting, { color: colors.muted }]}>
+                        {t('mobile.today.noGoals')}
+                      </Text>
+                      <Button
+                        label={t('settings.title')}
+                        secondary
+                        onPress={() => setSettings(true)}
+                      />
+                    </View>
+                  ) : null}
+                </View>
               </View>
-            </View>
-          }
-          sections={sections}
-          keyExtractor={(item) => `${item.kind}:${item.id}`}
-          stickySectionHeadersEnabled={false}
-          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, m.space.lg) }}
-          renderSectionHeader={({ section }) => (
-            <View style={styles.section}>
-              <GoalBadge
-                goal={section.goal}
-                add
-                disabled={
-                  !section.canAdd ||
-                  !online ||
-                  loading ||
-                  failed ||
-                  dayActions.isDateLocked(selectedDate)
-                }
-                hint={
-                  !online
-                    ? t('sync.writeDisabled')
-                    : !section.canAdd
-                      ? t('mobile.add.unavailable')
-                      : loading || failed
-                        ? t('day.menu.loading')
-                        : dayActions.isDateLocked(selectedDate)
-                          ? t('day.menu.busy')
-                          : undefined
-                }
-                onPress={() => {
-                  setAdding(section.goal.id);
-                  requestAnimationFrame(() => revealInput(section.goal.id));
-                }}
-              />
-            </View>
-          )}
-          renderSectionFooter={({ section }) =>
-            adding === section.goal.id && section.canAdd ? (
-              <InlineAdd
-                key={`${selectedDate}:${section.goal.id}`}
-                client={client}
-                goal={section.goal}
-                date={selectedDate}
-                today={today}
-                weekStart={profile.weekStart}
-                timeZone={profile.timezone}
-                isDateLocked={dayActions.isDateLocked}
-                onClose={() =>
-                  setAdding((current) => (current === section.goal.id ? null : current))
-                }
-                onFocus={() => revealInput(section.goal.id)}
-              />
-            ) : null
-          }
-          renderItem={({ item, section }) => (
-            <View style={{ paddingHorizontal: m.space.lg }}>
-              {item.kind === 'todo' ? (
-                <TodoRow
-                  todo={item.todo}
+            }
+            sections={sections}
+            CellRendererComponent={DayListCell}
+            keyExtractor={(item) => `${item.kind}:${item.id}`}
+            stickySectionHeadersEnabled={false}
+            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, m.space.lg) }}
+            renderSectionHeader={({ section }) => (
+              <View style={styles.section}>
+                <GoalBadge
                   goal={section.goal}
-                  client={client}
-                  weekStart={profile.weekStart}
-                  timeZone={profile.timezone}
-                  dayLocked={dayActions.isDateLocked(selectedDate)}
-                  isDateLocked={dayActions.isDateLocked}
+                  add
+                  disabled={
+                    !section.canAdd ||
+                    !online ||
+                    loading ||
+                    failed ||
+                    dayActions.isDateLocked(selectedDate)
+                  }
+                  hint={
+                    !online
+                      ? t('sync.writeDisabled')
+                      : !section.canAdd
+                        ? t('mobile.add.unavailable')
+                        : loading || failed
+                          ? t('day.menu.loading')
+                          : dayActions.isDateLocked(selectedDate)
+                            ? t('day.menu.busy')
+                            : undefined
+                  }
+                  onPress={() => {
+                    setAdding(section.goal.id);
+                    requestAnimationFrame(() => revealInput(section.goal.id));
+                  }}
                 />
-              ) : (
-                <RoutineRow
-                  routine={item.routine}
-                  log={item.log}
+              </View>
+            )}
+            renderSectionFooter={({ section }) =>
+              adding === section.goal.id && section.canAdd ? (
+                <InlineAdd
+                  key={`${selectedDate}:${section.goal.id}`}
+                  client={client}
                   goal={section.goal}
                   date={selectedDate}
-                  client={client}
+                  today={today}
                   weekStart={profile.weekStart}
-                  onEdit={() => setEditingRoutine(item.routine)}
-                  onStop={() => setStoppingRoutine(item.routine)}
+                  timeZone={profile.timezone}
+                  isDateLocked={dayActions.isDateLocked}
+                  onClose={() =>
+                    setAdding((current) => (current === section.goal.id ? null : current))
+                  }
+                  onFocus={() => revealInput(section.goal.id)}
                 />
-              )}
-            </View>
-          )}
-        />
+              ) : null
+            }
+            renderItem={({ item, section }) => (
+              <View
+                style={{ paddingHorizontal: m.space.lg }}
+                onLayout={(event) => {
+                  rowHeights.current[item.id] = event.nativeEvent.layout.height;
+                }}
+              >
+                {item.kind === 'todo' ? (
+                  <TodoRow
+                    todo={item.todo}
+                    goal={section.goal}
+                    client={client}
+                    weekStart={profile.weekStart}
+                    timeZone={profile.timezone}
+                    dayLocked={dayActions.isDateLocked(selectedDate)}
+                    isDateLocked={dayActions.isDateLocked}
+                    onReorder={
+                      section.data.length > 1 && routines.isSuccess
+                        ? (todo, distance) => moveTodo(section.data, todo, distance)
+                        : undefined
+                    }
+                    onDragChange={(dragging) =>
+                      setDraggingId((current) =>
+                        dragging ? item.id : current === item.id ? null : current,
+                      )
+                    }
+                  />
+                ) : (
+                  <RoutineRow
+                    routine={item.routine}
+                    log={item.log}
+                    goal={section.goal}
+                    date={selectedDate}
+                    client={client}
+                    weekStart={profile.weekStart}
+                    onEdit={() => setEditingRoutine(item.routine)}
+                    onStop={() => setStoppingRoutine(item.routine)}
+                  />
+                )}
+              </View>
+            )}
+          />
+        </DraggingRow.Provider>
       </SwipeRows>
       {settings && (
         <Settings
@@ -586,8 +655,35 @@ function TodayContent({
     </KeyboardAvoidingView>
   );
 }
+/** 끄는 중인 할 일의 셀을 뒤따르는 셀 위로 올린다. 가상화 목록의 셀은 서로 형제라서 셀 단위로 올려야 한다. */
+const DraggingRow = createContext<string | null>(null);
+function DayListCell({
+  item,
+  style,
+  children,
+  onLayout,
+}: {
+  item?: unknown;
+  style?: StyleProp<ViewStyle>;
+  children?: ReactNode;
+  onLayout?: ViewProps['onLayout'];
+}) {
+  const dragging = useContext(DraggingRow);
+  const lifted =
+    dragging !== null &&
+    typeof item === 'object' &&
+    item !== null &&
+    'kind' in item &&
+    (item as MobileDayItem).id === dragging;
+  return (
+    <View style={[style, lifted && styles.lifted]} onLayout={onLayout}>
+      {children}
+    </View>
+  );
+}
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  lifted: { zIndex: 1 },
   offline: {
     minHeight: m.type.title,
     textAlign: 'center',

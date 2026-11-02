@@ -1,4 +1,5 @@
 import { compareSortKey, keyBetween, type Goal } from '@nodii/core';
+import { droppedRowIndex } from '../../components/gestures/swipe';
 
 export const goalActions = [
   { id: 'edit', swipe: null },
@@ -28,19 +29,5 @@ export function reorderedGoalKey(
   const index = Math.max(0, Math.min(target, others.length));
   return keyBetween(others[index - 1]?.sortKey ?? null, others[index]?.sortKey ?? null);
 }
-/** Dynamic Type에서도 실측한 행 중심으로 이동할 위치를 고른다. */
-export function droppedGoalIndex(heights: readonly number[], source: number, distance: number) {
-  let top = 0;
-  const centers = heights.map((height) => {
-    const center = top + height / 2;
-    top += height;
-    return center;
-  });
-  const destination = (centers[source] ?? 0) + distance;
-  let target = source;
-  for (let i = 0; i < centers.length; i++) {
-    if (i < source && destination <= centers[i]!) return i;
-    if (i > source && destination >= centers[i]!) target = i;
-  }
-  return target;
-}
+/** Dynamic Type에서도 실측한 행 중심으로 이동할 위치를 고른다. 할 일 목록과 같은 규칙이다. */
+export const droppedGoalIndex = droppedRowIndex;

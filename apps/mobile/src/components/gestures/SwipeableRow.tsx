@@ -48,6 +48,8 @@ export function SwipeableRow({
   onMenu,
   onUnavailableSwipe,
   onReorder,
+  onDragChange,
+  holdMenu = true,
   children,
 }: {
   id: string;
@@ -57,6 +59,10 @@ export function SwipeableRow({
   onMenu(): void;
   onUnavailableSwipe?(): void;
   onReorder?(distance: number): void;
+  /** 가상화 목록이 끄는 행의 셀을 다른 셀 위로 올릴 수 있게 알린다. */
+  onDragChange?(dragging: boolean): void;
+  /** false면 길게 눌렀다 떼도 메뉴를 열지 않는다. 끌어서 순서 바꾸기와 헷갈리지 않게 할 때 쓴다. */
+  holdMenu?: boolean;
   children: ReactNode;
 }) {
   const context = useContext(SwipeContext);
@@ -68,7 +74,14 @@ export function SwipeableRow({
   const width = useSharedValue(0);
   const scale = useSharedValue(1);
   const vertical = useSharedValue(0);
-  const [dragging, setDragging] = useState(false);
+  const [dragging, setDraggingState] = useState(false);
+  const setDragging = useCallback(
+    (value: boolean) => {
+      setDraggingState(value);
+      onDragChange?.(value);
+    },
+    [onDragChange],
+  );
   const [opened, setOpened] = useState(false);
   const actionWidth = m.height.chip * 2;
   const railWidth = trailing.length * actionWidth;
@@ -143,7 +156,7 @@ export function SwipeableRow({
     });
   const longPress = Gesture.LongPress()
     .withTestId(`hold-${id}`)
-    .enabled(!disabled)
+    .enabled(!disabled && holdMenu)
     .minDuration(swipeRules.longPressMs)
     .maxDistance(swipeRules.verticalFailure)
     .onStart(() => {
@@ -174,8 +187,9 @@ export function SwipeableRow({
       vertical.set(event.translationY);
     })
     .onEnd((event) => {
-      if (Math.abs(event.translationY) < m.space.md) scheduleOnRN(onMenu);
-      else if (onReorder) scheduleOnRN(onReorder, event.translationY);
+      if (Math.abs(event.translationY) < m.space.md) {
+        if (holdMenu) scheduleOnRN(onMenu);
+      } else if (onReorder) scheduleOnRN(onReorder, event.translationY);
     })
     .onFinalize(() => {
       vertical.set(0);

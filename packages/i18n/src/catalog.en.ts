@@ -205,9 +205,9 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'mobile.guide.title': 'Two Things to Know',
   'mobile.guide.swipe': 'Swipe a todo row',
   'mobile.guide.swipeDescription': 'Swipe right to mark it as done, or left to move or delete it.',
-  'mobile.guide.hold': 'Touch and hold a row',
+  'mobile.guide.hold': 'Tap a row',
   'mobile.guide.holdDescription':
-    "The same actions are available in the menu. You don't have to swipe.",
+    'The same actions are available in its menu. Touch and hold, then drag to reorder.',
   'mobile.guide.skip': 'Skip',
   'mobile.guide.done': 'Get Started',
   'mobile.guide.storageFailed':

@@ -22,6 +22,8 @@ export function TodoRow({
   timeZone = 'UTC',
   dayLocked = false,
   isDateLocked,
+  onReorder,
+  onDragChange,
 }: {
   todo: TodoRecord;
   goal: Goal;
@@ -30,6 +32,9 @@ export function TodoRow({
   timeZone?: string;
   dayLocked?: boolean;
   isDateLocked?: (date: ISODate) => boolean;
+  /** TODO-06: 길게 누른 채 위아래로 끌면 같은 목표 안에서 순서를 바꾼다. 움직이지 않으면 메뉴를 연다. */
+  onReorder?(todo: TodoRecord, distance: number): void;
+  onDragChange?(dragging: boolean): void;
 }) {
   const { colors, isDark } = useTheme();
   const online = useOnline();
@@ -83,6 +88,9 @@ export function TodoRow({
         leading={swipeActions.leading}
         trailing={swipeActions.trailing}
         onMenu={openMenu}
+        onReorder={onReorder ? (distance) => onReorder(todo, distance) : undefined}
+        onDragChange={onDragChange}
+        holdMenu={false}
       >
         <DayRowContent
           title={todo.title}

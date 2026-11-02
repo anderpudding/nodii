@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { useGoals, useRoutines, useUpdateWeekStart, type NodiiClient } from '@nodii/api';
 import type { Profile } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { getLocale, t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { saveLanguage, useLanguagePreference } from '../../../lib/language-preference';
 import { saveTheme, useThemePreference } from '../../../lib/theme-preference';
-import { useTheme } from '../../../lib/theme';
+import { metrics as m, useTheme } from '../../../lib/theme';
 import { mobileLinks } from '../../../lib/links';
 import { ManagementScreen } from '../../components/ManagementScreen';
 import { useToast } from '../../components/Toast';
@@ -65,14 +65,15 @@ export function Settings({
           {title}
         </Text>
         <View style={[s.card, { backgroundColor: colors.chip, borderColor: colors.line }]}>
-          {children}
+          {/* 마지막 줄의 구분선은 카드 모서리 안으로 숨겨 줄 사이에만 선이 남게 한다. */}
+          <View style={s.rows}>{children}</View>
         </View>
       </View>
     );
   }
   function row(label: string, value: ReactNode) {
     return (
-      <View style={[s.row, s.horizontal, { flexWrap: 'wrap', borderBottomColor: colors.line }]}>
+      <View style={[s.row, s.horizontal, s.wrap, { borderBottomColor: colors.line }]}>
         <Text style={[s.body, { color: colors.ink }]}>{label}</Text>
         {value}
       </View>
@@ -109,68 +110,57 @@ export function Settings({
         <>
           {row(
             t('settings.weekStart'),
-            <View style={[s.segment, { backgroundColor: colors.bg }]}>
-              {([0, 1] as const).map((value) => (
-                <RoutineOption
-                  key={value}
-                  segment
-                  compact
-                  label={t(value ? 'settings.monday' : 'settings.sunday')}
-                  selected={profile.weekStart === value}
-                  disabled={!online || week.isPending}
-                  onPress={() => week.mutate(value)}
-                />
-              ))}
-            </View>,
+            <Segment
+              label={t('settings.weekStart')}
+              value={profile.weekStart}
+              options={([0, 1] as const).map((value) => ({
+                value,
+                label: t(value ? 'settings.monday' : 'settings.sunday'),
+              }))}
+              disabled={!online || week.isPending}
+              onChange={(value) => week.mutate(value)}
+            />,
           )}
           {!online && (
-            <Text style={[s.supporting, { color: colors.muted }]}>{t('sync.writeDisabled')}</Text>
+            <Text style={[s.supporting, s.note, { color: colors.muted }]}>
+              {t('sync.writeDisabled')}
+            </Text>
           )}
           {row(
             t('settings.theme'),
-            <View style={[s.segment, { backgroundColor: colors.bg }]}>
-              {(['system', 'light', 'dark'] as const).map((value) => (
-                <RoutineOption
-                  key={value}
-                  segment
-                  compact
-                  label={t(`settings.theme.${value}`)}
-                  selected={preference === value}
-                  disabled={themeSaving}
-                  onPress={() => {
-                    setThemeSaving(true);
-                    void saveTheme(value)
-                      .catch(() => toast(() => t('settings.theme.failed')))
-                      .finally(() => setThemeSaving(false));
-                  }}
-                />
-              ))}
-            </View>,
+            <Segment
+              label={t('settings.theme')}
+              value={preference}
+              options={(['system', 'light', 'dark'] as const).map((value) => ({
+                value,
+                label: t(`settings.theme.${value}`),
+              }))}
+              disabled={themeSaving}
+              onChange={(value) => {
+                setThemeSaving(true);
+                void saveTheme(value)
+                  .catch(() => toast(() => t('settings.theme.failed')))
+                  .finally(() => setThemeSaving(false));
+              }}
+            />,
           )}
           {row(
             t('settings.language'),
-            <View
-              accessibilityRole="radiogroup"
-              accessibilityLabel={t('settings.language')}
-              style={[s.segment, { backgroundColor: colors.bg }]}
-            >
-              {(['system', 'ko', 'en'] as const).map((value) => (
-                <RoutineOption
-                  key={value}
-                  segment
-                  compact
-                  label={t(`settings.language.${value}`)}
-                  selected={language === value}
-                  disabled={languageSaving}
-                  onPress={() => {
-                    setLanguageSaving(true);
-                    void saveLanguage(value)
-                      .catch(() => toast(() => t('settings.language.saveFailed')))
-                      .finally(() => setLanguageSaving(false));
-                  }}
-                />
-              ))}
-            </View>,
+            <Segment
+              label={t('settings.language')}
+              value={language}
+              options={(['system', 'ko', 'en'] as const).map((value) => ({
+                value,
+                label: t(`settings.language.${value}`),
+              }))}
+              disabled={languageSaving}
+              onChange={(value) => {
+                setLanguageSaving(true);
+                void saveLanguage(value)
+                  .catch(() => toast(() => t('settings.language.saveFailed')))
+                  .finally(() => setLanguageSaving(false));
+              }}
+            />,
           )}
         </>,
       )}
@@ -247,5 +237,63 @@ export function Settings({
         />
       )}
     </ManagementScreen>
+  );
+}
+
+/** SET-02/05: 시안처럼 줄 오른쪽에 붙는 알약 세그먼트. 보이는 높이는 36, 누르는 영역은 44를 유지한다. */
+function Segment<T extends string | number>({
+  label,
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  disabled: boolean;
+  onChange(value: T): void;
+}) {
+  const { colors } = useTheme();
+  const english = getLocale() === 'en';
+  return (
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel={label}
+      style={[s.segment, { backgroundColor: colors.bg, opacity: disabled ? 0.5 : 1 }]}
+    >
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={String(option.value)}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ disabled, selected, checked: selected }}
+            disabled={disabled}
+            hitSlop={(m.height.touch - m.height.chip) / 2}
+            onPress={() => {
+              if (!selected) onChange(option.value);
+            }}
+            style={({ pressed }) => [
+              s.segmentOption,
+              english && { flexShrink: 1 },
+              {
+                backgroundColor: selected ? colors.ink : 'transparent',
+                opacity: pressed ? m.pressedOpacity : 1,
+              },
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit={english}
+              style={[s.segmentLabel, { color: selected ? colors.bg : colors.ink2 }]}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }

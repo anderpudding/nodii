@@ -12,7 +12,7 @@ const remove = jest.fn();
 const menu = jest.fn();
 afterEach(cleanup);
 beforeEach(() => jest.clearAllMocks());
-function content(disabled: boolean) {
+function content(disabled: boolean, holdMenu?: boolean) {
   return (
     <SwipeRows>
       <SwipeableRow
@@ -36,14 +36,15 @@ function content(disabled: boolean) {
           { id: 'delete', label: '삭제', background: '#C4332C', color: '#FFFFFF', run: remove },
         ]}
         onMenu={menu}
+        holdMenu={holdMenu}
       >
         <Text>장보기</Text>
       </SwipeableRow>
     </SwipeRows>
   );
 }
-async function mount() {
-  const result = render(content(false));
+async function mount(holdMenu?: boolean) {
+  const result = render(content(false, holdMenu));
   await act(async () => {});
   fireEvent(screen.getByTestId('swipe-layout-one'), 'layout', {
     nativeEvent: { layout: { width: 360, height: 52 } },
@@ -61,7 +62,7 @@ function swipe(distance: number) {
 }
 it('짧게 밀면 쓰기를 하지 않고 충분한 왼쪽 밀기만 버튼을 노출한다', async () => {
   await mount();
-  swipe(80);
+  swipe(40);
   expect(leading).not.toHaveBeenCalled();
   expect(remove).not.toHaveBeenCalled();
   expect(screen.queryByRole('button', { name: '내일로' })).toBeNull();
@@ -88,6 +89,18 @@ it('긴 누르기 인식·해제는 햅틱 한 번과 메뉴 한 번을 실행�
   );
   expect(Haptics.impactAsync).toHaveBeenCalledTimes(1);
   expect(menu).toHaveBeenCalledTimes(1);
+});
+it('길게 누르기 메뉴를 끈 행은 눌렀다 떼도 메뉴를 열지 않는다', async () => {
+  await mount(false);
+  act(() =>
+    fireGestureHandler(getByGestureTestId('hold-one'), [
+      { state: State.BEGAN, duration: 0 },
+      { state: State.ACTIVE, duration: 400 },
+      { state: State.END, duration: 500 },
+    ]),
+  );
+  expect(Haptics.impactAsync).not.toHaveBeenCalled();
+  expect(menu).not.toHaveBeenCalled();
 });
 it('취소된 밀기는 열린 칸을 닫고 쓰기를 실행하지 않는다', async () => {
   await mount();

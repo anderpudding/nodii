@@ -2,6 +2,8 @@ export const swipeRules = {
   horizontalActivation: 12,
   verticalFailure: 8,
   commitRatio: 0.65,
+  // 오른쪽 밀기(완료/되돌리기)는 되돌릴 수 있는 동작이라, [완료] 칸(72pt)이 다 드러나면 바로 실행한다.
+  leadingCommit: 72,
   longPressMs: 400,
 } as const;
 
@@ -10,7 +12,8 @@ export type SwipeOutcome = 'close' | 'open' | 'leading' | 'trailing';
 export function swipeOutcome(distance: number, width: number, railWidth: number): SwipeOutcome {
   'worklet';
   if (width <= 0) return 'close';
-  if (distance >= width * swipeRules.commitRatio) return 'leading';
+  if (distance >= Math.min(swipeRules.leadingCommit, width * swipeRules.commitRatio))
+    return 'leading';
   if (distance <= -width * swipeRules.commitRatio) return 'trailing';
   return distance <= -railWidth ? 'open' : 'close';
 }
@@ -31,4 +34,21 @@ export function createRowCoordinator() {
       current = null;
     },
   };
+}
+
+/** GOAL-04/TODO-06: 길게 눌러 끈 거리를 실측한 행 중심과 비교해 놓일 위치를 고른다. */
+export function droppedRowIndex(heights: readonly number[], source: number, distance: number) {
+  let top = 0;
+  const centers = heights.map((height) => {
+    const center = top + height / 2;
+    top += height;
+    return center;
+  });
+  const destination = (centers[source] ?? 0) + distance;
+  let target = source;
+  for (let i = 0; i < centers.length; i++) {
+    if (i < source && destination <= centers[i]!) return i;
+    if (i > source && destination >= centers[i]!) target = i;
+  }
+  return target;
 }
