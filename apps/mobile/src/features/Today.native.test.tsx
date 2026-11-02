@@ -118,6 +118,26 @@ beforeAll(() =>
 );
 afterAll(() => notifyManager.setNotifyFunction((notify) => notify()));
 beforeEach(async () => {
+  // 실행하는 날짜와 무관하게 2026-10-10을 오늘로 둔다. 타이머는 그대로 두고 Date만 고정한다.
+  jest.useFakeTimers({
+    now: new Date('2026-10-10T20:00:00Z'),
+    doNotFake: [
+      'hrtime',
+      'nextTick',
+      'performance',
+      'queueMicrotask',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+      'requestIdleCallback',
+      'cancelIdleCallback',
+      'setImmediate',
+      'clearImmediate',
+      'setInterval',
+      'clearInterval',
+      'setTimeout',
+      'clearTimeout',
+    ],
+  });
   jest.clearAllMocks();
   await AsyncStorage.setItem(GUIDE_KEY, 'seen');
   onlineManager.setOnline(true);
@@ -180,6 +200,7 @@ beforeEach(async () => {
   }));
 });
 afterEach(() => {
+  jest.useRealTimers();
   cleanup();
   onlineManager.setOnline(true);
   cache.clear();
@@ -597,7 +618,11 @@ it('완료 후 삭제하면 완료 실행 취소는 사라지고 삭제 실행 �
   expect(screen.getAllByRole('button', { name: t('todo.undo') })).toHaveLength(1);
   fireEvent.press(screen.getByRole('button', { name: t('todo.undo') }));
   await screen.findByTestId('todo-menu-one');
-  expect(jest.mocked(updateTodo).mock.calls.map((call) => call[2])).toEqual([{ deletedAt: null }]);
+  // 완료 한 번과 삭제 복원 한 번만 쓰고, 사라진 완료 실행 취소는 서버에 쓰지 않는다.
+  expect(jest.mocked(updateTodo).mock.calls.map((call) => call[2])).toEqual([
+    { isDone: true },
+    { deletedAt: null },
+  ]);
 });
 
 it('월간은 필요한 35칸을 펼치고 다른 달의 날짜나 오늘을 선택해도 월간을 유지한다', async () => {
