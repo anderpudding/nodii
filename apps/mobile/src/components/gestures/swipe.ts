@@ -32,3 +32,20 @@ export function createRowCoordinator() {
     },
   };
 }
+
+/** GOAL-04/TODO-06: 길게 눌러 끈 거리를 실측한 행 중심과 비교해 놓일 위치를 고른다. */
+export function droppedRowIndex(heights: readonly number[], source: number, distance: number) {
+  let top = 0;
+  const centers = heights.map((height) => {
+    const center = top + height / 2;
+    top += height;
+    return center;
+  });
+  const destination = (centers[source] ?? 0) + distance;
+  let target = source;
+  for (let i = 0; i < centers.length; i++) {
+    if (i < source && destination <= centers[i]!) return i;
+    if (i > source && destination >= centers[i]!) target = i;
+  }
+  return target;
+}
