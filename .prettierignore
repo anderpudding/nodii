@@ -9,3 +9,6 @@ packages/api/src/database.types.ts
 
 # 로컬 디자인 에이전트의 생성 캐시
 .impeccable/
+
+# 사이트에 직접 넣은 Pretendard (원본 그대로 유지)
+site/fonts/
