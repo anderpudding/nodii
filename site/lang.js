@@ -8,7 +8,9 @@
     if (!link) return;
     try {
       localStorage.setItem(KEY, link.getAttribute('data-lang'));
-    } catch (e) {}
+    } catch {
+      // Storage can be unavailable (private mode, blocked site data); the toggle still works.
+    }
   });
 
   // Demo checks on the landing page: toggle a sprout check on click.
