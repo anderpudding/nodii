@@ -5,20 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <title>Terms of Use — Nodii</title>
+    <meta name="description" content="The terms for using Nodii for iPhone and Mac." />
+    <link rel="canonical" href="https://nodii.app/terms.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nodii" />
+    <meta property="og:title" content="Terms of Use — Nodii" />
+    <meta property="og:description" content="The terms for using Nodii for iPhone and Mac." />
+    <meta property="og:url" content="https://nodii.app/terms.html" />
+    <meta property="og:image" content="https://nodii.app/img/og-en.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1013" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+    <link rel="stylesheet" href="fonts/pretendard.css" />
     <link rel="stylesheet" href="style.css" />
+    <script src="lang.js" defer></script>
   </head>
-  <body>
+  <body class="page">
+    <a class="skip" href="#main">Skip to content</a>
     <header class="site-header">
-      <a class="brand" href="./">Nodii</a>
-      <nav aria-label="Site">
-        <a href="support.html">Support</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html" aria-current="page">Terms</a>
-      </nav>
+      <div class="wrap">
+        <a class="brand" href="./"><img src="img/icon.svg" alt="" width="30" height="30" />Nodii</a>
+        <div class="header-right">
+          <a class="header-link" href="support.html">Support</a>
+          <nav class="lang" aria-label="Language">
+            <a href="terms.html" hreflang="en" lang="en" data-lang="en" aria-current="true">EN</a
+            ><a href="ko/" hreflang="ko" lang="ko" data-lang="ko">한국어</a>
+          </nav>
+        </div>
+      </div>
     </header>
-
-    <main>
+    <main id="main" class="wrap doc">
       <h1>Terms of Use</h1>
+      <p class="note" lang="ko">
+        이 문서는 영어로만 제공됩니다. <a href="ko/" hreflang="ko" data-lang="ko">한국어 홈으로</a>
+      </p>
       <p class="meta">Effective date: October 12, 2026</p>
 
       <h2>1. The service</h2>
@@ -119,13 +144,15 @@
       <h2>10. Contact</h2>
       <p>Email: <a href="mailto:support@nodii.app">support@nodii.app</a></p>
     </main>
-
     <footer class="site-footer">
-      <p>
-        <a href="support.html">Support</a> · <a href="privacy.html">Privacy</a> ·
-        <a href="terms.html">Terms</a>
-      </p>
-      <p>© 2026 Sungjun Lee</p>
+      <div class="wrap">
+        <nav aria-label="Site">
+          <a href="support.html">Support</a>
+          <a href="privacy.html" hreflang="en">Privacy Policy</a>
+          <a href="terms.html" hreflang="en">Terms of Use</a>
+        </nav>
+        <p>© 2026 Sungjun Lee</p>
+      </div>
     </footer>
   </body>
 </html>

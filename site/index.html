@@ -1,84 +1,734 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>Nodii — 목표별로 정리하는 Mac 할 일 앱</title>
+    <script>
+      try {
+        var s = localStorage.getItem('nodii.lang');
+        var l = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+        if (s === 'ko' || (!s && /^ko\b/i.test(l))) location.replace('ko/' + location.hash);
+      } catch (e) {}
+    </script>
+    <title>Nodii — Todos & routines by goal, for iPhone and Mac</title>
     <meta
       name="description"
-      content="Nodii는 목표별로 할 일과 루틴을 정리하고 하루를 체크하는 macOS 앱입니다."
+      content="Nodii gathers your todos and routines by goal. Check off your day and watch your calendar fill with color. Free on iPhone and Mac."
     />
+    <link rel="canonical" href="https://nodii.app/" />
+    <link rel="alternate" hreflang="en" href="https://nodii.app/" />
+    <link rel="alternate" hreflang="ko" href="https://nodii.app/ko/" />
+    <link rel="alternate" hreflang="x-default" href="https://nodii.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nodii" />
+    <meta property="og:title" content="Nodii — Todos & routines by goal, for iPhone and Mac" />
+    <meta
+      property="og:description"
+      content="Nodii gathers your todos and routines by goal. Check off your day and watch your calendar fill with color. Free on iPhone and Mac."
+    />
+    <meta property="og:url" content="https://nodii.app/" />
+    <meta property="og:image" content="https://nodii.app/img/og-en.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1013" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+    <link rel="stylesheet" href="fonts/pretendard.css" />
     <link rel="stylesheet" href="style.css" />
+    <script src="lang.js" defer></script>
   </head>
-  <body>
+  <body class="home">
+    <a class="skip" href="#main">Skip to content</a>
     <header class="site-header">
-      <a class="brand" href="./">Nodii</a>
-      <nav aria-label="사이트">
-        <a href="support.html">지원</a>
-        <a href="privacy.html">개인정보처리방침</a>
-        <a href="terms.html">이용약관</a>
-      </nav>
+      <div class="wrap">
+        <a class="brand" href="./"><img src="img/icon.svg" alt="" width="30" height="30" />Nodii</a>
+        <div class="header-right">
+          <a class="header-link" href="support.html">Support</a>
+          <nav class="lang" aria-label="Language">
+            <a href="./" hreflang="en" lang="en" data-lang="en" aria-current="true">EN</a
+            ><a href="ko/" hreflang="ko" lang="ko" data-lang="ko">한국어</a>
+          </nav>
+        </div>
+      </div>
     </header>
-
-    <main>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="g-pp" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.5" stop-color="#9B5CFF" />
+          <stop offset="0.5" stop-color="#FF3D8B" />
+        </linearGradient>
+        <linearGradient id="g-pt" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.5" stop-color="#FF3D8B" />
+          <stop offset="0.5" stop-color="#0FA3B1" />
+        </linearGradient>
+        <linearGradient id="g-ptl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.5" stop-color="#9B5CFF" />
+          <stop offset="0.5" stop-color="#0FA3B1" />
+        </linearGradient>
+      </defs>
+    </svg>
+    <main id="main">
       <section class="hero">
-        <h1>목표별로 정리하고,<br />하루를 체크하세요</h1>
-        <p class="lead">
-          Nodii는 목표마다 할 일과 루틴을 모아 두고 오늘 할 일을 체크하는 Mac 앱입니다. 같은
-          계정으로 로그인한 Mac끼리 자동으로 동기화돼요.
-        </p>
-        <!-- App Store 앱 ID가 정해지면 href를 https://apps.apple.com/app/id<APP_ID> 로 바꿉니다. -->
-        <a class="store-button" href="https://apps.apple.com/app/id6812983213" aria-disabled="true"
-          >Mac App Store에서 받기</a
-        >
-        <p class="meta">https://apps.apple.com/app/id6812983213 · macOS 12 이상 · 무료</p>
+        <div class="wrap">
+          <div class="sprouts" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#9B5CFF">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#FF3D8B">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#0FA3B1">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                class="seed-empty"
+                d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+              />
+            </svg>
+          </div>
+          <h1>Make room for every <em>goal</em></h1>
+          <p class="lead">
+            Nodii gathers your todos and routines by goal. Check off your day and watch your
+            calendar fill with color, on iPhone and Mac.
+          </p>
+          <div class="actions">
+            <a class="button" href="https://apps.apple.com/app/id6812983213"
+              >Download on the App Store</a
+            >
+          </div>
+          <p class="platforms">Free · iPhone (iOS 16.4 or later) · Mac (macOS 12 or later)</p>
+          <div class="stage">
+            <figure class="mac" style="margin-top: 0; margin-bottom: 0; margin-left: 0">
+              <div class="mac-bar" aria-hidden="true"><i></i><i></i><i></i><span>Nodii</span></div>
+              <img
+                src="img/mac-today-en.webp"
+                width="1820"
+                height="1220"
+                alt="Nodii on Mac: a monthly calendar of sprout stamps next to today’s todos grouped by goal"
+                fetchpriority="high"
+              />
+            </figure>
+            <figure class="phone" style="margin: 0">
+              <div class="phone-screen">
+                <img
+                  src="img/iphone-today-en.webp"
+                  width="660"
+                  height="1199"
+                  alt="Nodii on iPhone: a week strip above today’s todos grouped by goal"
+                />
+              </div>
+            </figure>
+          </div>
+        </div>
       </section>
 
-      <div class="preview" aria-hidden="true">
-        <span class="preview-goal" style="background: var(--goal-blue)">할 일</span>
-        <ul>
-          <li>
-            <span class="check done" style="background: var(--goal-blue)"></span
-            ><span class="done-text">장보기 목록 정리</span>
-          </li>
-          <li><span class="check"></span>메일 답장하기</li>
-        </ul>
-        <span class="preview-goal" style="background: var(--goal-green)">운동</span>
-        <ul>
-          <li>
-            <span class="check done" style="background: var(--goal-green)"></span
-            ><span class="done-text">스트레칭 10분</span>
-          </li>
-        </ul>
-      </div>
+      <section class="section" aria-labelledby="how">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">How it works</p>
+            <h2 id="how">A small list that grows with you</h2>
+            <p>
+              Every todo you finish leaves a mark in its goal’s color. Over a month, your calendar
+              shows where your days went.
+            </p>
+          </div>
+          <div class="features">
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">Goals</p>
+                <h3>A day organized by goal</h3>
+                <p>
+                  Give each goal a name and a color. Each day’s todos sit under their goal, and
+                  checking one off fills it with that color.
+                </p>
+                <ul>
+                  <li>Drag to reorder todos within a goal</li>
+                  <li>Move a todo to tomorrow or any date you choose</li>
+                  <li>Archive a finished goal and keep its past records</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="panel-inner">
+                  <span class="goal g-purple">Study</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--purple)"
+                        aria-pressed="true"
+                        aria-label="Learn 30 Spanish words"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Learn 30 Spanish words</span>
+                    </li>
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--purple)"
+                        aria-pressed="true"
+                        aria-label="Solve 2 coding problems"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Solve 2 coding problems</span>
+                    </li>
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--purple)"
+                        aria-pressed="false"
+                        aria-label="Review chapter 3 notes"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Review chapter 3 notes</span>
+                    </li>
+                  </ul>
+                  <span class="goal g-pink">Workout</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--pink)"
+                        aria-pressed="false"
+                        aria-label="Run 5 km"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Run 5 km</span>
+                    </li>
+                  </ul>
+                  <p class="hint">Go ahead, check them off.</p>
+                </div>
+              </div>
+            </article>
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">Calendar</p>
+                <h3>Watch your month fill with color</h3>
+                <p>
+                  Each date gets a sprout stamp. It takes on the colors of the goals you finished
+                  that day, and it sprouts leaves once everything is done.
+                </p>
+                <ul>
+                  <li>See how many todos are left on every date</li>
+                  <li>Jump to any day from the monthly calendar</li>
+                  <li>Shrink the Mac window for a compact week view</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div
+                  class="cal"
+                  role="img"
+                  aria-label="Calendar example: finished days are filled with goal colors, and days with everything done grow leaves and a check."
+                >
+                  <p class="cal-title" aria-hidden="true">October 2026</p>
+                  <ul class="cal-grid" aria-hidden="true">
+                    <li class="dow sun">Sun</li>
+                    <li class="dow">Mon</li>
+                    <li class="dow">Tue</li>
+                    <li class="dow">Wed</li>
+                    <li class="dow">Thu</li>
+                    <li class="dow">Fri</li>
+                    <li class="dow sat">Sat</li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pp)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="sun">11</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">12</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-empty"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num past" x="12" y="17.6">2</text></svg
+                      ><b class="">13</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">14</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">15</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="url(#g-pt)"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">1</text></svg
+                      ><b class="">16</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pp)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="sat">17</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pp)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="sun">18</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">19</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="url(#g-pp)"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">1</text></svg
+                      ><b class="">20</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="#9B5CFF"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">3</text></svg
+                      ><b class="">21</b>
+                    </li>
+                    <li class="cal-day today">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="url(#g-pp)"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">3</text></svg
+                      ><b class="">22</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-soft"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num future" x="12" y="17.6">4</text></svg
+                      ><b class="">23</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-soft"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num future" x="12" y="17.6">4</text></svg
+                      ><b class="sat">24</b>
+                    </li>
+                  </ul>
+                  <ul class="legend" aria-hidden="true">
+                    <li>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      >All done
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="#9B5CFF"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">None</text></svg
+                      >Some done
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-empty"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        /></svg
+                      >Not started
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">Routines</p>
+                <h3>Set it once with routines</h3>
+                <p>
+                  Repeat daily, on chosen weekdays, or on chosen dates each month. Routines appear
+                  on the right days by themselves.
+                </p>
+                <ul>
+                  <li>Choose an interval, like every 2 weeks or every 3 days</li>
+                  <li>Skip just one busy day</li>
+                  <li>Stop as of today and keep your past records</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="panel-inner">
+                  <span class="goal g-pink">Workout</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--pink)"
+                        aria-pressed="true"
+                        aria-label="Run 5 km"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Run 5 km</span><span class="tag">Mon · Wed · Fri</span>
+                    </li>
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--pink)"
+                        aria-pressed="false"
+                        aria-label="Stretch 10 min"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Stretch 10 min</span><span class="tag">Daily</span>
+                    </li>
+                    <li class="row skipped">
+                      <span class="check" aria-hidden="true"
+                        ><svg viewBox="0 0 24 24">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path class="skip-dash" d="M8.4 14.2h7.2" /></svg></span
+                      ><span class="title">Swim · Skipped</span
+                      ><span class="tag">Every 2 weeks</span>
+                    </li>
+                  </ul>
+                  <span class="goal g-teal">Reading</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--teal)"
+                        aria-pressed="false"
+                        aria-label="Read 20 pages"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">Read 20 pages</span><span class="tag">Daily</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">Undo</p>
+                <h3>Change plans without worry</h3>
+                <p>
+                  Move a todo to tomorrow, or bring over what you didn’t finish last week. If you
+                  slip, undo it within 5 seconds.
+                </p>
+                <ul>
+                  <li>Bring over unfinished todos from the past 7 days</li>
+                  <li>Move or delete a day’s unfinished todos all at once</li>
+                  <li>Swipe on iPhone; right-click or ⋯ on Mac</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="undo-scene">
+                  <span class="goal g-teal">Reading</span>
+                  <ul class="rows" style="margin-bottom: 0">
+                    <li class="row">
+                      <span class="check" aria-hidden="true"
+                        ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="seed-empty"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          /></svg></span
+                      ><span class="title">Read 20 pages</span>
+                    </li>
+                  </ul>
+                  <div class="menu" aria-hidden="true">
+                    <div class="on">Move to Tomorrow</div>
+                    <div>Move to Today</div>
+                    <div>Choose Date</div>
+                    <hr />
+                    <div class="danger">Delete</div>
+                  </div>
+                  <div class="toast" role="img" aria-label="Moved ‘Read 20 pages’ to Oct 23 Undo">
+                    <span>Moved ‘Read 20 pages’ to Oct 23</span><b>Undo</b>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
 
-      <ul class="features">
-        <li>
-          <strong>목표별 할 일</strong>
-          목표에 색을 정하고, 날짜마다 목표별로 할 일을 모아 봅니다.
-        </li>
-        <li>
-          <strong>반복 루틴</strong>
-          매일·요일·매월 반복하는 일을 한 번만 만들어 두면 해당 날짜에 나타나요.
-        </li>
-        <li>
-          <strong>월간 캘린더</strong>
-          날짜마다 남은 할 일 수와 완료 여부를 한눈에 확인합니다.
-        </li>
-        <li>
-          <strong>Mac 간 동기화</strong>
-          한 Mac에서 체크하면 같은 계정의 다른 Mac에도 바로 반영돼요.
-        </li>
-      </ul>
+      <section class="together" aria-labelledby="together">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">iPhone + Mac</p>
+            <h2 id="together">One list on your iPhone and Mac</h2>
+            <p>
+              Sign in with the same email on each device. Your goals, todos and routines stay in
+              sync.
+            </p>
+          </div>
+          <ul class="points">
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M20 7h-9a5 5 0 0 0-5 5" />
+                <path d="M17 4l3 3-3 3" />
+                <path d="M4 17h9a5 5 0 0 0 5-5" />
+                <path d="M7 20l-3-3 3-3" /></svg
+              ><strong>Syncs right away</strong>
+              <p>Check something off on your iPhone and it’s already done on your Mac.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+                <circle cx="12" cy="12" r="3" /></svg
+              ><strong>Readable offline</strong>
+              <p>Lost your connection? Your saved records are still there to read.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3" y="5" width="18" height="14" rx="3" />
+                <path d="m4 7.5 8 5.5 8-5.5" /></svg
+              ><strong>No passwords</strong>
+              <p>
+                Sign in with a 6-digit code sent to your email. New here? That signs you up too.
+              </p>
+            </li>
+          </ul>
+          <p class="meta" style="margin: 28px 0 0">
+            Free. No ads, analytics or tracking. Delete your account and all its data anytime in
+            Settings.
+          </p>
+        </div>
+      </section>
+
+      <section class="closing" aria-labelledby="closing">
+        <div class="wrap">
+          <div class="sprouts" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#9B5CFF">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#FF3D8B">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#0FA3B1">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                class="seed-empty"
+                d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+              />
+            </svg>
+          </div>
+          <h2 id="closing">Start checking off today</h2>
+          <p>Free on iPhone and Mac. English and Korean.</p>
+          <a class="button" href="https://apps.apple.com/app/id6812983213"
+            >Download on the App Store</a
+          >
+        </div>
+      </section>
     </main>
-
     <footer class="site-footer">
-      <p>
-        <a href="support.html">지원</a> · <a href="privacy.html">개인정보처리방침</a> ·
-        <a href="terms.html">이용약관</a>
-      </p>
-      <p>© 2026 Sungjun Lee</p>
+      <div class="wrap">
+        <nav aria-label="Site">
+          <a href="support.html">Support</a>
+          <a href="privacy.html" hreflang="en">Privacy Policy</a>
+          <a href="terms.html" hreflang="en">Terms of Use</a>
+        </nav>
+        <p>© 2026 Sungjun Lee</p>
+      </div>
     </footer>
   </body>
 </html>

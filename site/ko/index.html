@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Nodii — 목표별 할 일·루틴 플래너 (iPhone·Mac)</title>
+    <meta
+      name="description"
+      content="Nodii는 할 일과 루틴을 목표별로 모아 줘요. 하루를 체크할수록 캘린더가 목표 색으로 채워져요. iPhone과 Mac에서 무료."
+    />
+    <link rel="canonical" href="https://nodii.app/ko/" />
+    <link rel="alternate" hreflang="en" href="https://nodii.app/" />
+    <link rel="alternate" hreflang="ko" href="https://nodii.app/ko/" />
+    <link rel="alternate" hreflang="x-default" href="https://nodii.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nodii" />
+    <meta property="og:title" content="Nodii — 목표별 할 일·루틴 플래너 (iPhone·Mac)" />
+    <meta
+      property="og:description"
+      content="Nodii는 할 일과 루틴을 목표별로 모아 줘요. 하루를 체크할수록 캘린더가 목표 색으로 채워져요. iPhone과 Mac에서 무료."
+    />
+    <meta property="og:url" content="https://nodii.app/ko/" />
+    <meta property="og:image" content="https://nodii.app/img/og-ko.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1013" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="../img/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../fonts/pretendard.css" />
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../lang.js" defer></script>
+  </head>
+  <body class="home">
+    <a class="skip" href="#main">본문으로 건너뛰기</a>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="./"
+          ><img src="../img/icon.svg" alt="" width="30" height="30" />Nodii</a
+        >
+        <div class="header-right">
+          <a class="header-link" href="support.html">지원</a>
+          <nav class="lang" aria-label="언어">
+            <a href="../" hreflang="en" lang="en" data-lang="en">EN</a
+            ><a href="./" hreflang="ko" lang="ko" data-lang="ko" aria-current="true">한국어</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="g-pp" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.5" stop-color="#9B5CFF" />
+          <stop offset="0.5" stop-color="#FF3D8B" />
+        </linearGradient>
+        <linearGradient id="g-pt" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.5" stop-color="#FF3D8B" />
+          <stop offset="0.5" stop-color="#0FA3B1" />
+        </linearGradient>
+        <linearGradient id="g-ptl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0.5" stop-color="#9B5CFF" />
+          <stop offset="0.5" stop-color="#0FA3B1" />
+        </linearGradient>
+      </defs>
+    </svg>
+    <main id="main">
+      <section class="hero">
+        <div class="wrap">
+          <div class="sprouts" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#9B5CFF">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#FF3D8B">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#0FA3B1">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                class="seed-empty"
+                d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+              />
+            </svg>
+          </div>
+          <h1>목표별로 모아서 하루를 <em>체크</em>하세요</h1>
+          <p class="lead">
+            Nodii는 할 일과 루틴을 목표별로 모아 줘요. 하루를 체크할수록 캘린더가 목표 색으로
+            채워져요. iPhone과 Mac에서 함께 쓸 수 있어요.
+          </p>
+          <div class="actions">
+            <a class="button" href="https://apps.apple.com/app/id6812983213">App Store에서 받기</a>
+          </div>
+          <p class="platforms">무료 · iPhone (iOS 16.4 이상) · Mac (macOS 12 이상)</p>
+          <div class="stage">
+            <figure class="mac" style="margin-top: 0; margin-bottom: 0; margin-left: 0">
+              <div class="mac-bar" aria-hidden="true"><i></i><i></i><i></i><span>Nodii</span></div>
+              <img
+                src="../img/mac-today-ko.webp"
+                width="1820"
+                height="1220"
+                alt="Mac의 Nodii: 새싹 도장이 찍힌 월간 캘린더와 목표별로 모은 오늘 할 일"
+                fetchpriority="high"
+              />
+            </figure>
+            <figure class="phone" style="margin: 0">
+              <div class="phone-screen">
+                <img
+                  src="../img/iphone-today-ko.webp"
+                  width="660"
+                  height="1199"
+                  alt="iPhone의 Nodii: 주간 줄 아래 목표별로 모은 오늘 할 일"
+                />
+              </div>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="how">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">이렇게 써요</p>
+            <h2 id="how">끝낸 만큼 물드는 투두리스트</h2>
+            <p>
+              할 일을 끝낼 때마다 그 목표의 색이 남아요. 한 달이 지나면 내 하루들이 어디에 쓰였는지
+              캘린더가 보여 줘요.
+            </p>
+          </div>
+          <div class="features">
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">목표</p>
+                <h3>목표별로 모아 보는 하루</h3>
+                <p>
+                  목표마다 이름과 색을 정하세요. 날짜별 할 일이 목표 아래에 모이고, 체크하면 그
+                  목표의 색으로 물들어요.
+                </p>
+                <ul>
+                  <li>끌어서 목표 안의 순서를 바꿔요</li>
+                  <li>할 일을 내일이나 원하는 날짜로 옮겨요</li>
+                  <li>다 이룬 목표는 지난 기록을 남긴 채 보관해요</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="panel-inner">
+                  <span class="goal g-purple">공부</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--purple)"
+                        aria-pressed="true"
+                        aria-label="영어 단어 30개"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">영어 단어 30개</span>
+                    </li>
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--purple)"
+                        aria-pressed="true"
+                        aria-label="알고리즘 2문제"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">알고리즘 2문제</span>
+                    </li>
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--purple)"
+                        aria-pressed="false"
+                        aria-label="OS 과제 3장 정리"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">OS 과제 3장 정리</span>
+                    </li>
+                  </ul>
+                  <span class="goal g-pink">운동</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--pink)"
+                        aria-pressed="false"
+                        aria-label="러닝 5km"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">러닝 5km</span>
+                    </li>
+                  </ul>
+                  <p class="hint">직접 눌러서 체크해 보세요.</p>
+                </div>
+              </div>
+            </article>
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">캘린더</p>
+                <h3>한 달이 목표 색으로 차올라요</h3>
+                <p>
+                  날짜마다 새싹 도장이 찍혀요. 그날 끝낸 목표의 색으로 채워지고, 다 끝낸 날에는 잎이
+                  돋아요.
+                </p>
+                <ul>
+                  <li>날짜마다 남은 할 일 수를 한눈에 봐요</li>
+                  <li>월간 캘린더에서 원하는 날로 바로 이동해요</li>
+                  <li>Mac 창을 좁히면 주간 보기로 바뀌어요</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div
+                  class="cal"
+                  role="img"
+                  aria-label="캘린더 예시: 끝낸 날은 목표 색으로 채워지고, 다 끝낸 날에는 잎과 체크가 돋아요."
+                >
+                  <p class="cal-title" aria-hidden="true">2026년 10월</p>
+                  <ul class="cal-grid" aria-hidden="true">
+                    <li class="dow sun">일</li>
+                    <li class="dow">월</li>
+                    <li class="dow">화</li>
+                    <li class="dow">수</li>
+                    <li class="dow">목</li>
+                    <li class="dow">금</li>
+                    <li class="dow sat">토</li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pp)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="sun">11</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">12</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-empty"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num past" x="12" y="17.6">2</text></svg
+                      ><b class="">13</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">14</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">15</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="url(#g-pt)"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">1</text></svg
+                      ><b class="">16</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pp)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="sat">17</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pp)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="sun">18</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      ><b class="">19</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="url(#g-pp)"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">1</text></svg
+                      ><b class="">20</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="#9B5CFF"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">3</text></svg
+                      ><b class="">21</b>
+                    </li>
+                    <li class="cal-day today">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="url(#g-pp)"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">3</text></svg
+                      ><b class="">22</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-soft"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num future" x="12" y="17.6">4</text></svg
+                      ><b class="">23</b>
+                    </li>
+                    <li class="cal-day">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-soft"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num future" x="12" y="17.6">4</text></svg
+                      ><b class="sat">24</b>
+                    </li>
+                  </ul>
+                  <ul class="legend" aria-hidden="true">
+                    <li>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <g fill="url(#g-pt)">
+                          <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                          <path
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                        </g>
+                        <path
+                          class="check-mark"
+                          d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4"
+                        /></svg
+                      >다 끝낸 날
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          fill="#9B5CFF"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        />
+                        <text class="stamp-num on-color" x="12" y="17.6">None</text></svg
+                      >일부 끝낸 날
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path
+                          class="seed-empty"
+                          d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                        /></svg
+                      >아직 시작 전
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">루틴</p>
+                <h3>반복하는 일은 루틴으로 한 번만</h3>
+                <p>
+                  매일, 매주 원하는 요일, 매월 원하는 날짜로 반복을 정해 두면 해당 날짜에 알아서
+                  나타나요.
+                </p>
+                <ul>
+                  <li>2주마다, 3일마다처럼 간격도 정할 수 있어요</li>
+                  <li>바쁜 날은 그날만 건너뛰어요</li>
+                  <li>오늘부터 그만두어도 지난 기록은 남아요</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="panel-inner">
+                  <span class="goal g-pink">운동</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--pink)"
+                        aria-pressed="true"
+                        aria-label="러닝 5km"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">러닝 5km</span><span class="tag">월 · 수 · 금</span>
+                    </li>
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--pink)"
+                        aria-pressed="false"
+                        aria-label="스트레칭 10분"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">스트레칭 10분</span><span class="tag">매일</span>
+                    </li>
+                    <li class="row skipped">
+                      <span class="check" aria-hidden="true"
+                        ><svg viewBox="0 0 24 24">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path class="skip-dash" d="M8.4 14.2h7.2" /></svg></span
+                      ><span class="title">수영 · 건너뜀</span><span class="tag">2주마다</span>
+                    </li>
+                  </ul>
+                  <span class="goal g-teal">독서</span>
+                  <ul class="rows">
+                    <li class="row">
+                      <button
+                        type="button"
+                        class="check"
+                        style="--goal: var(--teal)"
+                        aria-pressed="false"
+                        aria-label="책 20쪽 읽기"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="body"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          />
+                          <path
+                            class="leaves"
+                            d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                          />
+                          <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" />
+                        </svg></button
+                      ><span class="title">책 20쪽 읽기</span><span class="tag">매일</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+            <article class="feature">
+              <div class="feature-copy">
+                <p class="eyebrow">실행 취소</p>
+                <h3>계획이 바뀌어도 걱정 없이</h3>
+                <p>
+                  할 일을 내일로 옮기거나, 지난주에 못 끝낸 일을 오늘로 가져오세요. 실수했다면 5초
+                  안에 실행 취소하면 돼요.
+                </p>
+                <ul>
+                  <li>지난 7일 동안 못 끝낸 할 일을 오늘로 한 번에 가져와요</li>
+                  <li>그날 남은 할 일을 한꺼번에 옮기거나 지워요</li>
+                  <li>iPhone은 밀어서, Mac은 우클릭이나 ⋯ 메뉴로</li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="undo-scene">
+                  <span class="goal g-teal">독서</span>
+                  <ul class="rows" style="margin-bottom: 0">
+                    <li class="row">
+                      <span class="check" aria-hidden="true"
+                        ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path
+                            class="seed-empty"
+                            d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+                          /></svg></span
+                      ><span class="title">책 20쪽 읽기</span>
+                    </li>
+                  </ul>
+                  <div class="menu" aria-hidden="true">
+                    <div class="on">내일로</div>
+                    <div>오늘로</div>
+                    <div>날짜 선택</div>
+                    <hr />
+                    <div class="danger">삭제</div>
+                  </div>
+                  <div
+                    class="toast"
+                    role="img"
+                    aria-label="‘책 20쪽 읽기’를 10월 23일로 옮겼어요 실행 취소"
+                  >
+                    <span>‘책 20쪽 읽기’를 10월 23일로 옮겼어요</span><b>실행 취소</b>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="together" aria-labelledby="together">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">iPhone + Mac</p>
+            <h2 id="together">iPhone과 Mac에서 같은 목록을</h2>
+            <p>기기마다 같은 이메일로 로그인하면 목표, 할 일, 루틴이 함께 맞춰져요.</p>
+          </div>
+          <ul class="points">
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M20 7h-9a5 5 0 0 0-5 5" />
+                <path d="M17 4l3 3-3 3" />
+                <path d="M4 17h9a5 5 0 0 0 5-5" />
+                <path d="M7 20l-3-3 3-3" /></svg
+              ><strong>바로 동기화돼요</strong>
+              <p>iPhone에서 체크하면 Mac에서도 이미 끝나 있어요.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+                <circle cx="12" cy="12" r="3" /></svg
+              ><strong>오프라인에서도 보여요</strong>
+              <p>인터넷이 끊겨도 저장된 기록은 그대로 볼 수 있어요.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3" y="5" width="18" height="14" rx="3" />
+                <path d="m4 7.5 8 5.5 8-5.5" /></svg
+              ><strong>비밀번호가 없어요</strong>
+              <p>이메일로 받은 6자리 코드로 로그인해요. 처음이면 가입도 함께 돼요.</p>
+            </li>
+          </ul>
+          <p class="meta" style="margin: 28px 0 0">
+            무료예요. 광고, 분석 도구, 추적이 없어요. 설정에서 언제든 계정과 모든 데이터를 지울 수
+            있어요.
+          </p>
+        </div>
+      </section>
+
+      <section class="closing" aria-labelledby="closing">
+        <div class="wrap">
+          <div class="sprouts" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#9B5CFF">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#FF3D8B">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <g fill="#0FA3B1">
+                <path d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z" />
+                <path
+                  d="M12.00 6.40C12.00 4.40 12.90 2.80 15.10 2.30C15.50 4.60 14.20 6.20 12.00 6.40zM12.00 6.40C12.00 4.70 11.20 3.40 9.40 3.00C9.10 4.90 10.10 6.20 12.00 6.40z"
+                />
+              </g>
+              <path class="check-mark" d="M7.6 14.8l2.8 2.8c1.7-3.2 3.9-5.6 6.4-7.4" /></svg
+            ><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                class="seed-empty"
+                d="M3.70 14.20a8.30 8.30 0 1 0 16.60 0a8.30 8.30 0 1 0 -16.60 0z"
+              />
+            </svg>
+          </div>
+          <h2 id="closing">오늘 할 일부터 체크해 보세요</h2>
+          <p>iPhone과 Mac에서 무료. 한국어와 영어를 지원해요.</p>
+          <a class="button" href="https://apps.apple.com/app/id6812983213">App Store에서 받기</a>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav aria-label="사이트">
+          <a href="support.html">지원</a>
+          <a href="../privacy.html" hreflang="en">Privacy Policy (English)</a>
+          <a href="../terms.html" hreflang="en">Terms of Use (English)</a>
+        </nav>
+        <p>© 2026 Sungjun Lee</p>
+      </div>
+    </footer>
+  </body>
+</html>
