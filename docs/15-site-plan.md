@@ -118,7 +118,7 @@ site/
 - **스크린샷은 라이트만** 쓴다. iPhone 다크 스크린샷이 없어 Mac만 다크로 바꾸면 둘이 어긋나서, 다크 모드에서도 라이트 스크린샷을 그대로 둔다.
 - 스크린샷은 스토어 합성 이미지(`store-assets/screenshots-v2/macos{,-en}`, `ios{,-en}`의 `01-today`)에서 앱 화면만 잘라 WebP로 만들었다(Mac 1820×1220, iPhone 660×1199, 4장 합계 약 150KB). 창 제목 막대와 iPhone 테두리는 CSS로 그린다. 한국어 iPhone 원본 캡처(`generator-ios/ko-after`)는 목표 이름이 영어라 쓰지 않았다.
 - 헤더·파비콘 아이콘은 여백이 있는 macOS 아이콘 대신 **iOS 라이트 아이콘**(`nodii-icon-ios-light.svg`, C2PA 메타데이터 제거)을 쓴다.
-- App Store 버튼은 Apple 공식 배지 대신 **먹색 알약 버튼**("Download on the App Store" / "App Store에서 받기")으로 둔다. 링크는 유니버설 구매라 하나다.
+- App Store 버튼은 **Apple 공식 배지 두 개**(App Store + Mac App Store, 언어별)로 둔다(2026-11-06 변경, 처음엔 먹색 알약 버튼). Apple 마케팅 툴박스에서 받은 SVG를 수정 없이 `site/img/badges/`에 두고, 라이트는 검은 배지·다크는 흰 배지(`<picture>`)를 쓴다. 높이 48px(모바일 44px), 사이 12px(배지 높이의 1/4 여백). 두 배지 모두 유니버설 구매라 같은 링크(`id6812983213`)이며, Apple이 기기에 맞는 플랫폼 페이지를 연다. 원본은 `store-assets/badges/`(git 제외).
 - `.prettierignore`에 `site/fonts/`를 추가했다(Pretendard 원본 CSS 유지).
 - 검증 결과: axe(wcag2a/aa + best-practice) 6페이지 × 라이트/다크 위반 0, 내부 링크 깨짐 0, 375px 가로 스크롤 없음, JS 끔 상태 열람 가능, 언어 안내·토글 왕복 확인. Lighthouse는 아직 돌리지 않았다.
 
