@@ -264,6 +264,30 @@ a {
   height: 18px;
 }
 
+/* App Store badges (Apple artwork, unmodified; black on light, white on dark) */
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.badge {
+  display: block;
+  border-radius: 9px;
+  transition: opacity 0.15s ease-out;
+}
+
+.badge:hover {
+  opacity: 0.85;
+}
+
+.badge img {
+  width: auto;
+  height: 48px;
+}
+
 .button.secondary {
   background: var(--chip);
   color: var(--ink);
@@ -934,7 +958,7 @@ h2 {
   font-size: 18px;
 }
 
-.closing .button {
+.closing .badges {
   margin-top: 32px;
 }
 
@@ -1186,6 +1210,10 @@ details > :last-child {
 
   .hero {
     padding-top: 36px;
+  }
+
+  .badge img {
+    height: 44px;
   }
 
   .stage {
