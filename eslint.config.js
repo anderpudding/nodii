@@ -57,6 +57,11 @@ export default defineConfig([
     },
   },
   {
+    // nodii.app 정적 사이트의 브라우저 스크립트 (빌드 없이 그대로 배포)
+    files: ['site/**/*.js'],
+    languageOptions: { globals: globals.browser, sourceType: 'script' },
+  },
+  {
     files: ['**/*.config.{js,ts}', 'scripts/**/*.js'],
     languageOptions: { globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
