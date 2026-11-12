@@ -26,4 +26,5 @@ create trigger hold_deleted_user_handle before delete on auth.users
 
 -- delete_my_account()의 auth.users 삭제가 위 트리거를 실행한다.
 -- 실제 사진 파일은 계정 삭제 전에 Storage API로 지워야 한다(S2).
-alter publication supabase_realtime add table public.follows, public.reactions, public.notifications;
+-- follows의 DELETE 이벤트에는 RLS가 적용되지 않아 양쪽 사용자 ID가 드러난다(SOC-60).
+alter publication supabase_realtime add table public.reactions, public.notifications;

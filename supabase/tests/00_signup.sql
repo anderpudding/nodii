@@ -24,9 +24,9 @@ select is((select count(*) from pg_class c join pg_namespace n on n.oid = c.reln
 select results_eq(
   $$select tablename::text collate "default" from pg_publication_tables
     where pubname = 'supabase_realtime' and schemaname = 'public' order by tablename$$,
-  $$values ('follows'::text), ('goals'), ('notifications'), ('reactions'),
+  $$values ('goals'::text), ('notifications'), ('reactions'),
            ('routine_logs'), ('routines'), ('todos')$$,
-  '기존 동기화와 소셜 Realtime 테이블을 publication에 등록한다');
+  'Realtime은 기존 동기화·반응·알림만 등록하고 팔로우를 제외한다');
 
 select * from finish();
 rollback;

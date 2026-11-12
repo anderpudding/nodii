@@ -868,7 +868,7 @@ Secrets: `APPLE_DISTRIBUTION_CERT_P12`, `APPLE_INSTALLER_CERT_P12`, `APPLE_CERT_
 | ADR-014 | `app_config.min_macos_app_version`으로 최소 지원 버전을 강제 | 제안 |
 | ADR-015 | 지난 미완료 할 일 가져오기 기간 7일, 도메인·발신 주소는 개발 초기에 확보 | **확정** (Q8, Q9) |
 | ADR-016 | 번들 ID `com.sungjunlee.Nodii`, App Store 카테고리 생산성, 무료 | **확정** (Q10, Q11) |
-| ADR-017 | 테이블 권한을 명시적으로 부여하고, 물리 DELETE는 `routine_logs`만 허용. 활성 목표 규칙은 사용자별 잠금으로 동시 요청에도 보장 | **확정** (1단계 DB, pgTAP) |
+| ADR-017 | 테이블 권한을 명시적으로 부여한다. 일정 데이터와 반응의 클라이언트 물리 DELETE는 본인 `routine_logs`와 본인이 보낸 `reactions`에 허용한다. `goals`, `todos`, `routines`는 소프트 삭제한다. 팔로우·차단 해제, 알림 예외와 푸시 토큰 제거는 각 테이블의 권한과 RLS 정책을 따른다. 활성 목표 규칙은 사용자별 잠금으로 동시 요청에도 보장한다. | **확정** (1단계 DB, v3 S1, pgTAP) |
 | ADR-018 | iOS 앱은 **Expo (React Native)**. `core`·`api`를 재사용하고 서버는 바꾸지 않는다 | **확정** (Q13) |
 | ADR-019 | **UI는 공유하지 않는다.** 디자인 토큰과 문구만 공유하고 화면·제스처·내비게이션은 플랫폼별로 따로 만든다 | **확정** (Q14) |
 | ADR-020 | 사용자 문구는 메시지 카탈로그로 관리한다. v2는 한국어만 채운다 | **확정** (Q16) |

@@ -146,7 +146,7 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 - `unreact(p_reaction_id uuid)`는 두지 않고 클라이언트가 DELETE합니다(RLS로 충분).
 - **`split_routine` 수정**: `p_from` 이후 날짜의 반응도 새 `routine_id`로 옮깁니다. 반응 행은 다른 사람(`reactor_id`) 것이라 invoker 권한으로는 바꿀 수 없으므로, 함수를 `security definer`로 바꾸고 **첫 줄에서 `v_old.user_id = auth.uid()`를 직접 확인**합니다(지금은 RLS가 그 일을 했습니다). 같은 시그니처로 `create or replace`.
 - "과거 날짜까지 모두"로 숨겨진 날의 반응은 지우지 않습니다(§4.3).
-- **ADR-017 갱신 제안**: 물리 DELETE 허용 테이블이 `routine_logs`, `reactions` 둘이 됩니다. `docs/02-system-design.md`는 직접 고치지 말고 보고의 "결정이 필요한 사항"에 문안을 적습니다.
+- **ADR-017**: 일정 데이터와 반응의 클라이언트 물리 DELETE는 본인 `routine_logs`와 본인이 보낸 `reactions`에 허용합니다(설계서 §13).
 
 ## 6. 알림 · 신고 · 사진 (테이블과 권한만)
 
@@ -173,7 +173,10 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 
 ## 9. Realtime
 
-`alter publication supabase_realtime add table public.follows, public.reactions, public.notifications;`
+`alter publication supabase_realtime add table public.reactions, public.notifications;`
+
+`follows`는 Realtime에 넣지 않습니다. DELETE 이벤트에 RLS가 적용되지 않아 언팔로우·팔로워 내보내기·차단으로 삭제된 행의 기본 키(`follower_id`, `followee_id`)가 구독자에게 노출될 수 있습니다. 다른 기기의 ‘오늘에 보일 사람’ 변경은 앱이 앞으로 올 때 다시 불러옵니다.
+
 `goals`의 `visibility` 변경은 이미 publication에 있는 `goals`로 전달됩니다.
 
 ## 10. pgTAP
