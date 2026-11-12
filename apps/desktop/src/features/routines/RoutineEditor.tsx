@@ -66,8 +66,8 @@ export function RoutineEditor({
 }) {
   const { today, selectedDate } = useUIStore();
   const id = useId();
-  const goals = useGoals(client);
-  const routines = useRoutines(client);
+  const goals = useGoals(client, profile.id);
+  const routines = useRoutines(client, profile.id);
   const activeGoals = (goals.data ?? []).filter((goal) => !goal.archivedAt);
   const [draft, setDraft] = useState<Routine>(
     () =>
@@ -146,6 +146,7 @@ export function RoutineEditor({
       <RoutineStopDialog
         routine={routine}
         client={client}
+        userId={profile.id}
         deleting={stop === 'delete'}
         onClose={onClose}
       />

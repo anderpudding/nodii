@@ -144,7 +144,7 @@ function TodayContent({
     showMonth,
   } = useUIStore();
   const cache = useQueryClient();
-  const dayActions = useDayActions(client, profile.weekStart);
+  const dayActions = useDayActions(client, profile.id, profile.weekStart);
   const [adding, setAdding] = useState<string | null>(null);
   const list = useRef<SectionList<MobileDayItem, ReturnType<typeof daySections>[number]>>(null);
   const inputLocation = useRef<{ sectionIndex: number; itemIndex: number } | null>(null);
@@ -157,19 +157,19 @@ function TodayContent({
   const { from, to, dates } = weekRange(selectedDate, profile.weekStart);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
-  const goals = useGoals(client);
-  const routines = useRoutines(client);
-  const firstLogs = useMonthRoutineLogs(client, firstMonth, profile.weekStart);
-  const lastLogs = useMonthRoutineLogs(client, lastMonth, profile.weekStart);
-  const monthLogs = useMonthRoutineLogs(client, calendarMonth, profile.weekStart);
-  const first = useMonthTodos(client, firstMonth, profile.weekStart);
-  const last = useMonthTodos(client, lastMonth, profile.weekStart);
-  const month = useMonthTodos(client, calendarMonth, profile.weekStart);
+  const goals = useGoals(client, profile.id);
+  const routines = useRoutines(client, profile.id);
+  const firstLogs = useMonthRoutineLogs(client, profile.id, firstMonth, profile.weekStart);
+  const lastLogs = useMonthRoutineLogs(client, profile.id, lastMonth, profile.weekStart);
+  const monthLogs = useMonthRoutineLogs(client, profile.id, calendarMonth, profile.weekStart);
+  const first = useMonthTodos(client, profile.id, firstMonth, profile.weekStart);
+  const last = useMonthTodos(client, profile.id, lastMonth, profile.weekStart);
+  const month = useMonthTodos(client, profile.id, calendarMonth, profile.weekStart);
   const monthRange = monthGridRange(calendarMonth, profile.weekStart);
   useEffect(() => {
     if (!monthExpanded) return;
-    void prefetchAdjacentMonths(cache, client, calendarMonth, profile.weekStart);
-  }, [cache, client, calendarMonth, profile.weekStart, monthExpanded]);
+    void prefetchAdjacentMonths(cache, client, profile.id, calendarMonth, profile.weekStart);
+  }, [cache, client, profile.id, calendarMonth, profile.weekStart, monthExpanded]);
   const rows = useMemo(
     () => mergeWeekTodos(from, to, first.data ?? [], last.data ?? []),
     [from, to, first.data, last.data],
@@ -390,6 +390,7 @@ function TodayContent({
           <DayMenu
             key={selectedDate}
             client={client}
+            userId={profile.id}
             date={selectedDate}
             today={today}
             goals={goals.data ?? []}
@@ -563,6 +564,7 @@ function TodayContent({
                 <InlineAdd
                   key={`${selectedDate}:${section.goal.id}`}
                   client={client}
+                  userId={profile.id}
                   goal={section.goal}
                   date={selectedDate}
                   today={today}
@@ -588,6 +590,7 @@ function TodayContent({
                     todo={item.todo}
                     goal={section.goal}
                     client={client}
+                    userId={profile.id}
                     weekStart={profile.weekStart}
                     timeZone={profile.timezone}
                     dayLocked={dayActions.isDateLocked(selectedDate)}
@@ -635,6 +638,7 @@ function TodayContent({
         <RoutineEditor
           timeZone={profile.timezone}
           client={client}
+          userId={profile.id}
           routine={editingRoutine}
           routines={routines.data ?? []}
           goals={goals.data ?? []}
@@ -647,6 +651,7 @@ function TodayContent({
       {stoppingRoutine && (
         <RoutineStop
           client={client}
+          userId={profile.id}
           routine={stoppingRoutine}
           today={today}
           onClose={() => setStoppingRoutine(null)}

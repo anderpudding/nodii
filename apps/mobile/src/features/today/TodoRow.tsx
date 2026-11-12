@@ -18,6 +18,7 @@ export function TodoRow({
   todo,
   goal,
   client,
+  userId,
   weekStart,
   timeZone = 'UTC',
   dayLocked = false,
@@ -28,6 +29,7 @@ export function TodoRow({
   todo: TodoRecord;
   goal: Goal;
   client: NodiiClient;
+  userId: string;
   weekStart: 0 | 1;
   timeZone?: string;
   dayLocked?: boolean;
@@ -41,7 +43,7 @@ export function TodoRow({
   const [menu, setMenu] = useState(false);
   const [picking, setPicking] = useState(false);
   const today = useUIStore((state) => state.today);
-  const actions = useTodoActions(client, weekStart, todo, isDateLocked);
+  const actions = useTodoActions(client, userId, weekStart, todo, isDateLocked);
   const updating =
     useIsMutating({
       mutationKey: ['write'],
@@ -116,6 +118,7 @@ export function TodoRow({
       {picking && (
         <DatePickSheet
           client={client}
+          userId={userId}
           title={todo.title}
           date={todo.date}
           today={today}

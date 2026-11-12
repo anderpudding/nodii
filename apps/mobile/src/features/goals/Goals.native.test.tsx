@@ -86,7 +86,7 @@ async function mount() {
   render(
     <QueryClientProvider client={cache}>
       <ToastProvider>
-        <Goals client={client} onClose={jest.fn()} />
+        <Goals client={client} userId="user" onClose={jest.fn()} />
       </ToastProvider>
     </QueryClientProvider>,
   );

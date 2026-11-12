@@ -17,11 +17,13 @@ import { useUIStore } from '../../stores/ui';
 export function RoutineStopDialog({
   routine,
   client,
+  userId,
   deleting = false,
   onClose,
 }: {
   routine: RoutineRecord;
   client: NodiiClient;
+  userId: string;
   deleting?: boolean;
   onClose: () => void;
 }) {
@@ -31,7 +33,7 @@ export function RoutineStopDialog({
     cancel.current?.focus();
   }, [confirmDelete]);
   const today = useUIStore((s) => s.today);
-  const end = useEndRoutine(client, routine.id, { onError: notifyError });
+  const end = useEndRoutine(client, userId, routine.id, { onError: notifyError });
   const remove = useDeleteRoutine(client, routine.id, { onError: notifyError });
   const busy = useRoutineWritePending(routine.id);
   const ended = routine.endDate !== null && routine.endDate < today;

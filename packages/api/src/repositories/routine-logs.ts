@@ -5,6 +5,7 @@ import { mapRoutineLog, routineLogToRow, type RoutineLogRecord } from '../mapper
 /** 42칸 범위 전체를 페이지로 읽어 기록이 많은 달도 누락하지 않는다. */
 export async function listLogsInRange(
   client: NodiiClient,
+  userId: string,
   from: string,
   to: string,
   signal?: AbortSignal,
@@ -14,6 +15,7 @@ export async function listLogsInRange(
     let query = client
       .from('routine_logs')
       .select('*')
+      .eq('user_id', userId)
       .gte('date', from)
       .lte('date', to)
       .order('date')

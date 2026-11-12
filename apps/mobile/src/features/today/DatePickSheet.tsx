@@ -22,6 +22,7 @@ import { weekSummary } from './model';
 /** TODO-05/11/MOB-03: 단건·묶음·추가 날짜가 같은 즉시 선택 시트를 사용한다. */
 export function DatePickSheet({
   client,
+  userId,
   title,
   date,
   today,
@@ -32,6 +33,7 @@ export function DatePickSheet({
   timeZone = 'UTC',
 }: {
   client: NodiiClient;
+  userId: string;
   title: string;
   date: ISODate;
   today: ISODate;
@@ -43,10 +45,10 @@ export function DatePickSheet({
 }) {
   const { colors } = useTheme();
   const [month, setMonth] = useState(monthKeyOf(date));
-  const goals = useGoals(client);
-  const todos = useMonthTodos(client, month, weekStart);
-  const routines = useRoutines(client);
-  const logs = useMonthRoutineLogs(client, month, weekStart);
+  const goals = useGoals(client, userId);
+  const todos = useMonthTodos(client, userId, month, weekStart);
+  const routines = useRoutines(client, userId);
+  const logs = useMonthRoutineLogs(client, userId, month, weekStart);
   const { from, to } = monthGridRange(month, weekStart);
   const summary = useMemo(
     () =>

@@ -20,13 +20,14 @@ function validate(changes: GoalChanges) {
   return { ...changes, name: changes.name?.trim() };
 }
 /** 과거 기록을 위해 보관한 목표도 조회한다 (GOAL-05). */
-export async function listGoals(client: NodiiClient, signal?: AbortSignal) {
+export async function listGoals(client: NodiiClient, userId: string, signal?: AbortSignal) {
   const rows: GoalRecord[] = [];
   // Data API의 기본 1000행 상한으로 오래된 목표가 조용히 빠지지 않게 한다.
   for (let offset = 0; ; offset += 1000) {
     let query = client
       .from('goals')
       .select('*')
+      .eq('user_id', userId)
       .is('deleted_at', null)
       .order('sort_key')
       .order('id')

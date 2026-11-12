@@ -20,11 +20,13 @@ import { notifyError } from '../../lib/notify-error';
 export function TodoRow({
   todo,
   client,
+  userId,
   weekStart,
   timeZone,
 }: {
   todo: TodoRecord;
   client: NodiiClient;
+  userId: string;
   weekStart: 0 | 1;
   timeZone: string;
 }) {
@@ -97,6 +99,7 @@ export function TodoRow({
     <TodoMenu
       todo={todo}
       client={client}
+      userId={userId}
       weekStart={weekStart}
       timeZone={timeZone}
       pending={pending}

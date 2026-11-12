@@ -28,10 +28,12 @@ import { useConnectivity } from '../../lib/connectivity';
 /** AUTH-06: 개수·이메일·이해 확인을 마친 뒤에만 계정 삭제 요청을 보낸다. */
 function DeleteAccount({
   client,
+  userId,
   email,
   onClose,
 }: {
   client: NodiiClient;
+  userId: string;
   email: string;
   onClose: () => void;
 }) {
@@ -43,7 +45,7 @@ function DeleteAccount({
   const online = useConnectivity();
   const counts = useQuery({
     queryKey: ['accountContents'],
-    queryFn: ({ signal }) => countAccountContents(client, signal),
+    queryFn: ({ signal }) => countAccountContents(client, userId, signal),
     staleTime: 0,
   });
   async function remove() {
@@ -174,7 +176,7 @@ export function SettingsSheet({
     isTauri() ? undefined : version,
   );
   const online = useConnectivity();
-  const goals = useGoals(client);
+  const goals = useGoals(client, session.user.id);
   const archivedGoals = (goals.data ?? []).filter((goal) => goal.archivedAt).length;
   const week = useUpdateWeekStart(client, session.user.id, { onError: notifyError });
   useEffect(() => {
@@ -187,6 +189,7 @@ export function SettingsSheet({
     return (
       <DeleteAccount
         client={client}
+        userId={session.user.id}
         email={session.user.email ?? ''}
         onClose={() => setDeleting(false)}
       />

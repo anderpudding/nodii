@@ -43,8 +43,8 @@ export function RoutineScope({
     cancel.current?.focus();
   }, []);
   const dates = Array.from({ length: 14 }, (_, i) => addDays(today, i - 7));
-  const past = useMonthRoutineLogs(client, monthKeyOf(dates[0]!), profile.weekStart);
-  const future = useMonthRoutineLogs(client, monthKeyOf(dates[13]!), profile.weekStart);
+  const past = useMonthRoutineLogs(client, profile.id, monthKeyOf(dates[0]!), profile.weekStart);
+  const future = useMonthRoutineLogs(client, profile.id, monthKeyOf(dates[13]!), profile.weekStart);
   const logs = [...(past.data ?? []), ...(future.data ?? [])];
   const unavailable = past.isPending || future.isPending || past.isError || future.isError;
   return (

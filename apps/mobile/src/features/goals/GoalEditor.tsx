@@ -26,11 +26,13 @@ import { goalPresets } from './presets';
 /** GOAL-01/02/03/06: 이름·색 입력과 개수 확인을 별도 편집 시트에서 처리한다. */
 export function GoalEditor({
   client,
+  userId,
   goal,
   goals,
   onClose,
 }: {
   client: NodiiClient;
+  userId: string;
   goal: GoalRecord | null;
   goals: GoalRecord[];
   onClose(): void;
@@ -47,7 +49,7 @@ export function GoalEditor({
   const create = useCreateGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
   const update = useUpdateGoal(client, id, { onError: () => toast(() => t('todo.save.failed')) });
   const remove = useDeleteGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
-  const counts = useGoalContents(client);
+  const counts = useGoalContents(client, userId);
   const draft: GoalRecord = goal ?? {
     id,
     name: '',

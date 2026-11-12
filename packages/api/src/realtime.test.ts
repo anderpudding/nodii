@@ -35,6 +35,7 @@ const goal = {
   deleted_at: null,
   created_at: todo.created_at,
   updated_at: todo.updated_at,
+  visibility: 'private' as const,
 };
 const log = {
   routine_id: 'routine',

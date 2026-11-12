@@ -31,6 +31,7 @@ import { newTodo, submissionTitle } from './model';
 /** TODO-01/MOB-03/05: 기존 추가 mutation을 목표 아래에서 연속 입력하며 실패도 복원한다. */
 export function InlineAdd({
   client,
+  userId,
   goal,
   date: initialDate,
   today,
@@ -41,6 +42,7 @@ export function InlineAdd({
   onFocus,
 }: {
   client: NodiiClient;
+  userId: string;
   goal: Goal;
   date: ISODate;
   today: ISODate;
@@ -89,7 +91,7 @@ export function InlineAdd({
     busy.current = true;
     let rows: TodoRecord[];
     try {
-      await cache.ensureQueryData(monthTodosOptions(client, monthKeyOf(date), weekStart));
+      await cache.ensureQueryData(monthTodosOptions(client, userId, monthKeyOf(date), weekStart));
       rows = cache.getQueryData<TodoRecord[]>(queryKeys.todos(monthKeyOf(date))) ?? [];
     } catch {
       busy.current = false;
@@ -186,6 +188,7 @@ export function InlineAdd({
       {picking && (
         <DatePickSheet
           client={client}
+          userId={userId}
           title={title || t('todo.add')}
           date={date}
           today={today}

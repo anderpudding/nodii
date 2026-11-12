@@ -6,10 +6,10 @@ import { countAllGoalContents, updateWeekStart } from '../settings';
 import type { MutationOptions } from './mutations';
 
 /** 목표별 요청을 만들지 않고 시트 전체에서 같은 집계 결과를 사용한다. */
-export function useGoalContents(client: NodiiClient) {
+export function useGoalContents(client: NodiiClient, userId: string) {
   return useQuery({
     queryKey: ['goalContents'],
-    queryFn: ({ signal }) => countAllGoalContents(client, signal),
+    queryFn: ({ signal }) => countAllGoalContents(client, userId, signal),
     staleTime: 0,
   });
 }

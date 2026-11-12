@@ -17,7 +17,7 @@ import { planDayMove } from './day-menu-model';
 import { DayActionGuardError, dayActionErrorKey } from './day-action-error';
 
 /** TODO-10~12: 쓰기/복원은 기존 훅에 맡기고 날짜별 준비 잠금과 실패한 복원 그룹만 관리한다. */
-export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
+export function useDayActions(client: NodiiClient, userId: string, weekStart: 0 | 1) {
   const cache = useQueryClient();
   const toast = useToast();
   const locks = useRef(new Set<ISODate>());
@@ -106,7 +106,7 @@ export function useDayActions(client: NodiiClient, weekStart: 0 | 1) {
     let requestStarted = false;
     try {
       await locked([...new Set(originals.map((row) => row.date))], async () => {
-        await cache.ensureQueryData(monthTodosOptions(client, monthKeyOf(date), weekStart));
+        await cache.ensureQueryData(monthTodosOptions(client, userId, monthKeyOf(date), weekStart));
         const target = cache.getQueryData<TodoRecord[]>(['todos', monthKeyOf(date)]) ?? [];
         if (!originalsStillActive(originals)) throw new DayActionGuardError('todos_changed');
         const moves = planDayMove(originals, target, date);

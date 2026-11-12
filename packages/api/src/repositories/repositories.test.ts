@@ -21,6 +21,7 @@ const goal = {
   deleted_at: null,
   created_at: '',
   updated_at: 'server-time',
+  visibility: 'private' as const,
 };
 const todo = {
   id: 'todo-id',
@@ -45,7 +46,7 @@ it('응답 상한에 도달하면 다음 페이지까지 읽어 목록을 누락
       ),
   );
   fetch.mockImplementationOnce(async () => new Response(JSON.stringify([{ ...todo, id: 'last' }])));
-  expect(await listTodosInRange(client, todo.date, todo.date)).toHaveLength(1001);
+  expect(await listTodosInRange(client, goal.user_id, todo.date, todo.date)).toHaveLength(1001);
   expect(String(fetch.mock.calls[1]![0])).toContain('offset=1000');
 });
 function setup(response: unknown) {
@@ -65,7 +66,7 @@ afterEach(async () => {
 });
 it('목표 조회는 삭제 제외·보관 포함이고 서버 시각을 보존한다', async () => {
   const { client, fetch } = setup([{ ...goal, archived_at: '2026-09-17T00:00:00Z' }]);
-  expect(await listGoals(client)).toEqual([
+  expect(await listGoals(client, goal.user_id)).toEqual([
     { ...mapGoal(goal), archivedAt: '2026-09-17T00:00:00Z' },
   ]);
   const url = String(fetch.mock.calls[0]?.[0]);
@@ -106,7 +107,9 @@ it('보관·해제는 archived_at만 바꾸고 마지막 목표 DB 오류를 매
 });
 it('할 일 조회는 양 끝 date를 포함하며 삭제 제외 조건을 전달한다', async () => {
   const { client, fetch } = setup([todo]);
-  expect(await listTodosInRange(client, '2026-08-30', '2026-10-10')).toEqual([mapTodo(todo)]);
+  expect(await listTodosInRange(client, goal.user_id, '2026-08-30', '2026-10-10')).toEqual([
+    mapTodo(todo),
+  ]);
   const url = String(fetch.mock.calls[0]![0]);
   expect(url).toContain('date=gte.2026-08-30');
   expect(url).toContain('date=lte.2026-10-10');
@@ -143,8 +146,8 @@ it('잘못된 제목·목표 이름·색을 요청 전에 거부하고 조회 �
   fetch.mockImplementation(
     async () => new Response(JSON.stringify({ code: '42501', message: 'denied' }), { status: 403 }),
   );
-  await expect(listGoals(client)).rejects.toMatchObject({ code: '42501' });
-  await expect(listTodosInRange(client, todo.date, todo.date)).rejects.toMatchObject({
+  await expect(listGoals(client, goal.user_id)).rejects.toMatchObject({ code: '42501' });
+  await expect(listTodosInRange(client, goal.user_id, todo.date, todo.date)).rejects.toMatchObject({
     code: '42501',
   });
 });
@@ -165,7 +168,7 @@ it('날짜 이동은 한 행의 날짜·키만 UPDATE하고 일괄 이동은 mov
 it('최근 7일 미완료·삭제 제외 조건을 서버에 전달한다', async () => {
   const { listOverdue } = await import('./todos');
   const { client, fetch } = setup([todo]);
-  await listOverdue(client, '2026-10-01');
+  await listOverdue(client, goal.user_id, '2026-10-01');
   const url = String(fetch.mock.calls[0]![0]);
   for (const filter of [
     'is_done=eq.false',
@@ -182,7 +185,10 @@ it('목표 확인 개수는 본문 없이 정확한 개수를 요청하고 삭�
   fetch.mockImplementation(
     async () => new Response(null, { headers: { 'content-range': '0-11/12' } }),
   );
-  expect(await countGoalContents(client, goal.id)).toEqual({ todos: 12, routines: 12 });
+  expect(await countGoalContents(client, goal.user_id, goal.id)).toEqual({
+    todos: 12,
+    routines: 12,
+  });
   expect(fetch).toHaveBeenCalledTimes(2);
   for (const [url, init] of fetch.mock.calls) {
     expect(String(url)).toContain('goal_id=eq.goal-id');
@@ -197,7 +203,7 @@ it('공용 집계는 목표 수만큼 요청하지 않고 한 관계 조회로 �
     { id: 'a', todos: [{ count: 42 }], routines: [{ count: 1 }] },
     { id: 'b', todos: [{ count: 0 }], routines: [{ count: 0 }] },
   ]);
-  expect(await countAllGoalContents(client)).toEqual({
+  expect(await countAllGoalContents(client, goal.user_id)).toEqual({
     a: { todos: 42, routines: 1 },
     b: { todos: 0, routines: 0 },
   });

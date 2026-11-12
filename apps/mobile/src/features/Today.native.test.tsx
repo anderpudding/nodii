@@ -757,7 +757,7 @@ function installServer(rows: TodoRecord[]) {
   const active = () => [...server.values()].filter((row) => !row.deletedAt);
   jest
     .mocked(listTodosInRange)
-    .mockImplementation(async (_client, from, to) =>
+    .mockImplementation(async (_client, _userId, from, to) =>
       active().filter((row) => row.date >= from && row.date <= to),
     );
   jest
@@ -1078,7 +1078,7 @@ it('월간에서 다른 달을 둘러봐도 선택한 날짜의 목록은 유지
 });
 
 function mountDayActions() {
-  return renderHook(() => useDayActions(client, 0), {
+  return renderHook(() => useDayActions(client, 'user', 0), {
     wrapper: ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={cache}>
         <ToastProvider>{children}</ToastProvider>

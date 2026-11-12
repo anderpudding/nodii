@@ -19,11 +19,13 @@ import { routineStyles as s } from './styles';
 /** ROUT-09: 종료·전체 삭제 결과를 먼저 설명하고 기존 훅으로 한 번만 쓴다. */
 export function RoutineStop({
   client,
+  userId,
   routine,
   today,
   onClose,
 }: {
   client: NodiiClient;
+  userId: string;
   routine: RoutineRecord;
   today: ISODate;
   onClose(): void;
@@ -34,7 +36,7 @@ export function RoutineStop({
   const [saving, setSaving] = useState(false);
   const guard = useRef(false);
   const options = { onError: () => toast(() => t('todo.save.failed')) };
-  const end = useEndRoutine(client, routine.id, options);
+  const end = useEndRoutine(client, userId, routine.id, options);
   const remove = useDeleteRoutine(client, routine.id, options);
   const pending = useRoutineWritePending(routine.id);
   const busy = saving || pending;

@@ -55,7 +55,7 @@ export function DayMenu({
   const cache = useQueryClient();
   const online = useConnectivity();
   const writes = useIsMutating({ mutationKey: ['write'] });
-  const overdue = useOverdueTodos(client, today, selectedDate === today);
+  const overdue = useOverdueTodos(client, profile.id, today, selectedDate === today);
   const move = useBulkMoveTodos(client, profile.weekStart, { onError: notifyError });
   const remove = useBulkDeleteTodos(client, profile.weekStart, { onError: notifyError });
   const [open, setOpen] = useState(false);
@@ -142,13 +142,17 @@ export function DayMenu({
     try {
       assertOnline();
       const [target, routines, logs] = await Promise.all([
-        cache.fetchQuery(monthTodosOptions(client, monthKeyOf(date), profile.weekStart)),
+        cache.fetchQuery(
+          monthTodosOptions(client, profile.id, monthKeyOf(date), profile.weekStart),
+        ),
         cache.fetchQuery({
           queryKey: queryKeys.routines(),
-          queryFn: ({ signal }) => listRoutines(client, signal),
+          queryFn: ({ signal }) => listRoutines(client, profile.id, signal),
           staleTime: 30_000,
         }),
-        cache.fetchQuery(monthRoutineLogsOptions(client, monthKeyOf(date), profile.weekStart)),
+        cache.fetchQuery(
+          monthRoutineLogsOptions(client, profile.id, monthKeyOf(date), profile.weekStart),
+        ),
       ]);
       assertOnline();
       if (cache.isMutating({ mutationKey: ['write'] })) throw new Error('write_in_progress');

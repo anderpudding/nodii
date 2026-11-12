@@ -118,6 +118,7 @@ export function DayList({
                       key={item.todo.id}
                       todo={todos.find((todo) => todo.id === item.todo.id)!}
                       client={client}
+                      userId={profile.id}
                       weekStart={profile.weekStart}
                       timeZone={profile.timezone}
                     />
@@ -183,7 +184,12 @@ export function DayList({
         />
       )}
       {stopping && (
-        <RoutineStopDialog client={client} {...stopping} onClose={() => setStopping(null)} />
+        <RoutineStopDialog
+          client={client}
+          userId={profile.id}
+          {...stopping}
+          onClose={() => setStopping(null)}
+        />
       )}
     </div>
   );

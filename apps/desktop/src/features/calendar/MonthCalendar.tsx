@@ -31,13 +31,13 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
     void cache.invalidateQueries({ queryKey: ['todos'] });
     void cache.invalidateQueries({ queryKey: ['routineLogs'] });
   }, [cache, profile.weekStart]);
-  const goals = useGoals(client);
-  const todos = useMonthTodos(client, month, profile.weekStart);
-  const routines = useRoutines(client);
-  const logs = useMonthRoutineLogs(client, month, profile.weekStart);
+  const goals = useGoals(client, profile.id);
+  const todos = useMonthTodos(client, profile.id, month, profile.weekStart);
+  const routines = useRoutines(client, profile.id);
+  const logs = useMonthRoutineLogs(client, profile.id, month, profile.weekStart);
   useEffect(() => {
-    void prefetchAdjacentMonths(cache, client, month, profile.weekStart);
-  }, [cache, client, month, profile.weekStart]);
+    void prefetchAdjacentMonths(cache, client, profile.id, month, profile.weekStart);
+  }, [cache, client, profile.id, month, profile.weekStart]);
   const { summary, stampColors } = useMemo(() => {
     const input = {
       ...monthGridRange(month, profile.weekStart),
