@@ -19,6 +19,8 @@ export default defineConfig([
     '**/src-tauri/target',
     '**/src-tauri/gen',
     'packages/api/src/database.types.ts',
+    // /brag 스킬이 만드는 로컬 영상 출력물(.gitignore와 같음).
+    'brag-output*/',
   ]),
   js.configs.recommended,
   tseslint.configs.recommended,
