@@ -104,7 +104,7 @@ create index blocks_blocked_idx on public.blocks (blocked_id, blocker_id);
 ```
 
 - **follows RLS**: SELECT `follower_id = me or followee_id = me`. INSERT `follower_id = me` + 트리거 검사(아래). UPDATE 정책 `follower_id = me`, 권한은 `grant update (show_on_today, today_sort_key)`만. DELETE `follower_id = me`(언팔로우) **또는** `followee_id = me`(팔로워 내보내기, SOC-12).
-- **follows 트리거** (before insert): 양쪽 모두 `social_profiles` 행이 있고 정지되지 않았는지, 차단이 없는지, 그리고 **요청 횟수 제한**(SOC-13): 같은 `follower_id`가 최근 1시간에 만든 팔로우가 60개 이상이면 거부(`rate_limited`). 값 60은 제안입니다(아래 결정 필요).
+- **follows 트리거** (before insert): 양쪽 모두 `social_profiles` 행이 있고 정지되지 않았는지, 차단이 없는지, 그리고 **요청 횟수 제한**(SOC-13): 같은 `follower_id`가 최근 1시간에 만든 팔로우가 **30개** 이상이면 거부(`rate_limited`, §12-3 확정).
 - **blocks RLS**: 본인(`blocker_id = me`)만 SELECT·INSERT·DELETE. 상대는 차단 사실을 볼 수 없습니다(SOC-60). blocks 트리거(after insert, definer): 양방향 `follows` 삭제.
 - **관계 함수** (모두 `security definer`, `stable`, `search_path = ''`, authenticated에 실행 권한. follows·blocks의 RLS를 피하려고 definer가 필요합니다 — AGENTS.md §6 예외로 보고에 적습니다):
   - `is_blocked_between(a uuid, b uuid) boolean`
@@ -198,7 +198,7 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 - [ ] 소개 81자·세 줄 거부. 닉네임 21자 거부.
 - [ ] `search_profiles`: `searchable = false`·차단 관계 제외, 정확히 같은 핸들이 첫 줄.
 - [ ] `resolve_invite`: 차단이면 null.
-- [ ] 팔로우 제한: 61번째(1시간 안) 거부.
+- [ ] 팔로우 제한: 31번째(1시간 안) 거부.
 - [ ] 신고 3건(서로 다른 사람)이면 `auto_hidden_at`이 채워지고, 같은 사람 3건이면 안 채워진다.
 - [ ] `notifications`·`reactions`에 authenticated가 직접 INSERT 못 한다.
 - [ ] 계정 삭제 후 follows(양쪽)·blocks·reactions(보낸·받은)·notifications·prefs·mutes·push_tokens·reports·invite_links·social_profiles가 남지 않고, 핸들은 `handle_holds`에 남는다.
@@ -212,11 +212,13 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 - 친구 화면 조회 `explain analyze` 결과를 보고에 첨부.
 - `docs/v3/README.md` 진행 기록 한 줄.
 
-## 12. 결정이 필요한 사항 (지시서를 쓰면서 정한 것 — 보고 때 다시 확인)
+## 12. 확정한 결정 (2026-11-11)
 
-1. 공개 프로필을 `profiles` 컬럼이 아니라 **`social_profiles` 새 테이블**로 둔다(§2). 계획서 §4.1 표를 이에 맞게 고칠지.
+지시서를 쓰면서 정한 것을 사람이 확인해 확정했습니다. 구현은 이대로 하고, 바꿔야 할 이유가 생기면 보고에 적습니다.
+
+1. 공개 프로필을 `profiles` 컬럼이 아니라 **`social_profiles` 새 테이블**로 둔다(§2). 계획서 §4.1 표도 이에 맞게 고쳤다.
 2. 친구 SELECT 정책에 `deleted_at is null`을 넣지 않는다(§4, Realtime 때문).
-3. 팔로우 제한 **1시간 60개**(SOC-13에 숫자가 없음).
+3. 팔로우 제한 **1시간 30개**(SOC-13).
 4. `notification_mutes`를 "사람별 예외(켬/끔)"로 둔다(계획서 표의 "사람별 친구 완료 알림 켜기"를 일반화).
 5. 신고 자동 숨김을 `auto_hidden_at` 컬럼으로 표시하고 원본(사진·소개)은 지우지 않는다.
 6. `split_routine`을 `security definer`로 바꾼다(반응을 옮기기 위해).
