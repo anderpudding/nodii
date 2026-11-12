@@ -8,7 +8,9 @@
 | `docs/01-requirements.md`             | 요구사항 (ID: AUTH-, GOAL-, TODO-, CAL-, ROUT-, SYNC-, SET-, NFR-) · 확정 결정 Q1~Q11                             |
 | `docs/02-system-design.md`            | 아키텍처, **DB 스키마 SQL(§4.3, §4.5)**, core 함수 명세(§5), 흐름(§6), 캐시 키(§8), 보안(§9), 테스트(§10)         |
 | `docs/03-implementation-plan.md`      | 단계별 작업 체크리스트, 설계 보완 사항 G1~G6(§5), 진행 기록(§6)                                                   |
-| `docs/codex/`                         | 단계별 작업 지시서 (사람이 한 단계씩 넘겨줌)                                                                      |
+| `docs/16-v3-social-plan.md`           | **v3 소셜** 결정 D1~D30, 요구사항 SOC-, 데이터 구조·RLS(§4), 내비게이션(§5), 단계 S0~S7(§8)                       |
+| `docs/16-v3-moderation/`              | 금칙어(`banned-words.csv`)·예약어(`reserved-words.csv`) 목록. DB 시드의 원본                                      |
+| `docs/v3/`                            | v3 단계별 작업 지시서 (사람이 한 단계씩 넘겨줌)                                                                   |
 | `DESIGN.md`                           | 비주얼 기준 (원칙, 색 역할, 목표 색 계산 규칙, 접근성 기준, 금지 사항)                                            |
 | `docs/design/`                        | 토큰(`tokens.md`), 컴포넌트 스펙(`components.md`), 화면 스펙(`screens.md`), 모바일 화면 스펙(`mobile-screens.md`) |
 | `mobile-designs/`, `desktop-designs/` | 와이어프레임 (로컬 전용, git 제외). 보조 자료이며 기준은 위 문서                                                  |
@@ -18,10 +20,11 @@
 ## 1. 제품 한 줄 요약
 
 **Nodii** — 투두메이트를 대체하는, 모든 기기에서 같은 하루를 보여주는 날짜 기반 투두 앱.
-MVP는 **macOS 전용 데스크톱 앱**(Tauri v2)이고 **Mac App Store**로 공개 배포합니다. 서버는 Supabase(Auth + Postgres + Realtime)이며, v2에서 iOS 앱(Expo)이 `packages/core`·`packages/api`를 그대로 재사용합니다.
+앱은 **macOS**(Tauri v2, Mac App Store)와 **iOS**(Expo, App Store) 두 개이고, 서버는 Supabase(Auth + Postgres + Realtime)입니다. 두 앱이 `packages/core`·`packages/api`·`packages/i18n`을 같이 씁니다.
 
-MVP 기능: 이메일 OTP 로그인 · 목표(카테고리) · 날짜별 할 일 · 월간 캘린더 · 루틴(반복 할 일) · 실시간 동기화 · 설정.
-MVP 제외: 타이머, 일기, 소셜, 위젯, 푸시, 모바일 앱, **오프라인 쓰기**, Google/Apple 로그인, 앱 자체 업데이트.
+- v1(macOS)·v2(iOS) 기능: 이메일 OTP 로그인 · 목표(카테고리) · 날짜별 할 일 · 월간 캘린더 · 루틴(반복 할 일) · 실시간 동기화 · 설정.
+- **v3(지금 진행 중): 소셜.** 팔로우(수락 없음) · 목표마다 공개 범위(`나만 / 맞팔로우 / 팔로워`) · 오늘 탭에서 친구의 하루 보기 · 반응(좋아요) · 알림 탭 · 프로필 탭 · 차단·신고. 하단 탭바 `오늘 | 알림 | 프로필`. macOS와 iOS를 **같은 날** 출시합니다(D15). 기준은 `docs/16-v3-social-plan.md`.
+- 여전히 하지 않는 것: 타이머, 일기, 위젯, **오프라인 쓰기**, Google/Apple 로그인, 앱 자체 업데이트, 댓글(D11), 전체 공개 화면(enum 값만 있음, D3).
 
 UI는 **한국어·영어**를 지원하고 기본은 OS 언어를 따릅니다(`ko*`는 한국어, 그 외는 영어). 한국어 문구는 짧고 친근한 존댓말(예: "저장하지 못했어요 · 다시 시도")로 씁니다. I2에서는 언어 설정 외 영어 문구가 한국어로 대체되며, 전체 영어 카탈로그는 I3에서 채웁니다.
 사용자에게 보이는 문구는 `@nodii/i18n` 카탈로그에 넣고 `t()`로 씁니다. 컴포넌트에 문구 리터럴을 두지 않습니다(근거: `docs/14-i18n-plan.md`).
@@ -50,17 +53,19 @@ UI는 **한국어·영어**를 지원하고 기본은 OS 언어를 따릅니다(
 ## 3. 저장소 구조와 의존 방향
 
 ```
-apps/desktop/            Tauri v2 앱
+apps/desktop/            Tauri v2 앱 (macOS)
   src/                   React (app/, features/{auth,calendar,day-list,goals,routines,settings}/, components/ui/, lib/)
   src-tauri/             Rust 셸 · tauri.conf.json · tauri.appstore.conf.json · Entitlements · Info.plist
-packages/core/           순수 TS 도메인 로직 (타입, 날짜, 반복 규칙, 집계, 정렬 키)
+apps/mobile/             Expo 앱 (iOS, Expo Router)
+packages/core/           순수 TS 도메인 로직 (타입, 날짜, 반복 규칙, 집계, 정렬 키, 팔로우 버튼 상태 같은 소셜 규칙)
 packages/api/            Supabase 클라이언트, repository, query 훅, realtime
+packages/i18n/           문구 카탈로그(한국어·영어), 날짜 형식
 supabase/                config.toml · migrations/ · tests/(pgTAP) · templates/otp.html
 scripts/build-appstore.sh
 docs/
 ```
 
-**의존 방향:** `apps/desktop` → `packages/api` → `packages/core`. 역방향 import 금지.
+**의존 방향:** `apps/desktop`·`apps/mobile` → `packages/api` → `packages/core`. 역방향 import 금지. 두 앱끼리 서로 import하지 않습니다.
 
 - `core`: React, Supabase, Tauri, DOM, `Date.now()` 직접 호출 금지 (오늘 날짜는 인자로 받음).
 - `api`: Tauri import 금지 (저장소는 `AuthStorage` 인터페이스로 주입받음 — 모바일 재사용 때문).
@@ -119,6 +124,19 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - 하루 목록과 캘린더 집계는 별도 요청 없이 캐시에서 `core.buildDay`/`summarizeMonth`로 계산(`useMemo`).
 - 충돌 정책은 Last-Write-Wins. Realtime 이벤트는 `updated_at`이 캐시보다 **새로울 때만** 반영.
 
+### 소셜 (v3)
+
+- **공개 범위는 서버(RLS)가 지킵니다.** 친구의 목표·할 일·루틴·루틴 기록은 SELECT 정책의 `can_view_goal(goal_id)`로만 걸러지고, 쓰기 정책은 지금처럼 본인만입니다. 화면에서 숨기는 것은 보조일 뿐이며, 클라이언트에서 범위를 다시 계산해 데이터를 거르지 않습니다(필요한 것은 서버가 이미 걸러서 줍니다).
+- 관계 단계: 없음 0 · 팔로워 1 · 맞팔로우 2 · 본인 3. 목표 범위 `public`·`followers`·`mutual`·`private`가 요구하는 단계는 0·1·2·3. **어느 방향이든 차단이 있으면 단계를 계산하기 전에 거부**합니다(기준: `docs/16-v3-social-plan.md` §4.2).
+- `goal_visibility`에 `public`이 있지만 v3 화면에는 3단계만 보여 줍니다(D3). DB도 `profiles.default_visibility`에는 `public`을 넣을 수 없게 막습니다.
+- 반응은 `react` RPC로만 남깁니다(볼 수 있는가 + 지금 완료 상태인가 확인). 루틴 반응은 `routine_logs`를 외래 키로 참조하지 않습니다(완료 취소 때 로그가 물리 삭제되므로, D8).
+- 친구의 하루는 **읽기 전용**: 이름표 `+`, 밀기, 길게 누르기, 하루 메뉴를 숨기고 끝낸 줄에 하트만 둡니다(SOC-32). 내 화면 코드에 `isOwner` 분기를 흩뿌리지 말고 읽기 전용 모드를 한 곳에서 내려 줍니다.
+- 목표 색 동그라미는 양쪽 앱의 **`GoalMark`** 하나로만 그립니다(색·공개 범위·크기를 받아 동그라미 또는 범위 아이콘). 아바타는 **`Avatar`** 하나(사진 또는 기본 싹이, 크기, 선택 테두리). 화면마다 따로 만들지 않습니다.
+- 핸들·닉네임·소개는 **서버에서** 금칙어·예약어를 검사합니다(SOC-02, SOC-64). 앱은 같은 목록으로 입력 중 안내만 하고, 어떤 단어가 걸렸는지는 보여 주지 않습니다.
+- 사용자 사진은 업로드 전에 기기에서 정사각형으로 자르고 다시 인코딩해 **EXIF를 지웁니다**(SOC-04). 원본을 그대로 올리지 않습니다.
+- 소셜 화면은 `app_config.social_enabled`가 켜졌을 때만 보입니다. 꺼져 있으면 v2와 같은 화면(탭바 없음)으로 동작해야 합니다.
+- 새 문구(알림 문장, 공개 범위 설명, 확인 창)는 한국어·영어 카탈로그에 같이 넣습니다. 알림 문장의 이름·개수는 `t()`의 변수로 넘기고 문자열을 이어 붙이지 않습니다.
+
 ---
 
 ## 6. 보안 · 배포 제약 (App Store)
@@ -133,6 +151,7 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - 비밀 값 커밋 금지: `.env.local`, `.env.production.local`, `*.provisionprofile`, 인증서, 심사 계정 비밀번호. 환경 변수는 `apps/desktop/.env.example`에 키 이름만 추가합니다.
 - 번들 ID `com.sungjunlee.Nodii`, `Entitlements`, `Info.plist`, `tauri.appstore.conf.json`, `scripts/build-appstore.sh`는 지시가 없으면 건드리지 않습니다.
 - 성능 목표: 조작 반영 100ms 이하, 월 이동 300ms 이하, 설치 파일 15MB 이하. 무거운 UI 라이브러리를 들이지 마세요.
+- v3에서 새로 다루는 것: Supabase Storage(`avatars` 버킷, 본인 폴더만 쓰기), 푸시 토큰(iOS), 신고 메일(Resend, 서버에서만). Storage·Edge Function의 비밀 값은 대시보드/CLI secret으로만 두고 앱에 넣지 않습니다.
 
 ---
 
@@ -149,6 +168,7 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - **UI 코드를 쓰기 전에 `DESIGN.md`와 `docs/design/`을 읽습니다.** 색·크기·모서리·모션 값은 `docs/design/tokens.md`의 토큰만 씁니다. 필요한 값이 없으면 새로 만들지 말고 보고하세요.
 - 목표 색이 들어가는 자리(이름표, 체크, 미리보기)는 `@nodii/core`의 `goalTint`·`goalInk`·`checkColor`를 거칩니다. 사용자가 HEX를 직접 넣어도 대비가 유지돼야 합니다(GOAL-03).
 - 되돌릴 수 있는 동작에는 5초 실행 취소 토스트를, 되돌릴 수 없는 동작에는 함께 사라지는 개수를 적은 확인 창을 붙입니다.
+- v3 화면 이름과 시안: `docs/design/screens.md`(macOS)·`mobile-screens.md`(iOS)의 "v3 소셜" 절, 공통 컴포넌트는 `components.md`의 `GoalMark`·`Avatar`·`FollowButton`·탭바.
 - **와이어프레임**이 저장소 루트의 `mobile-designs/`(iOS)와 `desktop-designs/`(macOS)에 **PNG**로 있습니다. git에는 올리지 않는 로컬 참고 자료입니다(`.gitignore`). 화면을 만들기 전에 해당 파일을 **이미지로 열어서 레이아웃·배치·여백을 눈으로 확인합니다.** 파일 이름은 한국어 화면 이름입니다(`오늘.png`, `제스처.png`, `메뉴 시트.png` 등). 폴더가 비어 있거나 그 화면 파일이 없으면 그냥 넘어갑니다.
 - `mobile-designs/`와 `docs/design/mobile-screens.md`의 대응: `로그인`=`MobileLogin` · `오늘`/`오늘 · 다크`=`MobileToday` · `할 일 추가 시트`=`MobileAdd` · `메뉴 시트`=`MobileMenu` · `제스처`=`MobileGestures` · `삭제 · 실행 취소`=`MobileUndo` · `월간 펼침`=`MobileMonth` · `목표 관리`=`MobileGoals` · `루틴 관리`=`MobileRoutines` · `루틴 편집 시트`=`MobileRoutineEdit` · `설정`=`MobileSettings`.
 - **기준 순서는 이번 단계 지시서 → `DESIGN.md`·`docs/design/*.md` → 와이어프레임**입니다. 지시서는 단계를 쪼개면서 라벨이나 범위를 일부러 줄여 둔 경우가 있으니 **지시서가 가장 셉니다.** 와이어프레임이 문서와 다르면 **문서를 따르고 차이를 보고**하세요. 와이어프레임에서 새 색·간격 값을 뽑아 쓰지 않습니다(토큰만 씁니다).
@@ -159,11 +179,11 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 
 ## 8. 작업 방식
 
-1. **시작 전**: 지시서와 관련 문서 절을 읽고, `git status`가 깨끗한지 확인하고, `feat/<단계>-<이름>` 브랜치를 만듭니다.
+1. **시작 전**: 지시서와 관련 문서 절을 읽고, `git status`가 깨끗한지 확인하고, `feat/<단계>-<이름>` 브랜치를 만듭니다(v3는 `feat/s1-db`처럼 단계 번호를 씁니다).
 2. **범위 준수**: 지시서의 "하지 말 것"과 다음 단계 작업을 미리 하지 않습니다. 관련 없는 리팩터링·포맷 변경을 섞지 않습니다.
 3. **모호하거나 문서끼리 충돌할 때**: 제품 동작을 임의로 정하지 말고, 문서에 가장 가까운 **보수적인 해석**을 택한 뒤 코드 주석과 최종 보고의 "결정이 필요한 사항"에 적습니다.
 4. **커밋**: 작은 단위로, 요구사항 ID 포함. **커밋 메시지는 항상 영어로** 씁니다 (Conventional Commits). 예: `feat(day-list): move todo to another date (TODO-05)`, `test(core): show monthly day-31 routine on last day of month (ROUT-04)`.
-5. **문서 갱신**: 끝낸 항목은 `docs/03-implementation-plan.md` 체크박스를 체크하고 §6 진행 기록에 한 줄 추가합니다. 설계를 바꿔야 했다면 `docs/02-system-design.md`를 직접 고치지 말고 보고에 제안으로 남깁니다.
+5. **문서 갱신**: 끝낸 항목은 `docs/03-implementation-plan.md` 체크박스를 체크하고 §6 진행 기록에 한 줄 추가합니다(v3는 해당 지시서의 체크리스트와 `docs/v3/README.md`의 진행 기록). 설계를 바꿔야 했다면 `docs/02-system-design.md`·`docs/16-v3-social-plan.md`를 직접 고치지 말고 보고에 제안으로 남깁니다.
 6. **건드리지 말 것**: `Claude outputs/` 폴더(이전 작업의 사본, CI 설정 원본은 `.github/workflows/`), `.env.local`, `.env.production.local`, `src-tauri/profiles/`의 실제 파일.
 7. **최종 보고 형식** (한국어):
    - 한 일 (요구사항 ID별)
