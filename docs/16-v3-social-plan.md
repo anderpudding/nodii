@@ -1,8 +1,9 @@
 # Nodii v3 계획 — 소셜
 
-> 버전 0.19 · 2026-11-11 · 상태: **초안 (브레인스토밍 결과)**
+> 버전 0.20 · 2026-11-11 · 상태: **초안 (브레인스토밍 결과)**
 > 근거: `11-v2-plan.md` §7(커뮤니티 대비 메모), `02-system-design.md` §12·ADR-003·ADR-017, `12-design-mobile-screens.md`
 > 이 문서는 기능 범위·결정·데이터 구조·단계를 다룹니다. 디자인은 목표 공개 범위 표시(SOC-24·25)와 오늘 탭 친구 보기(SOC-30~36), 알림 탭·사람 하루 페이지·사진 자르기(D24~26)를 정했고, 시안은 디자인 캔버스 "Nodii 디자인"의 **소셜 (v3)** 등 소셜 페이지들에 있습니다. 알림·사람 하루·사진 자르기의 최종 시안은 **알림 · 사람 하루 · 사진 자르기** 페이지의 "최종 시안" 줄입니다.
+> v0.20 변경: S1 DB 결정 확정 — 공개 프로필은 `social_profiles` 테이블(§4.1), 팔로우 제한 1시간 30개(SOC-13), 나머지는 `docs/v3/S1-db.md` §12
 > v0.19 변경: 구현 지시서(`docs/v3/`) 연결, §6 "기존 버전 앱" 주의 보완
 > v0.18 변경: [오늘] 버튼을 없애고 월 제목을 누르면 오늘로 이동(D30, SOC-30·35)
 > v0.17 변경: 다크 테마 값 확정(D23), 디자인 캔버스 데스크톱 탭에 알림 탭·사람 하루 추가, §9 비움
@@ -106,7 +107,7 @@
 - **SOC-10** ID 검색 또는 프로필 링크로 팔로우한다. 수락 없이 바로 된다.
 - **SOC-11** 언팔로우. 언팔하면 그 사람의 `맞팔로우` 목표도 더 이상 볼 수 없다는 안내를 확인 창에 둔다(상대가 나를 볼 수 있는 범위도 함께 줄어든다).
 - **SOC-12** 팔로잉·팔로워 목록. 팔로워 목록에서 **팔로워 내보내기**(차단하지 않고 팔로우를 끊기)를 할 수 있다.
-- **SOC-13** 팔로우 요청 횟수 제한(서버 rate limit)으로 스팸 팔로우를 막는다.
+- **SOC-13** 팔로우 요청 횟수 제한(서버 rate limit)으로 스팸 팔로우를 막는다. 한 사람이 **1시간에 30명**까지 새로 팔로우할 수 있다.
 
 ### 3.3 공개 범위
 
@@ -233,13 +234,14 @@
 
 ## 4. 데이터 구조 (스케치)
 
-> 실제 SQL은 v3 설계 단계에서 확정합니다. 아래는 방향입니다.
+> 실제 SQL은 `docs/v3/S1-db.md`가 기준입니다. 아래는 방향이고, 지시서에서 확정한 결정은 그 문서 §12에 있습니다.
 
 ### 4.1 테이블
 
 | 테이블 | 핵심 컬럼 | 비고 |
 |---|---|---|
-| `profiles` | `user_id` PK, `handle` unique, `nickname`, `bio`, `avatar_path`, `handle_changed_at`, `searchable`, `default_visibility`, `social_suspended_at` | 기본 이미지는 `avatar_path = null`. `default_visibility`는 `goal_visibility` enum, 기본 `private`(SOC-28). v3에서는 `public`을 넣을 수 없게 check 제약을 둔다(D3). 사진은 `avatars/{user_id}/{uuid}_160.jpg`·`_480.jpg` |
+| `profiles` (기존) | `default_visibility` 추가 | 본인만 읽는 개인 설정 테이블 그대로. `default_visibility`는 `goal_visibility` enum, 기본 `private`(SOC-28). v3에서는 `public`을 넣을 수 없게 check 제약을 둔다(D3) |
+| `social_profiles` | `user_id` PK, `handle` unique, `nickname`, `bio`, `avatar_path`, `searchable`, `handle_changed_at`, `auto_hidden_at`, `social_suspended_at` | **남에게 보이는 프로필.** 개인 설정과 섞이지 않도록 `profiles`와 나눴다(S1 §12-1). 소셜을 처음 쓸 때 행이 생긴다(SOC-03). 기본 이미지는 `avatar_path = null`. 사진은 `avatars/{user_id}/{uuid}_160.jpg`·`_480.jpg`. `auto_hidden_at`은 신고 3건 자동 숨김(SOC-62) |
 | `handle_holds` | `handle` PK, `released_by`, `available_at` | 버린 핸들을 30일간 묶어 둔다(SOC-02) |
 | `reserved_words` | `word` PK | 핸들·닉네임 예약어(SOC-02). CSV에서 시드 |
 | `banned_words` | `word` PK, `match`(`contains`/`exact`), `lang` | 금칙어(SOC-64). CSV에서 시드 |
@@ -250,7 +252,7 @@
 | `reactions` | `id`, `reactor_id`, `owner_id`, `todo_id?`, `routine_id?`, `date?`, `type`, `created_at` | §4.3 |
 | `notifications` | `id`, `recipient_id`, `actor_id`, `kind`, 대상, `count` | 읽음 상태는 저장하지 않는다(D24). 친구 완료는 (받는 사람, 보낸 사람, 날짜)로 묶음 |
 | `notification_prefs` | `user_id`, 종류별 on/off | 친구 완료 기본 off |
-| `notification_mutes` | `user_id`, `actor_id` | 사람별 친구 완료 알림 켜기 |
+| `notification_mutes` | `user_id`, `actor_id`, `friend_done` | 사람별 친구 완료 알림 예외(켬/끔). 전체 설정보다 우선한다 |
 | `push_tokens` | `user_id`, `token`, `platform` | iOS(Expo push) |
 | `reports` | `reporter_id`, 대상, 사유, `created_at`, `resolved_at` | 운영자 확인용 |
 
