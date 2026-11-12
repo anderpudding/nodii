@@ -9,12 +9,13 @@ import {
 } from '../mappers';
 
 /** 과거 캘린더에 필요한 종료 루틴도 삭제 전까지 모두 조회한다 (ROUT-05). */
-export async function listRoutines(client: NodiiClient, signal?: AbortSignal) {
+export async function listRoutines(client: NodiiClient, userId: string, signal?: AbortSignal) {
   const rows: RoutineRecord[] = [];
   for (let offset = 0; ; offset += 1000) {
     let query = client
       .from('routines')
       .select('*')
+      .eq('user_id', userId)
       .is('deleted_at', null)
       .order('sort_key')
       .order('id')
@@ -106,10 +107,11 @@ export async function splitRoutine(
   return { routine };
 }
 /** 오늘/미래에 시작하는 루틴은 DB 종료일 제약 때문에 소프트 삭제한다 (ROUT-09). */
-export async function endRoutine(client: NodiiClient, id: string, today: string) {
+export async function endRoutine(client: NodiiClient, userId: string, id: string, today: string) {
   const { data, error } = await client
     .from('routines')
     .select('*')
+    .eq('user_id', userId)
     .eq('id', id)
     .is('deleted_at', null)
     .single();

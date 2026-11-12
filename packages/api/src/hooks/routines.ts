@@ -26,27 +26,38 @@ import { deleteLog, listLogsInRange, upsertLog } from '../repositories/routine-l
 import { useRowMutation, type MutationOptions } from './mutations';
 
 /** 루틴 전체를 날짜별 전개와 관리 화면이 함께 구독한다. */
-export function useRoutines(client: NodiiClient) {
+export function useRoutines(client: NodiiClient, userId: string) {
   return useQuery({
     queryKey: queryKeys.routines(),
-    queryFn: ({ signal }) => listRoutines(client, signal),
+    queryFn: ({ signal }) => listRoutines(client, userId, signal),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 }
 /** 주 시작 설정과 같은 범위로 로그 조회·미리 불러오기를 공유한다. */
-export function monthRoutineLogsOptions(client: NodiiClient, monthKey: string, weekStart: 0 | 1) {
+export function monthRoutineLogsOptions(
+  client: NodiiClient,
+  userId: string,
+  monthKey: string,
+  weekStart: 0 | 1,
+) {
   const { from, to } = monthGridRange(monthKey, weekStart);
   return {
     queryKey: queryKeys.routineLogs(monthKey),
-    queryFn: ({ signal }: { signal: AbortSignal }) => listLogsInRange(client, from, to, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      listLogsInRange(client, userId, from, to, signal),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   };
 }
 /** 완료 기록도 화면의 42칸 캐시를 사용한다. */
-export function useMonthRoutineLogs(client: NodiiClient, monthKey: string, weekStart: 0 | 1) {
-  return useQuery(monthRoutineLogsOptions(client, monthKey, weekStart));
+export function useMonthRoutineLogs(
+  client: NodiiClient,
+  userId: string,
+  monthKey: string,
+  weekStart: 0 | 1,
+) {
+  return useQuery(monthRoutineLogsOptions(client, userId, monthKey, weekStart));
 }
 /** 분할만 공유 키를 사용하며 구독할 때는 exact로 행별 쓰기와 구분한다. */
 export const routineWriteKey = ['write', 'routine'] as const;
@@ -210,7 +221,12 @@ export function useSplitRoutine(client: NodiiClient, newId: string, options: Mut
   return mutation;
 }
 /** 종료와 실행 취소는 원래 종료일 및 삭제 상태를 복원한다 (ROUT-09). */
-export function useEndRoutine(client: NodiiClient, id: string, options: MutationOptions) {
+export function useEndRoutine(
+  client: NodiiClient,
+  userId: string,
+  id: string,
+  options: MutationOptions,
+) {
   return useRowMutation(
     options,
     routineRowWriteKey(id),
@@ -229,7 +245,7 @@ export function useEndRoutine(client: NodiiClient, id: string, options: Mutation
             endDate: routine.endDate,
             deletedAt: routine.deletedAt,
           })
-        : (await endRoutine(client, routine.id, today)).routine,
+        : (await endRoutine(client, userId, routine.id, today)).routine,
   );
 }
 /** 모든 날짜에서 숨기는 삭제도 5초 실행 취소를 지원한다. */

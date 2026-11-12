@@ -14,10 +14,12 @@ import { settingsStyles as s } from './styles';
 /** AUTH-06: 정확한 삭제 개수와 이해 확인이 준비돼야 되돌릴 수 없는 RPC를 실행한다. */
 export function AccountDelete({
   client,
+  userId,
   onClose,
   onDeleted,
 }: {
   client: NodiiClient;
+  userId: string;
   onClose(): void;
   onDeleted(): Promise<void>;
 }) {
@@ -29,7 +31,7 @@ export function AccountDelete({
   const guard = useRef(false);
   const counts = useQuery({
     queryKey: ['accountContents'],
-    queryFn: ({ signal }) => countAccountContents(client, signal),
+    queryFn: ({ signal }) => countAccountContents(client, userId, signal),
     staleTime: 0,
   });
   async function remove() {

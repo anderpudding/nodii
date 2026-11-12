@@ -18,12 +18,13 @@ export async function deleteMyAccount(client: NodiiClient) {
   if (error) throw error;
 }
 /** GOAL-06: 확인 창에는 삭제되지 않은 항목의 정확한 개수만 표시한다. */
-export async function countGoalContents(client: NodiiClient, goalId: string) {
+export async function countGoalContents(client: NodiiClient, userId: string, goalId: string) {
   const results = await Promise.all(
     (['todos', 'routines'] as const).map((table) =>
       client
         .from(table)
         .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
         .eq('goal_id', goalId)
         .is('deleted_at', null),
     ),
@@ -36,12 +37,19 @@ export interface GoalContents {
   routines: number;
 }
 /** 관리 시트의 모든 행이 한 번의 관계 집계를 공유한다. 큰 목록만 페이지로 나눈다. */
-export async function countAllGoalContents(client: NodiiClient, signal?: AbortSignal) {
+export async function countAllGoalContents(
+  client: NodiiClient,
+  userId: string,
+  signal?: AbortSignal,
+) {
   const counts: Record<string, GoalContents> = {};
   for (let offset = 0; ; offset += 1000) {
     let query = client
       .from('goals')
       .select('id,todos(count),routines(count)')
+      .eq('user_id', userId)
+      .eq('todos.user_id', userId)
+      .eq('routines.user_id', userId)
       .is('deleted_at', null)
       .is('todos.deleted_at', null)
       .is('routines.deleted_at', null)
@@ -59,10 +67,17 @@ export async function countAllGoalContents(client: NodiiClient, signal?: AbortSi
   }
 }
 /** 계정 삭제는 소프트 삭제된 데이터까지 지우므로 전체 행을 센다. */
-export async function countAccountContents(client: NodiiClient, signal?: AbortSignal) {
+export async function countAccountContents(
+  client: NodiiClient,
+  userId: string,
+  signal?: AbortSignal,
+) {
   const results = await Promise.all(
     (['goals', 'todos', 'routines'] as const).map((table) => {
-      const query = client.from(table).select('*', { count: 'exact', head: true });
+      const query = client
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
       return signal ? query.abortSignal(signal) : query;
     }),
   );

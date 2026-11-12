@@ -27,10 +27,10 @@ export function DaySkeleton() {
 /** 날짜가 달을 넘으면 해당 월의 42칸 캐시를 구독한다. */
 export function DayView({ client, profile }: { client: NodiiClient; profile: Profile }) {
   const date = useUIStore((state) => state.selectedDate);
-  const goals = useGoals(client);
-  const todos = useMonthTodos(client, monthKeyOf(date), profile.weekStart);
-  const routines = useRoutines(client);
-  const logs = useMonthRoutineLogs(client, monthKeyOf(date), profile.weekStart);
+  const goals = useGoals(client, profile.id);
+  const todos = useMonthTodos(client, profile.id, monthKeyOf(date), profile.weekStart);
+  const routines = useRoutines(client, profile.id);
+  const logs = useMonthRoutineLogs(client, profile.id, monthKeyOf(date), profile.weekStart);
   // TODO-09: 헤더와 목록이 같은 전개 결과를 써서 숨겨진 항목을 세지 않는다.
   const groups = useMemo(
     () =>

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 /** GOAL-06: 삭제 전에 최신 개수와 보관 대안을 보여준다. */
 export function GoalDeleteDialog({
   client,
+  userId,
   goal,
   lastActive,
   onClose,
@@ -23,6 +24,7 @@ export function GoalDeleteDialog({
   onArchived,
 }: {
   client: NodiiClient;
+  userId: string;
   goal: GoalRecord;
   lastActive: boolean;
   onClose: () => void;
@@ -31,7 +33,7 @@ export function GoalDeleteDialog({
 }) {
   const counts = useQuery({
     queryKey: ['goalContents', goal.id],
-    queryFn: () => countGoalContents(client, goal.id),
+    queryFn: () => countGoalContents(client, userId, goal.id),
     staleTime: 0,
   });
   const remove = useDeleteGoal(client, { onError: notifyError });

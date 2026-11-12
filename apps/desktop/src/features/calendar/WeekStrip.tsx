@@ -23,12 +23,12 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
   const to = addDays(from, 6);
   const firstMonth = monthKeyOf(from);
   const lastMonth = monthKeyOf(to);
-  const goals = useGoals(client);
-  const routines = useRoutines(client);
-  const firstTodos = useMonthTodos(client, firstMonth, profile.weekStart);
-  const lastTodos = useMonthTodos(client, lastMonth, profile.weekStart);
-  const firstLogs = useMonthRoutineLogs(client, firstMonth, profile.weekStart);
-  const lastLogs = useMonthRoutineLogs(client, lastMonth, profile.weekStart);
+  const goals = useGoals(client, profile.id);
+  const routines = useRoutines(client, profile.id);
+  const firstTodos = useMonthTodos(client, profile.id, firstMonth, profile.weekStart);
+  const lastTodos = useMonthTodos(client, profile.id, lastMonth, profile.weekStart);
+  const firstLogs = useMonthRoutineLogs(client, profile.id, firstMonth, profile.weekStart);
+  const lastLogs = useMonthRoutineLogs(client, profile.id, lastMonth, profile.weekStart);
   // 날짜가 속한 달의 캐시를 기준으로 중복된 42칸 데이터를 한 번만 집계한다.
   const { summary, stampColors } = useMemo(() => {
     const input = {

@@ -32,6 +32,7 @@ import { ruleLabel, routineDate } from './model';
 /** ROUT-10: M5 설정으로 옮길 수 있도록 임시 진입점과 독립된 관리 화면이다. */
 export function RoutineList({
   client,
+  userId,
   date,
   today,
   weekStart,
@@ -40,6 +41,7 @@ export function RoutineList({
   backLabel = t('day.today'),
 }: {
   client: NodiiClient;
+  userId: string;
   date: ISODate;
   today: ISODate;
   weekStart: 0 | 1;
@@ -63,8 +65,8 @@ export function RoutineList({
       }),
     [onClose],
   );
-  const routines = useRoutines(client);
-  const goals = useGoals(client);
+  const routines = useRoutines(client, userId);
+  const goals = useGoals(client, userId);
   const [editing, setEditing] = useState<RoutineRecord | null | undefined>(undefined);
   const [stopping, setStopping] = useState<RoutineRecord | null>(null);
   const allGoals = goals.data ?? [];
@@ -188,6 +190,7 @@ export function RoutineList({
         {editing !== undefined && (
           <RoutineEditor
             client={client}
+            userId={userId}
             routine={editing}
             routines={routines.data ?? []}
             goals={allGoals}
@@ -201,6 +204,7 @@ export function RoutineList({
         {stopping && (
           <RoutineStop
             client={client}
+            userId={userId}
             routine={stopping}
             today={today}
             onClose={() => setStopping(null)}

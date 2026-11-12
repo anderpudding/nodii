@@ -26,6 +26,7 @@ import { TodoDatePicker } from './TodoDatePicker';
 export function TodoMenu({
   todo,
   client,
+  userId,
   weekStart,
   timeZone,
   pending,
@@ -36,6 +37,7 @@ export function TodoMenu({
 }: {
   todo: TodoRecord;
   client: NodiiClient;
+  userId: string;
   weekStart: 0 | 1;
   timeZone: string;
   pending: boolean;
@@ -74,13 +76,13 @@ export function TodoMenu({
     setPreparing(true);
     try {
       const [target, routines, logs] = await Promise.all([
-        cache.fetchQuery(monthTodosOptions(client, monthKeyOf(date), weekStart)),
+        cache.fetchQuery(monthTodosOptions(client, userId, monthKeyOf(date), weekStart)),
         cache.fetchQuery({
           queryKey: queryKeys.routines(),
-          queryFn: ({ signal }) => listRoutines(client, signal),
+          queryFn: ({ signal }) => listRoutines(client, userId, signal),
           staleTime: 30_000,
         }),
-        cache.fetchQuery(monthRoutineLogsOptions(client, monthKeyOf(date), weekStart)),
+        cache.fetchQuery(monthRoutineLogsOptions(client, userId, monthKeyOf(date), weekStart)),
       ]);
       const groups = buildDay({
         goals: cache.getQueryData<GoalRecord[]>(queryKeys.goals()) ?? [],

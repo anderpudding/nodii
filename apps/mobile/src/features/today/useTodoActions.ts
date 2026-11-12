@@ -18,6 +18,7 @@ import { mutationTouchesTodo, type TodoAction } from './actions';
 /** TODO-02~05: 네 경로는 기존 API 훅을 사용하고 실행 취소도 같은 낙관적 경로로 쓴다. */
 export function useTodoActions(
   client: NodiiClient,
+  userId: string,
   weekStart: 0 | 1,
   todo: TodoRecord,
   isDateLocked: (date: ISODate) => boolean = () => false,
@@ -116,7 +117,7 @@ export function useTodoActions(
           const date = destination!;
           // 목적 달이 아직 캐시되지 않았으면 그 달을 먼저 읽어 목적 목표의 맨 아래 키를 만든다.
           await cache
-            .ensureQueryData(monthTodosOptions(client, monthKeyOf(date), weekStart))
+            .ensureQueryData(monthTodosOptions(client, userId, monthKeyOf(date), weekStart))
             .catch((error: unknown) => {
               preparationFailed = true;
               throw error;

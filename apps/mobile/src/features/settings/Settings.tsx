@@ -48,8 +48,8 @@ export function Settings({
   const week = useUpdateWeekStart(client, profile.id, {
     onError: () => toast(() => t('todo.save.failed')),
   });
-  const goals = useGoals(client);
-  const routines = useRoutines(client);
+  const goals = useGoals(client, profile.id);
+  const routines = useRoutines(client, profile.id);
   const { selectedDate, today } = useUIStore();
   async function openLink(url: string) {
     try {
@@ -217,10 +217,13 @@ export function Settings({
           />
         </>,
       )}
-      {page === 'goals' && <Goals client={client} onClose={() => setPage(null)} />}
+      {page === 'goals' && (
+        <Goals client={client} userId={profile.id} onClose={() => setPage(null)} />
+      )}
       {page === 'routines' && (
         <RoutineList
           client={client}
+          userId={profile.id}
           backLabel={t('settings.back')}
           date={selectedDate}
           today={today}
@@ -232,6 +235,7 @@ export function Settings({
       {deleting && (
         <AccountDelete
           client={client}
+          userId={profile.id}
           onDeleted={onAccountDeleted}
           onClose={() => setDeleting(false)}
         />

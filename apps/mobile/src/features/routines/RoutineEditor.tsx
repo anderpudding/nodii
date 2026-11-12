@@ -40,6 +40,7 @@ import { routineDate, shouldAskScope, validateForm, weekdayOrder } from './model
 /** ROUT-01~04/08: 공용 규칙 검증과 기존 날짜 시트·쓰기 훅만 사용한다. */
 export function RoutineEditor({
   client,
+  userId,
   routine,
   routines,
   goals,
@@ -50,6 +51,7 @@ export function RoutineEditor({
   onClose,
 }: {
   client: NodiiClient;
+  userId: string;
   routine: RoutineRecord | null;
   routines: RoutineRecord[];
   goals: Goal[];
@@ -88,11 +90,11 @@ export function RoutineEditor({
   const previewFrom = weekRange(today, weekStart).from;
   const previewTo = addDays(previewFrom, 13);
   const previewFirst = useQuery({
-    ...monthRoutineLogsOptions(client, monthKeyOf(previewFrom), weekStart),
+    ...monthRoutineLogsOptions(client, userId, monthKeyOf(previewFrom), weekStart),
     enabled: scope,
   });
   const previewLast = useQuery({
-    ...monthRoutineLogsOptions(client, monthKeyOf(previewTo), weekStart),
+    ...monthRoutineLogsOptions(client, userId, monthKeyOf(previewTo), weekStart),
     enabled: scope,
   });
   const [saving, setSaving] = useState(false);
@@ -486,6 +488,7 @@ export function RoutineEditor({
       {picking && (
         <DatePickSheet
           client={client}
+          userId={userId}
           title={t(picking === 'startDate' ? 'routine.start' : 'routine.end')}
           date={draft[picking] ?? today}
           allowSameDate={picking === 'endDate' && draft.endDate === null}

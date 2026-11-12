@@ -7,33 +7,49 @@ import { listOverdue, listTodosInRange } from '../repositories/todos';
 import { monthRoutineLogsOptions } from './routines';
 
 /** 활성·보관 목표를 하나의 서버 캐시로 공유한다. */
-export function useGoals(client: NodiiClient) {
+export function useGoals(client: NodiiClient, userId: string) {
   return useQuery({
     queryKey: queryKeys.goals(),
-    queryFn: ({ signal }) => listGoals(client, signal),
+    queryFn: ({ signal }) => listGoals(client, userId, signal),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 }
 /** 화면과 미리 불러오기가 동일한 범위·신선도를 사용한다. */
-export function monthTodosOptions(client: NodiiClient, monthKey: string, weekStart: 0 | 1) {
+export function monthTodosOptions(
+  client: NodiiClient,
+  userId: string,
+  monthKey: string,
+  weekStart: 0 | 1,
+) {
   const { from, to } = monthGridRange(monthKey, weekStart);
   return {
     queryKey: queryKeys.todos(monthKey),
-    queryFn: ({ signal }: { signal: AbortSignal }) => listTodosInRange(client, from, to, signal),
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      listTodosInRange(client, userId, from, to, signal),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   };
 }
 /** 사용자 설정의 주 시작 요일로 42칸 범위를 조회한다. */
-export function useMonthTodos(client: NodiiClient, monthKey: string, weekStart: 0 | 1) {
-  return useQuery(monthTodosOptions(client, monthKey, weekStart));
+export function useMonthTodos(
+  client: NodiiClient,
+  userId: string,
+  monthKey: string,
+  weekStart: 0 | 1,
+) {
+  return useQuery(monthTodosOptions(client, userId, monthKey, weekStart));
 }
 /** 오늘 화면에서만 최근 미완료 목록을 요청한다 (TODO-10). */
-export function useOverdueTodos(client: NodiiClient, today: string, enabled: boolean) {
+export function useOverdueTodos(
+  client: NodiiClient,
+  userId: string,
+  today: string,
+  enabled: boolean,
+) {
   return useQuery({
     queryKey: queryKeys.overdue(today),
-    queryFn: ({ signal }) => listOverdue(client, today, signal),
+    queryFn: ({ signal }) => listOverdue(client, userId, today, signal),
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
@@ -47,16 +63,17 @@ export function adjacentMonthKey(monthKey: string, direction: -1 | 1) {
 export async function prefetchAdjacentMonths(
   cache: QueryClient,
   client: NodiiClient,
+  userId: string,
   monthKey: string,
   weekStart: 0 | 1,
 ) {
   await Promise.all(
     ([-1, 1] as const).flatMap((direction) => [
       cache.prefetchQuery(
-        monthTodosOptions(client, adjacentMonthKey(monthKey, direction), weekStart),
+        monthTodosOptions(client, userId, adjacentMonthKey(monthKey, direction), weekStart),
       ),
       cache.prefetchQuery(
-        monthRoutineLogsOptions(client, adjacentMonthKey(monthKey, direction), weekStart),
+        monthRoutineLogsOptions(client, userId, adjacentMonthKey(monthKey, direction), weekStart),
       ),
     ]),
   );

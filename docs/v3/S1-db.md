@@ -146,7 +146,7 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 - `unreact(p_reaction_id uuid)`는 두지 않고 클라이언트가 DELETE합니다(RLS로 충분).
 - **`split_routine` 수정**: `p_from` 이후 날짜의 반응도 새 `routine_id`로 옮깁니다. 반응 행은 다른 사람(`reactor_id`) 것이라 invoker 권한으로는 바꿀 수 없으므로, 함수를 `security definer`로 바꾸고 **첫 줄에서 `v_old.user_id = auth.uid()`를 직접 확인**합니다(지금은 RLS가 그 일을 했습니다). 같은 시그니처로 `create or replace`.
 - "과거 날짜까지 모두"로 숨겨진 날의 반응은 지우지 않습니다(§4.3).
-- **ADR-017 갱신 제안**: 물리 DELETE 허용 테이블이 `routine_logs`, `reactions` 둘이 됩니다. `docs/02-system-design.md`는 직접 고치지 말고 보고의 "결정이 필요한 사항"에 문안을 적습니다.
+- **ADR-017**: 일정 데이터와 반응의 클라이언트 물리 DELETE는 본인 `routine_logs`와 본인이 보낸 `reactions`에 허용합니다(설계서 §13).
 
 ## 6. 알림 · 신고 · 사진 (테이블과 권한만)
 
@@ -173,7 +173,10 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 
 ## 9. Realtime
 
-`alter publication supabase_realtime add table public.follows, public.reactions, public.notifications;`
+`alter publication supabase_realtime add table public.reactions, public.notifications;`
+
+`follows`는 Realtime에 넣지 않습니다. DELETE 이벤트에 RLS가 적용되지 않아 언팔로우·팔로워 내보내기·차단으로 삭제된 행의 기본 키(`follower_id`, `followee_id`)가 구독자에게 노출될 수 있습니다. 다른 기기의 ‘오늘에 보일 사람’ 변경은 앱이 앞으로 올 때 다시 불러옵니다.
+
 `goals`의 `visibility` 변경은 이미 publication에 있는 `goals`로 전달됩니다.
 
 ## 10. pgTAP
@@ -182,28 +185,28 @@ create index reactions_owner_idx on public.reactions (owner_id, created_at desc)
 
 필수(계획서 §4.2 그대로 + 이 지시서의 결정):
 
-- [ ] A가 B의 `private` 목표·할 일·루틴·루틴 기록을 못 본다.
-- [ ] A가 B를 팔로우만 하면 B의 `followers` 목표는 보이고 `mutual`은 안 보인다.
-- [ ] 맞팔이면 `mutual`이 보인다.
-- [ ] 언팔 직후 못 본다. 팔로워 내보내기(B가 A→B 행 삭제) 직후 못 본다.
-- [ ] 어느 방향이든 차단하면 모든 범위(`public` 포함)가 막히고, 양방향 follows가 지워지고, 차단당한 쪽은 `blocks`를 볼 수 없다.
-- [ ] 친구의 할 일·루틴·목표·루틴 기록을 INSERT·UPDATE·DELETE할 수 없다(0행 또는 오류).
-- [ ] `public` 목표: 관계가 없어도 보인다(v3 화면에는 없지만 동작이 정의됨). `profiles.default_visibility = 'public'`은 거부.
-- [ ] 건너뛴 루틴 기록은 친구에게 안 보인다.
-- [ ] 팔로우당한 사람은 상대의 `show_on_today`·`today_sort_key`를 못 바꾼다. 팔로우한 사람은 그 두 컬럼만 바꿀 수 있다(`followee_id` 변경 거부).
-- [ ] 정지된 사용자의 목표는 친구에게 안 보이고, 정지된 사용자는 남을 볼 수 없다.
-- [ ] `react`: 볼 수 없으면 `not_visible`, 미완료면 `not_done`, 본인 것이면 `own_item`. 완료 취소 뒤에도 반응이 남는다(D8). 같은 대상 두 번은 한 행.
-- [ ] `split_routine` 뒤 `p_from` 이후 반응이 새 루틴으로 옮겨지고 이전 날짜 반응은 그대로. 남의 루틴으로 호출하면 거부.
-- [ ] 핸들 규칙(형식·소문자·예약어·금칙어·30일 쿨다운·30일 묶음·본인 재사용), §3의 금칙어 예시 전부.
-- [ ] 소개 81자·세 줄 거부. 닉네임 21자 거부.
-- [ ] `search_profiles`: `searchable = false`·차단 관계 제외, 정확히 같은 핸들이 첫 줄.
-- [ ] `resolve_invite`: 차단이면 null.
-- [ ] 팔로우 제한: 31번째(1시간 안) 거부.
-- [ ] 신고 3건(서로 다른 사람)이면 `auto_hidden_at`이 채워지고, 같은 사람 3건이면 안 채워진다.
-- [ ] `notifications`·`reactions`에 authenticated가 직접 INSERT 못 한다.
-- [ ] 계정 삭제 후 follows(양쪽)·blocks·reactions(보낸·받은)·notifications·prefs·mutes·push_tokens·reports·invite_links·social_profiles가 남지 않고, 핸들은 `handle_holds`에 남는다.
-- [ ] 새 테이블·RPC마다 허용 1개 + 거부 1개(AGENTS.md §6). RPC는 anon 실행 권한 회수 확인.
-- [ ] 기존 `01_rls.sql`~`09_*.sql`이 그대로 통과한다.
+- [x] A가 B의 `private` 목표·할 일·루틴·루틴 기록을 못 본다.
+- [x] A가 B를 팔로우만 하면 B의 `followers` 목표는 보이고 `mutual`은 안 보인다.
+- [x] 맞팔이면 `mutual`이 보인다.
+- [x] 언팔 직후 못 본다. 팔로워 내보내기(B가 A→B 행 삭제) 직후 못 본다.
+- [x] 어느 방향이든 차단하면 모든 범위(`public` 포함)가 막히고, 양방향 follows가 지워지고, 차단당한 쪽은 `blocks`를 볼 수 없다.
+- [x] 친구의 할 일·루틴·목표·루틴 기록을 INSERT·UPDATE·DELETE할 수 없다(0행 또는 오류).
+- [x] `public` 목표: 관계가 없어도 보인다(v3 화면에는 없지만 동작이 정의됨). `profiles.default_visibility = 'public'`은 거부.
+- [x] 건너뛴 루틴 기록은 친구에게 안 보인다.
+- [x] 팔로우당한 사람은 상대의 `show_on_today`·`today_sort_key`를 못 바꾼다. 팔로우한 사람은 그 두 컬럼만 바꿀 수 있다(`followee_id` 변경 거부).
+- [x] 정지된 사용자의 목표는 친구에게 안 보이고, 정지된 사용자는 남을 볼 수 없다.
+- [x] `react`: 볼 수 없으면 `not_visible`, 미완료면 `not_done`, 본인 것이면 `own_item`. 완료 취소 뒤에도 반응이 남는다(D8). 같은 대상 두 번은 한 행.
+- [x] `split_routine` 뒤 `p_from` 이후 반응이 새 루틴으로 옮겨지고 이전 날짜 반응은 그대로. 남의 루틴으로 호출하면 거부.
+- [x] 핸들 규칙(형식·소문자·예약어·금칙어·30일 쿨다운·30일 묶음·본인 재사용), §3의 금칙어 예시 전부.
+- [x] 소개 81자·세 줄 거부. 닉네임 21자 거부.
+- [x] `search_profiles`: `searchable = false`·차단 관계 제외, 정확히 같은 핸들이 첫 줄.
+- [x] `resolve_invite`: 차단이면 null.
+- [x] 팔로우 제한: 31번째(1시간 안) 거부.
+- [x] 신고 3건(서로 다른 사람)이면 `auto_hidden_at`이 채워지고, 같은 사람 3건이면 안 채워진다.
+- [x] `notifications`·`reactions`에 authenticated가 직접 INSERT 못 한다.
+- [x] 계정 삭제 후 follows(양쪽)·blocks·reactions(보낸·받은)·notifications·prefs·mutes·push_tokens·reports·invite_links·social_profiles가 남지 않고, 핸들은 `handle_holds`에 남는다.
+- [x] 새 테이블·RPC마다 허용 1개 + 거부 1개(AGENTS.md §6). RPC는 anon 실행 권한 회수 확인.
+- [x] 기존 `01_rls.sql`~`09_*.sql`이 그대로 통과한다.
 
 ## 11. 완료 기준
 

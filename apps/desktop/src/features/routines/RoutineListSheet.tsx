@@ -29,8 +29,8 @@ export function RoutineListSheet({
   onClose: () => void;
 }) {
   const today = useUIStore((s) => s.today);
-  const goals = useGoals(client);
-  const routines = useRoutines(client);
+  const goals = useGoals(client, profile.id);
+  const routines = useRoutines(client, profile.id);
   const [editor, setEditor] = useState<RoutineRecord | 'new' | null>(null);
   const [ending, setEnding] = useState<RoutineRecord | null>(null);
   const busy = useIsMutating({ mutationKey: routineWriteKey, exact: true }) > 0;
@@ -55,7 +55,14 @@ export function RoutineListSheet({
       />
     );
   if (ending)
-    return <RoutineStopDialog routine={ending} client={client} onClose={() => setEnding(null)} />;
+    return (
+      <RoutineStopDialog
+        routine={ending}
+        client={client}
+        userId={profile.id}
+        onClose={() => setEnding(null)}
+      />
+    );
   return (
     <Sheet
       labelledBy="routine-list-title"

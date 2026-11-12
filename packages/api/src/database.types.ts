@@ -52,6 +52,66 @@ export type Database = {
         }
         Relationships: []
       }
+      banned_words: {
+        Row: {
+          lang: string
+          match: string
+          word: string
+        }
+        Insert: {
+          lang: string
+          match: string
+          word: string
+        }
+        Update: {
+          lang?: string
+          match?: string
+          word?: string
+        }
+        Relationships: []
+      }
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+          show_on_today: boolean
+          today_sort_key: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+          show_on_today?: boolean
+          today_sort_key: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+          show_on_today?: boolean
+          today_sort_key?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           archived_at: string | null
@@ -63,6 +123,7 @@ export type Database = {
           sort_key: string
           updated_at: string
           user_id: string
+          visibility: Database["public"]["Enums"]["goal_visibility"]
         }
         Insert: {
           archived_at?: string | null
@@ -74,6 +135,7 @@ export type Database = {
           sort_key: string
           updated_at?: string
           user_id?: string
+          visibility?: Database["public"]["Enums"]["goal_visibility"]
         }
         Update: {
           archived_at?: string | null
@@ -85,12 +147,131 @@ export type Database = {
           sort_key?: string
           updated_at?: string
           user_id?: string
+          visibility?: Database["public"]["Enums"]["goal_visibility"]
+        }
+        Relationships: []
+      }
+      handle_holds: {
+        Row: {
+          available_at: string
+          handle: string
+          released_by: string | null
+        }
+        Insert: {
+          available_at: string
+          handle: string
+          released_by?: string | null
+        }
+        Update: {
+          available_at?: string
+          handle?: string
+          released_by?: string | null
+        }
+        Relationships: []
+      }
+      invite_links: {
+        Row: {
+          created_at: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_mutes: {
+        Row: {
+          actor_id: string
+          friend_done: boolean
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          friend_done: boolean
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          friend_done?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_prefs: {
+        Row: {
+          friend_done: boolean
+          new_follower: boolean
+          reaction: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          friend_done?: boolean
+          new_follower?: boolean
+          reaction?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          friend_done?: boolean
+          new_follower?: boolean
+          reaction?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_id: string
+          count: number
+          created_at: string
+          date: string | null
+          id: string
+          kind: string
+          recipient_id: string
+          routine_id: string | null
+          todo_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          actor_id: string
+          count?: number
+          created_at?: string
+          date?: string | null
+          id?: string
+          kind: string
+          recipient_id: string
+          routine_id?: string | null
+          todo_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string
+          count?: number
+          created_at?: string
+          date?: string | null
+          id?: string
+          kind?: string
+          recipient_id?: string
+          routine_id?: string | null
+          todo_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
           created_at: string
+          default_visibility: Database["public"]["Enums"]["goal_visibility"]
           display_name: string | null
           id: string
           timezone: string
@@ -99,6 +280,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_visibility?: Database["public"]["Enums"]["goal_visibility"]
           display_name?: string | null
           id: string
           timezone?: string
@@ -107,11 +289,137 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_visibility?: Database["public"]["Enums"]["goal_visibility"]
           display_name?: string | null
           id?: string
           timezone?: string
           updated_at?: string
           week_start?: number
+        }
+        Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reactions: {
+        Row: {
+          created_at: string
+          date: string | null
+          id: string
+          owner_id: string
+          reactor_id: string
+          routine_id: string | null
+          todo_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          id?: string
+          owner_id: string
+          reactor_id: string
+          routine_id?: string | null
+          todo_id?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          id?: string
+          owner_id?: string
+          reactor_id?: string
+          routine_id?: string | null
+          todo_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "routines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          target_kind: string
+          target_user_id: string
+          todo_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          target_kind: string
+          target_user_id: string
+          todo_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          target_kind?: string
+          target_user_id?: string
+          todo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reserved_words: {
+        Row: {
+          word: string
+        }
+        Insert: {
+          word: string
+        }
+        Update: {
+          word?: string
         }
         Relationships: []
       }
@@ -209,6 +517,48 @@ export type Database = {
           },
         ]
       }
+      social_profiles: {
+        Row: {
+          auto_hidden_at: string | null
+          avatar_path: string | null
+          bio: string
+          created_at: string
+          handle: string
+          handle_changed_at: string | null
+          nickname: string
+          searchable: boolean
+          social_suspended_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_hidden_at?: string | null
+          avatar_path?: string | null
+          bio?: string
+          created_at?: string
+          handle: string
+          handle_changed_at?: string | null
+          nickname: string
+          searchable?: boolean
+          social_suspended_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_hidden_at?: string | null
+          avatar_path?: string | null
+          bio?: string
+          created_at?: string
+          handle?: string
+          handle_changed_at?: string | null
+          nickname?: string
+          searchable?: boolean
+          social_suspended_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       todos: {
         Row: {
           created_at: string
@@ -264,11 +614,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_goal: { Args: { p_goal_id: string }; Returns: boolean }
+      can_view_routine: { Args: { p_routine_id: string }; Returns: boolean }
       delete_goal: { Args: { p_goal_id: string }; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
+      handle_available: { Args: { p_handle: string }; Returns: string }
       move_todos: {
         Args: { p_date: string; p_moves: Json }
         Returns: undefined
+      }
+      normalize_text: { Args: { t: string }; Returns: string }
+      react: {
+        Args: { p_date: string; p_routine_id: string; p_todo_id: string }
+        Returns: string
+      }
+      resolve_invite: { Args: { p_token: string }; Returns: string }
+      search_profiles: {
+        Args: { p_query: string }
+        Returns: {
+          auto_hidden_at: string | null
+          avatar_path: string | null
+          bio: string
+          created_at: string
+          handle: string
+          handle_changed_at: string | null
+          nickname: string
+          searchable: boolean
+          social_suspended_at: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "social_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       split_routine: {
         Args: {
@@ -284,8 +665,11 @@ export type Database = {
         }
         Returns: string
       }
+      text_is_allowed: { Args: { t: string }; Returns: boolean }
+      text_is_reserved: { Args: { t: string }; Returns: boolean }
     }
     Enums: {
+      goal_visibility: "private" | "mutual" | "followers" | "public"
       routine_freq: "daily" | "weekly" | "monthly"
     }
     CompositeTypes: {
@@ -417,6 +801,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      goal_visibility: ["private", "mutual", "followers", "public"],
       routine_freq: ["daily", "weekly", "monthly"],
     },
   },

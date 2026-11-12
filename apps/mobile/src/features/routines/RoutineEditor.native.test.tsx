@@ -105,6 +105,7 @@ function mount(before: RoutineRecord | null = routine) {
       <ToastProvider>
         <RoutineEditor
           client={client}
+          userId="user"
           routine={before}
           routines={[routine]}
           goals={[goal]}
@@ -260,7 +261,13 @@ it.each(['end', 'delete'])(
     render(
       <QueryClientProvider client={cache}>
         <ToastProvider>
-          <RoutineStop client={client} routine={routine} today="2026-10-12" onClose={onClose} />
+          <RoutineStop
+            client={client}
+            userId="user"
+            routine={routine}
+            today="2026-10-12"
+            onClose={onClose}
+          />
         </ToastProvider>
       </QueryClientProvider>,
     );
@@ -272,7 +279,8 @@ it.each(['end', 'delete'])(
       }),
     );
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    if (action === 'end') expect(endRoutine).toHaveBeenCalledWith(client, 'r', '2026-10-12');
+    if (action === 'end')
+      expect(endRoutine).toHaveBeenCalledWith(client, 'user', 'r', '2026-10-12');
     else expect(softDeleteRoutine).toHaveBeenCalledWith(client, 'r');
     expect(screen.queryByRole('button', { name: t('todo.undo') })).toBeNull();
     expect(cache.getQueryData(['routineLogs', '2026-10'])).toEqual([

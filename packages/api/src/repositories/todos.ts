@@ -11,6 +11,7 @@ import {
 /** 42칸의 양 끝 날짜를 포함하고 삭제된 행은 제외한다. */
 export async function listTodosInRange(
   client: NodiiClient,
+  userId: string,
   from: ISODate,
   to: ISODate,
   signal?: AbortSignal,
@@ -22,6 +23,7 @@ export async function listTodosInRange(
     let query = client
       .from('todos')
       .select('*')
+      .eq('user_id', userId)
       .is('deleted_at', null)
       .gte('date', from)
       .lte('date', to)
@@ -38,9 +40,14 @@ export async function listTodosInRange(
 }
 
 /** 서버에서 최근 7일 미완료만 조회하고 자동 이월하지 않는다 (TODO-10). */
-export function listOverdue(client: NodiiClient, today: ISODate, signal?: AbortSignal) {
+export function listOverdue(
+  client: NodiiClient,
+  userId: string,
+  today: ISODate,
+  signal?: AbortSignal,
+) {
   const { from, to } = overdueRange(today);
-  return listTodosInRange(client, from, to, signal, true);
+  return listTodosInRange(client, userId, from, to, signal, true);
 }
 
 /** 지정한 한 행의 날짜와 정렬 키만 함께 갱신한다 (TODO-05). */

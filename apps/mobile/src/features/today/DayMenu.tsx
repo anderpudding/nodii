@@ -15,6 +15,7 @@ import type { useDayActions } from './useDayActions';
 /** TODO-10~12: 상단 줄에서 동일한 순서로 세 동작과 비활성 이유를 제공한다. */
 export function DayMenu({
   client,
+  userId,
   date,
   today,
   goals,
@@ -25,6 +26,7 @@ export function DayMenu({
   actions,
 }: {
   client: NodiiClient;
+  userId: string;
   date: ISODate;
   today: ISODate;
   goals: Goal[];
@@ -38,7 +40,7 @@ export function DayMenu({
   const online = useOnline();
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
-  const overdue = useOverdueTodos(client, today, date === today);
+  const overdue = useOverdueTodos(client, userId, today, date === today);
   const targets = items.filter((row) => row.date === date && !row.isDone && !row.deletedAt);
   const moves = planOverdueMove({
     overdue: (overdue.data ?? []).filter((row) => !row.deletedAt),
@@ -184,6 +186,7 @@ export function DayMenu({
       {picking && (
         <DatePickSheet
           client={client}
+          userId={userId}
           title={t('day.menu.targets', { count: targets.length })}
           date={date}
           today={today}

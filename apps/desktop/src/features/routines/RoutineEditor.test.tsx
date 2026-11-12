@@ -428,7 +428,10 @@ it('오늘 시작 루틴 종료는 소프트 삭제하고 실행 취소가 원�
     }),
   );
   const close = vi.fn();
-  render(<RoutineStopDialog routine={current} client={client} onClose={close} />, { wrapper });
+  render(
+    <RoutineStopDialog routine={current} client={client} userId={profile.id} onClose={close} />,
+    { wrapper },
+  );
   expect(document.activeElement?.textContent).toBe('취소');
   const user = userEvent.setup();
   await user.click(screen.getByRole('button', { name: '오늘부터 그만하기' }));
@@ -460,6 +463,7 @@ it('과거에 끝난 루틴의 종료 확인은 기간 연장을 허용하지 �
   render(
     <RoutineStopDialog
       client={client}
+      userId={profile.id}
       routine={{ ...routine, endDate: '2026-09-10' }}
       onClose={() => {}}
     />,
@@ -556,7 +560,7 @@ it.each(['update', 'end', 'delete'] as const)(
     const { result } = renderHook(
       () => ({
         update: useUpdateRoutine(client, routine.id, { onError: vi.fn() }),
-        end: useEndRoutine(client, routine.id, { onError: vi.fn() }),
+        end: useEndRoutine(client, profile.id, routine.id, { onError: vi.fn() }),
         delete: useDeleteRoutine(client, routine.id, { onError: vi.fn() }),
         ownBusy: useRoutineWritePending(routine.id),
         otherBusy: useRoutineWritePending('other'),

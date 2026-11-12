@@ -142,15 +142,17 @@ function ArchivedGoalRow({
 /** 목록·추가·편집·보관함을 나눠 목표를 한눈에 관리한다 (GOAL-01~07). */
 export function GoalManagerSheet({
   client,
+  userId,
   onClose,
   initialView = 'list',
 }: {
   client: NodiiClient;
+  userId: string;
   onClose: () => void;
   initialView?: 'list' | 'archive';
 }) {
-  const goals = useGoals(client);
-  const counts = useGoalContents(client);
+  const goals = useGoals(client, userId);
+  const counts = useGoalContents(client, userId);
   const online = useConnectivity();
   const reorder = useUpdateGoal(client, 'reorder', { onError: notifyError });
   const [view, setView] = useState<GoalView>({ kind: initialView });
@@ -178,6 +180,7 @@ export function GoalManagerSheet({
     return (
       <GoalDeleteDialog
         client={client}
+        userId={userId}
         goal={view.goal}
         lastActive={!view.goal.archivedAt && active.length <= 1}
         onDeleted={() => setView({ kind: 'list' })}

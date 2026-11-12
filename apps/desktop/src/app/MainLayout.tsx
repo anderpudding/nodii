@@ -163,6 +163,7 @@ export function MainLayout({
       {goalView && (
         <GoalManagerSheet
           client={client}
+          userId={session.user.id}
           initialView={goalView}
           onClose={() => setGoalView(null)}
         />

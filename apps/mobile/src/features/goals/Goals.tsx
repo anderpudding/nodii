@@ -27,11 +27,19 @@ import { useGoalActions } from './useGoalActions';
 import { GoalEditor } from './GoalEditor';
 
 /** GOAL-01~07: 활성 목록·추가·편집·보관함은 같은 Query 데이터를 공유하는 네 화면이다. */
-export function Goals({ client, onClose }: { client: NodiiClient; onClose(): void }) {
+export function Goals({
+  client,
+  userId,
+  onClose,
+}: {
+  client: NodiiClient;
+  userId: string;
+  onClose(): void;
+}) {
   const { colors } = useTheme();
   const online = useOnline();
-  const goals = useGoals(client);
-  const contents = useGoalContents(client);
+  const goals = useGoals(client, userId);
+  const contents = useGoalContents(client, userId);
   const [archived, setArchived] = useState(false);
   const [editing, setEditing] = useState<GoalRecord | null | undefined>(undefined);
   const heights = useRef<Record<string, number>>({});
@@ -122,6 +130,7 @@ export function Goals({ client, onClose }: { client: NodiiClient; onClose(): voi
       {editing !== undefined && (
         <GoalEditor
           client={client}
+          userId={userId}
           goal={editing}
           goals={rows}
           onClose={() => setEditing(undefined)}
