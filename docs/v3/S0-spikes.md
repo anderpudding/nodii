@@ -8,6 +8,12 @@ v3에서 처음 쓰는 플랫폼 기능 네 가지가 **실제 기기와 실제 
 
 ## 공통
 
+- **스파이크 전용 Supabase 프로젝트**(`nodii-spike`, 무료 플랜)를 씁니다. 실기기(TestFlight)는 내 맥의 로컬 Supabase에 닿지 않고, 운영 프로젝트는 건드리지 않기 위해서입니다. 사람이 만들어 URL·publishable 키를 각 앱의 `.env.local`에 넣어 둡니다. 스파이크용 테이블·버킷·Edge Function은 이 프로젝트에만 만들고 마이그레이션으로 커밋하지 않습니다.
+- **진행 순서: 4 → 2 → 3 → 1.** 애플 설정이 적게 드는 것부터 합니다.
+- **사람이 해야 할 단계에 닿으면 멈추고**, 무엇을 어떤 순서로 해야 하는지 체크리스트로 알려 준 뒤 기다립니다(빌드 업로드, 기기 설치, 애플 개발자 사이트 설정, 사이트 배포).
+- **예외: 사이트 파일은 `main`으로 PR합니다.** 유니버설 링크는 실제 `nodii.app`에 파일이 있어야 확인할 수 있습니다. `site/.well-known/apple-app-site-association`과 `/u/` 안내 페이지만 별도 브랜치 `spike/s0-site`에서 `main`으로 PR합니다. 앱 쪽 스파이크 코드는 머지하지 않습니다.
+- 스파이크 빌드는 운영 앱과 번들 ID가 같아서, 설치하면 기기의 운영 앱을 덮어씁니다. 끝나면 사람이 운영 빌드를 다시 설치합니다.
+
 - 실기기: macOS 앱은 **Mac App Store 서명 빌드(샌드박스)** 또는 TestFlight(macOS), iOS는 **TestFlight**. 개발 빌드에서만 되는 것은 "됨"으로 치지 않습니다.
 - 새 의존성·Tauri 플러그인·capability·Entitlement를 추가할 수 있습니다(스파이크 브랜치 한정). 추가한 것과 이유를 결과에 적습니다. `main`에 들어갈 때는 S2·S6 지시서에서 다시 정합니다.
 - 비밀 값(APNs 키, Expo 액세스 토큰, Resend 키)은 커밋하지 않습니다. EAS·Supabase secret으로만 둡니다.
@@ -28,7 +34,7 @@ v3에서 처음 쓰는 플랫폼 기능 네 가지가 **실제 기기와 실제 
 
 앱이 켜져 있는 동안(창을 닫고 Dock에 남은 상태 포함) Supabase Realtime으로 행을 받으면 macOS 알림 센터에 알림을 띄울 수 있는지 확인합니다.
 
-- 임시 테이블(`spike_events`, 본인 행만 RLS) INSERT를 Realtime으로 구독해서 `tauri-plugin-notification`으로 알림을 띄웁니다. 테이블은 스파이크 브랜치 로컬 Supabase에만 만들고 마이그레이션으로 커밋하지 않습니다(원격 프로젝트에는 쓰지 않음).
+- 임시 테이블(`spike_events`, 본인 행만 RLS) INSERT를 Realtime으로 구독해서 `tauri-plugin-notification`으로 알림을 띄웁니다. 테이블은 스파이크 프로젝트에만 만들고 마이그레이션으로 커밋하지 않습니다. 다른 계정으로 행을 넣는 스크립트(`scripts/spike/insert-event.mjs` 같은 것, 커밋하지 않음)도 함께 준비합니다.
 - 확인할 것: 첫 실행의 알림 권한 요청, 샌드박스에서의 동작, 창을 닫은 상태·다른 앱이 앞에 있는 상태, 앱 아이콘 배지를 켜고 끌 수 있는지(v3는 배지를 쓰지 않음, SOC-50 — 쓰지 않을 수 있는지만 확인), 알림을 눌렀을 때 앱이 앞으로 오는지.
 - 완전히 종료된 앱에서는 알림이 오지 않는 것이 정상입니다(계획 §6). 그 사실만 결과에 적습니다.
 - **완료 기준**: 서명 빌드에서 창을 닫은 상태로 다른 계정이 INSERT하면 2초 안에 알림이 뜬다.
@@ -37,17 +43,17 @@ v3에서 처음 쓰는 플랫폼 기능 네 가지가 **실제 기기와 실제 
 
 - `expo-notifications`로 권한 요청 → Expo push token 얻기 → 화면에 표시(복사 가능하게).
 - EAS 자격 증명에 APNs 키 연결(사람이 할 일). TestFlight 빌드 설치.
-- 서버 쪽은 Supabase Edge Function 하나(`spike-push`)에서 Expo Push API(`https://exp.host/--/api/v2/push/send`)를 호출합니다. 함수는 로컬(`supabase functions serve`)에서 실행해도 됩니다.
+- 서버 쪽은 Supabase Edge Function 하나(`spike-push`)에서 Expo Push API(`https://exp.host/--/api/v2/push/send`)를 호출합니다. 스파이크 프로젝트에 배포하거나 로컬(`supabase functions serve`)에서 실행해도 됩니다. 토큰과 메시지를 받아 보내는 명령 한 줄을 사람에게 알려 줍니다.
 - 확인할 것: 앱을 완전히 종료한 상태에서 도착, 알림을 눌렀을 때 앱이 열리고 payload를 읽는지, 잘못된 토큰의 오류 응답 모양(나중에 토큰 정리에 씀).
 - **완료 기준**: 앱을 종료한 TestFlight iPhone에 10초 안에 도착하고, 누르면 payload가 화면에 보인다.
 - **안 될 때**: S6을 v3.1로 넘기는 계획(§8 마지막 줄)을 쓸지 결과에 적습니다.
 
 ## 4. Storage 사진 업로드와 EXIF 제거 (SOC-04)
 
-- 로컬 Supabase에 `avatars` 버킷(공개 읽기)을 만들고, 정책은 S1 지시서 §6과 같게 둡니다(본인 폴더 `{user_id}/`만 쓰기).
+- 스파이크 프로젝트에 `avatars` 버킷(공개 읽기)을 만들고, 정책은 S1 마이그레이션 `avatars_storage`와 같게 둡니다(본인 폴더 `{user_id}/`만 쓰기).
 - **iOS**: 사진 보관함에서 위치 정보가 있는 사진(HEIC 포함)을 고르고 `expo-image-manipulator`로 정사각형 자르기 → 160·480px JPEG(품질 0.8)로 저장 → 업로드.
 - **macOS**: 파일 선택 → `<canvas>`에서 자르고 `toBlob('image/jpeg', 0.8)` → 업로드. HEIC를 WebView가 읽는지 확인합니다(못 읽으면 대안 기록).
-- 올라간 파일을 내려받아 `exiftool`로 **GPS·촬영 기기 정보가 없는지** 확인합니다.
+- 올라간 파일을 내려받아 `exiftool`로 **GPS·촬영 기기 정보가 없는지** 확인합니다. 내려받기와 검사를 한 번에 하는 스크립트를 준비합니다.
 - 다른 계정 폴더에 쓰기·지우기가 거부되는지 확인합니다.
 - 움직이는 이미지(GIF)·10MB 넘는 원본을 고르면 업로드 전에 막히는지.
 - **완료 기준**: 두 앱 모두 160·480 파일이 올라가고, EXIF 위치가 없고, 남의 폴더 쓰기가 거부된다.
