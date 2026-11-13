@@ -51,12 +51,10 @@ set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000001"}';
 select results_eq($$delete from storage.objects where bucket_id = 'avatars' and name = '10000000-0000-4000-8000-000000000001/photo_480.jpg' returning name$$,
   $$values ('10000000-0000-4000-8000-000000000001/photo_480.jpg'::text)$$, '본인 사진 DELETE 허용');
 
-reset role;
-update public.app_config set value = 'false' where key = 'social_enabled';
 set local role anon;
 select throws_ok($$select public.react(null, null, null)$$, '42501', null, 'anon 반응 RPC 거부');
 select throws_ok($$select public.delete_my_account()$$, '42501', null, 'anon 계정 삭제 거부');
-select is((select value from public.app_config where key = 'social_enabled'), 'false', '로그인 전에도 꺼진 기능 플래그 읽기');
+select is((select value from public.app_config where key = 'social_enabled'), 'false', '로그인 전에도 기능 플래그 읽기');
 
 reset role;
 select is_empty($$select signature from unnest(array[

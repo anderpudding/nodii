@@ -40,6 +40,3 @@ values
    '월·수·금 운동하기', 'weekly', array[1,3,5]::smallint[], null, current_date - 3, 'a2'),
   ('dddddddd-0000-4000-8000-000000000001', 'dddddddd-1000-4000-8000-000000000002',
    '한 달 돌아보기', 'monthly', null, array[31]::smallint[], current_date - 3, 'a1');
-
--- S2: 개발 빌드에서는 프로필과 초대 링크를 바로 확인한다.
-update public.app_config set value = 'true' where key = 'social_enabled';

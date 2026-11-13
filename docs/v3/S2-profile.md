@@ -17,7 +17,7 @@
 ## 1. 소셜 플래그 · 탭바 · 설정 진입점 (D13, D20~D22, D27)
 
 - `packages/api`에 `fetchSocialEnabled(client)` — `app_config.social_enabled = 'true'`일 때만 참. 실패·시간 초과(3초)는 **거짓**(v2 화면으로 동작). `fetchMinAppVersion`과 같은 방식으로 앱 시작 때 한 번 읽고, 앱이 앞으로 올 때 다시 읽습니다.
-- **로컬 개발**: `supabase/seed.sql` 끝에 `update public.app_config set value = 'true' where key = 'social_enabled';`를 더합니다(seed는 로컬 전용). 원격은 S7에서 사람이 켭니다.
+- **로컬 개발**: 시드가 소셜 플래그를 켜지 않습니다. 프로필을 확인할 때만 `pnpm db:social-on`으로 로컬 DB의 플래그를 켭니다. 원격은 S7에서 사람이 켭니다.
 - **소셜 꺼짐**: 지금 화면 그대로(탭바 없음, 오늘 화면의 설정 진입점 그대로). 이 경로의 기존 테스트가 그대로 통과해야 합니다.
 - **소셜 켜짐**:
   - iOS: 하단 탭바 `오늘 | 알림 | 프로필`(아이콘만, 접근성 레이블은 이름). 계획서 §5대로 Expo Router native tabs를 먼저 시도하고, 시안 모양(떠 있는 알약, `tokens.md` §9)을 낼 수 없거나 iOS 27에서 문제가 있으면 자체 탭바로 만듭니다. 고른 방식과 이유를 보고합니다. 하위 화면에서는 탭바를 숨깁니다.
@@ -182,7 +182,8 @@
 
 ### 로컬 링크 검증 방법
 
-- 개발 앱의 Supabase URL과 publishable 키는 로컬 인스턴스를 사용합니다. `pnpm db:reset`은 테스트 전용 인스턴스에서 실행합니다.
+- 기본 포트의 테스트 전용 로컬 인스턴스에서 `pnpm db:start` → `pnpm db:reset` → `pnpm db:test` 순서로 실행합니다. 리셋하면 데이터가 지워지고 소셜 플래그는 `false`로 돌아갑니다.
+- pgTAP을 마친 뒤 `pnpm db:social-on`을 실행합니다. 이 명령은 `127.0.0.1:54322`의 DB만 대상으로 합니다. 개발 앱의 Supabase URL과 publishable 키는 같은 로컬 인스턴스의 값을 사용합니다.
 - iOS: `pnpm --filter @nodii/mobile exec expo run:ios`로 만든 개발 앱에서 `xcrun simctl openurl booted 'nodii://u/<token>'`. 기기가 둘 이상 부팅되어 있으면 `booted` 대신 기기 ID를 넣습니다.
 - macOS: `pnpm --filter @nodii/desktop tauri build --debug --bundles app --config src-tauri/tauri.s2-dev.conf.json`으로 만든 **Nodii S2 Dev** 앱을 먼저 실행하고 `open -a '/path/to/Nodii S2 Dev.app' 'nodii-dev://u/<token>'`. 개발 구성은 별도 번들 ID를 씁니다.
 - 두 개발 스킴 모두 정식 초대 URL과 같은 파서·해석 경로에 들어갑니다. 서명 빌드에서는 `https://nodii.app/u/<token>`을 사용합니다.
