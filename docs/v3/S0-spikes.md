@@ -69,11 +69,29 @@ AGENTS.md §8 형식에 더해 네 항목마다: 됨/안 됨, 확인한 기기·
 
 ## 결과
 
-(스파이크 후 작성)
-
 | # | 항목 | 결과 | 기기 / 빌드 | 메모·대안 |
 | --- | --- | --- | --- | --- |
-| 1 | 유니버설 링크 | | | |
-| 2 | macOS 로컬 알림 | | | |
-| 3 | iOS 푸시 | | | |
-| 4 | 사진 업로드·EXIF | | | |
+| 1 | 유니버설 링크 (SOC-05) | 됨 | iPhone 14 Plus · iOS 27.0.1 · TestFlight `0.2.1 (17)`<br>MacBook Pro 16 · macOS 27.0.1 · 서명 빌드 `0.2.1 (202611130436)` | 두 앱에서 종료·실행 중 모두 초대 토큰이 표시됐고, 앱을 지운 iPhone에서는 스토어 안내가 열렸다. [사이트 PR #54](https://github.com/anderpudding/nodii/pull/54) 머지 후 GitHub Pages 원본은 `200 application/octet-stream`, Apple CDN은 `200 application/json`을 반환했다. |
+| 2 | macOS 로컬 알림 (SOC-54) | 됨 | MacBook Pro 16 · macOS 27.0.1 · 서명 빌드 `0.2.1 (202611130107)` | 다른 계정의 INSERT 후 창을 닫고 다른 앱을 앞에 둔 상태에서 2초 이내 도착했다. 알림을 누르면 Nodii가 앞으로 왔고, Dock 배지를 켜고 끌 수 있었다. ⌘Q 종료 뒤에는 알림이 오지 않았다. 최초 시스템 권한 프롬프트는 미확인이다. |
+| 3 | iOS 푸시 (SOC-54) | 됨 | iPhone 14 Plus · iOS 27.0.1 · TestFlight `0.2.1 (16)` | 앱을 완전히 종료한 상태에서 10초 이내 도착했다. 알림을 누르면 Nodii가 열리고 `message`와 `sentAt`이 표시됐다. 잘못된 토큰은 HTTP 200의 티켓에서 `data.status = "error"`, `data.details.error = "DeviceNotRegistered"`를 반환했다. |
+| 4 | 사진 업로드·EXIF (SOC-04) | 됨 (S0 기준) | iPhone 14 Plus · iOS 27.0.1 · TestFlight `0.2.1 (15)`<br>MacBook Pro 16 · macOS 27.0.1 · 서명 빌드 `0.2.1 (202611130001)` | 두 앱에서 JPEG·HEIC 업로드가 성공했고 GIF·10MB 초과 원본은 거부했다. JPEG 8개에서 160·480px 정사각형과 GPS·촬영 기기 정보 제거를 확인했다. 실제 Storage API에서 타인 폴더 쓰기·삭제를 거부했다. 인코더가 만든 EXIF는 S2에서 제거할 예정이다. |
+
+사용자가 사이트 PR을 머지하고, 서명 빌드와 TestFlight 빌드를 만들어 설치한 뒤 링크·알림·사진 업로드를 실기기에서 확인했다. macOS 유니버설 링크 빌드 번호는 로컬 서명 번들의 Info.plist와 패키지로, iOS 빌드 번호는 EAS의 스파이크 커밋 기록으로 대조했다.
+
+### 스파이크 브랜치의 의존성과 권한
+
+- `spike/s0-universal-links`는 macOS의 시작 URL과 실행 중 URL을 받기 위해 Tauri 딥링크 플러그인 2.4.7(JS·Rust)과 `deep-link:allow-get-current`를 추가했다. 두 플랫폼에 Associated Domains 권한으로 `applinks:nodii.app`을 설정했다. iOS는 기존 `expo-linking`을 사용했다.
+- `spike/s0-macos-notifications`는 macOS 알림을 띄우기 위해 Tauri 알림 플러그인 2.4.0(JS·Rust)과 알림 조회·요청·발송 capability를 추가했다. 배지 확인에는 `core:window:allow-set-badge-label`을 썼다.
+- `spike/s0-ios-push`는 권한 요청·푸시 토큰 발급·알림 응답을 위해 `expo-notifications`를, 토큰 복사를 위해 `expo-clipboard`를 추가했다. TestFlight용 `aps-environment`는 `production`으로 설정했다.
+- `spike/s0-photos`는 iOS 사진 선택·변환·파일 읽기에 각각 `expo-image-picker`, `expo-image-manipulator`, `expo-file-system`을 추가했다. macOS 샌드박스에서 사용자가 고른 파일을 읽기 위해 `com.apple.security.files.user-selected.read-only`를 추가했다.
+
+### S2·S6에 반영할 사항
+
+- **S2 (SOC-04)**. 재인코딩 결과에 크기·색 공간·방향 등 인코더가 추가한 EXIF가 남았다. 업로드 직전에 JPEG의 EXIF 블록을 제거하고 두 크기의 결과에서 EXIF 전체가 없는지 검사하는 방안을 제안한다.
+- **S2 (SOC-05)**. 현재 Pages 배포가 `.well-known`을 포함했고 Apple CDN에서 JSON으로 확인됐다. 현재 유니버설 링크 경로를 사용하고, 배포 뒤 원본과 CDN 응답을 확인한다. 브라우저로 들어온 `/u/<token>`은 Pages의 사용자 지정 404에서 `/u/` 안내로 이동한다.
+- **S6 (SOC-50·54)**. iOS는 Expo 발송 티켓과 영수증의 `DeviceNotRegistered`를 토큰 정리에 쓴다. macOS는 서명 빌드에서 최초 권한 프롬프트와 시스템 알림이 꺼진 상태를 다시 확인한다. v3의 Dock 배지는 SOC-50을 따른다.
+
+### 검증
+
+- 스파이크 브랜치와 사이트에서 `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`가 통과했다. macOS 알림·링크의 `cargo check`, iOS Entitlement 확인, 푸시 함수의 `deno check`도 통과했다.
+- 별도 로컬 Supabase에서 `pnpm db:reset`, `pnpm db:test`(342개), `pnpm db:types`를 실행했다. 생성 타입은 저장소와 일치했다. `nodii-spike`에서 Storage 정책 8개와 알림 RLS·Realtime 설정 6개도 통과했다.
