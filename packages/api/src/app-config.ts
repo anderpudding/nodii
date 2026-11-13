@@ -25,3 +25,34 @@ export async function fetchMinAppVersion(
     clearTimeout(timeout);
   }
 }
+
+/** D13: 성공적으로 읽은 정확한 true 값만 소셜 화면을 켠다. */
+export async function fetchSocialEnabled(client: NodiiClient): Promise<boolean> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const request = async () => {
+      const { data, error } = await client
+        .from('app_config')
+        .select('value')
+        .eq('key', 'social_enabled')
+        .abortSignal(controller.signal)
+        .maybeSingle()
+        .retry(false);
+      return !error && data?.value === 'true';
+    };
+    return await Promise.race([
+      request(),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          resolve(false);
+        }, 3000);
+      }),
+    ]);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}

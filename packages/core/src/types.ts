@@ -1,3 +1,5 @@
+import type { DefaultVisibility } from './social';
+
 /** 'YYYY-MM-DD' 형식의 로컬 달력 날짜 (시각 없음, 설계서 §4.2) */
 export type ISODate = string;
 
@@ -67,4 +69,5 @@ export interface Profile {
   displayName: string | null;
   timezone: string;
   weekStart: 0 | 1;
+  defaultVisibility?: DefaultVisibility;
 }

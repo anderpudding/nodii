@@ -16,6 +16,7 @@ import { RoutineList } from '../routines/RoutineList';
 import { Goals } from '../goals/Goals';
 import { useUIStore } from '../../stores/ui';
 import { AccountDelete } from './AccountDelete';
+import { SearchableSwitch, type SocialSettings } from '../social/ProfilePrivacy';
 import { settingsStyles as s } from './styles';
 
 /** SET-01/02/07: 보기·계정·관리·정보를 네 카드로 묶어 같은 하루의 설정을 제공한다. */
@@ -27,6 +28,7 @@ export function Settings({
   loggingOut,
   onAccountDeleted,
   onClose,
+  social,
 }: {
   client: NodiiClient;
   profile: Profile;
@@ -35,6 +37,7 @@ export function Settings({
   loggingOut: boolean;
   onAccountDeleted(): Promise<void>;
   onClose(): void;
+  social?: SocialSettings;
 }) {
   const { colors } = useTheme();
   const online = useOnline();
@@ -82,7 +85,7 @@ export function Settings({
   return (
     <ManagementScreen
       title={t('settings.title')}
-      back={t('settings.backToday')}
+      back={social ? `‹ ${t('tabs.profile')}` : t('settings.backToday')}
       onClose={onClose}
       testID="settings-screen"
     >
@@ -95,6 +98,20 @@ export function Settings({
               {email}
             </Text>,
           )}
+          {social && (
+            <RoutineOption
+              inline
+              descriptionBelow
+              label={t('settings.account.handle')}
+              description={t('settings.account.handleHelp')}
+              onPress={social.onHandle}
+            >
+              <Text style={[s.body, { color: colors.ink }]}>{t('settings.account.handle')}</Text>
+              <Text style={[s.body, { color: colors.muted }]}>
+                {t('social.handle.display', { handle: social.profile.handle })} ›
+              </Text>
+            </RoutineOption>
+          )}
           <RoutineOption
             inline
             descriptionBelow
@@ -105,6 +122,25 @@ export function Settings({
           />
         </>,
       )}
+      {social &&
+        group(
+          t('settings.privacy'),
+          <>
+            <RoutineOption
+              inline
+              label={t('settings.privacy.visibility')}
+              onPress={social.onVisibility}
+            >
+              <Text style={[s.body, { color: colors.ink, flex: 1 }]}>
+                {t('settings.privacy.visibility')}
+              </Text>
+              <Text style={[s.supporting, { color: colors.muted }]}>
+                {t(`settings.privacy.${profile.defaultVisibility ?? 'private'}`)} ›
+              </Text>
+            </RoutineOption>
+            <SearchableSwitch client={client} profile={social.profile} />
+          </>,
+        )}
       {group(
         t('settings.view'),
         <>
@@ -210,7 +246,7 @@ export function Settings({
             inline
             descriptionBelow
             label={t('settings.delete')}
-            description={t('settings.delete.summary')}
+            description={t(social ? 'settings.delete.socialSummary' : 'settings.delete.summary')}
             danger
             disabled={!online || loggingOut}
             onPress={() => setDeleting(true)}

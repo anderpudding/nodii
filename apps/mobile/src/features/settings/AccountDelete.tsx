@@ -40,7 +40,7 @@ export function AccountDelete({
     setSaving(true);
     try {
       assertOnline();
-      await deleteMyAccount(client);
+      await deleteMyAccount(client, userId);
       await onDeleted();
     } catch {
       toast(() => t('settings.delete.failed'));

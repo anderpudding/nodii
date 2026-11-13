@@ -49,6 +49,7 @@ export function DayList({
   const create = useCreateTodo(client, profile.weekStart, { onError: notifyError });
   useEffect(() => {
     const command = (event: Event) => {
+      if (document.querySelector('.social-today[hidden]')) return;
       if (
         (event as CustomEvent<AppCommand>).detail !== 'new-todo' ||
         document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')

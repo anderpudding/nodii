@@ -48,6 +48,7 @@ import { droppedRowIndex } from '../components/gestures/swipe';
 import { reorderedTodoKey } from './today/reorder';
 import { SwipeRows } from '../components/gestures/SwipeableRow';
 import { Button } from '../components/Button';
+import { tabInset, TodayVisible } from './social/Primitives';
 import { SettingsIcon } from '../components/SettingsIcon';
 import { useUIStore } from '../stores/ui';
 import { InlineAdd } from './today/InlineAdd';
@@ -77,10 +78,12 @@ interface TodayProps {
   onLogout(): void;
   loggingOut: boolean;
   email?: string;
+  social?: boolean;
   onAccountDeleted?(): Promise<void>;
 }
 /** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
 export function Today(props: TodayProps) {
+  const visible = useContext(TodayVisible);
   const { colors } = useTheme();
   const online = useOnline();
   const profile = useQuery({
@@ -117,11 +120,12 @@ export function Today(props: TodayProps) {
   return (
     <>
       <TodayContent {...props} profile={profile.data} />
-      <FirstRunGuide />
+      {visible && <FirstRunGuide />}
     </>
   );
 }
 function TodayContent({
+  social = false,
   client,
   profile,
   onLogout,
@@ -388,6 +392,7 @@ function TodayContent({
             ))}
           </View>
           <DayMenu
+            sliders={social}
             key={selectedDate}
             client={client}
             userId={profile.id}
@@ -400,15 +405,20 @@ function TodayContent({
             timeZone={profile.timezone}
             actions={dayActions}
           />
-          <Pressable
-            onPress={() => setSettings(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.title')}
-            accessibilityState={{ expanded: settings }}
-            style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
-          >
-            <SettingsIcon color={colors.ink2} />
-          </Pressable>
+          {!social && (
+            <Pressable
+              onPress={() => setSettings(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('settings.title')}
+              accessibilityState={{ expanded: settings }}
+              style={({ pressed }) => [
+                styles.settings,
+                { opacity: pressed ? m.pressedOpacity : 1 },
+              ]}
+            >
+              <SettingsIcon color={colors.ink2} />
+            </Pressable>
+          )}
         </View>
       </View>
       {!online && (
@@ -422,7 +432,7 @@ function TodayContent({
           {t('sync.offline')}
         </Text>
       )}
-      <ToastInset bottom={0} />
+      <ToastInset bottom={social ? insets.bottom + tabInset : 0} />
       <SwipeRows>
         <DraggingRow.Provider value={draggingId}>
           <SectionList
@@ -514,11 +524,13 @@ function TodayContent({
                       <Text style={[styles.supporting, { color: colors.muted }]}>
                         {t('mobile.today.noGoals')}
                       </Text>
-                      <Button
-                        label={t('settings.title')}
-                        secondary
-                        onPress={() => setSettings(true)}
-                      />
+                      {!social && (
+                        <Button
+                          label={t('settings.title')}
+                          secondary
+                          onPress={() => setSettings(true)}
+                        />
+                      )}
                     </View>
                   ) : null}
                 </View>
@@ -528,7 +540,9 @@ function TodayContent({
             CellRendererComponent={DayListCell}
             keyExtractor={(item) => `${item.kind}:${item.id}`}
             stickySectionHeadersEnabled={false}
-            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, m.space.lg) }}
+            contentContainerStyle={{
+              paddingBottom: Math.max(insets.bottom, m.space.lg) + (social ? tabInset : 0),
+            }}
             renderSectionHeader={({ section }) => (
               <View style={styles.section}>
                 <GoalBadge
@@ -623,7 +637,7 @@ function TodayContent({
           />
         </DraggingRow.Provider>
       </SwipeRows>
-      {settings && (
+      {!social && settings && (
         <Settings
           client={client}
           profile={profile}

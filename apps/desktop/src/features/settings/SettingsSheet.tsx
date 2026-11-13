@@ -23,6 +23,7 @@ import { links, openLink } from '../../lib/links';
 import { setLanguage, useLanguage } from '../../lib/language';
 import { setTheme, useTheme, type Theme } from '../../lib/theme';
 import { notifyError } from '../../lib/notify-error';
+import { ProfilePrivacy, type SocialSettings } from '../social/ProfilePrivacy';
 import { useConnectivity } from '../../lib/connectivity';
 
 /** AUTH-06: 개수·이메일·이해 확인을 마친 뒤에만 계정 삭제 요청을 보낸다. */
@@ -54,7 +55,7 @@ function DeleteAccount({
     try {
       if (!deleted) {
         assertOnline();
-        await deleteMyAccount(client);
+        await deleteMyAccount(client, userId);
         setDeleted(true);
         accountRemoved = true;
       }
@@ -157,12 +158,16 @@ export function SettingsSheet({
   profile,
   onClose,
   onOpenArchivedGoals,
+  inline = false,
+  social,
 }: {
   client: NodiiClient;
   session: Session;
   profile?: Profile;
   onClose: () => void;
   onOpenArchivedGoals: () => void;
+  inline?: boolean;
+  social?: SocialSettings;
 }) {
   const cache = useQueryClient();
   const theme = useTheme();
@@ -194,14 +199,16 @@ export function SettingsSheet({
         onClose={() => setDeleting(false)}
       />
     );
-  return (
-    <Sheet labelledBy="settings-title" className="settings-sheet" onClose={onClose}>
+  const content = (
+    <>
       <header className="settings-header">
         <span aria-hidden="true" />
         <h2 id="settings-title">{t('settings.title')}</h2>
-        <Button variant="ghost" aria-label={t('settings.close')} onClick={onClose}>
-          {t('common.done')}
-        </Button>
+        {!inline && (
+          <Button variant="ghost" aria-label={t('settings.close')} onClick={onClose}>
+            {t('common.done')}
+          </Button>
+        )}
       </header>
       <div className="sheet-body settings-grid">
         <div className="settings-column">
@@ -212,6 +219,22 @@ export function SettingsSheet({
                 <span>{t('auth.email')}</span>
                 <span className="email-address settings-value">{session.user.email}</span>
               </div>
+              {social && (
+                <button
+                  type="button"
+                  className="settings-card-row settings-info-link"
+                  onClick={social.onHandle}
+                >
+                  <span>
+                    {t('settings.account.handle')}
+                    <span className="supporting">{t('settings.account.handleHelp')}</span>
+                  </span>
+                  <span className="settings-value">
+                    {t('social.handle.display', { handle: social.profile.handle })}{' '}
+                    <span aria-hidden="true">›</span>
+                  </span>
+                </button>
+              )}
               <div className="settings-card-row">
                 <div>
                   <strong>{t('auth.logout')}</strong>
@@ -236,6 +259,13 @@ export function SettingsSheet({
             </div>
           </section>
 
+          {social && (
+            <ProfilePrivacy
+              client={client}
+              social={social}
+              visibility={profile?.defaultVisibility ?? 'private'}
+            />
+          )}
           <section className="settings-group" aria-labelledby="view-settings">
             <h3 id="view-settings">{t('settings.view')}</h3>
             <div className="settings-card">
@@ -339,7 +369,9 @@ export function SettingsSheet({
           <section className="settings-group" aria-labelledby="delete-account-settings">
             <h3 id="delete-account-settings">{t('settings.delete')}</h3>
             <div className="settings-card settings-card-row">
-              <p className="supporting settings-delete-copy">{t('settings.delete.help')}</p>
+              <p className="supporting settings-delete-copy">
+                {t(inline ? 'settings.delete.socialSummary' : 'settings.delete.help')}
+              </p>
               <Button
                 variant="outline"
                 className="danger-text"
@@ -406,6 +438,15 @@ export function SettingsSheet({
           </section>
         </div>
       </div>
+    </>
+  );
+  return inline ? (
+    <section className="social-settings" aria-labelledby="settings-title">
+      {content}
+    </section>
+  ) : (
+    <Sheet labelledBy="settings-title" className="settings-sheet" onClose={onClose}>
+      {content}
     </Sheet>
   );
 }

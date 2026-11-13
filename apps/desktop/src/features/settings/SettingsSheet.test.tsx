@@ -63,6 +63,7 @@ it('이메일 재입력과 이해 체크를 모두 확인해야 계정 삭제를
         () => new HttpResponse(null, { headers: { 'content-range': '0-1/2' } }),
       ),
     ),
+    http.post(`${baseUrl}/storage/v1/object/list/avatars`, () => HttpResponse.json([])),
     http.post(`${baseUrl}/rest/v1/rpc/delete_my_account`, remove),
   );
   const { user, client, cache } = setup();

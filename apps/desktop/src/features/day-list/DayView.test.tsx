@@ -377,6 +377,15 @@ it('보관 목표는 항목이 있는 날짜에만 표시하고 추가 버튼은
 it('목표 생성·이름과 프리셋 변경·보관·보관 해제를 화면과 서버에 반영한다', async () => {
   let created = { ...goalRow, id: 'new-goal', name: '공부' };
   server.use(
+    http.get(`${baseUrl}/rest/v1/profiles`, () =>
+      HttpResponse.json({
+        id: goalRow.user_id,
+        display_name: null,
+        timezone: 'UTC',
+        week_start: 0,
+        default_visibility: 'private',
+      }),
+    ),
     http.post(`${baseUrl}/rest/v1/goals`, async ({ request }) => {
       created = { ...created, ...((await request.json()) as object) };
       return HttpResponse.json(created);

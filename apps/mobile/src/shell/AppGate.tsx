@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
-import { readStoredSession, type NodiiClient, type Session } from '@nodii/api';
+import { useSocialEnabled, readStoredSession, type NodiiClient, type Session } from '@nodii/api';
 import { getLocale, t, type MessageKey } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
@@ -25,6 +25,8 @@ import { Button } from '../components/Button';
 import { Login } from '../features/auth/Login';
 import { clearPersistedCache } from '../../lib/query-cache';
 import { UserData } from './UserData';
+import { SocialShell } from '../features/social/SocialShell';
+import { onSocialForeground, useInviteReceiver } from '../features/social/invite-receiver';
 import { Today } from '../features/Today';
 import { withStartupTimeout } from '../../lib/startup-timeout';
 
@@ -43,6 +45,12 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   const logoutNotice = useRef<MessageKey | null>(null);
   const refresh = useRef<ReturnType<typeof bindAuthRefresh> | null>(null);
   const query = useQueryClient();
+  const enabled = useSocialEnabled(client, onSocialForeground);
+  const { token, setToken } = useInviteReceiver(enabled);
+  const consume = useCallback(
+    (used: string) => setToken((current) => (current === used ? null : current)),
+    [setToken],
+  );
   const toast = useToast();
   const { colors, isDark } = useTheme();
 
@@ -229,15 +237,28 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
         )
       ) : gate.session ? (
         <UserData key={gate.session.user.id} client={client} userId={gate.session.user.id}>
-          <Today
-            key={gate.session.user.id}
+          <SocialShell
             client={client}
             userId={gate.session.user.id}
+            enabled={enabled === true}
+            token={token}
+            consume={consume}
             onLogout={() => void signOut()}
             loggingOut={loggingOut}
             email={gate.session.user.email ?? ''}
             onAccountDeleted={() => signOut(true)}
-          />
+          >
+            <Today
+              social={enabled === true}
+              key={gate.session.user.id}
+              client={client}
+              userId={gate.session.user.id}
+              onLogout={() => void signOut()}
+              loggingOut={loggingOut}
+              email={gate.session.user.email ?? ''}
+              onAccountDeleted={() => signOut(true)}
+            />
+          </SocialShell>
         </UserData>
       ) : (
         <Login client={client} reviewAccountEmail={mobileEnv.reviewAccountEmail} />

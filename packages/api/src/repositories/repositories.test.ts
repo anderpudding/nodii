@@ -75,16 +75,26 @@ it('목표 조회는 삭제 제외·보관 포함이고 서버 시각을 보존�
 });
 it('목표 생성은 UUID를 전하고 이름·색·키 수정은 한 행만 갱신한다', async () => {
   const { client, fetch } = setup(goal);
-  await createGoal(client, mapGoal(goal));
-  expect(JSON.parse(fetch.mock.calls[0]![1].body)).toMatchObject({
+  fetch.mockResolvedValueOnce(
+    new Response(
+      JSON.stringify({
+        id: goal.user_id,
+        timezone: 'UTC',
+        week_start: 0,
+        default_visibility: 'private',
+      }),
+    ),
+  );
+  await createGoal(client, mapGoal(goal), goal.user_id);
+  expect(JSON.parse(fetch.mock.calls[1]![1].body)).toMatchObject({
     id: goal.id,
     name: '공부',
     color: goal.color,
     sort_key: 'a0',
   });
   await updateGoal(client, goal.id, { name: '독서', color: '#F0715A', sortKey: 'a1' });
-  expect(String(fetch.mock.calls[1]![0])).toContain('id=eq.goal-id');
-  expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({
+  expect(String(fetch.mock.calls[2]![0])).toContain('id=eq.goal-id');
+  expect(JSON.parse(fetch.mock.calls[2]![1].body)).toEqual({
     name: '독서',
     color: '#F0715A',
     sort_key: 'a1',
@@ -138,7 +148,7 @@ it('잘못된 제목·목표 이름·색을 요청 전에 거부하고 조회 �
   await expect(updateTodo(client, todo.id, { title: 'x'.repeat(201) })).rejects.toThrow(
     'invalid_title',
   );
-  await expect(createGoal(client, { ...mapGoal(goal), name: ' ' })).rejects.toThrow(
+  await expect(createGoal(client, { ...mapGoal(goal), name: ' ' }, goal.user_id)).rejects.toThrow(
     'invalid_goal_name',
   );
   await expect(updateGoal(client, goal.id, { color: 'red' })).rejects.toThrow('invalid_goal_color');

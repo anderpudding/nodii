@@ -1,4 +1,4 @@
-import type { Goal, Todo, Profile, Routine, RoutineLog } from '@nodii/core';
+import type { Goal, Todo, Profile, Routine, RoutineLog, SocialProfile } from '@nodii/core';
 import type { Database } from './database.types';
 
 /** 동기화용 메타데이터는 도메인 타입을 오염시키지 않고 API 캐시에 보존한다. */
@@ -130,13 +130,17 @@ export function goalChangesToRow(
   };
 }
 /** 클라이언트 ID를 포함해 낙관적 행과 서버 행을 일치시킨다. */
-export function goalToRow(goal: Goal): Database['public']['Tables']['goals']['Insert'] {
+export function goalToRow(
+  goal: Goal,
+  visibility: Profile['defaultVisibility'],
+): Database['public']['Tables']['goals']['Insert'] {
   return {
     id: goal.id,
     name: goal.name,
     color: goal.color,
     sort_key: goal.sortKey,
     archived_at: goal.archivedAt,
+    visibility,
   };
 }
 /** 완료 상태와 완료 시각을 한 요청으로 보낸다. */
@@ -173,5 +177,46 @@ export function mapProfile(row: Database['public']['Tables']['profiles']['Row'])
     displayName: row.display_name,
     timezone: row.timezone,
     weekStart: row.week_start,
+    defaultVisibility:
+      row.default_visibility === 'mutual' || row.default_visibility === 'followers'
+        ? row.default_visibility
+        : 'private',
+  };
+}
+
+type SocialProfileRow = Omit<
+  Database['public']['Tables']['social_profiles']['Row'],
+  'created_at' | 'social_suspended_at'
+>;
+export type SocialProfilePatch = Partial<
+  Pick<SocialProfile, 'handle' | 'nickname' | 'bio' | 'avatarPath' | 'searchable'>
+>;
+
+/** SOC-62: 다른 사람에게 숨긴 사진과 소개는 앱 캐시에 넣지 않는다. */
+export function mapSocialProfile(row: SocialProfileRow, own: boolean): SocialProfile {
+  const hidden = !own && row.auto_hidden_at !== null;
+  return {
+    userId: row.user_id,
+    handle: row.handle,
+    nickname: row.nickname,
+    bio: hidden ? '' : row.bio,
+    avatarPath: hidden ? null : row.avatar_path,
+    searchable: row.searchable,
+    handleChangedAt: row.handle_changed_at,
+    autoHiddenAt: row.auto_hidden_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** 프로필 쓰기도 DB 열 이름을 매퍼에서만 조립한다. */
+export function socialProfilePatchToRow(
+  patch: SocialProfilePatch,
+): Database['public']['Tables']['social_profiles']['Update'] {
+  return {
+    handle: patch.handle,
+    nickname: patch.nickname,
+    bio: patch.bio,
+    avatar_path: patch.avatarPath,
+    searchable: patch.searchable,
   };
 }

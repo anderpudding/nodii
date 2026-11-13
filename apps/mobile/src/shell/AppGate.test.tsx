@@ -28,6 +28,13 @@ vi.mock('react-native-safe-area-context', () => ({
   SafeAreaView: View,
   useSafeAreaInsets: () => ({ top: 0 }),
 }));
+vi.mock('../features/social/invite-receiver', () => ({
+  onSocialForeground: () => () => {},
+  useInviteReceiver: () => ({ token: null, setToken: vi.fn() }),
+}));
+vi.mock('../features/social/SocialShell', () => ({
+  SocialShell: ({ children }: { children: React.ReactNode }) => children,
+}));
 vi.mock('../features/Today', () => ({
   Today: ({ onLogout }: { onLogout(): void }) => (
     <View>

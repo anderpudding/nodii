@@ -33,6 +33,7 @@ export function notifyGoalError(error: unknown, retry: () => void) {
 export function GoalEditor({
   goal,
   client,
+  userId,
   initialColor,
   sortKey,
   lastActive = false,
@@ -42,6 +43,7 @@ export function GoalEditor({
 }: {
   goal?: GoalRecord;
   client: NodiiClient;
+  userId: string;
   initialColor: string;
   sortKey: string;
   lastActive?: boolean;
@@ -52,7 +54,7 @@ export function GoalEditor({
   const [id] = useState(() => goal?.id ?? crypto.randomUUID());
   const [name, setName] = useState(goal?.name ?? '');
   const [color, setColor] = useState(goal?.color ?? initialColor);
-  const create = useCreateGoal(client, { onError: notifyGoalError });
+  const create = useCreateGoal(client, { onError: notifyGoalError }, userId);
   const update = useUpdateGoal(client, id, { onError: notifyGoalError });
   const archive = useArchiveGoal(client, id, { onError: notifyGoalError });
   const writing = useIsMutating({ mutationKey: ['write', 'goal'] }) > 0;

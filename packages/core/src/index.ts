@@ -10,3 +10,6 @@ export type * from './types';
 export * from './version';
 export * from './color';
 export * from './sprout';
+export * from './social';
+export * from './avatar';
+export * from './social-icons';

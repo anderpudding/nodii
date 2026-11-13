@@ -24,3 +24,7 @@ export * from './connectivity';
 export * from './settings';
 export * from './hooks/settings';
 export * from './hooks/delete-goal';
+export * from './repositories/social-profiles';
+export * from './hooks/social';
+export * from './avatars';
+export * from './invites';

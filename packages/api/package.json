@@ -18,7 +18,9 @@
     "@supabase/supabase-js": "^2.116.0"
   },
   "devDependencies": {
+    "@types/react": "~19.2.14",
     "@tanstack/react-query": "^5.103.1",
+    "msw": "^2.15.0",
     "@vitest/coverage-v8": "^5.0.1",
     "react": "19.2.3",
     "vitest": "^5.0.1"

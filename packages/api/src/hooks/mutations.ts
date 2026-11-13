@@ -131,13 +131,13 @@ export function useDeleteTodo(
   );
 }
 /** 새 목표를 목표 목록 전체에 즉시 표시한다 (GOAL-01). */
-export function useCreateGoal(client: NodiiClient, options: MutationOptions) {
+export function useCreateGoal(client: NodiiClient, options: MutationOptions, userId: string) {
   return useRowMutation(
     options,
     ['write', 'goal', 'create'],
     (_goal: Goal) => [queryKeys.goals()],
     goalRecord,
-    (goal) => createGoal(client, goal),
+    (goal) => createGoal(client, goal, userId),
   );
 }
 /** 이름과 프리셋 색을 낙관적으로 갱신한다 (GOAL-02). */
