@@ -10,6 +10,7 @@ export interface SocialSettings {
   profile: SocialProfile;
   onHandle(): void;
   onVisibility(): void;
+  onBlocked(): void;
 }
 
 /** SOC-06: 기존 설정 그룹 안에서 검색 허용을 즉시 바꾸고 실패 시 복원한다. */
@@ -51,27 +52,35 @@ export function SearchableSwitch({
           {t('settings.privacy.searchableHelp')}
         </Text>
       </View>
+      <ProfileSwitch checked={profile.searchable} />
+    </Pressable>
+  );
+}
+
+/** SOC-06·62: 두 스위치에 같은 40pt 트랙을 사용한다. */
+export function ProfileSwitch({ checked }: { checked: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        width: 40,
+        height: 24,
+        padding: 2,
+        backgroundColor: checked ? colors.ink : colors.box,
+        alignItems: checked ? 'flex-end' : 'flex-start',
+        borderRadius: m.radius.pill,
+      }}
+    >
       <View
         style={{
-          width: 40,
-          height: 24,
-          padding: 2,
-          backgroundColor: profile.searchable ? colors.ink : colors.box,
-          alignItems: profile.searchable ? 'flex-end' : 'flex-start',
-          borderRadius: m.radius.pill,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: '#FFFFFF',
+          boxShadow: '0 1px 3px rgba(17,19,24,0.25)',
         }}
-      >
-        <View
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: '#FFFFFF',
-            boxShadow: '0 1px 3px rgba(17,19,24,0.25)',
-          }}
-        />
-      </View>
-    </Pressable>
+      />
+    </View>
   );
 }
 

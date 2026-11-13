@@ -7,32 +7,30 @@ import {
   useMySocialProfile,
   usePendingInvite,
   useShareInvite,
-  useSocialProfile,
+  useFollowCounts,
+  useRefreshRelationships,
+  type FollowList,
   type NodiiClient,
 } from '@nodii/api';
 import { inviteUrl, socialTabs, type SocialProfile, type SocialTab } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { t, type MessageKey } from '@nodii/i18n';
 import { metrics as m, useReducedMotion, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import { SettingsIcon } from '../../components/SettingsIcon';
 import { useToast } from '../../components/Toast';
 import { Settings } from '../settings/Settings';
-import {
-  Avatar,
-  ProfileNav,
-  ProfileTool,
-  SocialIcon,
-  profileStyles as s,
-  tabInset,
-  TodayVisible,
-} from './Primitives';
+import { ProfileTool, SocialIcon, profileStyles as s, tabInset, TodayVisible } from './Primitives';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfileSetup, ProfileFieldEditor, type ProfileField } from './ProfileForms';
 import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
+import { onSocialForeground } from './invite-receiver';
+import { OtherProfile } from './OtherProfile';
+import { BlockedProfiles, FollowListPage, ProfileSearch } from './PeoplePages';
 
 type Page =
-  | { kind: 'edit' | 'settings' | 'visibility' }
+  | { kind: 'edit' | 'settings' | 'visibility' | 'search' | 'blocked' }
+  | { kind: 'list'; list: FollowList }
   | { kind: 'field'; field: ProfileField; from: 'edit' | 'settings' };
 type SettingsProps = {
   email: string;
@@ -41,53 +39,30 @@ type SettingsProps = {
   onAccountDeleted(): Promise<void>;
 };
 
-function OtherProfile({
-  client,
-  userId,
-  onBack,
-  from,
-}: {
-  client: NodiiClient;
-  userId: string;
-  onBack(): void;
-  from: SocialTab;
-}) {
-  const query = useSocialProfile(client, userId);
-  const { colors } = useTheme();
-  return (
-    <>
-      <ProfileNav back={`‹ ${t(`tabs.${from}`)}`} onBack={onBack} />
-      {query.isPending ? (
-        <View style={s.center}>
-          <ActivityIndicator color={colors.ink} />
-        </View>
-      ) : query.isError || !query.data ? (
-        <View style={s.center}>
-          <Avatar size={84} label={t('tabs.profile')} />
-          <Text style={[s.heading, { color: colors.ink }]}>{t('social.profile.gone')}</Text>
-        </View>
-      ) : (
-        <ProfileHeader client={client} profile={query.data} />
-      )}
-    </>
-  );
-}
-
 function MyProfile({
   client,
   profile,
   onEdit,
   onSettings,
+  onFind,
+  onList,
+  counts,
+  send,
+  sharing,
   bottom,
 }: {
   client: NodiiClient;
   profile: SocialProfile;
   onEdit(): void;
   onSettings(): void;
+  onFind(): void;
+  onList(kind: FollowList): void;
+  counts?: Record<FollowList, number>;
+  send(): void;
+  sharing: boolean;
   bottom: number;
 }) {
   const { colors } = useTheme();
-  const toast = useToast();
   const reduced = useReducedMotion();
   const [scroll] = useState(() => new Animated.Value(0));
   const [compact, setCompact] = useState(false);
@@ -97,15 +72,10 @@ function MyProfile({
     extrapolate: 'clamp',
   });
   const expanded = collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
-  const share = useShareInvite(client, profile.userId, async (token) => {
-    await Share.share({ message: t('social.invite.message', { url: inviteUrl(token) }) });
-  });
-  const send = () =>
-    share.mutate(undefined, { onError: () => toast(() => t('social.invite.shareFailed')) });
   return (
     <View style={s.fill}>
       <View style={[s.row, { justifyContent: 'flex-end', paddingHorizontal: m.space.lg }]}>
-        <ProfileTool label={t('social.find')} onPress={() => {}}>
+        <ProfileTool label={t('social.find')} onPress={onFind}>
           <SocialIcon name="find" color={colors.ink} />
         </ProfileTool>
         <ProfileTool label={t('settings.title')} onPress={onSettings}>
@@ -128,8 +98,14 @@ function MyProfile({
         </View>
         <View style={[s.row, { marginVertical: m.space.sm, justifyContent: 'center' }]}>
           {(['following', 'followers'] as const).map((key, index) => (
-            <View
+            <Pressable
               key={key}
+              accessibilityLabel={t('social.lists.count', {
+                label: t(`social.${key}`),
+                count: counts?.[key] ?? '–',
+              })}
+              accessibilityRole="button"
+              onPress={() => onList(key)}
               style={{
                 flex: 1,
                 alignItems: 'center',
@@ -138,10 +114,10 @@ function MyProfile({
               }}
             >
               <Text style={[s.heading, { color: colors.ink, fontVariant: ['tabular-nums'] }]}>
-                0
+                {counts?.[key] ?? '–'}
               </Text>
               <Text style={[s.support, { color: colors.muted }]}>{t(`social.${key}`)}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
         <View style={s.row}>
@@ -149,32 +125,28 @@ function MyProfile({
             <Button pill secondary label={t('social.edit')} onPress={onEdit} />
           </View>
           <View style={s.fill}>
-            <Button
-              pill
-              secondary
-              label={t('social.share')}
-              disabled={share.isPending}
-              onPress={send}
-            />
+            <Button pill secondary label={t('social.share')} disabled={sharing} onPress={send} />
           </View>
         </View>
-        <View
-          style={{
-            backgroundColor: colors.chip,
-            borderRadius: 20,
-            alignItems: 'center',
-            gap: m.space.sm,
-            padding: m.space.lg,
-          }}
-        >
-          <Text style={[s.heading, { color: colors.ink, textAlign: 'center' }]}>
-            {t('social.invite.title')}
-          </Text>
-          <Text style={[s.support, { color: colors.muted, textAlign: 'center' }]}>
-            {t('social.invite.description')}
-          </Text>
-          <Button pill label={t('social.invite.send')} disabled={share.isPending} onPress={send} />
-        </View>
+        {counts?.following === 0 && (
+          <View
+            style={{
+              backgroundColor: colors.chip,
+              borderRadius: 20,
+              alignItems: 'center',
+              gap: m.space.sm,
+              padding: m.space.lg,
+            }}
+          >
+            <Text style={[s.heading, { color: colors.ink, textAlign: 'center' }]}>
+              {t('social.invite.title')}
+            </Text>
+            <Text style={[s.support, { color: colors.muted, textAlign: 'center' }]}>
+              {t('social.invite.description')}
+            </Text>
+            <Button pill label={t('social.invite.send')} disabled={sharing} onPress={send} />
+          </View>
+        )}
       </Animated.ScrollView>
       <Animated.View
         pointerEvents="none"
@@ -218,8 +190,20 @@ export function SocialShell({
   const toast = useToast();
   const [tab, setTab] = useState<SocialTab>('today');
   const [page, setPage] = useState<Page | null>(null);
-  const [other, setOther] = useState<string | null>(null);
+  const [other, setOther] = useState<{ userId: string; from?: MessageKey } | null>(null);
+  const [search, setSearch] = useState('');
   const mine = useMySocialProfile(client, userId, enabled && (tab === 'profile' || !!token));
+  const counts = useFollowCounts(client, userId, enabled && tab === 'profile' && !!mine.data);
+  useRefreshRelationships(userId, enabled, onSocialForeground);
+  const share = useShareInvite(client, userId, async (token) => {
+    await Share.share({ message: t('social.invite.message', { url: inviteUrl(token) }) });
+  });
+  const send = () =>
+    share.mutate(undefined, { onError: () => toast(() => t('social.invite.shareFailed')) });
+  const openSearch = () => {
+    setSearch('');
+    setPage({ kind: 'search' });
+  };
   const account = useQuery({
     queryKey: ['profile', userId],
     queryFn: ({ signal }) => fetchProfile(client, userId, signal),
@@ -241,7 +225,7 @@ export function SocialShell({
       if (target === userId) select('profile');
       else {
         setPage(null);
-        setOther(target);
+        setOther({ userId: target });
       }
     },
     [consume, select, toast, userId],
@@ -261,7 +245,7 @@ export function SocialShell({
       setPage(
         page?.kind === 'field'
           ? { kind: page.from }
-          : page?.kind === 'visibility'
+          : page?.kind === 'visibility' || page?.kind === 'blocked'
             ? { kind: 'settings' }
             : null,
       );
@@ -301,6 +285,11 @@ export function SocialShell({
               bottom={inset}
               onEdit={() => setPage({ kind: 'edit' })}
               onSettings={() => setPage({ kind: 'settings' })}
+              onFind={openSearch}
+              onList={(list) => setPage({ kind: 'list', list })}
+              counts={counts.data}
+              send={send}
+              sharing={share.isPending}
             />
           ) : mine.data === null ? (
             <ProfileSetup client={client} userId={userId} bottom={inset} />
@@ -375,6 +364,7 @@ export function SocialShell({
             profile: mine.data,
             onHandle: () => setPage({ kind: 'field', field: 'handle', from: 'settings' }),
             onVisibility: () => setPage({ kind: 'visibility' }),
+            onBlocked: () => setPage({ kind: 'blocked' }),
           }}
         />
       )}
@@ -400,7 +390,15 @@ export function SocialShell({
           }}
         >
           {showOther && other ? (
-            <OtherProfile client={client} userId={other} from={tab} onBack={back} />
+            <OtherProfile
+              key={other.userId}
+              client={client}
+              me={userId}
+              userId={other.userId}
+              from={t(other.from ?? `tabs.${tab}`)}
+              onBack={back}
+              onBlocked={back}
+            />
           ) : mine.data && page?.kind === 'edit' ? (
             <ProfileEdit
               client={client}
@@ -417,6 +415,29 @@ export function SocialShell({
               back={`‹ ${t(page.from === 'edit' ? 'social.edit' : 'settings.title')}`}
               onBack={back}
             />
+          ) : page?.kind === 'search' ? (
+            <ProfileSearch
+              client={client}
+              me={userId}
+              text={search}
+              setText={setSearch}
+              onBack={back}
+              onPerson={(target) => setOther({ userId: target, from: 'social.find' })}
+            />
+          ) : page?.kind === 'list' ? (
+            <FollowListPage
+              client={client}
+              me={userId}
+              kind={page.list}
+              counts={counts.data}
+              select={(list) => setPage({ kind: 'list', list })}
+              onFind={openSearch}
+              onInvite={send}
+              onBack={back}
+              onPerson={(target) => setOther({ userId: target, from: `social.${page.list}` })}
+            />
+          ) : page?.kind === 'blocked' ? (
+            <BlockedProfiles client={client} me={userId} onBack={back} />
           ) : page?.kind === 'visibility' ? (
             <DefaultVisibilityScreen
               client={client}

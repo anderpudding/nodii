@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { avatarUrl, type NodiiClient } from '@nodii/api';
 import { SPROUT_BODY, SPROUT_LEAVES, type SocialProfile } from '@nodii/core';
 import { t } from '@nodii/i18n';
@@ -41,10 +41,12 @@ export function ProfileHeader({
   client,
   profile,
   horizontal = false,
+  actions,
 }: {
   client: NodiiClient;
   profile: SocialProfile;
   horizontal?: boolean;
+  actions?: ReactNode;
 }) {
   return (
     <div className={`social-header${horizontal ? ' social-header-horizontal' : ''}`}>
@@ -64,6 +66,7 @@ export function ProfileHeader({
         </span>
         {profile.bio && <p className="social-bio">{profile.bio}</p>}
       </div>
+      {actions}
     </div>
   );
 }

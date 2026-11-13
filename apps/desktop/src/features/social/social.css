@@ -167,16 +167,6 @@
   display: flex;
   gap: 8px;
 }
-.social-counts > div {
-  flex: 1;
-  text-align: center;
-  display: grid;
-  color: var(--color-muted);
-  font-size: 13px;
-}
-.social-counts > div + div {
-  border-left: 1px solid var(--color-line);
-}
 .social-counts strong {
   font-size: 20px;
   font-weight: 800;
@@ -551,4 +541,141 @@
   .social-spinner {
     animation: none !important;
   }
+}
+
+.social-counts > button {
+  flex: 1;
+  display: grid;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-align: center;
+  border-radius: 14px;
+}
+.social-counts > button + button {
+  box-shadow: -1px 0 var(--color-line);
+}
+.social-counts > button:is(:hover, [aria-pressed='true']) {
+  background: var(--color-chip);
+}
+.social-people-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.social-people-panel h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+.social-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+}
+.social-list-segment {
+  display: flex;
+  background: var(--color-chip);
+  padding: 4px;
+  border-radius: 999px;
+}
+.social-list-segment button {
+  height: 32px;
+  padding-inline: 12px;
+}
+.social-person-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+}
+.social-person-link {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border-radius: 14px;
+}
+button.social-person-link:hover {
+  background: var(--color-chip);
+}
+.social-person-label {
+  min-width: 0;
+  display: grid;
+  line-height: 1.45;
+}
+.social-person-label > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.social-person-label > strong {
+  font-weight: 800;
+}
+.social-small-action {
+  flex: none;
+  height: 32px;
+  padding-inline: 12px;
+}
+.social-small-action[data-size='36'] {
+  height: 36px;
+}
+.social-row-menu {
+  opacity: 0;
+}
+.social-person-row:is(:hover, :focus-within) .social-row-menu,
+.social-row-menu[data-state='open'] {
+  opacity: 1;
+}
+.social-other-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.social-list-message {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+.social-blocked-list {
+  background: var(--color-chip);
+  border-radius: 18px;
+  padding-inline: 12px;
+}
+.social-blocked-list .social-person-row + .social-person-row {
+  border-top: 1px solid var(--color-bg);
+}
+.social-dialog-actions,
+.social-report-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.social-dialog-actions {
+  justify-content: flex-end;
+}
+.social-report-switch {
+  justify-content: space-between;
+  min-height: 36px;
+  text-align: left;
+}
+.social-report.routine-modal {
+  width: min(440px, calc(100vw - 32px));
+}
+.social-report .social-radio label {
+  min-height: 36px;
+}
+.social-report textarea {
+  resize: vertical;
+}
+.social-danger-text {
+  color: var(--color-danger);
 }
