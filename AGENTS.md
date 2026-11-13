@@ -8,7 +8,7 @@
 | `docs/01-requirements.md`             | 요구사항 (ID: AUTH-, GOAL-, TODO-, CAL-, ROUT-, SYNC-, SET-, NFR-) · 확정 결정 Q1~Q11                             |
 | `docs/02-system-design.md`            | 아키텍처, **DB 스키마 SQL(§4.3, §4.5)**, core 함수 명세(§5), 흐름(§6), 캐시 키(§8), 보안(§9), 테스트(§10)         |
 | `docs/03-implementation-plan.md`      | 단계별 작업 체크리스트, 설계 보완 사항 G1~G6(§5), 진행 기록(§6)                                                   |
-| `docs/16-v3-social-plan.md`           | **v3 소셜** 결정 D1~D31, 요구사항 SOC-, 데이터 구조·RLS(§4), 내비게이션(§5), 단계 S0~S7(§8)                       |
+| `docs/16-v3-social-plan.md`           | **v3 소셜** 결정 D1~D32, 요구사항 SOC-, 데이터 구조·RLS(§4), 내비게이션(§5), 단계 S0~S7(§8)                       |
 | `docs/16-v3-moderation/`              | 금칙어(`banned-words.csv`)·예약어(`reserved-words.csv`) 목록. DB 시드의 원본                                      |
 | `docs/v3/`                            | v3 단계별 작업 지시서 (사람이 한 단계씩 넘겨줌)                                                                   |
 | `DESIGN.md`                           | 비주얼 기준 (원칙, 색 역할, 목표 색 계산 규칙, 접근성 기준, 금지 사항)                                            |
