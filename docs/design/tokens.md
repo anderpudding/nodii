@@ -248,7 +248,7 @@ FONT_SUBSET_PYTHON=/path/to/fonttools-python node scripts/subset.js --check
 | --- | --- | --- |
 | 아바타 | 84, 가운데 | 44, 왼쪽 |
 | 닉네임 | 22/800 가운데 | 17/800, 아바타 오른쪽 |
-| 핸들 | 14 `muted` | 13 `muted` |
+| ID | 14 `muted` | 13 `muted` |
 | 소개글 | 14 `ink-2` 두 줄까지 | 흐려지며 사라짐 |
 | 버튼 | 높이 36, 폭 140 | 높이 32, 오른쪽 끝 |
 

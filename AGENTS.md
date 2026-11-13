@@ -8,7 +8,7 @@
 | `docs/01-requirements.md`             | 요구사항 (ID: AUTH-, GOAL-, TODO-, CAL-, ROUT-, SYNC-, SET-, NFR-) · 확정 결정 Q1~Q11                             |
 | `docs/02-system-design.md`            | 아키텍처, **DB 스키마 SQL(§4.3, §4.5)**, core 함수 명세(§5), 흐름(§6), 캐시 키(§8), 보안(§9), 테스트(§10)         |
 | `docs/03-implementation-plan.md`      | 단계별 작업 체크리스트, 설계 보완 사항 G1~G6(§5), 진행 기록(§6)                                                   |
-| `docs/16-v3-social-plan.md`           | **v3 소셜** 결정 D1~D30, 요구사항 SOC-, 데이터 구조·RLS(§4), 내비게이션(§5), 단계 S0~S7(§8)                       |
+| `docs/16-v3-social-plan.md`           | **v3 소셜** 결정 D1~D31, 요구사항 SOC-, 데이터 구조·RLS(§4), 내비게이션(§5), 단계 S0~S7(§8)                       |
 | `docs/16-v3-moderation/`              | 금칙어(`banned-words.csv`)·예약어(`reserved-words.csv`) 목록. DB 시드의 원본                                      |
 | `docs/v3/`                            | v3 단계별 작업 지시서 (사람이 한 단계씩 넘겨줌)                                                                   |
 | `DESIGN.md`                           | 비주얼 기준 (원칙, 색 역할, 목표 색 계산 규칙, 접근성 기준, 금지 사항)                                            |
@@ -135,6 +135,7 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - 핸들·닉네임·소개는 **서버에서** 금칙어·예약어를 검사합니다(SOC-02, SOC-64). 앱은 같은 목록으로 입력 중 안내만 하고, 어떤 단어가 걸렸는지는 보여 주지 않습니다.
 - 사용자 사진은 업로드 전에 기기에서 정사각형으로 자르고 다시 인코딩해 **EXIF를 지웁니다**(SOC-04). 원본을 그대로 올리지 않습니다.
 - 소셜 화면은 `app_config.social_enabled`가 켜졌을 때만 보입니다. 꺼져 있으면 v2와 같은 화면(탭바 없음)으로 동작해야 합니다.
+- 화면 문구에서는 `handle`을 **"ID"**라고 부릅니다("핸들"이라고 쓰지 않음, D31). 코드·DB·i18n 키 이름은 `handle` 그대로.
 - 새 문구(알림 문장, 공개 범위 설명, 확인 창)는 한국어·영어 카탈로그에 같이 넣습니다. 알림 문장의 이름·개수는 `t()`의 변수로 넘기고 문자열을 이어 붙이지 않습니다.
 
 ---
@@ -170,6 +171,7 @@ pnpm dev             # Tauri 앱 / pnpm dev:web: 브라우저 미리보기
 - 되돌릴 수 있는 동작에는 5초 실행 취소 토스트를, 되돌릴 수 없는 동작에는 함께 사라지는 개수를 적은 확인 창을 붙입니다.
 - v3 화면 이름과 시안: `docs/design/screens.md`(macOS)·`mobile-screens.md`(iOS)의 "v3 소셜" 절, 공통 컴포넌트는 `components.md`의 `GoalMark`·`Avatar`·`FollowButton`·탭바.
 - **와이어프레임**이 저장소 루트의 `mobile-designs/`(iOS)와 `desktop-designs/`(macOS)에 **PNG**로 있습니다. git에는 올리지 않는 로컬 참고 자료입니다(`.gitignore`). 화면을 만들기 전에 해당 파일을 **이미지로 열어서 레이아웃·배치·여백을 눈으로 확인합니다.** 파일 이름은 한국어 화면 이름입니다(`오늘.png`, `제스처.png`, `메뉴 시트.png` 등). 폴더가 비어 있거나 그 화면 파일이 없으면 그냥 넘어갑니다.
+- 와이어프레임 폴더는 버전별 하위 폴더로 나뉩니다: `v1/`·`v2/`(기존 화면), **`v3/`(소셜)**. v3 단계에서는 `mobile-designs/v3/`와 `desktop-designs/v3/`를 먼저 보고, 바뀌지 않은 기존 화면만 `v2/`(iOS)·루트/`v2/`(macOS)를 봅니다. v3 파일 이름은 한국어 화면 이름이라 시안(아트보드) 이름과 1:1로 대응표가 없을 수 있으니, 폴더를 나열하고 그림을 열어 맞춰 봅니다. 연 파일 이름은 보고에 적습니다.
 - `mobile-designs/`와 `docs/design/mobile-screens.md`의 대응: `로그인`=`MobileLogin` · `오늘`/`오늘 · 다크`=`MobileToday` · `할 일 추가 시트`=`MobileAdd` · `메뉴 시트`=`MobileMenu` · `제스처`=`MobileGestures` · `삭제 · 실행 취소`=`MobileUndo` · `월간 펼침`=`MobileMonth` · `목표 관리`=`MobileGoals` · `루틴 관리`=`MobileRoutines` · `루틴 편집 시트`=`MobileRoutineEdit` · `설정`=`MobileSettings`.
 - **기준 순서는 이번 단계 지시서 → `DESIGN.md`·`docs/design/*.md` → 와이어프레임**입니다. 지시서는 단계를 쪼개면서 라벨이나 범위를 일부러 줄여 둔 경우가 있으니 **지시서가 가장 셉니다.** 와이어프레임이 문서와 다르면 **문서를 따르고 차이를 보고**하세요. 와이어프레임에서 새 색·간격 값을 뽑아 쓰지 않습니다(토큰만 씁니다).
 - 와이어프레임에 있는 화면이 문서에 없으면 **구현하지 말고 보고**하세요. 그린 것과 정해진 것은 다릅니다.
