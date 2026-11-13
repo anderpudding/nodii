@@ -1,6 +1,6 @@
 # v3 소셜 — 작업 지시서
 
-> 기준: `docs/16-v3-social-plan.md`(결정 D1~D31, 요구사항 SOC-, 단계 §8). 화면: `docs/design/`의 v3 절. 규칙: `AGENTS.md` "소셜 (v3)".
+> 기준: `docs/16-v3-social-plan.md`(결정 D1~D32, 요구사항 SOC-, 단계 §8). 화면: `docs/design/`의 v3 절. 규칙: `AGENTS.md` "소셜 (v3)".
 > 사람이 단계 하나씩 지시서를 넘겨줍니다. **지시서에 없는 다음 단계 일은 미리 하지 않습니다.**
 
 ## 단계
