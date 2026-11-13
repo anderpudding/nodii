@@ -6,6 +6,10 @@ import {
   handleChangeAvailableAt,
   inviteUrl,
   parseInviteUrl,
+  followButtonState,
+  normalizeSearchQuery,
+  validateReportDetail,
+  visibleProfile,
 } from './social';
 
 describe('S2 profile rules', () => {
@@ -51,5 +55,42 @@ describe('S2 profile rules', () => {
     ]) {
       expect(parseInviteUrl(url)).toBeNull();
     }
+  });
+});
+
+describe('S3 social rules', () => {
+  it.each([
+    [false, false, 'follow'],
+    [false, true, 'followBack'],
+    [true, false, 'following'],
+    [true, true, 'following'],
+  ])('chooses the follow button for %s / %s', (iFollow, followsMe, expected) => {
+    expect(followButtonState({ iFollow, followsMe })).toBe(expected);
+  });
+
+  it.each([
+    [' @ReAd ', 'read'],
+    [' @a ', null],
+    ['@', null],
+    ['🌱', null],
+    ['가나', '가나'],
+  ])('normalizes search input %s', (raw, expected) => {
+    expect(normalizeSearchQuery(raw)).toBe(expected);
+  });
+
+  it('requires a nonblank detail for other and counts Unicode characters', () => {
+    expect(validateReportDetail(' ', 'other').valid).toBe(false);
+    expect(validateReportDetail(' ', 'spam').valid).toBe(true);
+    expect(validateReportDetail(' 🌱 ', 'other')).toEqual({ value: '🌱', count: 1, valid: true });
+    expect(validateReportDetail('🌱'.repeat(500), 'other').valid).toBe(true);
+    expect(validateReportDetail('x'.repeat(501), 'spam').valid).toBe(false);
+  });
+
+  it('preserves the original profile and removes hidden fields for other viewers', () => {
+    const profile = { autoHiddenAt: 'now', avatarPath: 'photo', bio: 'bio', nickname: 'Reader' };
+    expect(visibleProfile(profile, true)).toBe(profile);
+    expect(visibleProfile(profile, false)).toEqual({ ...profile, avatarPath: null, bio: null });
+    const unhidden = { ...profile, autoHiddenAt: null };
+    expect(visibleProfile(unhidden, false)).toBe(unhidden);
   });
 });

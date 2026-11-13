@@ -14,16 +14,32 @@ export function mapDataError(error: unknown): unknown {
 }
 
 export type SocialErrorCode =
-  'reserved' | 'banned' | 'handle_cooldown' | 'handle_held' | 'taken' | 'network' | 'unknown';
+  | 'reserved'
+  | 'banned'
+  | 'handle_cooldown'
+  | 'handle_held'
+  | 'taken'
+  | 'network'
+  | 'unknown'
+  | 'rate_limited'
+  | 'blocked'
+  | 'not_found'
+  | 'already_following';
 
 /** SOC-02: 서버 원문 대신 제한된 코드만 화면에 전달한다. */
-export function socialErrorCode(error: unknown): SocialErrorCode {
+export function socialErrorCode(error: unknown, operation?: 'follow'): SocialErrorCode {
   if (!error || typeof error !== 'object') return 'unknown';
   const { code, message, name } = error as { code?: unknown; message?: unknown; name?: unknown };
-  if (code === '23505') return 'taken';
+  if (code === '23505') return operation === 'follow' ? 'already_following' : 'taken';
+  if (code === '23503' || code === 'PGRST116') return 'not_found';
+  if (code === 'P0001' && message === 'not_available') return 'not_found';
   if (
     code === 'P0001' &&
-    (message === 'reserved' ||
+    (message === 'rate_limited' ||
+      message === 'blocked' ||
+      message === 'not_found' ||
+      message === 'already_following' ||
+      message === 'reserved' ||
       message === 'banned' ||
       message === 'handle_cooldown' ||
       message === 'handle_held')
