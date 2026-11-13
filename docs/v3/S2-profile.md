@@ -155,11 +155,11 @@
 
 ## 8. 완료 기준
 
-- [ ] `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test`, `pnpm db:reset && pnpm db:test` 통과.
-- [ ] 로컬 Supabase에서 두 계정이 각자 ID를 정하고, 한쪽의 초대 링크를 다른 쪽 앱에서 열어 프로필이 보인다 — **iOS 시뮬레이터와 macOS 개발 빌드** 각각(로컬에서 유니버설 링크 대신 `xcrun simctl openurl`·`open "nodii-dev://…"` 같은 대체 경로를 쓸 수 있으면 그 방법을 보고에 적음).
-- [ ] 사진을 바꾸면 이전 파일이 지워지고, 올린 두 파일에 EXIF(APP1)가 없다(`exiftool`로 확인하는 스크립트나 테스트).
-- [ ] 소셜 꺼짐에서 v2와 같은 화면.
-- [ ] `docs/v3/README.md` 진행 기록 한 줄.
+- [x] `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test`, `pnpm db:reset && pnpm db:test` 통과.
+- [x] 로컬 Supabase에서 두 계정이 각자 ID를 정하고, 한쪽의 초대 링크를 다른 쪽 앱에서 열어 프로필이 보인다 — **iOS 시뮬레이터와 macOS 개발 빌드** 각각(로컬에서 유니버설 링크 대신 `xcrun simctl openurl`·`open "nodii-dev://…"` 같은 대체 경로를 쓸 수 있으면 그 방법을 보고에 적음).
+- [x] 사진을 바꾸면 이전 파일이 지워지고, 올린 두 파일에 EXIF(APP1)가 없다(`exiftool`로 확인하는 스크립트나 테스트).
+- [x] 소셜 꺼짐에서 v2와 같은 화면.
+- [x] `docs/v3/README.md` 진행 기록 한 줄.
 
 실기기(서명 빌드·TestFlight) 확인은 S2를 머지한 뒤 사람이 S3와 묶어서 합니다. 이 단계에서 빌드를 올리지 않습니다.
 
@@ -179,3 +179,24 @@
 5. 다른 사람 프로필 화면은 S2에서 머리만.
 6. 사진 메타데이터는 `APP1`·`APP13`·`COM`을 지우고 `APP0`·`APP2`(ICC)는 남김 — 색이 틀어지지 않게.
 7. ID 안내에서 `held`·`reserved`·`banned`를 한 문구로 합침(어떤 이유인지 드러내지 않음).
+
+### 로컬 링크 검증 방법
+
+- 개발 앱의 Supabase URL과 publishable 키는 로컬 인스턴스를 사용합니다. `pnpm db:reset`은 테스트 전용 인스턴스에서 실행합니다.
+- iOS: `pnpm --filter @nodii/mobile exec expo run:ios`로 만든 개발 앱에서 `xcrun simctl openurl booted 'nodii://u/<token>'`. 기기가 둘 이상 부팅되어 있으면 `booted` 대신 기기 ID를 넣습니다.
+- macOS: `pnpm --filter @nodii/desktop tauri build --debug --bundles app --config src-tauri/tauri.s2-dev.conf.json`으로 만든 **Nodii S2 Dev** 앱을 먼저 실행하고 `open -a '/path/to/Nodii S2 Dev.app' 'nodii-dev://u/<token>'`. 개발 구성은 별도 번들 ID를 씁니다.
+- 두 개발 스킴 모두 정식 초대 URL과 같은 파서·해석 경로에 들어갑니다. 서명 빌드에서는 `https://nodii.app/u/<token>`을 사용합니다.
+- Xcode 27에서 만든 iOS 앱은 UIScene을 요구합니다. Expo SDK 57의 `expo-build-properties` 설정을 사용합니다. 로컬 Metro가 IPv6에만 뜨면 `NODE_OPTIONS=--dns-result-order=ipv4first`를 설정해 다시 시작합니다.
+
+### 확인한 시안 PNG
+
+- `mobile-designs/v3/`: `오늘 (v3).png`, `오늘 · 다크 (v3).png`, `프로필 만들기 (v3, D31).png`, `ID 안내 여섯 가지.png`, `프로필 탭 (S2 · 숫자 0 + 초대 카드).png`, `프로필 편집 (v3).png`, `프로필 편집 › ID.png`, `사진 자르기 · 최종 (C2).png`, `설정 (v3 · 프로필 탭에서 진입).png`, `다른 사람 프로필 (S2 · 머리만, S4에서 사람 하루 페이지로 바뀜).png`, `다른 사람 프로필 · 볼 수 없음.png`.
+- `desktop-designs/v3/`: `메인 · 라이트 (v3).png`, `메인 · 다크 (v3).png`, `알림 · 가운데 한 줄 목록 (D29).png`, `프로필 만들기 (v3, D31).png`, `macOS ID 안내 여섯 가지.png`, `macOS 프로필 탭 (기본 · 가운데 내 프로필만).png`, `프로필 편집 · 프로필 탭 오른쪽 하위 화면 (v3).png`, `프로필 편집 › ID.png`, `프로필 편집 › 소개.png`, `macOS 사진 자르기 (모달 520).png`, `설정 · 프로필 탭 오른쪽 하위 화면 (v3).png`, `macOS 다른 사람 프로필 (S2 · 머리만, S4에서 사람 하루 페이지로 바뀜).png`, `macOS 다른 사람 프로필 · 볼 수 없음.png`.
+
+`ProfileDefaultVis`의 별도 PNG는 두 폴더에 없어 문서의 세 줄 라디오를 적용했습니다. macOS 기본 화면은 §10.4의 표현과 달리 §4.2/D32대로 **오른쪽 칸 없이 가운데 프로필 아래**에 초대 카드를 둡니다. 알림 PNG의 목록·필터와 설정 PNG의 알림·차단 항목은 S2에 포함하지 않습니다.
+
+### 검증 기록
+
+- 격리된 로컬 Supabase에서 리셋, pgTAP 342개 및 생성 타입 일치 확인.
+- iPhone 18 Pro(iOS 27) 시뮬레이터와 macOS 개발 빌드에서 각각 OTP 로그인, ID 등록, 개발 스킴으로 상대 프로필 열기 확인.
+- 두 앱이 올린 160·480px JPEG의 EXIF, APP1·APP13·COM 없음 확인. macOS 사진 교체 후 이전 두 주소에서 파일을 반환하지 않음.
