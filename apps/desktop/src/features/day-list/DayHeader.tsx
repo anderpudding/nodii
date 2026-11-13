@@ -33,7 +33,12 @@ export function DayHeader({
         )
       )
         return;
-      if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
+      if (
+        document.querySelector(
+          '.social-today[hidden], [role="dialog"], [role="alertdialog"], [role="menu"]',
+        )
+      )
+        return;
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       selectDate(addDays(useUIStore.getState().selectedDate, event.key === 'ArrowLeft' ? -1 : 1));

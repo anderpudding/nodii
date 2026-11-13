@@ -1,6 +1,7 @@
 import { GOAL_NAME_MAX_LENGTH, isHexColor, type Goal } from '@nodii/core';
 import type { NodiiClient } from '../client';
 import { mapDataError } from '../errors';
+import { fetchProfile } from '../profile';
 import {
   goalChangesToRow,
   goalToRow,
@@ -40,11 +41,12 @@ export async function listGoals(client: NodiiClient, userId: string, signal?: Ab
   }
 }
 /** 클라이언트 ID로 목표를 생성한다 (GOAL-01). */
-export async function createGoal(client: NodiiClient, goal: Goal) {
+export async function createGoal(client: NodiiClient, goal: Goal, userId: string) {
   validate(goal);
+  const visibility = (await fetchProfile(client, userId)).defaultVisibility ?? 'private';
   const { data, error } = await client
     .from('goals')
-    .insert(goalToRow({ ...goal, name: goal.name.trim() }))
+    .insert(goalToRow({ ...goal, name: goal.name.trim() }, visibility))
     .select('*')
     .single();
   if (error) throw mapDataError(error);

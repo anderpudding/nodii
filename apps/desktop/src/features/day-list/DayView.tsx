@@ -25,7 +25,15 @@ export function DaySkeleton() {
   );
 }
 /** 날짜가 달을 넘으면 해당 월의 42칸 캐시를 구독한다. */
-export function DayView({ client, profile }: { client: NodiiClient; profile: Profile }) {
+export function DayView({
+  client,
+  profile,
+  social = false,
+}: {
+  client: NodiiClient;
+  profile: Profile;
+  social?: boolean;
+}) {
   const date = useUIStore((state) => state.selectedDate);
   const goals = useGoals(client, profile.id);
   const todos = useMonthTodos(client, profile.id, monthKeyOf(date), profile.weekStart);
@@ -55,6 +63,7 @@ export function DayView({ client, profile }: { client: NodiiClient; profile: Pro
         done={done}
         menu={
           <DayMenu
+            sliders={social}
             key={date}
             client={client}
             profile={profile}

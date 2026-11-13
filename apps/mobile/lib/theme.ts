@@ -20,6 +20,9 @@ export const lightColors = {
   toastAction: '#9DB8FF',
   warnBg: '#FFF4DB',
   warnInk: '#8A5A00',
+  avatarSeed: '#C3C7CF',
+  avatarLeaf: '#AEB3BD',
+  tabSelected: '#F2F3F6',
   scrim: 'rgba(17,19,24,0.36)',
 };
 export const darkColors: typeof lightColors = {
@@ -40,6 +43,9 @@ export const darkColors: typeof lightColors = {
   toastAction: '#2F5BD8',
   warnBg: '#3A2F17',
   warnInk: '#F2C66D',
+  avatarSeed: '#4A4F59',
+  avatarLeaf: '#5B616C',
+  tabSelected: '#2B2E35',
   scrim: 'rgba(0,0,0,0.55)',
 };
 export type Colors = typeof lightColors;

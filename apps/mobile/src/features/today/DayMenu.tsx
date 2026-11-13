@@ -1,3 +1,4 @@
+import { SocialIcon } from '../social/Primitives';
 import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -24,6 +25,7 @@ export function DayMenu({
   weekStart,
   timeZone = 'UTC',
   actions,
+  sliders = false,
 }: {
   client: NodiiClient;
   userId: string;
@@ -34,6 +36,7 @@ export function DayMenu({
   ready: boolean;
   weekStart: 0 | 1;
   timeZone?: string;
+  sliders?: boolean;
   actions: ReturnType<typeof useDayActions>;
 }) {
   const { colors } = useTheme();
@@ -117,9 +120,13 @@ export function DayMenu({
           },
         ]}
       >
-        <Text accessible={false} style={[styles.heading, { color: colors.ink }]}>
-          ⋯
-        </Text>
+        {sliders ? (
+          <SocialIcon name="sliders" color={colors.ink} size={20} />
+        ) : (
+          <Text accessible={false} style={[styles.heading, { color: colors.ink }]}>
+            ⋯
+          </Text>
+        )}
       </Pressable>
       {open && (
         <BottomSheet

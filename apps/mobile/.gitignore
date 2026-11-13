@@ -4,3 +4,5 @@
 
 expo-env.d.ts
 # @end expo-cli
+# Expo prebuild output is generated from app.json.
+/ios/

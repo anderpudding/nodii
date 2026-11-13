@@ -6,6 +6,7 @@
     "main"
   ],
   "permissions": [
+    "deep-link:allow-get-current",
     "core:default",
     "store:default",
     "opener:default",

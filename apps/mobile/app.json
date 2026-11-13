@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
+      "associatedDomains": ["applinks:nodii.app"],
       "bundleIdentifier": "com.sungjunlee.Nodii",
       "icon": {
         "light": "./assets/icon.png",
@@ -38,7 +39,16 @@
           }
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      ["expo-build-properties", { "ios": { "enableSceneSupport": true } }],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Nodii to access your library to choose a profile photo.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -28,6 +28,7 @@ describe('프로필 시간대 동기화 (G2)', () => {
       displayName: null,
       timezone: 'UTC',
       weekStart: 0,
+      defaultVisibility: 'private',
     });
     expect(fetch).toHaveBeenCalledOnce();
     expect(fetch.mock.calls[0]?.[1].method).toBe('GET');

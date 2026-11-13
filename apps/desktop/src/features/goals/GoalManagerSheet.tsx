@@ -198,6 +198,7 @@ export function GoalManagerSheet({
         onClose={() => setView({ kind: 'list' })}
       >
         <GoalEditor
+          userId={userId}
           goal={editing}
           client={client}
           initialColor={defaultColor}

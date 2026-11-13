@@ -1,4 +1,5 @@
 import type { NodiiClient } from './client';
+import { clearMyAvatarFolder } from './avatars';
 import { mapProfile } from './mappers';
 
 /** SET-01: 로그인한 프로필의 주 시작 요일만 변경한다. */
@@ -13,7 +14,14 @@ export async function updateWeekStart(client: NodiiClient, userId: string, value
   return mapProfile(data);
 }
 /** AUTH-06: 서버가 인증한 본인 계정과 FK 데이터를 삭제한다. */
-export async function deleteMyAccount(client: NodiiClient) {
+export async function deleteMyAccount(client: NodiiClient, userId?: string) {
+  if (userId) {
+    try {
+      await clearMyAvatarFolder(client, userId);
+    } catch (error) {
+      console.warn('Account avatar cleanup failed', error);
+    }
+  }
   const { error } = await client.rpc('delete_my_account');
   if (error) throw error;
 }

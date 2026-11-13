@@ -1,3 +1,4 @@
+import { SocialIcon } from '../social/Icons';
 import { t } from '@nodii/i18n';
 import { useEffect, useId, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -43,6 +44,7 @@ export function DayMenu({
   items,
   todos,
   ready,
+  sliders = false,
 }: {
   client: NodiiClient;
   profile: Profile;
@@ -50,6 +52,7 @@ export function DayMenu({
   items: DayItem[];
   todos: TodoRecord[];
   ready: boolean;
+  sliders?: boolean;
 }) {
   const { selectedDate, today } = useUIStore();
   const cache = useQueryClient();
@@ -230,7 +233,7 @@ export function DayMenu({
           <Popover.Anchor asChild>
             <DropdownMenu.Trigger asChild>
               <Button ref={more} variant="ghost" aria-label={t('day.menu.open')}>
-                ⋯
+                {sliders ? <SocialIcon name="sliders" size={18} /> : '⋯'}
               </Button>
             </DropdownMenu.Trigger>
           </Popover.Anchor>

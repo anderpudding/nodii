@@ -1,0 +1,13 @@
+{
+  "identifier": "com.sungjunlee.Nodii.s2dev",
+  "productName": "Nodii S2 Dev",
+  "build": { "beforeBuildCommand": "pnpm exec vite build --mode s2-dev" },
+  "plugins": {
+    "deep-link": { "desktop": { "schemes": ["nodii-dev"], "domains": ["nodii.app"] } }
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:54321 ws://127.0.0.1:54321 http://127.0.0.1:54421 ws://127.0.0.1:54421; img-src 'self' data: blob: http://127.0.0.1:54321 http://127.0.0.1:54421; style-src 'self' 'unsafe-inline'"
+    }
+  }
+}

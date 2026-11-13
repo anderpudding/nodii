@@ -24,12 +24,14 @@ export function MainLayout({
   profile,
   profileError,
   retryProfile,
+  social = false,
 }: {
   client: NodiiClient;
   session: Session;
   profile?: Profile;
   profileError?: boolean;
   retryProfile?: () => void;
+  social?: boolean;
 }) {
   useUserSync(client, session.user.id, profile?.weekStart ?? 0);
   useTodayClock();
@@ -49,7 +51,7 @@ export function MainLayout({
       // 열린 편집/확인 창을 다른 명령으로 덮지 않는다.
       if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
       const value = (event as CustomEvent<AppCommand>).detail;
-      if (value === 'settings') setSettingsOpen(true);
+      if (value === 'settings' && !social) setSettingsOpen(true);
       if (value === 'today') useUIStore.getState().selectDate(useUIStore.getState().today);
     };
     window.addEventListener('nodii:command', command);
@@ -58,7 +60,7 @@ export function MainLayout({
       window.removeEventListener('nodii:command', command);
       useUIStore.setState({ lastAddedGoalByDate: {} });
     };
-  }, []);
+  }, [social]);
 
   return (
     <div className="app-shell">
@@ -84,20 +86,26 @@ export function MainLayout({
               </span>
             )}
           </div>
-          <Button
-            className="wide-settings"
-            variant="ghost"
-            aria-label={t('settings.title')}
-            aria-haspopup="dialog"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <SettingsIcon className="toolbar-icon" />
-          </Button>
+          {!social && (
+            <Button
+              className="wide-settings"
+              variant="ghost"
+              aria-label={t('settings.title')}
+              aria-haspopup="dialog"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <SettingsIcon className="toolbar-icon" />
+            </Button>
+          )}
           <div className="narrow-settings">
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <Button variant="ghost" aria-label={t('app.settingsManagement')}>
-                  <SettingsIcon className="toolbar-icon" />
+                  {social ? (
+                    <GoalIcon className="toolbar-icon" />
+                  ) : (
+                    <SettingsIcon className="toolbar-icon" />
+                  )}
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
@@ -120,13 +128,17 @@ export function MainLayout({
                   >
                     {t('routine.manage')}
                   </DropdownMenu.Item>
-                  <DropdownMenu.Separator className="todo-menu-separator" />
-                  <DropdownMenu.Item
-                    className="todo-menu-item"
-                    onSelect={() => setSettingsOpen(true)}
-                  >
-                    {t('settings.title')}
-                  </DropdownMenu.Item>
+                  {!social && (
+                    <>
+                      <DropdownMenu.Separator className="todo-menu-separator" />
+                      <DropdownMenu.Item
+                        className="todo-menu-item"
+                        onSelect={() => setSettingsOpen(true)}
+                      >
+                        {t('settings.title')}
+                      </DropdownMenu.Item>
+                    </>
+                  )}
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
@@ -135,7 +147,7 @@ export function MainLayout({
         {profile && <WeekStrip client={client} profile={profile} />}
         <main className="day-content">
           {profile ? (
-            <DayView client={client} profile={profile} />
+            <DayView client={client} profile={profile} social={social} />
           ) : profileError ? (
             <div>
               <p role="alert">{t('app.profile.failed')}</p>
@@ -148,7 +160,7 @@ export function MainLayout({
           )}
         </main>
       </div>
-      {settingsOpen && (
+      {!social && settingsOpen && (
         <SettingsSheet
           client={client}
           session={session}

@@ -6,7 +6,7 @@ select plan(51);
 insert into auth.users (id, email) values
   ('10000000-0000-4000-8000-000000000001', 'a@nodii.test'), ('10000000-0000-4000-8000-000000000002', 'b@nodii.test'),
   ('10000000-0000-4000-8000-000000000003', 'c@nodii.test'), ('10000000-0000-4000-8000-000000000004', 'd@nodii.test');
-select is((select value from public.app_config where key = 'social_enabled'), 'false', '기능 플래그 기본값은 꺼짐');
+select is((select value from public.app_config where key = 'social_enabled'), 'true', '로컬 시드에서만 기능 플래그 켜짐');
 select is((select count(*) from public.social_profiles), 0::bigint, '가입만으로 소셜 프로필을 만들지 않음');
 select is((select count(*) from public.goals where visibility <> 'private'), 0::bigint, '기본 목표는 private');
 

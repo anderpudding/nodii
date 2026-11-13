@@ -1,8 +1,9 @@
 import { t } from '@nodii/i18n';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { compareVersion } from '@nodii/core';
 import {
   fetchMinAppVersion,
+  useSocialEnabled,
   syncProfileTimezone,
   readStoredSession,
   normalizeAuthError,
@@ -19,6 +20,8 @@ import { MainLayout } from './MainLayout';
 import { UpdateRequired } from './UpdateRequired';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
+import { SocialShell } from '../features/social/SocialShell';
+import { onSocialForeground, useInviteReceiver } from '../features/social/InviteReceiver';
 import { UserCache } from './UserCache';
 import { detachPersistedCache } from '../lib/query-persister';
 
@@ -36,7 +39,19 @@ function updateAuthRefresh(client: NodiiClient, enabled: boolean) {
   );
 }
 
-function SignedIn({ client, session }: { client: NodiiClient; session: Session }) {
+function SignedIn({
+  client,
+  session,
+  social,
+  token,
+  consume,
+}: {
+  client: NodiiClient;
+  session: Session;
+  social: boolean;
+  token: string | null;
+  consume(token: string): void;
+}) {
   // 계정 삭제/로그아웃에서 멈춘 갱신은 다시 인증된 화면이 열릴 때만 재개한다.
   useEffect(() => {
     const update = () => {
@@ -58,15 +73,25 @@ function SignedIn({ client, session }: { client: NodiiClient; session: Session }
     staleTime: Infinity,
   });
   return (
-    <MainLayout
+    <SocialShell
       client={client}
       session={session}
       profile={profile.data}
-      profileError={profile.isError}
-      retryProfile={() => {
-        void profile.refetch();
-      }}
-    />
+      enabled={social}
+      token={token}
+      consume={consume}
+    >
+      <MainLayout
+        social={social}
+        client={client}
+        session={session}
+        profile={profile.data}
+        profileError={profile.isError}
+        retryProfile={() => {
+          void profile.refetch();
+        }}
+      />
+    </SocialShell>
   );
 }
 
@@ -83,6 +108,12 @@ export function AppGate({
   reviewAccountEmail?: string;
 }) {
   const queryClient = useQueryClient();
+  const enabled = useSocialEnabled(client, onSocialForeground);
+  const { token, setToken } = useInviteReceiver(enabled);
+  const consume = useCallback(
+    (used: string) => setToken((current) => (current === used ? null : current)),
+    [setToken],
+  );
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [sessionError, setSessionError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -215,7 +246,13 @@ export function AppGate({
     );
   return session ? (
     <UserCache key={session.user.id} userId={session.user.id}>
-      <SignedIn client={client} session={session} />
+      <SignedIn
+        client={client}
+        session={session}
+        social={enabled === true}
+        token={token}
+        consume={consume}
+      />
     </UserCache>
   ) : (
     <Login client={client} reviewAccountEmail={reviewAccountEmail} />
