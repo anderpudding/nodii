@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["P786RFNH6J.com.sungjunlee.Nodii"],
+        "components": [{ "/": "/u/*" }]
+      }
+    ]
+  }
+}
