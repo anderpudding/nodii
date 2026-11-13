@@ -324,9 +324,9 @@ _v2까지는 탭 막대가 없었습니다. 그 규칙은 v3에서 위로 바뀝
 | M4 | `MobileRoutines`, `MobileRoutineEdit`, `MobileRoutineScope`, `MobileRoutineMenu` |
 | M5 | `MobileSettings`, `MobileGoals`, `MobileOffline` |
 | M6 | `MobileFirstRun`, `MobileEmpty` |
-| S2 (v3) | `ProfileTabB`, `ProfileTabEmpty`, `MobileSettings`(=`ProfileSettings`), `ProfileDefaultVis`, `SocialCropFinal` |
+| S2 (v3) | 탭바(뼈대), `ProfileTabB`, `ProfileTabEmpty`, `MobileSettings`(=`ProfileSettings`), `ProfileDefaultVis`, `SocialCropFinal` |
 | S3 (v3) | `ProfileSearch`, 팔로잉·팔로워 목록, `SocialPersonFinal*`의 `⋯` 신고·차단 |
-| S4 (v3) | 탭바, `MobileToday`(아바타 줄), `SocialFriendsManage`, `SocialPersonFinal*`, 목표 편집·추가(`GoalVisSegment`, `GoalVisColorSheet`), `GoalMark` 적용 화면 전부 |
+| S4 (v3) | `MobileToday`(아바타 줄), `SocialFriendsManage`, `SocialPersonFinal*`, 목표 편집·추가(`GoalVisSegment`, `GoalVisColorSheet`), `GoalMark` 적용 화면 전부 |
 | S5 (v3) | `SocialNotifyFinal`, 설정 > 알림 |
 
 시안과 이 문서가 다르면 **이 문서가 기준**입니다.
