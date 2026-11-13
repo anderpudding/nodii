@@ -7,7 +7,7 @@
 
 | 단계 | 지시서 | 내용 | 상태 |
 | --- | --- | --- | --- |
-| S0 | [`S0-spikes.md`](S0-spikes.md) | 실기기 스파이크 4개(유니버설 링크, macOS 로컬 알림, iOS 푸시, 사진 업로드) | 준비됨 |
+| S0 | [`S0-spikes.md`](S0-spikes.md) | 실기기 스파이크 4개(유니버설 링크, macOS 로컬 알림, iOS 푸시, 사진 업로드) | 완료 |
 | S1 | [`S1-db.md`](S1-db.md) | DB: 테이블·enum·RLS·RPC·Storage 정책·pgTAP, API 조회의 `user_id` 필터 | 완료 |
 | S2 | (S1 뒤에 작성) | 프로필 탭·설정 이동·프로필·핸들·사진·초대 링크·기본 공개 범위 | — |
 | S3 | — | 팔로우·검색·팔로워 내보내기·차단·신고 | — |
@@ -29,3 +29,4 @@ S2 이후 지시서는 앞 단계 보고(특히 S0의 "안 되는 것과 대안"
 | 2026-11-11 | 준비 | `docs/v3-impl-prep` | AGENTS.md·`docs/design/` v3 반영, S0·S1 지시서 | S1 "결정이 필요한 사항" 참고 |
 | 2026-11-11 | S1 | `feat/s1-db` | 소셜 DB·RLS·RPC와 개인 조회 범위 적용, 로컬 pgTAP 342개 통과 | S2 사진 삭제, 배포 전 최소 앱 버전 확인 |
 | 2026-11-11 | S1 리뷰 | `feat/s1-db` | 팔로우 Realtime 제외 및 앱이 앞으로 올 때 다시 조회하도록 명세, ADR-017 갱신 | — |
+| 2026-11-12 | S0 | `docs/s0-results` · [사이트 PR #54](https://github.com/anderpudding/nodii/pull/54) | 실기기에서 네 항목의 S0 기준 충족 | S2 사진 EXIF 전체 제거, S6 macOS 최초 알림 권한 확인 |
