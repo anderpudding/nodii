@@ -87,7 +87,7 @@ interface TodayProps {
 /** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
 export function Today(props: TodayProps) {
   const visible = useContext(TodayVisible);
-  const { friendId, avatars, management } = useContext(TodaySocialContext);
+  const { friendId, avatars } = useContext(TodaySocialContext);
   const {
     today,
     selectedDate,
@@ -143,30 +143,30 @@ export function Today(props: TodayProps) {
     );
   return (
     <>
-      {management ??
-        (props.social && friendId ? (
-          <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.bg }}>
-            <ToastInset bottom={insets.bottom + tabInset} />
-            <FriendDay
-              key={friendId}
-              client={props.client}
-              friendId={friendId}
-              me={props.userId}
-              profile={profile.data}
-              today={today}
-              date={selectedDate}
-              onSelect={selectDate}
-              monthExpanded={monthExpanded}
-              onSetMonthExpanded={setMonthExpanded}
-              month={calendarMonth}
-              onMonth={showMonth}
-              header={avatars}
-              bottom={insets.bottom + tabInset + m.space.lg}
-            />
-          </View>
-        ) : (
-          <TodayContent {...props} profile={profile.data} />
-        ))}
+      {props.social && friendId ? (
+        <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.bg }}>
+          <ToastInset bottom={insets.bottom + tabInset} />
+          <FriendDay
+            key={friendId}
+            client={props.client}
+            friendId={friendId}
+            active={visible}
+            me={props.userId}
+            profile={profile.data}
+            today={today}
+            date={selectedDate}
+            onSelect={selectDate}
+            monthExpanded={monthExpanded}
+            onSetMonthExpanded={setMonthExpanded}
+            month={calendarMonth}
+            onMonth={showMonth}
+            header={avatars}
+            bottom={insets.bottom + tabInset + m.space.lg}
+          />
+        </View>
+      ) : (
+        <TodayContent {...props} profile={profile.data} />
+      )}
       {visible && <FirstRunGuide />}
     </>
   );

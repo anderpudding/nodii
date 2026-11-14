@@ -38,6 +38,7 @@ export function FriendDay({
   bottom = 0,
   onScroll,
   contentTop = 0,
+  active = true,
   minScroll = 0,
   me,
   nickname,
@@ -57,6 +58,7 @@ export function FriendDay({
   bottom?: number;
   onScroll?: React.ComponentProps<typeof ScrollView>['onScroll'];
   contentTop?: number;
+  active?: boolean;
   minScroll?: number;
   me?: string;
   nickname?: string;
@@ -75,19 +77,21 @@ export function FriendDay({
   }
   const week = weekRange(date, profile.weekStart);
   const range = monthExpanded ? monthGridRange(month, profile.weekStart) : week;
-  const query = useFriendDay(client, friendId, range);
+  const query = useFriendDay(client, active ? friendId : null, range);
   const fallbackRange = monthGridRange(monthKeyOf(date), profile.weekStart);
   const separate = date < range.from || date > range.to;
-  const selected = useFriendDay(client, separate ? friendId : null, fallbackRange);
+  const selected = useFriendDay(client, active && separate ? friendId : null, fallbackRange);
   const { refetch } = query;
   const { refetch: refetchSelected } = selected;
   useEffect(
     () =>
-      onSocialForeground(() => {
-        void refetch();
-        if (separate) void refetchSelected();
-      }),
-    [refetch, refetchSelected, separate],
+      active
+        ? onSocialForeground(() => {
+            void refetch();
+            if (separate) void refetchSelected();
+          })
+        : undefined,
+    [active, refetch, refetchSelected, separate],
   );
   const { summary, stampColors } = useMemo(() => {
     if (!query.data || query.isError) return { summary: new Map() };
@@ -111,6 +115,7 @@ export function FriendDay({
   return (
     <>
       <ScrollView
+        testID="friend-day-scroll"
         style={{ flex: 1 }}
         onLayout={(event) => setViewport(event.nativeEvent.layout.height)}
         contentContainerStyle={{
@@ -143,7 +148,9 @@ export function FriendDay({
             style={{ flex: 1, minHeight: m.height.touch, justifyContent: 'center' }}
             accessibilityRole="button"
             accessibilityLabel={t('calendar.monthToday', { month: monthLabel })}
-            onPress={() => onSelect(today)}
+            onPress={() => {
+              if (date !== today || month !== monthKeyOf(today)) onSelect(today);
+            }}
           >
             <Text
               numberOfLines={1}

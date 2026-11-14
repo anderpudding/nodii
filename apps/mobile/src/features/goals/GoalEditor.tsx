@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ManagementScreen } from '../../components/ManagementScreen';
 import { VisibilityContext } from '../social/VisibilityContext';
 import { GoalMark } from './GoalMark';
+import { GoalRainbow } from './GoalRainbow';
 import { GoalColorPicker } from './GoalColorPicker';
 import { showPublishNotice } from './publish-notice';
 import { useContext, useRef, useState } from 'react';
@@ -11,7 +12,7 @@ import {
   fetchProfile,
   OfflineWriteError,
   useCreateGoal,
-  useUpdateGoal,
+  useGoalVisibility,
   useDeleteGoal,
   useGoalContents,
   type GoalRecord,
@@ -78,7 +79,7 @@ export function GoalEditor({
       t(social && error instanceof OfflineWriteError ? 'sync.writeDisabled' : 'todo.save.failed'),
     );
   const create = useCreateGoal(client, { onError: saveError }, userId);
-  const update = useUpdateGoal(client, id, { onError: saveError });
+  const update = useGoalVisibility(client, id, { onError: saveError });
   const remove = useDeleteGoal(client, { onError: saveError });
   const counts = useGoalContents(client, userId);
   const draft: GoalRecord = goal ?? {
@@ -146,6 +147,10 @@ export function GoalEditor({
   }
   async function archive() {
     if (blocked || last || guard.current) return;
+    if (social && !online) {
+      toast(() => t('sync.writeDisabled'));
+      return;
+    }
     guard.current = true;
     setSaving(true);
     try {
@@ -263,13 +268,11 @@ export function GoalEditor({
                     alignItems: 'center',
                     justifyContent: 'center',
                     backgroundColor: preset?.color,
-                    experimental_backgroundImage: preset
-                      ? undefined
-                      : 'linear-gradient(135deg, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF)',
                     borderWidth: selected ? m.selectionRing : 0,
                     borderColor: colors.ink,
                   }}
                 >
+                  {!preset && <GoalRainbow />}
                   {selected && (
                     <View
                       style={{

@@ -4,5 +4,4 @@ import type { ReactNode } from 'react';
 export const TodaySocialContext = createContext<{
   friendId: string | null;
   avatars?: ReactNode;
-  management?: ReactNode;
 }>({ friendId: null });

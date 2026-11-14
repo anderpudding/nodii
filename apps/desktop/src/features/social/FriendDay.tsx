@@ -111,6 +111,7 @@ export function FriendDay({
   onBlocked,
   extra,
   manage,
+  active = true,
 }: {
   client: NodiiClient;
   friendId: string;
@@ -123,20 +124,22 @@ export function FriendDay({
   onBlocked?(): void;
   extra?: ReactNode;
   manage?: ReactNode;
+  active?: boolean;
 }) {
   const [report, setReport] = useState<{ id: string; title: string } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ date, month: monthKeyOf(date) });
   const month = view.date === date ? view.month : monthKeyOf(date);
   const range = monthGridRange(month, profile.weekStart);
-  const query = useFriendDay(client, friendId, range);
+  const query = useFriendDay(client, active ? friendId : null, range);
   // 달만 둘러볼 때 오른쪽은 계속 고른 날짜를 표시한다.
   const selectedRange = monthGridRange(monthKeyOf(date), profile.weekStart);
   const separate = date < range.from || date > range.to;
-  const selected = useFriendDay(client, separate ? friendId : null, selectedRange);
+  const selected = useFriendDay(client, active && separate ? friendId : null, selectedRange);
   const { refetch } = query;
   const { refetch: refetchSelected } = selected;
   useEffect(() => {
+    if (!active) return;
     const reload = () => {
       void refetch();
       if (separate) void refetchSelected();
@@ -150,9 +153,7 @@ export function FriendDay({
         event.target.closest(
           'input,textarea,select,[role=grid],[role=dialog],[role=menu],[data-drag-handle]',
         ) ||
-        document.querySelector(
-          '[role=dialog],[role=alertdialog],[role=menu],.social-today[hidden] .friend-day:focus-within',
-        )
+        document.querySelector('[role=dialog],[role=alertdialog],[role=menu]')
       )
         return;
       if (event.metaKey && event.key.toLowerCase() === 'r') {
@@ -169,12 +170,24 @@ export function FriendDay({
         onSelect(addDays(date, event.key === 'ArrowLeft' ? -1 : 1));
       }
     };
+    const command = (event: Event) => {
+      if (
+        (event as CustomEvent<string>).detail !== 'today' ||
+        root.current?.closest('[hidden]') ||
+        document.querySelector('[role=dialog],[role=alertdialog],[role=menu]')
+      )
+        return;
+      onSelect(today);
+      setView({ date: today, month: monthKeyOf(today) });
+    };
     window.addEventListener('keydown', keydown);
+    window.addEventListener('nodii:command', command);
     return () => {
       stop();
       window.removeEventListener('keydown', keydown);
+      window.removeEventListener('nodii:command', command);
     };
-  }, [date, onSelect, refetch, refetchSelected, separate]);
+  }, [active, date, onSelect, refetch, refetchSelected, separate, today]);
   const { summary, stampColors } = useMemo(() => {
     if (!query.data || query.isError) return {};
     const input = {

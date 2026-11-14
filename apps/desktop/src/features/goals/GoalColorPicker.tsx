@@ -9,9 +9,11 @@ const clamp = (n: number) => Math.max(0, Math.min(1, n));
 export function GoalColorPicker({
   color,
   onChange,
+  onValidityChange,
 }: {
   color: string;
   onChange(color: string): void;
+  onValidityChange(valid: boolean): void;
 }) {
   const [hsv, setHsv] = useState(() => hexToHsv(color));
   const [hex, setHex] = useState(color);
@@ -19,6 +21,7 @@ export function GoalColorPicker({
     const value = hsvToHex(next);
     setHsv(next);
     setHex(value);
+    onValidityChange(true);
     onChange(value);
   };
   const position = (event: PointerEvent<HTMLButtonElement>) => {
@@ -85,11 +88,15 @@ export function GoalColorPicker({
           value={hex}
           maxLength={7}
           aria-invalid={!normalizeHex(hex)}
-          onBlur={() => setHex(normalizeHex(hex) ?? color)}
+          onBlur={() => {
+            const normalized = normalizeHex(hex);
+            if (normalized) setHex(normalized);
+          }}
           onChange={(event) => {
             const value = event.target.value;
             setHex(value);
             const normalized = normalizeHex(value);
+            onValidityChange(!!normalized);
             if (normalized) {
               setHsv(hexToHsv(normalized));
               onChange(normalized);

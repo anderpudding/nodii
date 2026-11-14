@@ -16,7 +16,7 @@ import {
   fetchProfile,
   useArchiveGoal,
   useCreateGoal,
-  useUpdateGoal,
+  useGoalVisibility,
   type GoalContents,
   type GoalRecord,
   type NodiiClient,
@@ -73,15 +73,17 @@ export function GoalEditor({
   const visibility =
     changedVisibility ?? goal?.visibility ?? account.data?.defaultVisibility ?? 'private';
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [validHexDraft, setValidHexDraft] = useState(true);
   const [id] = useState(() => goal?.id ?? crypto.randomUUID());
   const [name, setName] = useState(goal?.name ?? '');
   const [color, setColor] = useState(goal?.color ?? initialColor);
   const create = useCreateGoal(client, { onError: notifyGoalError }, userId);
-  const update = useUpdateGoal(client, id, { onError: notifyGoalError });
+  const update = useGoalVisibility(client, id, { onError: notifyGoalError });
   const archive = useArchiveGoal(client, id, { onError: notifyGoalError });
   const writing = useIsMutating({ mutationKey: ['write', 'goal'] }) > 0;
   const custom = !goalPresets.some((preset) => preset.color === color);
   const valid =
+    (!pickerOpen || validHexDraft) &&
     (!social || !!goal || !!account.data) &&
     name.trim().length > 0 &&
     name.trim().length <= GOAL_NAME_MAX_LENGTH &&
@@ -189,6 +191,7 @@ export function GoalEditor({
               onClick={() => {
                 setColor(preset.color);
                 setPickerOpen(false);
+                setValidHexDraft(true);
               }}
             >
               {color === preset.color ? (
@@ -204,7 +207,10 @@ export function GoalEditor({
               className="color-option goal-rainbow"
               aria-label={t('goal.colorPicker.open')}
               aria-expanded={pickerOpen}
-              onClick={() => setPickerOpen(!pickerOpen)}
+              onClick={() => {
+                setPickerOpen(!pickerOpen);
+                setValidHexDraft(true);
+              }}
             >
               {custom && (
                 <span
@@ -217,7 +223,9 @@ export function GoalEditor({
             </button>
           )}
         </fieldset>
-        {social && pickerOpen && <GoalColorPicker color={color} onChange={setColor} />}
+        {social && pickerOpen && (
+          <GoalColorPicker color={color} onChange={setColor} onValidityChange={setValidHexDraft} />
+        )}
         {!social && (
           <>
             <div className="goal-color-field">

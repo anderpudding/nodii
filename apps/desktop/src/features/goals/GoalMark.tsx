@@ -29,6 +29,7 @@ export function GoalMark({
   const width = size * (icon === 'mutual' ? 1.7 : 1.6);
   return (
     <svg
+      className="goal-mark-icon"
       data-goal-mark={icon}
       aria-hidden="true"
       viewBox="0 0 24 24"
@@ -37,7 +38,7 @@ export function GoalMark({
       style={
         {
           flex: 'none',
-          color: selected ? 'var(--color-bg)' : 'var(--goal-mark-ink, var(--goal-mark-light))',
+          color: selected ? 'var(--color-bg)' : undefined,
           '--goal-mark-light': goalInk(color, '#F2F3F6', false),
           '--goal-mark-dark': goalInk(color, '#1E2026', true),
         } as CSSProperties

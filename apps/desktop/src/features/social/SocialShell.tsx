@@ -328,6 +328,7 @@ export function SocialShell({
             value={{
               friendId,
               management: peoplePage,
+              active: active === 'today' && !showingOther,
               avatars: enabled ? (
                 <AvatarRow
                   client={client}

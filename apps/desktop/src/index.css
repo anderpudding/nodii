@@ -2036,8 +2036,11 @@ html[lang='en'] .settings-header > [aria-hidden='true'] {
   color: var(--color-bg);
   background: var(--color-ink);
 }
-:root.dark {
-  --goal-mark-ink: var(--goal-mark-dark);
+.goal-mark-icon {
+  color: var(--goal-mark-light);
+}
+.dark .goal-mark-icon {
+  color: var(--goal-mark-dark);
 }
 
 .calendar-month-title {
@@ -2059,4 +2062,8 @@ html[lang='en'] .settings-header > [aria-hidden='true'] {
   .app-shell-v3 .app-toolbar:has(.narrow-settings) {
     display: flex;
   }
+}
+
+.todo-menu-goal {
+  padding: 4px 8px 8px;
 }

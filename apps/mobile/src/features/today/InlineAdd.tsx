@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
 import { SproutCheck } from '../../components/SproutCheck';
 import { ActionIcon } from '../../components/ActionIcon';
 import { useEffect, useRef, useState } from 'react';
@@ -54,6 +56,7 @@ export function InlineAdd({
 }) {
   const { colors } = useTheme();
   const online = useOnline();
+  const social = useContext(VisibilityContext);
   const cache = useQueryClient();
   const toast = useToast();
   const [title, setTitle] = useState('');
@@ -83,7 +86,11 @@ export function InlineAdd({
   });
   async function submit(event?: unknown) {
     const value = submissionTitle(title, event);
-    if (!online || !goal || busy.current || isDateLocked(date)) return;
+    if (!goal || busy.current || isDateLocked(date)) return;
+    if (!online) {
+      if (social && value) toast(() => t('sync.writeDisabled'));
+      return;
+    }
     if (!value) {
       if (!title.trim()) onClose();
       return;
@@ -172,13 +179,22 @@ export function InlineAdd({
             accessibilityLabel={t('mobile.add.action')}
             accessibilityState={{
               busy: create.isPending,
-              disabled: !online || !normalizeTitle(title) || create.isPending || isDateLocked(date),
+              disabled:
+                (!social && !online) ||
+                !normalizeTitle(title) ||
+                create.isPending ||
+                isDateLocked(date),
             }}
-            disabled={!online || !normalizeTitle(title) || create.isPending || isDateLocked(date)}
+            disabled={
+              (!social && !online) ||
+              !normalizeTitle(title) ||
+              create.isPending ||
+              isDateLocked(date)
+            }
             onPress={() => void submit()}
             style={({ pressed }) => [
               styles.action,
-              { opacity: pressed || !online ? m.pressedOpacity : 1 },
+              { opacity: pressed || (!social && !online) ? m.pressedOpacity : 1 },
             ]}
           >
             <Text style={[styles.label, { color: colors.ink }]}>{t('mobile.add.action')}</Text>

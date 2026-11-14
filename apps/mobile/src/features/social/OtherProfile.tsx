@@ -57,6 +57,10 @@ export function OtherProfile({
   const toast = useToast();
   const query = useSocialProfile(client, userId);
   const person = query.data;
+  const expandedHeight = person?.bio ? 236 : 204;
+  const collapseOffset = reduced
+    ? Math.max(0, expandedHeight - 64 - collapseDistance / 2)
+    : Math.max(0, expandedHeight - 64 - collapseDistance);
   const relations = useRelations(client, me, person ? [userId] : []);
   const pending = useRelationshipPending(me, userId);
   const block = useBlock(client, me, userId);
@@ -132,7 +136,7 @@ export function OtherProfile({
               setExpanded(value);
               setMonth(monthKeyOf(date));
             }}
-            contentTop={person.bio ? 236 : 204}
+            contentTop={expandedHeight - collapseOffset * progress}
             minScroll={collapseDistance}
             onScroll={(event) => setScroll(Math.max(0, event.nativeEvent.contentOffset.y))}
           />
@@ -142,7 +146,7 @@ export function OtherProfile({
             person={person}
             relation={relations.data?.get(userId)}
             progress={progress}
-            expandedHeight={person.bio ? 236 : 204}
+            expandedHeight={expandedHeight}
           />
           {relations.isError && (
             <Button

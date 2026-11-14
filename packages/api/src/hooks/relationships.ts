@@ -191,6 +191,7 @@ function useRelationshipWrite<T>(
       }
     },
     onSettled: async () => {
+      await cache.invalidateQueries({ queryKey: ['friend', target], refetchType: 'active' });
       await cache.invalidateQueries({ queryKey: scope(me), refetchType: 'none' });
       if (cache.isMutating({ mutationKey: key }) === 1 && onlineManager.isOnline()) {
         await refreshRelationships(cache, me);
@@ -244,7 +245,11 @@ function useReport<T extends ReportProfileInput>(client: NodiiClient, me: string
       assertOnline();
       return reportProfile(client, me, input);
     },
-    onSuccess: () => refreshRelationships(cache, me),
+    onSuccess: async (result, input) => {
+      if (result.blocked)
+        await cache.invalidateQueries({ queryKey: ['friend', input.targetUserId] });
+      await refreshRelationships(cache, me);
+    },
   });
 }
 

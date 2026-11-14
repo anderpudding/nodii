@@ -1,9 +1,12 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
+import { GoalChip } from '../goals/GoalChip';
 import { t } from '@nodii/i18n';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
-import { addDays, buildDay, keyBetween, lastSortKey, monthKeyOf } from '@nodii/core';
+import { addDays, buildDay, keyBetween, lastSortKey, monthKeyOf, type Goal } from '@nodii/core';
 import {
   monthTodosOptions,
   monthRoutineLogsOptions,
@@ -25,6 +28,7 @@ import { TodoDatePicker } from './TodoDatePicker';
 /** 두 진입점이 같은 메뉴를 제공하고 달력 팝오버로 포커스를 넘긴다 (TODO-05). */
 export function TodoMenu({
   todo,
+  goal,
   client,
   userId,
   weekStart,
@@ -36,6 +40,7 @@ export function TodoMenu({
   children,
 }: {
   todo: TodoRecord;
+  goal?: Goal;
   client: NodiiClient;
   userId: string;
   weekStart: 0 | 1;
@@ -46,6 +51,7 @@ export function TodoMenu({
   onDelete: () => void;
   children: ReactNode;
 }) {
+  const social = useContext(VisibilityContext);
   const today = useUIStore((state) => state.today);
   const cache = useQueryClient();
   const move = useMoveTodo(client, weekStart, todo.id, { onError: notifyError });
@@ -157,6 +163,11 @@ export function TodoMenu({
     const Separator = kind === 'context' ? ContextMenu.Separator : DropdownMenu.Separator;
     return (
       <>
+        {social && goal && (
+          <div className="todo-menu-goal">
+            <GoalChip goal={goal} />
+          </div>
+        )}
         {actions.map((action) => (
           <Item className="todo-menu-item" key={action.label} onSelect={action.run} disabled={busy}>
             {action.label}

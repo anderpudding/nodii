@@ -795,15 +795,6 @@ button.social-person-link:hover {
 .today-people-page .drag-handle {
   touch-action: none;
 }
-.today-people-page .social-switch {
-  width: 34px;
-  height: 20px;
-}
-.today-people-page .social-switch::after {
-  width: 16px;
-  height: 16px;
-}
-
 .friend-report-more {
   margin-left: auto;
   width: 36px;

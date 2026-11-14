@@ -1,4 +1,4 @@
-import { keyBetween, orderTodayPeople, type DefaultVisibility, type ISODate } from '@nodii/core';
+import { keyBetween, orderTodayPeople, type ISODate } from '@nodii/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NodiiClient } from '../client';
 import { assertOnline } from '../connectivity';
@@ -12,7 +12,6 @@ import {
   type TodayPerson,
   type TodayPersonPatch,
 } from '../repositories/today-people';
-import type { GoalRecord } from '../mappers';
 import { useUpdateGoal, type MutationOptions } from './mutations';
 
 export interface FriendDayRange {
@@ -55,12 +54,7 @@ export function useFriendDay(client: NodiiClient, friendId: string | null, range
 
 /** SOC-20: 기존 목표 수정의 낙관적 업데이트와 롤백을 공유한다. */
 export function useGoalVisibility(client: NodiiClient, id: string, options: MutationOptions) {
-  const mutation = useUpdateGoal(client, id, options);
-  return {
-    ...mutation,
-    setVisibility: (goal: GoalRecord, visibility: DefaultVisibility) =>
-      mutation.mutate({ goal, changes: { visibility } }),
-  };
+  return useUpdateGoal(client, id, options);
 }
 
 const peopleKey = (me: string) => ['relationships', me, 'todayPeople'] as const;

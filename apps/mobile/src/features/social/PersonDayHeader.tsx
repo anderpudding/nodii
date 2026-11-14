@@ -30,14 +30,16 @@ export function PersonDayHeader({
   const [width, setWidth] = useState(0);
   const avatarSize = blend(84, 44, progress);
   const compact = progress >= 0.5;
+  const buttonWidth = blend(140, 90, progress);
   const widthOfName = blend(
     width - 2 * m.space.lg,
-    Math.max(0, width - 2 * m.space.lg - 44 - 140 - 2 * m.space.md),
+    Math.max(0, width - 2 * m.space.lg - 44 - 90 - 2 * m.space.md),
     progress,
   );
   const height = blend(expandedHeight, 64, progress);
   return (
     <View
+      testID="person-day-header"
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={{
         position: 'absolute',
@@ -123,7 +125,7 @@ export function PersonDayHeader({
           person={person}
           relation={relation}
           size={blend(36, 32, progress)}
-          width={blend(140, 76, progress)}
+          width={buttonWidth}
         />
       </View>
     </View>

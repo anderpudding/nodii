@@ -54,7 +54,13 @@ export function MainLayout({
       if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
       const value = (event as CustomEvent<AppCommand>).detail;
       if (value === 'settings' && !social) setSettingsOpen(true);
-      if (value === 'today') useUIStore.getState().selectDate(useUIStore.getState().today);
+      if (
+        value === 'today' &&
+        !document.querySelector('.social-other .friend-day') &&
+        !document.querySelector('.social-today[hidden]')
+      ) {
+        useUIStore.getState().selectDate(useUIStore.getState().today);
+      }
     };
     window.addEventListener('nodii:command', command);
     return () => {
@@ -64,7 +70,7 @@ export function MainLayout({
     };
   }, [social]);
 
-  const { friendId, avatars, management } = useContext(TodaySocialContext);
+  const { friendId, avatars, management, active } = useContext(TodaySocialContext);
   const { today, selectedDate, selectDate } = useUIStore();
   return (
     <div className="today-shell">
@@ -74,6 +80,7 @@ export function MainLayout({
           key={friendId}
           client={client}
           friendId={friendId}
+          active={active}
           me={session.user.id}
           profile={profile}
           today={today}

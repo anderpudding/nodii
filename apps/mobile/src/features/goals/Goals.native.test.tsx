@@ -1,3 +1,5 @@
+import { VisibilityContext } from '../social/VisibilityContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   act,
   cleanup,
@@ -82,11 +84,13 @@ afterEach(() => {
   onlineManager.setOnline(true);
   jest.restoreAllMocks();
 });
-async function mount() {
+async function mount(social = false) {
   render(
     <QueryClientProvider client={cache}>
       <ToastProvider>
-        <Goals client={client} userId="user" onClose={jest.fn()} />
+        <VisibilityContext.Provider value={social}>
+          <Goals client={client} userId="user" onClose={jest.fn()} />
+        </VisibilityContext.Provider>
       </ToastProvider>
     </QueryClientProvider>,
   );
@@ -208,4 +212,33 @@ it('완전 삭제 확인에는 개수를 표시하고 delete_goal 경로를 한 
   });
   await waitFor(() => expect(deleteGoal).toHaveBeenCalledTimes(1));
   expect(deleteGoal).toHaveBeenCalledWith(client, 'g1');
+});
+
+it('opens goal editing as a page, previews shorthand HEX, and saves the chosen visibility', async () => {
+  await mount(true);
+  fireEvent.press(screen.getByRole('button', { name: '공부, 할 일 42개, 루틴 1개' }));
+  expect(screen.getByTestId('goal-editor-page')).toBeTruthy();
+  expect(screen.queryByTestId('goal-editor-sheet')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: '직접 고르기' }));
+  fireEvent.changeText(screen.getByLabelText('HEX 색상'), '2af');
+  expect(screen.getByLabelText('고른 색 #22AAFF')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: '이 색으로 하기' }));
+  fireEvent.press(screen.getByRole('radio', { name: '팔로워' }));
+  await waitFor(() =>
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('nodii:first-publish-notice', '1'),
+  );
+  fireEvent.press(screen.getByRole('radio', { name: '나만' }));
+  fireEvent.press(screen.getByRole('radio', { name: '맞팔로우' }));
+  const marks = jest
+    .mocked(AsyncStorage.setItem)
+    .mock.calls.filter(([key]) => key === 'nodii:first-publish-notice');
+  expect(marks).toHaveLength(1);
+  fireEvent.press(screen.getByRole('button', { name: '저장' }));
+  await waitFor(() =>
+    expect(updateGoal).toHaveBeenCalledWith(client, first.id, {
+      name: first.name,
+      color: '#22AAFF',
+      visibility: 'mutual',
+    }),
+  );
 });

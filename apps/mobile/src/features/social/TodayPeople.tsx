@@ -55,6 +55,7 @@ function Handle({
       setDistance(0);
     },
   });
+
   return (
     <View
       accessible
