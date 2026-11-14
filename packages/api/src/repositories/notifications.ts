@@ -291,3 +291,23 @@ export async function notificationDestination(client: NodiiClient, me: string, i
     ? ({ tab: 'today', date: row.date } as const)
     : null;
 }
+
+/** SOC-54: 이전 행을 제공하지 않는 Realtime UPDATE를 판별할 시작 상태를 읽는다. */
+export async function fetchFriendDonePushBaseline(client: NodiiClient, me: string) {
+  const baseline = new Map<string, { count: number; updatedAt: string }>();
+  let after: string | undefined;
+  for (;;) {
+    const query = client
+      .from('notifications')
+      .select('id,count,updated_at')
+      .eq('recipient_id', me)
+      .eq('kind', 'friend_done')
+      .order('id')
+      .limit(500);
+    const { data, error } = await (after ? query.gt('id', after) : query);
+    if (error) throw error;
+    for (const row of data) baseline.set(row.id, { count: row.count, updatedAt: row.updated_at });
+    if (data.length < 500) return baseline;
+    after = data.at(-1)?.id;
+  }
+}

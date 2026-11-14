@@ -6,6 +6,7 @@ import {
   createNodiiClient,
   fetchMyReactions,
   fetchNotifications,
+  notificationDestination,
   react,
   setNotificationMute,
   socialErrorCode,
@@ -232,4 +233,34 @@ it('saves only the changed preference and scopes the override upsert and removal
   });
   await setNotificationMute(client, 'me', 'b', false);
   await clearNotificationMute(client, 'me', 'b');
+});
+
+it('opens the current reaction date and falls back when the receiving account or item is gone', async () => {
+  const id = '10000000-0000-4000-8000-000000000088';
+  let targetExists = true;
+  server.use(
+    http.get(rest + '/notifications', ({ request }) => {
+      const q = new URL(request.url).searchParams;
+      expect(q.get('id')).toBe(`eq.${id}`);
+      return HttpResponse.json(
+        q.get('recipient_id') === 'eq.me'
+          ? [{ id, actor_id: 'actor', kind: 'reaction', todo_id: 'todo', date: '2026-11-13' }]
+          : [],
+      );
+    }),
+    http.get(rest + '/social_profiles', () => HttpResponse.json([{ user_id: 'actor' }])),
+    http.get(rest + '/todos', ({ request }) => {
+      const q = new URL(request.url).searchParams;
+      expect(q.get('deleted_at')).toBe('is.null');
+      expect(q.get('user_id')).toBe('eq.me');
+      return HttpResponse.json(targetExists ? [{ date: '2026-11-14' }] : []);
+    }),
+  );
+  expect(await notificationDestination(client, 'me', id)).toEqual({
+    tab: 'today',
+    date: '2026-11-14',
+  });
+  expect(await notificationDestination(client, 'another', id)).toBeNull();
+  targetExists = false;
+  expect(await notificationDestination(client, 'me', id)).toBeNull();
 });
