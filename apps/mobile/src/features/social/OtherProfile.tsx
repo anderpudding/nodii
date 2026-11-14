@@ -1,150 +1,25 @@
+import { ReportSheet } from './ReportSheet';
 import { useState } from 'react';
-import {
-  ActionSheetIOS,
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Text, View } from 'react-native';
 import {
   relationshipErrorKey,
   useBlock,
   useRelations,
   useRelationshipPending,
-  useReportProfile,
   useSocialProfile,
   type NodiiClient,
 } from '@nodii/api';
-import {
-  REPORT_DETAIL_LIMIT,
-  REPORT_REASONS,
-  validateReportDetail,
-  type ReportReason,
-  type SocialProfile,
-} from '@nodii/core';
+import { monthKeyOf, type Profile, type SocialProfile } from '@nodii/core';
 import { t } from '@nodii/i18n';
-import { metrics as m, useTheme } from '../../../lib/theme';
-import { BottomSheet } from '../../components/BottomSheet';
+import { useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import { useToast } from '../../components/Toast';
-import { RoutineOption } from '../routines/RoutineOption';
 import { Avatar, ProfileNav, ProfileTool, profileStyles as s } from './Primitives';
-import { ProfileHeader } from './ProfileHeader';
-import { confirmRelationship, FollowButton } from './RelationshipActions';
-import { ProfileSwitch } from './ProfilePrivacy';
-
-function ReportSheet({
-  client,
-  me,
-  person,
-  onClose,
-  onBlocked,
-}: {
-  client: NodiiClient;
-  me: string;
-  person: SocialProfile;
-  onClose(): void;
-  onBlocked(): void;
-}) {
-  const { colors } = useTheme();
-  const toast = useToast();
-  const [reason, setReason] = useState<ReportReason>();
-  const [detail, setDetail] = useState('');
-  const [alsoBlock, setAlsoBlock] = useState(false);
-  const report = useReportProfile(client, me);
-  const parsed = validateReportDetail(detail, reason ?? 'other');
-  const valid = reason && (reason !== 'other' || parsed.valid);
-  async function submit() {
-    if (!valid || !reason || report.isPending) return;
-    try {
-      const { blocked, blockFailed } = await report.mutateAsync({
-        targetUserId: person.userId,
-        reason,
-        detail: reason === 'other' ? parsed.value : undefined,
-        alsoBlock,
-      });
-      toast(() => t(blockFailed ? 'social.report.blockFailed' : 'social.report.sent'));
-      onClose();
-      if (blocked) onBlocked();
-    } catch (error) {
-      toast(() => t(relationshipErrorKey(error)));
-    }
-  }
-  return (
-    <BottomSheet
-      testID="report-profile"
-      title={t('social.report.title', { nickname: person.nickname })}
-      keyboard
-      onClose={() => {
-        if (!report.isPending) onClose();
-      }}
-    >
-      <View
-        accessibilityRole="radiogroup"
-        accessibilityLabel={t('social.report.title', { nickname: person.nickname })}
-        style={[s.card, { backgroundColor: colors.chip }]}
-      >
-        {REPORT_REASONS.map((value) => (
-          <RoutineOption
-            key={value}
-            compact
-            selected={reason === value}
-            disabled={report.isPending}
-            label={t(`social.report.${value}`)}
-            onPress={() => setReason(value)}
-          />
-        ))}
-      </View>
-      {reason === 'other' && (
-        <>
-          <TextInput
-            accessibilityLabel={t('social.report.detail')}
-            placeholder={t('social.report.detail')}
-            placeholderTextColor={colors.muted}
-            multiline
-            value={detail}
-            editable={!report.isPending}
-            onChangeText={(next) => setDetail([...next].slice(0, REPORT_DETAIL_LIMIT).join(''))}
-            style={[
-              s.body,
-              {
-                minHeight: m.height.menu,
-                padding: m.space.md,
-                borderRadius: m.radius.field,
-                backgroundColor: colors.chip,
-                color: colors.ink,
-              },
-            ]}
-          />
-          <Text style={[s.support, { color: colors.muted }]}>
-            {t('social.report.remaining', { count: REPORT_DETAIL_LIMIT - [...detail].length })}
-          </Text>
-        </>
-      )}
-      <Pressable
-        accessibilityRole="switch"
-        accessibilityLabel={t('social.report.alsoBlock')}
-        accessibilityState={{ checked: alsoBlock, disabled: report.isPending }}
-        disabled={report.isPending}
-        onPress={() => setAlsoBlock(!alsoBlock)}
-        style={[s.row, { minHeight: m.height.touch, justifyContent: 'space-between' }]}
-      >
-        <Text style={[s.body, { color: colors.ink }]}>{t('social.report.alsoBlock')}</Text>
-        <ProfileSwitch checked={alsoBlock} />
-      </Pressable>
-      <Text style={[s.support, { color: colors.muted }]}>{t('social.report.hint')}</Text>
-      <Button
-        pill
-        label={t('social.report.action')}
-        onPress={() => void submit()}
-        disabled={!valid || report.isPending}
-        busy={report.isPending}
-      />
-    </BottomSheet>
-  );
-}
+import { PersonDayHeader, collapseDistance } from './PersonDayHeader';
+import { FriendDay } from './FriendDay';
+import { useUIStore } from '../../stores/ui';
+import { useReducedMotion } from '../../../lib/theme';
+import { confirmRelationship } from './RelationshipActions';
 
 /** SOC-38·60·62: 프로필 헤더와 관계 동작을 한 화면에 둔다. */
 export function OtherProfile({
@@ -154,6 +29,7 @@ export function OtherProfile({
   from,
   onBack,
   onBlocked,
+  calendarProfile,
 }: {
   client: NodiiClient;
   me: string;
@@ -161,8 +37,23 @@ export function OtherProfile({
   from: string;
   onBack(): void;
   onBlocked(): void;
+  calendarProfile?: Profile;
 }) {
   const { colors } = useTheme();
+  const today = useUIStore((state) => state.today);
+  const [date, setDate] = useState(today);
+  const [month, setMonth] = useState(() => monthKeyOf(today));
+  const [expanded, setExpanded] = useState(false);
+  const [scroll, setScroll] = useState(0);
+  const reduced = useReducedMotion();
+  const progress = reduced
+    ? Number(scroll >= collapseDistance / 2)
+    : Math.min(1, scroll / collapseDistance);
+  const select = (value: string) => {
+    setDate(value);
+    setMonth(monthKeyOf(value));
+  };
+
   const toast = useToast();
   const query = useSocialProfile(client, userId);
   const person = query.data;
@@ -223,14 +114,35 @@ export function OtherProfile({
           <Text style={[s.heading, { color: colors.ink }]}>{t('social.profile.gone')}</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[s.page, { alignItems: 'center', gap: m.space.sm }]}>
-          <ProfileHeader client={client} profile={person} />
-          <FollowButton
+        <View style={{ flex: 1 }}>
+          <FriendDay
+            client={client}
+            me={me}
+            friendId={userId}
+            nickname={person.nickname}
+            onBlocked={onBlocked}
+            profile={calendarProfile ?? { timezone: 'UTC', weekStart: 0 }}
+            today={today}
+            date={date}
+            onSelect={select}
+            month={month}
+            onMonth={setMonth}
+            monthExpanded={expanded}
+            onSetMonthExpanded={(value) => {
+              setExpanded(value);
+              setMonth(monthKeyOf(date));
+            }}
+            contentTop={person.bio ? 236 : 204}
+            minScroll={collapseDistance}
+            onScroll={(event) => setScroll(Math.max(0, event.nativeEvent.contentOffset.y))}
+          />
+          <PersonDayHeader
             client={client}
             me={me}
             person={person}
             relation={relations.data?.get(userId)}
-            size={36}
+            progress={progress}
+            expandedHeight={person.bio ? 236 : 204}
           />
           {relations.isError && (
             <Button
@@ -239,7 +151,7 @@ export function OtherProfile({
               onPress={() => void relations.refetch()}
             />
           )}
-        </ScrollView>
+        </View>
       )}
       {person && report && (
         <ReportSheet

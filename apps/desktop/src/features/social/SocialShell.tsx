@@ -357,6 +357,7 @@ export function SocialShell({
                 from={t(showingOther.from ?? `tabs.${tab}`)}
                 onBack={() => setOther(null)}
                 onBlocked={() => setOther(null)}
+                calendarProfile={profile}
               />
             ) : active === 'notifications' ? (
               <section className="social-notifications">

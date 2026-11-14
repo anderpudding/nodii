@@ -151,6 +151,7 @@ export function Today(props: TodayProps) {
               key={friendId}
               client={props.client}
               friendId={friendId}
+              me={props.userId}
               profile={profile.data}
               today={today}
               date={selectedDate}

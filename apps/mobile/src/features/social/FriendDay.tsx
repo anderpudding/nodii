@@ -1,5 +1,14 @@
-import { useEffect, useMemo, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ReportSheet } from './ReportSheet';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  ActionSheetIOS,
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { adjacentMonthKey, useFriendDay, type NodiiClient } from '@nodii/api';
 import { buildDay, monthGridRange, monthKeyOf, summarizeMonth, type Profile } from '@nodii/core';
 import { formatISODate, t } from '@nodii/i18n';
@@ -9,7 +18,7 @@ import { SproutCheck } from '../../components/SproutCheck';
 import { GoalBadge } from '../today/GoalBadge';
 import { MonthGrid } from '../today/MonthGrid';
 import { WeekStrip } from '../today/WeekStrip';
-import { weekRange } from '../today/calendar-model';
+import { weekRange } from '../today/model';
 import { completedStampColors } from '../today/stamp-colors';
 import { onSocialForeground } from './invite-receiver';
 
@@ -29,6 +38,10 @@ export function FriendDay({
   bottom = 0,
   onScroll,
   contentTop = 0,
+  minScroll = 0,
+  me,
+  nickname,
+  onBlocked,
 }: {
   client: NodiiClient;
   friendId: string;
@@ -44,8 +57,22 @@ export function FriendDay({
   bottom?: number;
   onScroll?: React.ComponentProps<typeof ScrollView>['onScroll'];
   contentTop?: number;
+  minScroll?: number;
+  me?: string;
+  nickname?: string;
+  onBlocked?(): void;
 }) {
   const { colors } = useTheme();
+  const [viewport, setViewport] = useState(0);
+  const [report, setReport] = useState<{ id: string; title: string } | null>(null);
+  function reportMenu(todo: { id: string; title: string }) {
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: [t('mobile.add.cancel'), t('social.report.action')], cancelButtonIndex: 0 },
+      (index) => {
+        if (index === 1) setReport(todo);
+      },
+    );
+  }
   const week = weekRange(date, profile.weekStart);
   const range = monthExpanded ? monthGridRange(month, profile.weekStart) : week;
   const query = useFriendDay(client, friendId, range);
@@ -82,155 +109,188 @@ export function FriendDay({
     if (separate) void refetchSelected();
   };
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ paddingBottom: bottom, paddingTop: contentTop, flexGrow: 1 }}
-      onScroll={onScroll}
-      scrollEventThrottle={16}
-      refreshControl={
-        <RefreshControl
-          refreshing={query.isRefetching || selected.isRefetching}
-          onRefresh={reload}
-          tintColor={colors.ink}
-        />
-      }
-    >
-      {header}
-      <View
-        style={{
-          minHeight: 48,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: m.space.lg,
-          gap: m.space.sm,
+    <>
+      <ScrollView
+        style={{ flex: 1 }}
+        onLayout={(event) => setViewport(event.nativeEvent.layout.height)}
+        contentContainerStyle={{
+          paddingBottom: bottom,
+          paddingTop: contentTop,
+          flexGrow: 1,
+          minHeight: minScroll ? viewport + minScroll : undefined,
         }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={query.isRefetching || selected.isRefetching}
+            onRefresh={reload}
+            tintColor={colors.ink}
+          />
+        }
       >
-        <Pressable
-          style={{ flex: 1, minHeight: m.height.touch, justifyContent: 'center' }}
-          accessibilityRole="button"
-          accessibilityLabel={t('calendar.monthToday', { month: monthLabel })}
-          onPress={() => onSelect(today)}
-        >
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            style={{ color: colors.ink, fontSize: m.type.month, fontFamily: m.fontExtraBold }}
-          >
-            {monthLabel}
-          </Text>
-        </Pressable>
+        {header}
         <View
-          accessibilityRole="radiogroup"
           style={{
+            minHeight: 48,
             flexDirection: 'row',
-            backgroundColor: colors.chip,
-            borderRadius: m.radius.pill,
-            padding: m.space.xs,
+            alignItems: 'center',
+            paddingHorizontal: m.space.lg,
+            gap: m.space.sm,
           }}
         >
-          {([false, true] as const).map((value) => (
-            <Pressable
-              key={String(value)}
-              accessibilityRole="radio"
-              accessibilityLabel={t(value ? 'mobile.view.month' : 'mobile.view.week')}
-              accessibilityState={{ checked: value === monthExpanded }}
-              onPress={() => onSetMonthExpanded(value)}
-              style={{
-                width: m.height.segmentMark,
-                minHeight: m.height.segmentMark,
-                borderRadius: m.radius.pill,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: value === monthExpanded ? colors.ink : colors.chip,
-              }}
+          <Pressable
+            style={{ flex: 1, minHeight: m.height.touch, justifyContent: 'center' }}
+            accessibilityRole="button"
+            accessibilityLabel={t('calendar.monthToday', { month: monthLabel })}
+            onPress={() => onSelect(today)}
+          >
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              style={{ color: colors.ink, fontSize: m.type.month, fontFamily: m.fontExtraBold }}
             >
-              <Text
+              {monthLabel}
+            </Text>
+          </Pressable>
+          <View
+            accessibilityRole="radiogroup"
+            style={{
+              flexDirection: 'row',
+              backgroundColor: colors.chip,
+              borderRadius: m.radius.pill,
+              padding: m.space.xs,
+            }}
+          >
+            {([false, true] as const).map((value) => (
+              <Pressable
+                key={String(value)}
+                accessibilityRole="radio"
+                accessibilityLabel={t(value ? 'mobile.view.month' : 'mobile.view.week')}
+                accessibilityState={{ checked: value === monthExpanded }}
+                onPress={() => onSetMonthExpanded(value)}
                 style={{
-                  color: value === monthExpanded ? colors.bg : colors.ink2,
-                  fontFamily: m.fontExtraBold,
+                  width: m.height.segmentMark,
+                  minHeight: m.height.segmentMark,
+                  borderRadius: m.radius.pill,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: value === monthExpanded ? colors.ink : colors.chip,
                 }}
               >
-                {value ? 'M' : 'W'}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  style={{
+                    color: value === monthExpanded ? colors.bg : colors.ink2,
+                    fontFamily: m.fontExtraBold,
+                  }}
+                >
+                  {value ? 'M' : 'W'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View>
-      {monthExpanded ? (
-        <MonthGrid
-          month={month}
-          weekStart={profile.weekStart}
-          today={today}
-          selectedDate={date}
-          summary={summary}
-          stampColors={stampColors}
-          onSelect={onSelect}
-          onMove={(direction) => onMonth(adjacentMonthKey(month, direction))}
-        />
-      ) : (
-        <WeekStrip
-          dates={week.dates}
-          today={today}
-          selectedDate={date}
-          summary={summary}
-          stampColors={stampColors}
-          onSelect={onSelect}
-        />
-      )}
-      <View style={{ padding: m.space.lg, gap: m.space.group }}>
-        {day.isError || query.isError ? (
-          <>
-            <Text accessibilityRole="alert" style={{ color: colors.ink }}>
-              {t('social.today.loadFailed')}
-            </Text>
-            <Button label={t('common.tryAgain')} secondary onPress={reload} />
-          </>
-        ) : !day.data ? (
-          <ActivityIndicator accessibilityLabel={t('day.loading')} color={colors.ink} />
-        ) : !day.data.goals.length ? (
-          <Text style={{ color: colors.muted }}>{t('social.today.noGoals')}</Text>
+        {monthExpanded ? (
+          <MonthGrid
+            month={month}
+            weekStart={profile.weekStart}
+            today={today}
+            selectedDate={date}
+            summary={summary}
+            stampColors={stampColors}
+            onSelect={onSelect}
+            onMove={(direction) => onMonth(adjacentMonthKey(month, direction))}
+          />
         ) : (
-          groups.map(({ goal, items }) => (
-            <View key={goal.id}>
-              <View style={{ alignSelf: 'flex-start' }}>
-                <GoalBadge goal={goal} friend />
-              </View>
-              {items.map((item) => {
-                const id = item.kind === 'todo' ? item.todo.id : item.routine.id;
-                const title = item.kind === 'todo' ? item.todo.title : item.routine.title;
-                const done = item.kind === 'todo' ? item.todo.isDone : item.log?.status === 'done';
-                return (
-                  <View
-                    key={`${item.kind}:${id}`}
-                    accessible
-                    accessibilityLabel={t(
-                      done ? 'social.today.finished' : 'social.today.unfinished',
-                      { title },
-                    )}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      minHeight: m.height.field,
-                      gap: m.space.md,
-                    }}
-                  >
-                    <SproutCheck color={goal.color} done={done} />
-                    <Text
+          <WeekStrip
+            dates={week.dates}
+            today={today}
+            selectedDate={date}
+            summary={summary}
+            stampColors={stampColors}
+            onSelect={onSelect}
+          />
+        )}
+        <View style={{ padding: m.space.lg, gap: m.space.group }}>
+          {day.isError || query.isError ? (
+            <>
+              <Text accessibilityRole="alert" style={{ color: colors.ink }}>
+                {t('social.today.loadFailed')}
+              </Text>
+              <Button label={t('common.tryAgain')} secondary onPress={reload} />
+            </>
+          ) : !day.data ? (
+            <ActivityIndicator accessibilityLabel={t('day.loading')} color={colors.ink} />
+          ) : !day.data.goals.length ? (
+            <Text style={{ color: colors.muted }}>{t('social.today.noGoals')}</Text>
+          ) : (
+            groups.map(({ goal, items }) => (
+              <View key={goal.id}>
+                <View style={{ alignSelf: 'flex-start' }}>
+                  <GoalBadge goal={goal} friend />
+                </View>
+                {items.map((item) => {
+                  const id = item.kind === 'todo' ? item.todo.id : item.routine.id;
+                  const title = item.kind === 'todo' ? item.todo.title : item.routine.title;
+                  const done =
+                    item.kind === 'todo' ? item.todo.isDone : item.log?.status === 'done';
+                  const Row = me && item.kind === 'todo' ? Pressable : View;
+                  const todo = me && item.kind === 'todo' ? item.todo : null;
+                  return (
+                    <Row
+                      key={`${item.kind}:${id}`}
+                      accessible
+                      {...(todo
+                        ? {
+                            onLongPress: () => reportMenu(todo),
+                            accessibilityActions: [
+                              { name: 'report', label: t('social.report.action') },
+                            ],
+                            onAccessibilityAction: () => reportMenu(todo),
+                          }
+                        : {})}
+                      accessibilityLabel={t(
+                        done ? 'social.today.finished' : 'social.today.unfinished',
+                        { title },
+                      )}
                       style={{
-                        color: done ? colors.ink2 : colors.ink,
-                        fontSize: m.type.body,
-                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        minHeight: m.height.field,
+                        gap: m.space.md,
                       }}
                     >
-                      {title}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ))
-        )}
-      </View>
-    </ScrollView>
+                      <SproutCheck color={goal.color} done={done} />
+                      <Text
+                        style={{
+                          color: done ? colors.ink2 : colors.ink,
+                          fontSize: m.type.body,
+                          flex: 1,
+                        }}
+                      >
+                        {title}
+                      </Text>
+                    </Row>
+                  );
+                })}
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
+      {report && me && (
+        <ReportSheet
+          client={client}
+          me={me}
+          person={{ userId: friendId, nickname: nickname ?? '' }}
+          todo={report}
+          onClose={() => setReport(null)}
+          onBlocked={() => {
+            setReport(null);
+            onBlocked?.();
+          }}
+        />
+      )}
+    </>
   );
 }

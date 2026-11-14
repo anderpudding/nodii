@@ -803,3 +803,29 @@ button.social-person-link:hover {
   width: 16px;
   height: 16px;
 }
+
+.friend-report-more {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  opacity: 0;
+}
+.friend-day-row:hover .friend-report-more,
+.friend-report-more:focus,
+.friend-report-more[aria-expanded='true'] {
+  opacity: 1;
+}
+.report-todo-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.social-other > .friend-day {
+  flex: 1;
+  height: auto;
+}
+.social-other > .social-header-horizontal {
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 12px;
+}

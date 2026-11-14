@@ -219,7 +219,7 @@ export function SocialShell({
   const account = useQuery({
     queryKey: ['profile', userId],
     queryFn: ({ signal }) => fetchProfile(client, userId, signal),
-    enabled: enabled && !!page,
+    enabled: enabled && (!!page || !!other),
     staleTime: 30_000,
   });
   const select = useCallback((next: SocialTab) => {
@@ -467,6 +467,7 @@ export function SocialShell({
                 from={t(other.from ?? `tabs.${tab}`)}
                 onBack={back}
                 onBlocked={back}
+                calendarProfile={account.data}
               />
             ) : mine.data && page?.kind === 'edit' ? (
               <ProfileEdit

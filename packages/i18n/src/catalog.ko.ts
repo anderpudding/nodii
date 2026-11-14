@@ -603,6 +603,7 @@ export const ko = {
   'social.block.unblockConfirm': '{nickname}님의 차단을 풀까요?',
   'social.block.unblockExplanation': '팔로우는 다시 이어지지 않아요.',
   'social.report.action': '신고하기',
+  'social.report.todoTitle': '할 일 신고',
   'social.report.title': '{nickname}님 신고',
   'social.report.spam': '스팸',
   'social.report.offensive': '불쾌한 내용',

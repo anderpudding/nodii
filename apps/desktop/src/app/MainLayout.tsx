@@ -74,6 +74,7 @@ export function MainLayout({
           key={friendId}
           client={client}
           friendId={friendId}
+          me={session.user.id}
           profile={profile}
           today={today}
           date={selectedDate}

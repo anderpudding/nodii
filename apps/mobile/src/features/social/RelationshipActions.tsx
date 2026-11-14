@@ -30,12 +30,14 @@ export function SmallAction({
   label,
   size = 32,
   wide,
+  width,
   secondary,
   disabled,
   onPress,
 }: {
   label: string;
-  size?: 32 | 36;
+  size?: number;
+  width?: number;
   wide?: boolean;
   secondary?: boolean;
   disabled?: boolean;
@@ -62,7 +64,7 @@ export function SmallAction({
           {
             lineHeight: size,
             paddingHorizontal: m.space.md,
-            width: wide ? 140 : undefined,
+            width: width ?? (wide ? 140 : undefined),
             textAlign: 'center',
             color: secondary ? colors.ink : colors.bg,
             backgroundColor: secondary ? colors.chip : colors.ink,
@@ -84,12 +86,14 @@ export function FollowButton({
   person,
   relation,
   size = 32,
+  width,
 }: {
   client: NodiiClient;
   me: string;
   person: { userId: string; nickname: string };
   relation?: FollowRelation;
-  size?: 32 | 36;
+  size?: number;
+  width?: number;
 }) {
   const toast = useToast();
   const mutation = useFollowMutation(client, me, person.userId);
@@ -105,6 +109,7 @@ export function FollowButton({
       label={t(`social.follow.${state}`)}
       secondary={state === 'following'}
       size={size}
+      width={width}
       wide={size === 36}
       disabled={pending}
       onPress={() => {

@@ -628,6 +628,7 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'social.block.unblockConfirm': 'Unblock {nickname}?',
   'social.block.unblockExplanation': 'You won’t automatically follow each other again.',
   'social.report.action': 'Report',
+  'social.report.todoTitle': 'Report a to-do',
   'social.report.title': 'Report {nickname}',
   'social.report.spam': 'Spam',
   'social.report.offensive': 'Offensive content',
