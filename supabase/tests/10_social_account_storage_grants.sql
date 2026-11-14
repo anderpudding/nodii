@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(27);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('10000000-0000-4000-8000-000000000001', 'a@nodii.test'), ('10000000-0000-4000-8000-000000000002', 'b@nodii.test'), ('10000000-0000-4000-8000-000000000003', 'c@nodii.test');
@@ -23,6 +23,9 @@ insert into public.notification_prefs (user_id) values ('10000000-0000-4000-8000
 insert into public.notification_mutes (user_id, actor_id, friend_done)
 values ('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', false), ('10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', true);
 insert into public.push_tokens (token, user_id, platform) values ('a-token', '10000000-0000-4000-8000-000000000001', 'ios');
+insert into public.push_throttle (recipient_id, actor_id, last_sent_at)
+values ('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', now()),
+  ('10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', now());
 insert into public.reports (reporter_id, target_user_id, target_kind, reason)
 values ('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', 'profile', 'other'), ('10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 'profile', 'other');
 
@@ -90,6 +93,8 @@ select is_empty($$select id from public.notifications where '10000000-0000-4000-
 select is_empty($$select user_id from public.notification_prefs where user_id = '10000000-0000-4000-8000-000000000001'$$, '알림 설정 정리');
 select is_empty($$select user_id from public.notification_mutes where '10000000-0000-4000-8000-000000000001' in (user_id, actor_id)$$, '사람별 알림 예외 정리');
 select is_empty($$select token from public.push_tokens where user_id = '10000000-0000-4000-8000-000000000001'$$, '푸시 토큰 정리');
+select is_empty($$select 1 from public.push_throttle
+  where '10000000-0000-4000-8000-000000000001' in (recipient_id, actor_id)$$, '푸시 제한 기록 양방향 정리');
 select is_empty($$select id from public.reports where '10000000-0000-4000-8000-000000000001' in (reporter_id, target_user_id)$$, '보낸 신고와 받은 신고 정리');
 select is_empty($$select user_id from social_private.follow_rate_limits where user_id = '10000000-0000-4000-8000-000000000001'$$, '팔로우 한도 이력 정리');
 select results_eq($$select handle, available_at - now() from public.handle_holds
