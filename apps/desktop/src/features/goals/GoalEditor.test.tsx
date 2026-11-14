@@ -13,6 +13,7 @@ import { server } from '../../test/server';
 it('previews HEX input and only publishes when the editor is saved', async () => {
   const client = createTestClient();
   const cache = new QueryClient();
+  cache.setQueryData(['goals'], [mapGoal(goalRow)]);
   const onBack = vi.fn();
   const writes = vi.fn(async ({ request }: { request: Request }) => {
     const patch = await request.json();
