@@ -1,5 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { monthGridRange, monthKeyOf } from '@nodii/core';
+import { mapGoal, mapTodo } from '@nodii/api';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { expect, it, vi } from 'vitest';
@@ -36,6 +38,25 @@ it('toggles a completed friend’s heart and restores it after a rejected reques
     .mockReturnValueOnce(HttpResponse.json({ code: 'P0001', message: 'not_done' }, { status: 400 }))
     .mockReturnValueOnce(HttpResponse.json('like-id'));
   const remove = vi.fn(() => new HttpResponse(null, { status: 204 }));
+  // 달력과 친구 하루 조회는 아래 테스트에서 다룬다. 여기서는 준비된 목록의 반응만 검증한다.
+  cache.setQueryData(['myReactions', 'me', [`todo:${todoRow.id}`]], {});
+  const range = monthGridRange(monthKeyOf(date), 0);
+  cache.setQueryData(['friend', 'friend', range.from, range.to], {
+    goals: [mapGoal({ ...goalRow, user_id: 'friend', visibility: 'followers' })],
+    todos: [
+      mapTodo({ ...todoRow, date, user_id: 'friend', is_done: true }),
+      mapTodo({
+        ...todoRow,
+        id: 'pending',
+        title: 'Pending',
+        date,
+        user_id: 'friend',
+        is_done: false,
+      }),
+    ],
+    routines: [],
+    logs: [],
+  });
   server.use(
     http.get(`${rest}/goals`, () => HttpResponse.json([{ ...goalRow, user_id: 'friend' }])),
     http.get(`${rest}/todos`, () =>
@@ -64,16 +85,17 @@ it('toggles a completed friend’s heart and restores it after a rejected reques
     </QueryClientProvider>,
   );
   try {
-    const like = await screen.findByRole('button', { name: `${todoRow.title} 좋아요` });
+    const list = within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
+    const like = list.getByRole('button', { name: `${todoRow.title} 좋아요` });
     await waitFor(() => expect(like.getAttribute('aria-disabled')).toBe('false'));
-    expect(screen.queryByRole('button', { name: 'Pending 좋아요' })).toBeNull();
+    expect(list.queryByRole('button', { name: 'Pending 좋아요' })).toBeNull();
     const user = userEvent.setup();
     await user.click(like);
     await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(like.getAttribute('aria-pressed')).toBe('false'));
     await user.click(like);
     await waitFor(() => expect(like.getAttribute('aria-disabled')).toBe('false'));
-    await user.click(screen.getByRole('button', { name: '좋아요 취소' }));
+    await user.click(list.getByRole('button', { name: '좋아요 취소' }));
     await waitFor(() => expect(remove).toHaveBeenCalledTimes(1));
     expect(like.getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryByRole('menu')).toBeNull();
