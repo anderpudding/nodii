@@ -1642,11 +1642,11 @@ body,
 .goal-dot {
   width: 10px;
   height: 10px;
-  flex: 0 0 10px;
+  flex: none;
   border-radius: 999px;
   background: var(--goal-color);
 }
-.goal-chip > span:last-child:not(.goal-dot) {
+.goal-chip-add {
   color: var(--color-ink);
 }
 

@@ -1,5 +1,8 @@
+import { useContext } from 'react';
+import { GoalMark } from '../goals/GoalMark';
+import { VisibilityContext } from '../social/VisibilityContext';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { goalInk, type Goal } from '@nodii/core';
+import { goalInk, visibilityA11y, type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 
@@ -12,6 +15,7 @@ export function GoalBadge({
   disabled = false,
   hint,
   onChip = false,
+  friend = false,
 }: {
   goal: Goal;
   onPress?(): void;
@@ -20,8 +24,14 @@ export function GoalBadge({
   disabled?: boolean;
   hint?: string;
   onChip?: boolean;
+  friend?: boolean;
 }) {
   const { colors, isDark } = useTheme();
+  const visibility =
+    useContext(VisibilityContext) && !friend ? (goal.visibility ?? 'private') : undefined;
+  const label = visibility && visibilityA11y(visibility);
+  const describe = (name: string) =>
+    label ? t('social.visibility.withName', { name, visibility: t(label) }) : name;
   const background = onChip ? colors.bg : colors.chip;
   const badge = (
     <View
@@ -34,18 +44,20 @@ export function GoalBadge({
         },
       ]}
     >
-      <View style={[styles.dot, { backgroundColor: goal.color }]} />
+      <GoalMark color={goal.color} visibility={visibility} onChip={onChip} friend={friend} />
       <Text style={[styles.text, { color: goalInk(goal.color, background, isDark) }]}>
         {goal.name}
       </Text>
       {add && <Text style={[styles.text, { color: colors.ink }]}> +</Text>}
     </View>
   );
-  if (!onPress) return <View accessibilityLabel={goal.name}>{badge}</View>;
+  if (!onPress) return <View accessibilityLabel={describe(goal.name)}>{badge}</View>;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={t(add ? 'mobile.goal.add' : 'mobile.goal.select', { name: goal.name })}
+      accessibilityLabel={describe(
+        t(add ? 'mobile.goal.add' : 'mobile.goal.select', { name: goal.name }),
+      )}
       accessibilityHint={hint}
       disabled={disabled}
       accessibilityState={{ selected, disabled }}
@@ -80,7 +92,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: m.radius.pill,
   },
-  dot: { width: m.glyph.dot, height: m.glyph.dot, borderRadius: m.radius.pill },
   text: {
     fontFamily: m.fontExtraBold,
     fontWeight: '800',

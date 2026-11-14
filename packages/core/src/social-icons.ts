@@ -16,3 +16,9 @@ export const socialIcons = {
 } as const;
 export const socialTabs = ['today', 'notifications', 'profile'] as const;
 export type SocialTab = (typeof socialTabs)[number];
+
+export const goalVisibilityPaths = {
+  mutual:
+    'M5.3 7.8a3.7 3.7 0 1 0 7.4 0 3.7 3.7 0 1 0-7.4 0M2.5 20c.5-4 3.1-6.3 6.5-6.3s6 2.3 6.5 6.3zM13.9 8.6a2.9 2.9 0 1 0 5.8 0 2.9 2.9 0 1 0-5.8 0M16.4 13.8c3 .2 4.8 2.4 5.2 6.2h-4.4c-.1-2.5-.4-4.4-.8-6.2z',
+  followers: 'M8 7.8a4 4 0 1 0 8 0 4 4 0 1 0-8 0M4.5 20.5c.6-4.3 3.6-6.8 7.5-6.8s6.9 2.5 7.5 6.8z',
+} as const;

@@ -1,3 +1,4 @@
+import { VisibilityContext } from './VisibilityContext';
 import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -252,202 +253,210 @@ export function SocialShell({
   };
   const modal = showOther || (showPage && page?.kind !== 'settings');
   return (
-    <View style={s.fill}>
-      <View
-        style={active === 'today' ? s.fill : { display: 'none' }}
-        accessibilityElementsHidden={active !== 'today' || showOther}
-        importantForAccessibility={active !== 'today' || showOther ? 'no-hide-descendants' : 'auto'}
-      >
-        <TodayVisible.Provider value={active === 'today' && !showOther}>
-          {children}
-        </TodayVisible.Provider>
-      </View>
-      {enabled && active !== 'today' && !modal && (
-        <View style={[s.fill, { paddingTop: top }]}>
-          {active === 'notifications' ? (
-            <>
-              <Text
-                accessibilityRole="header"
-                style={[s.title, { color: colors.ink, margin: m.space.lg }]}
-              >
-                {t('tabs.notifications')}
-              </Text>
-              <View style={s.center}>
-                <Text style={[s.support, { color: colors.muted }]}>
-                  {t('social.notifications.empty')}
+    <VisibilityContext.Provider value={enabled}>
+      <View style={s.fill}>
+        <View
+          style={active === 'today' ? s.fill : { display: 'none' }}
+          accessibilityElementsHidden={active !== 'today' || showOther}
+          importantForAccessibility={
+            active !== 'today' || showOther ? 'no-hide-descendants' : 'auto'
+          }
+        >
+          <TodayVisible.Provider value={active === 'today' && !showOther}>
+            {children}
+          </TodayVisible.Provider>
+        </View>
+        {enabled && active !== 'today' && !modal && (
+          <View style={[s.fill, { paddingTop: top }]}>
+            {active === 'notifications' ? (
+              <>
+                <Text
+                  accessibilityRole="header"
+                  style={[s.title, { color: colors.ink, margin: m.space.lg }]}
+                >
+                  {t('tabs.notifications')}
                 </Text>
-              </View>
-            </>
-          ) : mine.data ? (
-            <MyProfile
-              client={client}
-              profile={mine.data}
-              bottom={inset}
-              onEdit={() => setPage({ kind: 'edit' })}
-              onSettings={() => setPage({ kind: 'settings' })}
-              onFind={openSearch}
-              onList={(list) => setPage({ kind: 'list', list })}
-              counts={counts.data}
-              send={send}
-              sharing={share.isPending}
-            />
-          ) : mine.data === null ? (
-            <ProfileSetup client={client} userId={userId} bottom={inset} />
-          ) : (
-            <View style={s.center}>
-              {mine.isError ? (
-                <>
-                  <Text accessibilityRole="alert" style={[s.support, { color: colors.danger }]}>
-                    {t('social.profile.loadFailed')}
+                <View style={s.center}>
+                  <Text style={[s.support, { color: colors.muted }]}>
+                    {t('social.notifications.empty')}
                   </Text>
-                  <Button
-                    secondary
-                    label={t('common.tryAgain')}
-                    onPress={() => void mine.refetch()}
-                  />
-                </>
-              ) : (
-                <ActivityIndicator color={colors.ink} />
-              )}
-            </View>
-          )}
-        </View>
-      )}
-      {enabled && !showOther && !showPage && (
-        <View
-          accessibilityRole="tablist"
-          style={{
-            position: 'absolute',
-            bottom: bottom + 6,
-            alignSelf: 'center',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: m.space.xs,
-            height: 60,
-            paddingHorizontal: m.space.sm,
-            borderRadius: m.radius.pill,
-            backgroundColor: colors.surface,
-            boxShadow: isDark
-              ? '0 8px 28px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)'
-              : '0 8px 28px rgba(17,19,24,0.14), 0 0 0 1px rgba(17,19,24,0.05)',
-          }}
-        >
-          {socialTabs.map((name) => (
-            <Pressable
-              key={name}
-              accessibilityRole="tab"
-              accessibilityLabel={t(`tabs.${name}`)}
-              accessibilityState={{ selected: active === name }}
-              onPress={() => select(name)}
-              style={({ pressed }) => ({
-                width: 64,
-                height: 48,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: active === name ? colors.tabSelected : 'transparent',
-                borderRadius: m.radius.pill,
-                opacity: pressed ? m.pressedOpacity : 1,
-              })}
-            >
-              <SocialIcon name={name} color={active === name ? colors.ink : colors.muted} />
-            </Pressable>
-          ))}
-        </View>
-      )}
-      {showPage && page?.kind === 'settings' && mine.data && account.data && (
-        <Settings
-          {...settings}
-          client={client}
-          profile={account.data}
-          onClose={() => setPage(null)}
-          social={{
-            profile: mine.data,
-            onHandle: () => setPage({ kind: 'field', field: 'handle', from: 'settings' }),
-            onVisibility: () => setPage({ kind: 'visibility' }),
-            onBlocked: () => setPage({ kind: 'blocked' }),
-          }}
-        />
-      )}
-      {showPage && page?.kind === 'settings' && !account.data && (
-        <View style={[s.center, { position: 'absolute', inset: 0, backgroundColor: colors.bg }]}>
-          {account.isError ? (
-            <Button secondary label={t('common.tryAgain')} onPress={() => void account.refetch()} />
-          ) : (
-            <ActivityIndicator color={colors.ink} />
-          )}
-          <Button quiet label={t('mobile.add.cancel')} onPress={back} />
-        </View>
-      )}
-      {!!modal && (
-        <View
-          accessibilityViewIsModal
-          style={{
-            position: 'absolute',
-            inset: 0,
-            paddingTop: top,
-            paddingBottom: bottom,
-            backgroundColor: colors.bg,
-          }}
-        >
-          {showOther && other ? (
-            <OtherProfile
-              key={other.userId}
-              client={client}
-              me={userId}
-              userId={other.userId}
-              from={t(other.from ?? `tabs.${tab}`)}
-              onBack={back}
-              onBlocked={back}
-            />
-          ) : mine.data && page?.kind === 'edit' ? (
-            <ProfileEdit
-              client={client}
-              profile={mine.data}
-              onBack={back}
-              onField={(field) => setPage({ kind: 'field', field, from: 'edit' })}
-            />
-          ) : mine.data && page?.kind === 'field' ? (
-            <ProfileFieldEditor
-              key={page.field}
-              client={client}
-              profile={mine.data}
-              field={page.field}
-              back={`‹ ${t(page.from === 'edit' ? 'social.edit' : 'settings.title')}`}
-              onBack={back}
-            />
-          ) : page?.kind === 'search' ? (
-            <ProfileSearch
-              client={client}
-              me={userId}
-              text={search}
-              setText={setSearch}
-              onBack={back}
-              onPerson={(target) => setOther({ userId: target, from: 'social.find' })}
-            />
-          ) : page?.kind === 'list' ? (
-            <FollowListPage
-              client={client}
-              me={userId}
-              kind={page.list}
-              counts={counts.data}
-              select={(list) => setPage({ kind: 'list', list })}
-              onFind={openSearch}
-              onInvite={send}
-              onBack={back}
-              onPerson={(target) => setOther({ userId: target, from: `social.${page.list}` })}
-            />
-          ) : page?.kind === 'blocked' ? (
-            <BlockedProfiles client={client} me={userId} onBack={back} />
-          ) : page?.kind === 'visibility' ? (
-            <DefaultVisibilityScreen
-              client={client}
-              userId={userId}
-              visibility={account.data?.defaultVisibility ?? 'private'}
-              onBack={back}
-            />
-          ) : null}
-        </View>
-      )}
-    </View>
+                </View>
+              </>
+            ) : mine.data ? (
+              <MyProfile
+                client={client}
+                profile={mine.data}
+                bottom={inset}
+                onEdit={() => setPage({ kind: 'edit' })}
+                onSettings={() => setPage({ kind: 'settings' })}
+                onFind={openSearch}
+                onList={(list) => setPage({ kind: 'list', list })}
+                counts={counts.data}
+                send={send}
+                sharing={share.isPending}
+              />
+            ) : mine.data === null ? (
+              <ProfileSetup client={client} userId={userId} bottom={inset} />
+            ) : (
+              <View style={s.center}>
+                {mine.isError ? (
+                  <>
+                    <Text accessibilityRole="alert" style={[s.support, { color: colors.danger }]}>
+                      {t('social.profile.loadFailed')}
+                    </Text>
+                    <Button
+                      secondary
+                      label={t('common.tryAgain')}
+                      onPress={() => void mine.refetch()}
+                    />
+                  </>
+                ) : (
+                  <ActivityIndicator color={colors.ink} />
+                )}
+              </View>
+            )}
+          </View>
+        )}
+        {enabled && !showOther && !showPage && (
+          <View
+            accessibilityRole="tablist"
+            style={{
+              position: 'absolute',
+              bottom: bottom + 6,
+              alignSelf: 'center',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: m.space.xs,
+              height: 60,
+              paddingHorizontal: m.space.sm,
+              borderRadius: m.radius.pill,
+              backgroundColor: colors.surface,
+              boxShadow: isDark
+                ? '0 8px 28px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)'
+                : '0 8px 28px rgba(17,19,24,0.14), 0 0 0 1px rgba(17,19,24,0.05)',
+            }}
+          >
+            {socialTabs.map((name) => (
+              <Pressable
+                key={name}
+                accessibilityRole="tab"
+                accessibilityLabel={t(`tabs.${name}`)}
+                accessibilityState={{ selected: active === name }}
+                onPress={() => select(name)}
+                style={({ pressed }) => ({
+                  width: 64,
+                  height: 48,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: active === name ? colors.tabSelected : 'transparent',
+                  borderRadius: m.radius.pill,
+                  opacity: pressed ? m.pressedOpacity : 1,
+                })}
+              >
+                <SocialIcon name={name} color={active === name ? colors.ink : colors.muted} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+        {showPage && page?.kind === 'settings' && mine.data && account.data && (
+          <Settings
+            {...settings}
+            client={client}
+            profile={account.data}
+            onClose={() => setPage(null)}
+            social={{
+              profile: mine.data,
+              onHandle: () => setPage({ kind: 'field', field: 'handle', from: 'settings' }),
+              onVisibility: () => setPage({ kind: 'visibility' }),
+              onBlocked: () => setPage({ kind: 'blocked' }),
+            }}
+          />
+        )}
+        {showPage && page?.kind === 'settings' && !account.data && (
+          <View style={[s.center, { position: 'absolute', inset: 0, backgroundColor: colors.bg }]}>
+            {account.isError ? (
+              <Button
+                secondary
+                label={t('common.tryAgain')}
+                onPress={() => void account.refetch()}
+              />
+            ) : (
+              <ActivityIndicator color={colors.ink} />
+            )}
+            <Button quiet label={t('mobile.add.cancel')} onPress={back} />
+          </View>
+        )}
+        {!!modal && (
+          <View
+            accessibilityViewIsModal
+            style={{
+              position: 'absolute',
+              inset: 0,
+              paddingTop: top,
+              paddingBottom: bottom,
+              backgroundColor: colors.bg,
+            }}
+          >
+            {showOther && other ? (
+              <OtherProfile
+                key={other.userId}
+                client={client}
+                me={userId}
+                userId={other.userId}
+                from={t(other.from ?? `tabs.${tab}`)}
+                onBack={back}
+                onBlocked={back}
+              />
+            ) : mine.data && page?.kind === 'edit' ? (
+              <ProfileEdit
+                client={client}
+                profile={mine.data}
+                onBack={back}
+                onField={(field) => setPage({ kind: 'field', field, from: 'edit' })}
+              />
+            ) : mine.data && page?.kind === 'field' ? (
+              <ProfileFieldEditor
+                key={page.field}
+                client={client}
+                profile={mine.data}
+                field={page.field}
+                back={`‹ ${t(page.from === 'edit' ? 'social.edit' : 'settings.title')}`}
+                onBack={back}
+              />
+            ) : page?.kind === 'search' ? (
+              <ProfileSearch
+                client={client}
+                me={userId}
+                text={search}
+                setText={setSearch}
+                onBack={back}
+                onPerson={(target) => setOther({ userId: target, from: 'social.find' })}
+              />
+            ) : page?.kind === 'list' ? (
+              <FollowListPage
+                client={client}
+                me={userId}
+                kind={page.list}
+                counts={counts.data}
+                select={(list) => setPage({ kind: 'list', list })}
+                onFind={openSearch}
+                onInvite={send}
+                onBack={back}
+                onPerson={(target) => setOther({ userId: target, from: `social.${page.list}` })}
+              />
+            ) : page?.kind === 'blocked' ? (
+              <BlockedProfiles client={client} me={userId} onBack={back} />
+            ) : page?.kind === 'visibility' ? (
+              <DefaultVisibilityScreen
+                client={client}
+                userId={userId}
+                visibility={account.data?.defaultVisibility ?? 'private'}
+                onBack={back}
+              />
+            ) : null}
+          </View>
+        )}
+      </View>
+    </VisibilityContext.Provider>
   );
 }
