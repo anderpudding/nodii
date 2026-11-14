@@ -264,6 +264,21 @@ function socialHandlers({
   return { search, write, mail };
 }
 
+async function findFriendHeader() {
+  const heading = await screen.findByRole('heading', { name: 'Friend' });
+  // 프로필 메뉴를 찾을 때 함께 그려지는 하루 달력까지 검사하지 않는다.
+  return within(heading.closest<HTMLElement>('.social-header')!);
+}
+
+async function openFriendMenu(
+  user: ReturnType<typeof userEvent.setup>,
+  header: ReturnType<typeof within>,
+) {
+  (await header.findByRole('button', { name: '프로필 메뉴' })).focus();
+  await user.keyboard('{Enter}');
+  return within(screen.getByRole('menu'));
+}
+
 it('debounces search, shows empty results, and restores a failed optimistic follow', async () => {
   const { search, write } = socialHandlers({ followsMe: true });
   let reject!: (response: Response) => void;
@@ -325,16 +340,21 @@ it('blocks a profile from search and opens the blocked list in settings', async 
   const user = userEvent.setup();
   await user.click(screen.getByRole('tab', { name: '프로필' }));
   await user.click(await screen.findByRole('button', { name: '친구 찾기' }));
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'friend' } });
-  await user.click(await screen.findByRole('button', { name: /@friend/ }));
-  (await screen.findByRole('button', { name: '프로필 메뉴' })).focus();
-  await user.keyboard('{Enter}');
-  await user.click(await screen.findByRole('menuitem', { name: '차단하기' }));
-  await user.click(await screen.findByRole('button', { name: '차단' }));
+  const searchPanel = within(
+    screen.getByRole('heading', { name: '친구 찾기' }).closest('section')!,
+  );
+  fireEvent.change(searchPanel.getByRole('searchbox'), { target: { value: 'friend' } });
+  await user.click(await searchPanel.findByRole('button', { name: /@friend/ }));
+  const menu = await openFriendMenu(user, await findFriendHeader());
+  await user.click(menu.getByRole('menuitem', { name: '차단하기' }));
+  const block = await screen.findByRole('alertdialog', { name: 'Friend님을 차단할까요?' });
+  await user.click(within(block).getByRole('button', { name: '차단' }));
   expect(await screen.findByText('찾는 사람이 없어요')).toBeTruthy();
   await user.click(screen.getByRole('button', { name: '설정' }));
-  await user.click(await screen.findByRole('button', { name: /차단한 사람\s*1명/ }));
-  await user.click(await screen.findByRole('button', { name: '차단 해제' }));
+  const settings = within(screen.getByRole('region', { name: '설정' }));
+  await user.click(await settings.findByRole('button', { name: /차단한 사람\s*1명/ }));
+  const blocked = within(screen.getByRole('heading', { name: '차단한 사람' }).closest('section')!);
+  await user.click(await blocked.findByRole('button', { name: '차단 해제' }));
   const confirm = screen.getByRole('alertdialog', { name: 'Friend님의 차단을 풀까요?' });
   await user.click(within(confirm).getByRole('button', { name: '차단 해제' }));
   expect(await screen.findByText('차단한 사람이 없어요')).toBeTruthy();
@@ -344,20 +364,21 @@ it('hides moderated profile fields and validates the report form and block switc
   const { mail } = socialHandlers({ hidden: true });
   mount(true, 'friend');
   const user = userEvent.setup();
-  expect(await screen.findByRole('heading', { name: 'Friend' })).toBeTruthy();
-  expect(screen.queryByText('Other bio')).toBeNull();
-  expect(screen.getByRole('img', { name: 'Friend' }).querySelector('img')).toBeNull();
-  (await screen.findByRole('button', { name: '프로필 메뉴' })).focus();
-  await user.keyboard('{Enter}');
-  await user.click(screen.getByRole('menuitem', { name: '신고하기' }));
-  const submit = await screen.findByRole<HTMLButtonElement>('button', { name: '신고하기' });
+  const header = await findFriendHeader();
+  expect(header.queryByText('Other bio')).toBeNull();
+  expect(header.getByRole('img', { name: 'Friend' }).querySelector('img')).toBeNull();
+  const menu = await openFriendMenu(user, header);
+  await user.click(menu.getByRole('menuitem', { name: '신고하기' }));
+  const report = await screen.findByRole('dialog', { name: 'Friend님 신고' });
+  const form = within(report);
+  const submit = form.getByRole<HTMLButtonElement>('button', { name: '신고하기' });
   expect(submit.disabled).toBe(true);
-  await user.click(screen.getByRole('radio', { name: '기타' }));
+  await user.click(form.getByRole('radio', { name: '기타' }));
   expect(submit.disabled).toBe(true);
-  await user.type(screen.getByRole('textbox'), 'details');
-  await user.click(screen.getByRole('switch', { name: '이 사람 차단하기' }));
+  await user.type(form.getByRole('textbox'), 'details');
+  await user.click(form.getByRole('switch', { name: '이 사람 차단하기' }));
   await user.click(submit);
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(() => expect(report.isConnected).toBe(false));
   expect(mail).toHaveBeenCalledWith({ targetUserId: 'other', reason: 'other', detail: 'details' });
   await user.click(screen.getByRole('tab', { name: '프로필' }));
   await user.click(await screen.findByRole('button', { name: '프로필 편집' }));

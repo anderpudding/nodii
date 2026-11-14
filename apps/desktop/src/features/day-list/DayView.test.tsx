@@ -43,10 +43,15 @@ function setup(weekStart: 0 | 1 = 0, timezone = 'UTC') {
   );
   return { user: userEvent.setup(), cache };
 }
+function dayList() {
+  // 로딩 중 역할을 찾을 때 월간 캘린더의 버튼까지 반복 검사하지 않는다.
+  return within(screen.getByRole('region', { name: '목표별 할 일 목록' }));
+}
 function findAddTodoButton() {
-  // 로딩 중 전체 화면의 캘린더 버튼까지 반복 검사하면 CI에서 기본 대기 시간을 소모한다.
-  const list = screen.getByRole('region', { name: '목표별 할 일 목록' });
-  return within(list).findByRole('button', { name: '할 일에 할 일 추가' });
+  return dayList().findByRole('button', { name: '할 일에 할 일 추가' });
+}
+function notifications() {
+  return within(screen.getByRole('region', { name: /^Notifications/ }));
 }
 it.each([false, true])(
   '헤더와 빈 상태는 삭제된 목표의 할 일을 제외한 표시 목록을 따른다 (숨겨진 항목만: %s)',
@@ -350,11 +355,12 @@ it('삭제 후 실행 취소는 서버 행과 목록을 복원한다', async () 
     ),
   );
   const { user } = setup();
-  await user.click(await screen.findByRole('button', { name: '책 읽기 메뉴' }));
+  const list = dayList();
+  await user.click(await list.findByRole('button', { name: '책 읽기 메뉴' }));
   await user.click(screen.getByRole('menuitem', { name: '삭제' }));
-  await waitFor(() => expect(screen.queryByRole('button', { name: '책 읽기 완료' })).toBeNull());
-  await user.click(await screen.findByRole('button', { name: '실행 취소' }));
-  expect(await screen.findByRole('button', { name: '책 읽기 완료' })).toBeTruthy();
+  await waitFor(() => expect(list.queryByRole('button', { name: '책 읽기 완료' })).toBeNull());
+  await user.click(await notifications().findByRole('button', { name: '실행 취소' }));
+  expect(await list.findByRole('button', { name: '책 읽기 완료' })).toBeTruthy();
 });
 it('보관 목표는 항목이 있는 날짜에만 표시하고 추가 버튼은 숨긴다', async () => {
   server.use(
@@ -791,19 +797,22 @@ it('목표 삭제는 최신 개수를 확인하고 실패하면 목표와 인접
     }),
   );
   const { user, cache } = setup();
-  await screen.findByRole('button', { name: '책 읽기 완료' });
+  await dayList().findByRole('button', { name: '책 읽기 완료' });
   await user.click(screen.getByRole('button', { name: '목표 관리' }));
-  await waitFor(() => expect(screen.getAllByText('할 일 12개 · 루틴 2개')).toHaveLength(2));
+  const manager = within(screen.getByRole('dialog', { name: '목표 관리' }));
+  await waitFor(() => expect(manager.getAllByText('할 일 12개 · 루틴 2개')).toHaveLength(2));
   expect(aggregate).toHaveBeenCalledOnce();
-  await user.click(screen.getByRole('button', { name: '할 일 편집' }));
-  await user.click(screen.getByRole('button', { name: '삭제' }));
-  await screen.findByText(/할 일 12개와 루틴 2개가/);
-  expect(document.activeElement).toBe(screen.getByRole('button', { name: '취소' }));
-  await user.click(screen.getByRole('button', { name: '삭제' }));
+  await user.click(manager.getByRole('button', { name: '할 일 편집' }));
+  const editor = within(screen.getByRole('dialog', { name: '목표 편집' }));
+  await user.click(editor.getByRole('button', { name: '삭제' }));
+  const confirm = within(await screen.findByRole('alertdialog'));
+  expect(confirm.getByText(/할 일 12개와 루틴 2개가/)).toBeTruthy();
+  expect(document.activeElement).toBe(confirm.getByRole('button', { name: '취소' }));
+  await user.click(confirm.getByRole('button', { name: '삭제' }));
   await waitFor(() => expect(cache.getQueryData<unknown[]>(['todos', '2026-09'])).toEqual([]));
   expect(cache.getQueryData<unknown[]>(['todos', '2026-10'])).toEqual([]);
   await act(async () => release());
-  await screen.findByText('저장하지 못했어요');
+  await notifications().findByText('저장하지 못했어요');
   await waitFor(() =>
     expect(cache.getQueryData<unknown[]>(['todos', '2026-09'])).toEqual([mapTodo(todoRow)]),
   );
@@ -824,16 +833,21 @@ it('연속 삭제의 실행 취소는 각 할 일의 날짜와 정렬 키를 따
     }),
   );
   const { user } = setup();
+  const list = dayList();
   for (const title of ['책 읽기', '산책']) {
-    await user.click(await screen.findByRole('button', { name: `${title} 메뉴` }));
+    await user.click(await list.findByRole('button', { name: `${title} 메뉴` }));
     await user.click(screen.getByRole('menuitem', { name: '삭제' }));
-    await waitFor(() => expect(screen.queryByRole('button', { name: `${title} 완료` })).toBeNull());
+    await waitFor(() => expect(list.queryByRole('button', { name: `${title} 완료` })).toBeNull());
   }
-  const undo = await screen.findAllByRole('button', { name: '실행 취소' });
-  expect(undo).toHaveLength(2);
+  const toasts = notifications();
+  const undo = await waitFor(() => {
+    const buttons = toasts.getAllByRole('button', { name: '실행 취소' });
+    expect(buttons).toHaveLength(2);
+    return buttons;
+  });
   await user.click(undo[0]!);
   await user.click(undo[1]!);
-  await screen.findByRole('button', { name: '책 읽기 완료' });
-  await screen.findByRole('button', { name: '산책 완료' });
-  expect(rows).toEqual(initial);
+  await list.findByRole('button', { name: '책 읽기 완료' });
+  await list.findByRole('button', { name: '산책 완료' });
+  await waitFor(() => expect(rows).toEqual(initial));
 });
