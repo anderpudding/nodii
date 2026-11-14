@@ -557,7 +557,6 @@ export const ko = {
   'social.notifications.sentenceFollow': '{name}님이 나를 팔로우했어요',
   'social.notifications.sentenceReaction': '{name}님이 ‘{title}’에 좋아요를 남겼어요',
   'social.notifications.sentenceFriendDone': '{name}님이 할 일 {count}개를 끝냈어요',
-  'social.notifications.unknownPerson': '알 수 없는 사람',
   'social.notifications.unknownItem': '할 일',
   'social.notifications.filterEmpty': '이 종류의 알림이 없어요',
   'social.notifications.noCompleted': '끝낸 항목이 없어요',

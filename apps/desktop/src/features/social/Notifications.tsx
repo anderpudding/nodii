@@ -53,7 +53,7 @@ export function Notifications({
   const relations = useRelations(
     client,
     me,
-    rows.filter((row) => row.kind === 'follow' && row.actor).map((row) => row.actorId),
+    rows.filter((row) => row.kind === 'follow').map((row) => row.actorId),
   );
   const visible = filterNotifications(rows, kind);
   const groups = groupNotifications(visible, now, timezone, weekStart);

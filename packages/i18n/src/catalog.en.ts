@@ -582,7 +582,6 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'social.notifications.sentenceReaction': '{name} liked “{title}”',
   'social.notifications.sentenceFriendDone_one': '{name} completed {count} task',
   'social.notifications.sentenceFriendDone': '{name} completed {count} tasks',
-  'social.notifications.unknownPerson': 'Unavailable person',
   'social.notifications.unknownItem': 'a task',
   'social.notifications.filterEmpty': 'No notifications of this kind',
   'social.notifications.noCompleted': 'No completed items',

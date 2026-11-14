@@ -116,7 +116,7 @@ export function NotificationRow({
 }: RowProps) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
-  const name = row.actor?.nickname ?? t('social.notifications.unknownPerson');
+  const name = row.actor.nickname;
   const sentence = notificationSentence({
     kind: row.kind,
     name,
@@ -153,7 +153,7 @@ export function NotificationRow({
             label={name}
             size={40}
             photoUrl={
-              row.actor?.avatarPath ? avatarUrl(client, row.actor.avatarPath, 160) : undefined
+              row.actor.avatarPath ? avatarUrl(client, row.actor.avatarPath, 160) : undefined
             }
           />
         </Pressable>

@@ -20,7 +20,7 @@ import {
 
 type StoredNotification = NonNullable<ReturnType<typeof mapNotification>>;
 export interface Notification extends StoredNotification {
-  actor: SocialProfile | null;
+  actor: SocialProfile;
   title: string | null;
   color: string | null;
 }
@@ -29,7 +29,7 @@ const idsOf = (ids: readonly (string | null)[]) => [
   ...new Set(ids.filter((id): id is string => id !== null)),
 ];
 
-/** SOC-50: 최근 100줄과 연결된 프로필, 항목 및 목표를 RLS 아래 일괄 조회한다. */
+/** SOC-50: 최근 100줄을 읽고 RLS 아래에서 발신자 프로필을 볼 수 있는 알림만 반환한다. */
 export async function fetchNotifications(
   client: NodiiClient,
   me: string,
@@ -93,7 +93,10 @@ export async function fetchNotifications(
   const byTodo = new Map(todoRows?.data?.map((row) => [row.id, row]));
   const byRoutine = new Map(routineRows?.data?.map((row) => [row.id, row]));
   // 친구 완료 항목은 펼치는 순간의 친구 하루로 읽는다. 묶음 행에는 항목 ID가 없다.
-  return rows.map((row) => {
+  return rows.flatMap((row) => {
+    // 정지·차단 등으로 프로필을 읽을 수 없으면 알림도 목록에서 뺀다.
+    const actor = byActor.get(row.actorId);
+    if (!actor) return [];
     const todo = row.todoId ? byTodo.get(row.todoId) : undefined;
     const item = todo ?? (row.routineId ? byRoutine.get(row.routineId) : undefined);
     const color = (item && colors.get(item.goal_id)) ?? null;
@@ -102,7 +105,7 @@ export async function fetchNotifications(
       date: todo?.date ?? row.date,
       title: color && item ? item.title : null,
       color,
-      actor: byActor.get(row.actorId) ?? null,
+      actor,
     };
   });
 }

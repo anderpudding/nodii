@@ -12,10 +12,11 @@ const row = (kind: NotificationKind, updatedAt: string) => ({ kind, updatedAt })
 
 describe('notifications', () => {
   it('groups by local midnight and the chosen start of week, keeping server order', () => {
-    const now = new Date('2026-11-09T08:01:00Z');
-    const today = row('reaction', '2026-11-09T08:00:00Z');
-    const sunday = row('follow', '2026-11-09T07:59:59Z');
-    const saturday = row('friend_done', '2026-11-08T07:59:59Z');
+    // 2026년 밴쿠버 규칙 변경 전이면서 주 경계에 DST 전환이 없는 날짜를 사용한다.
+    const now = new Date('2025-11-10T08:01:00Z');
+    const today = row('reaction', '2025-11-10T08:00:00Z');
+    const sunday = row('follow', '2025-11-10T07:59:59Z');
+    const saturday = row('friend_done', '2025-11-09T07:59:59Z');
     const rows = [today, sunday, saturday];
     expect(groupNotifications(rows, now, 'America/Vancouver', 0)).toEqual({
       today: [today],

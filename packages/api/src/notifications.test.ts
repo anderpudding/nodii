@@ -98,6 +98,37 @@ it('reads up to 100 rows, batches actor and item metadata, and omits unavailable
   expect(reads.sort()).toEqual(['goals', 'notifications', 'routines', 'social_profiles', 'todos']);
 });
 
+it('omits existing notifications when their sender is no longer readable under profile RLS', async () => {
+  const available = { user_id: 'available', nickname: 'Available' };
+  const suspended = { user_id: 'suspended', nickname: 'Suspended later' };
+  let readableProfiles = [available, suspended];
+  const notification = {
+    count: 1,
+    date: null,
+    todo_id: null,
+    routine_id: null,
+    kind: 'follow',
+    updated_at: '2026-11-13T00:00:00Z',
+  };
+  server.use(
+    http.get(rest + '/notifications', () =>
+      HttpResponse.json([
+        { ...notification, id: '1', actor_id: suspended.user_id },
+        { ...notification, id: '2', actor_id: 'missing' },
+        { ...notification, id: '3', actor_id: available.user_id },
+      ]),
+    ),
+    http.get(rest + '/social_profiles', () => HttpResponse.json(readableProfiles)),
+  );
+
+  expect((await fetchNotifications(client, 'me')).map(({ id }) => id)).toEqual(['1', '3']);
+  // 정지된 사람은 기존 알림 행이 남아 있어도 프로필 SELECT 결과에서는 빠진다.
+  readableProfiles = [available];
+  expect((await fetchNotifications(client, 'me')).map(({ id }) => id)).toEqual(['3']);
+  readableProfiles = [];
+  expect(await fetchNotifications(client, 'me')).toEqual([]);
+});
+
 it('filters received writes, invalidates deletes by ID, and ignores callbacks after cleanup', () => {
   const listeners: ((row: { new: { recipient_id: string }; old: { id: string } }) => void)[] = [];
   const channel = client.channel('mock');
