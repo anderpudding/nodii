@@ -1,7 +1,15 @@
-import { useRef, useState } from 'react';
-import { Alert, Text, TextInput, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { ManagementScreen } from '../../components/ManagementScreen';
+import { VisibilityContext } from '../social/VisibilityContext';
+import { GoalMark } from './GoalMark';
+import { GoalColorPicker } from './GoalColorPicker';
+import { showPublishNotice } from './publish-notice';
+import { useContext, useRef, useState } from 'react';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import {
+  fetchProfile,
+  OfflineWriteError,
   useCreateGoal,
   useUpdateGoal,
   useDeleteGoal,
@@ -9,10 +17,18 @@ import {
   type GoalRecord,
   type NodiiClient,
 } from '@nodii/api';
-import { GOAL_NAME_MAX_LENGTH, isHexColor, keyBetween, lastSortKey } from '@nodii/core';
+import {
+  checkColor,
+  GOAL_NAME_MAX_LENGTH,
+  isHexColor,
+  keyBetween,
+  lastSortKey,
+  VISIBILITY_CHOICES,
+  type DefaultVisibility,
+} from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
-import { useTheme } from '../../../lib/theme';
+import { metrics as m, useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useToast } from '../../components/Toast';
@@ -40,19 +56,30 @@ export function GoalEditor({
   const { colors } = useTheme();
   const online = useOnline();
   const toast = useToast();
+  const social = useContext(VisibilityContext);
+  const account = useQuery({
+    queryKey: ['profile', userId],
+    enabled: social && !goal,
+    queryFn: ({ signal }) => fetchProfile(client, userId, signal),
+    staleTime: 30_000,
+  });
+  const [changedVisibility, setVisibility] = useState<DefaultVisibility>();
+  const visibility =
+    changedVisibility ?? goal?.visibility ?? account.data?.defaultVisibility ?? 'private';
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [name, setName] = useState(goal?.name ?? '');
   const [color, setColor] = useState(goal?.color ?? '#4F7CFF');
   const [id] = useState(() => goal?.id ?? Crypto.randomUUID());
   const [focused, setFocused] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const guard = useRef(false);
-  const create = useCreateGoal(
-    client,
-    { onError: () => toast(() => t('todo.save.failed')) },
-    userId,
-  );
-  const update = useUpdateGoal(client, id, { onError: () => toast(() => t('todo.save.failed')) });
-  const remove = useDeleteGoal(client, { onError: () => toast(() => t('todo.save.failed')) });
+  const saveError = (error: unknown) =>
+    toast(() =>
+      t(social && error instanceof OfflineWriteError ? 'sync.writeDisabled' : 'todo.save.failed'),
+    );
+  const create = useCreateGoal(client, { onError: saveError }, userId);
+  const update = useUpdateGoal(client, id, { onError: saveError });
+  const remove = useDeleteGoal(client, { onError: saveError });
   const counts = useGoalContents(client, userId);
   const draft: GoalRecord = goal ?? {
     id,
@@ -66,11 +93,18 @@ export function GoalEditor({
   const actions = useGoalActions(client, draft);
   const last = isLastActiveGoal(goals, id);
   const valid =
-    name.trim().length > 0 && name.trim().length <= GOAL_NAME_MAX_LENGTH && isHexColor(color);
-  const blocked = !online || saving || actions.pending;
+    (!social || !!goal || !!account.data) &&
+    name.trim().length > 0 &&
+    name.trim().length <= GOAL_NAME_MAX_LENGTH &&
+    isHexColor(color);
+  const blocked = (!social && !online) || saving || actions.pending;
   function close() {
     if (guard.current) return;
-    if (name === (goal?.name ?? '') && color === (goal?.color ?? '#4F7CFF')) {
+    if (
+      name === (goal?.name ?? '') &&
+      color === (goal?.color ?? '#4F7CFF') &&
+      changedVisibility === undefined
+    ) {
       onClose();
       return;
     }
@@ -87,13 +121,18 @@ export function GoalEditor({
       if (goal)
         await update.mutateAsync({
           goal,
-          changes: { name: name.trim(), color: color.toUpperCase() },
+          changes: {
+            name: name.trim(),
+            color: color.toUpperCase(),
+            visibility: social ? changedVisibility : undefined,
+          },
         });
       else
         await create.mutateAsync({
           id,
           name: name.trim(),
           color: color.toUpperCase(),
+          visibility: social ? visibility : undefined,
           archivedAt: null,
           sortKey: keyBetween(lastSortKey(goals), null),
         });
@@ -135,7 +174,7 @@ export function GoalEditor({
           text: t('todo.action.delete'),
           style: 'destructive',
           onPress: () => {
-            if (guard.current || !online) return;
+            if (guard.current) return;
             guard.current = true;
             setSaving(true);
             void remove
@@ -151,13 +190,18 @@ export function GoalEditor({
       ],
     );
   }
-  return (
-    <BottomSheet
-      title={t(goal ? 'goal.edit' : 'goal.add')}
-      testID="goal-editor-sheet"
-      onClose={close}
-      keyboard
-    >
+  const title = t(goal ? 'goal.edit' : 'goal.add');
+  const saveButton = (
+    <Button
+      label={t(social || goal ? 'mobile.rename.save' : 'goal.add')}
+      disabled={!valid || blocked}
+      busy={saving}
+      onPress={() => void save()}
+    />
+  );
+  const body = (
+    <>
+      {' '}
       <Text style={[s.label, { color: colors.ink2 }]}>{t('goal.name')}</Text>
       <TextInput
         autoFocus
@@ -182,65 +226,188 @@ export function GoalEditor({
         ]}
       />
       <Text style={[s.label, { color: colors.ink2 }]}>{t('goal.color')}</Text>
-      <View style={s.choices}>
-        {goalPresets.map((preset) => (
-          <RoutineOption
-            key={preset.color}
-            label={t(preset.name)}
-            compact
-            borderless
-            multiple
-            selected={color.toUpperCase() === preset.color}
-            accessibilityLabel={t('goal.preset', { name: t(preset.name) })}
-            disabled={blocked}
-            onPress={() => setColor(preset.color)}
-          >
-            <GoalBadge
-              goal={{ ...draft, name: t(preset.name), color: preset.color }}
-              selected={color.toUpperCase() === preset.color}
-            />
-          </RoutineOption>
-        ))}
-      </View>
-      <TextInput
-        accessibilityLabel={t('goal.hex')}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        value={color}
-        onChangeText={setColor}
-        editable={!blocked}
-        onFocus={() => setFocused('color')}
-        onBlur={() => setFocused(null)}
-        style={[
-          s.input,
-          { borderWidth: 1.5 },
-          {
-            color: colors.ink,
-            backgroundColor: colors.chip,
-            borderColor: !isHexColor(color)
-              ? colors.danger
-              : focused === 'color'
-                ? colors.ink
-                : colors.chip,
-          },
-        ]}
-      />
-      {!isHexColor(color) ? (
-        <Text accessibilityRole="alert" style={[s.supporting, { color: colors.danger }]}>
-          {t('goal.hex.invalid')}
-        </Text>
+      {social ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            rowGap: m.space.sm,
+          }}
+        >
+          {[...goalPresets, null].map((preset) => {
+            const custom = !goalPresets.some((option) => option.color === color);
+            const selected = preset ? preset.color === color : custom;
+            return (
+              <Pressable
+                key={preset?.color ?? 'custom'}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  preset ? t('goal.preset', { name: t(preset.name) }) : t('goal.colorPicker.open')
+                }
+                accessibilityState={{ selected }}
+                disabled={blocked}
+                onPress={() => (preset ? setColor(preset.color) : setPickerOpen(true))}
+                style={{
+                  flexBasis: '16.6%',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: m.height.touch,
+                }}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: m.radius.pill,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: preset?.color,
+                    experimental_backgroundImage: preset
+                      ? undefined
+                      : 'linear-gradient(135deg, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF)',
+                    borderWidth: selected ? m.selectionRing : 0,
+                    borderColor: colors.ink,
+                  }}
+                >
+                  {selected && (
+                    <View
+                      style={{
+                        borderRadius: m.radius.pill,
+                        minWidth: 24,
+                        minHeight: 24,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: color,
+                      }}
+                    >
+                      <Text style={{ color: checkColor(color) }}>✓</Text>
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       ) : (
-        <GoalBadge goal={{ ...draft, name: name.trim() || t('goal.preview'), color }} />
+        <>
+          <View style={s.choices}>
+            {goalPresets.map((preset) => (
+              <RoutineOption
+                key={preset.color}
+                label={t(preset.name)}
+                compact
+                borderless
+                multiple
+                selected={color.toUpperCase() === preset.color}
+                accessibilityLabel={t('goal.preset', { name: t(preset.name) })}
+                disabled={blocked}
+                onPress={() => setColor(preset.color)}
+              >
+                <GoalBadge
+                  goal={{ ...draft, name: t(preset.name), color: preset.color }}
+                  selected={color.toUpperCase() === preset.color}
+                />
+              </RoutineOption>
+            ))}
+          </View>
+          <TextInput
+            accessibilityLabel={t('goal.hex')}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            value={color}
+            onChangeText={setColor}
+            editable={!blocked}
+            onFocus={() => setFocused('color')}
+            onBlur={() => setFocused(null)}
+            style={[
+              s.input,
+              { borderWidth: 1.5 },
+              {
+                color: colors.ink,
+                backgroundColor: colors.chip,
+                borderColor: !isHexColor(color)
+                  ? colors.danger
+                  : focused === 'color'
+                    ? colors.ink
+                    : colors.chip,
+              },
+            ]}
+          />
+          {!isHexColor(color) ? (
+            <Text accessibilityRole="alert" style={[s.supporting, { color: colors.danger }]}>
+              {t('goal.hex.invalid')}
+            </Text>
+          ) : (
+            <GoalBadge goal={{ ...draft, name: name.trim() || t('goal.preview'), color }} />
+          )}
+        </>
       )}
-      {!online && (
+      {social && (
+        <>
+          <Text style={[s.label, { color: colors.ink2 }]}>{t('social.visibility.label')}</Text>
+          <View
+            accessibilityRole="radiogroup"
+            style={{
+              backgroundColor: colors.chip,
+              borderRadius: m.radius.pill,
+              flexDirection: 'row',
+              padding: m.space.xs,
+            }}
+          >
+            {VISIBILITY_CHOICES.map((choice) => (
+              <Pressable
+                key={choice}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: choice === visibility }}
+                disabled={blocked || (!goal && !account.data)}
+                onPress={() => {
+                  showPublishNotice(visibility, choice, toast);
+                  setVisibility(choice);
+                }}
+                style={{
+                  backgroundColor: choice === visibility ? colors.ink : colors.chip,
+                  flex: 1,
+                  minHeight: m.height.touch,
+                  borderRadius: m.radius.pill,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: m.space.xs,
+                }}
+              >
+                <GoalMark color={color} visibility={choice} selected={choice === visibility} />
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  style={{
+                    color: choice === visibility ? colors.bg : colors.ink2,
+                    fontFamily: m.fontExtraBold,
+                    fontSize: m.type.button,
+                  }}
+                >
+                  {t(`social.visibility.${choice}`)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {visibility !== 'public' && (
+            <Text style={[s.supporting, { color: colors.muted }]}>
+              {t(`social.visibility.${visibility}Help`)}
+            </Text>
+          )}
+          <GoalBadge
+            goal={{ ...draft, name: name.trim() || t('goal.preview'), color, visibility }}
+          />
+          {!goal && account.isError && (
+            <Button label={t('common.tryAgain')} secondary onPress={() => void account.refetch()} />
+          )}
+        </>
+      )}
+      {!social && !online && (
         <Text style={[s.supporting, { color: colors.muted }]}>{t('sync.writeDisabled')}</Text>
       )}
-      <Button
-        label={t(goal ? 'mobile.rename.save' : 'goal.add')}
-        disabled={!valid || blocked}
-        busy={saving}
-        onPress={() => void save()}
-      />
+      {!social && saveButton}
       {goal && (
         <>
           {last && (
@@ -270,6 +437,34 @@ export function GoalEditor({
           )}
         </>
       )}
+    </>
+  );
+  if (social)
+    return (
+      <ManagementScreen
+        inline
+        title={title}
+        back={t('goal.back')}
+        onClose={close}
+        testID="goal-editor-page"
+        footer={saveButton}
+      >
+        {body}
+        {pickerOpen && (
+          <GoalColorPicker
+            initial={color}
+            onClose={() => setPickerOpen(false)}
+            onApply={(value) => {
+              setColor(value);
+              setPickerOpen(false);
+            }}
+          />
+        )}
+      </ManagementScreen>
+    );
+  return (
+    <BottomSheet title={title} testID="goal-editor-sheet" onClose={close} keyboard>
+      {body}
     </BottomSheet>
   );
 }

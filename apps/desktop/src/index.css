@@ -1925,3 +1925,117 @@ html[lang='en'] .settings-header {
 html[lang='en'] .settings-header > [aria-hidden='true'] {
   display: none;
 }
+
+.goal-palette .goal-rainbow {
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  display: grid;
+  place-items: center;
+}
+.goal-rainbow .goal-custom-color {
+  display: grid;
+  place-items: center;
+  width: 65%;
+  height: 65%;
+  border-radius: 50%;
+}
+.goal-color-picker {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-chip);
+  border-radius: 14px;
+  transform-origin: top right;
+  animation: goal-picker-open 280ms ease-out;
+}
+@keyframes goal-picker-open {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    clip-path: inset(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .goal-color-picker {
+    animation: none;
+  }
+}
+.goal-sv {
+  position: relative;
+  height: 150px;
+  border: 0;
+  touch-action: none;
+  border-radius: 14px;
+  background-image:
+    linear-gradient(to top, black, transparent), linear-gradient(to right, white, transparent);
+}
+.goal-color-pointer {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(17, 19, 24, 0.25);
+}
+.goal-hue {
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
+}
+.goal-hue::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: var(--color-ink);
+}
+.goal-color-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.goal-color-preview {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+}
+.goal-vis {
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 8px;
+}
+.goal-vis-choices {
+  display: flex;
+  gap: 4px;
+  background: var(--color-chip);
+  border-radius: 999px;
+  padding: 3px;
+}
+.goal-vis-choices button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-height: 34px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+.goal-vis-choices button[aria-pressed='true'] {
+  color: var(--color-bg);
+  background: var(--color-ink);
+}
+:root.dark {
+  --goal-mark-ink: var(--goal-mark-dark);
+}

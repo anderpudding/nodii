@@ -17,6 +17,8 @@ export function ManagementScreen({
   footer,
   testID,
   swipeRows = false,
+  inline = false,
+  hostOnly = false,
 }: {
   title: string;
   back: string;
@@ -25,6 +27,8 @@ export function ManagementScreen({
   footer?: ReactNode;
   testID: string;
   swipeRows?: boolean;
+  inline?: boolean;
+  hostOnly?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -46,8 +50,8 @@ export function ManagementScreen({
       {children}
     </ScrollView>
   );
-  return (
-    <Modal visible animationType="none" onRequestClose={onClose}>
+  const page = (
+    <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View
         testID={testID}
@@ -57,8 +61,8 @@ export function ManagementScreen({
           styles.screen,
           {
             backgroundColor: colors.bg,
-            paddingTop: insets.top,
-            paddingBottom: Math.max(insets.bottom, m.space.lg),
+            paddingTop: inline ? 0 : insets.top,
+            paddingBottom: inline ? 0 : Math.max(insets.bottom, m.space.lg),
           },
         ]}
       >
@@ -87,6 +91,26 @@ export function ManagementScreen({
           }
         />
       </View>
+    </>
+  );
+  return inline ? (
+    page
+  ) : (
+    <Modal visible animationType="none" onRequestClose={onClose}>
+      {hostOnly ? (
+        <View
+          style={{
+            flex: 1,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            backgroundColor: colors.bg,
+          }}
+        >
+          {children}
+        </View>
+      ) : (
+        page
+      )}
     </Modal>
   );
 }
