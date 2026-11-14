@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { ActionSheetIOS, Alert, StyleSheet, Text } from 'react-native';
@@ -8,6 +9,9 @@ import {
   createSocialProfile,
   block,
   fetchBlockedProfiles,
+  fetchNotifications,
+  fetchNotificationPrefs,
+  fetchMyReactions,
   fetchFollowCounts,
   fetchTodayPeople,
   updateTodayPerson,
@@ -75,6 +79,14 @@ jest.mock('../../../../../packages/api/src/repositories/goals', () => ({ listGoa
 jest.mock('../../../../../packages/api/src/repositories/routines', () => ({
   listRoutines: jest.fn(),
 }));
+jest.mock('../../../../../packages/api/src/repositories/notifications', () => ({
+  fetchNotifications: jest.fn(),
+  fetchNotificationPrefs: jest.fn(),
+  fetchMyReactions: jest.fn(),
+}));
+jest.mock('../../../../../packages/api/src/notification-realtime', () => ({
+  subscribeNotifications: jest.fn(() => () => {}),
+}));
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
 }));
@@ -94,6 +106,11 @@ const client = {} as NodiiClient;
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(fetchTodayPeople).mockResolvedValue([]);
+  jest.mocked(fetchNotifications).mockResolvedValue([]);
+  jest
+    .mocked(fetchNotificationPrefs)
+    .mockResolvedValue({ friendDone: false, newFollower: true, reaction: true });
+  jest.mocked(fetchMyReactions).mockResolvedValue({});
   jest.mocked(listTodosInRange).mockResolvedValue([]);
   jest.mocked(listLogsInRange).mockResolvedValue([]);
   jest.mocked(fetchFollowCounts).mockResolvedValue({ following: 0, followers: 0 });
@@ -173,7 +190,7 @@ it('switches tabs and waits for valid inputs and ID availability', async () => {
   jest.mocked(createSocialProfile).mockResolvedValue(mine);
   mount();
   fireEvent.press(screen.getByRole('tab', { name: '알림' }));
-  expect(screen.getByText('아직 알림이 없어요')).toBeVisible();
+  expect(await screen.findByText('아직 알림이 없어요')).toBeVisible();
   fireEvent.press(screen.getByRole('tab', { name: '프로필' }));
   const id = await screen.findByLabelText('ID');
   expect(screen.getByText('ID는 3~20자로 써 주세요')).toBeVisible();
@@ -493,4 +510,99 @@ it('keeps the person page date separate and collapses its header on scroll', asy
     nativeEvent: { actionName: 'increment' },
   });
   expect(useUIStore.getState().selectedDate).toBe(dateInToday);
+});
+
+it('filters alerts, expands just the current day, jumps to Today, and remembers dismissal', async () => {
+  const date = '2026-09-30';
+  const updatedAt = new Date().toISOString();
+  const actor = { ...mine, userId: 'friend', nickname: '민수' };
+  const base = {
+    actorId: actor.userId,
+    actor,
+    title: null,
+    color: null,
+    todoId: null,
+    routineId: null,
+    date,
+    count: 1,
+  };
+  jest.mocked(fetchNotifications).mockResolvedValue([
+    { ...base, id: 'group', kind: 'friend_done', count: 2, updatedAt },
+    { ...base, id: 'follow', kind: 'follow', date: null, updatedAt },
+    { ...base, id: 'like', kind: 'reaction', title: '내 독서', updatedAt: '2020-01-01T00:00:00Z' },
+  ]);
+  jest
+    .mocked(fetchRelations)
+    .mockResolvedValue(new Map([['friend', { followsMe: true, iFollow: false }]]));
+  jest
+    .mocked(fetchTodayPeople)
+    .mockResolvedValue([
+      {
+        followeeId: 'friend',
+        profile: actor,
+        showOnToday: true,
+        todaySortKey: 'a0',
+        createdAt: updatedAt,
+      },
+    ]);
+  jest
+    .mocked(listGoals)
+    .mockResolvedValue([
+      {
+        id: 'g',
+        name: '독서',
+        color: '#4F7CFF',
+        sortKey: 'a0',
+        archivedAt: null,
+        deletedAt: null,
+        updatedAt,
+      },
+    ]);
+  jest.mocked(listTodosInRange).mockResolvedValue([
+    {
+      id: 'done',
+      goalId: 'g',
+      title: '친구 독서',
+      date,
+      sortKey: 'a0',
+      isDone: true,
+      doneAt: updatedAt,
+      deletedAt: null,
+      updatedAt,
+    },
+    {
+      id: 'pending',
+      goalId: 'g',
+      title: '미완료',
+      date,
+      sortKey: 'a1',
+      isDone: false,
+      doneAt: null,
+      deletedAt: null,
+      updatedAt,
+    },
+  ]);
+  mount();
+  fireEvent.press(screen.getByRole('tab', { name: '알림' }));
+  expect(await screen.findByRole('button', { name: '맞팔로우' })).toBeVisible();
+  expect(screen.getByRole('header', { name: '이전' })).toBeVisible();
+  fireEvent.press(screen.getByRole('tab', { name: '친구 완료' }));
+  expect(screen.queryByRole('button', { name: '맞팔로우' })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: '끝낸 항목 펼치기' }));
+  expect(await screen.findByRole('togglebutton', { name: '친구 독서 좋아요' })).toBeVisible();
+  expect(screen.queryByText('미완료')).toBeNull();
+  expect(listTodosInRange).toHaveBeenCalledWith(client, 'friend', date, date, expect.anything());
+  fireEvent.press(await screen.findByRole('button', { name: '안내 닫기' }));
+  expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+    'nodii:friend-completion-prompt-dismissed',
+    '1',
+  );
+  fireEvent.press(screen.getByRole('tab', { name: '좋아요' }));
+  fireEvent.press(
+    screen
+      .getAllByRole('button', { name: '민수님이 ‘내 독서’에 좋아요를 남겼어요' })
+      .at(-1)!,
+  );
+  expect(screen.getByRole('tab', { name: '오늘', selected: true })).toBeVisible();
+  expect(useUIStore.getState().selectedDate).toBe(date);
 });

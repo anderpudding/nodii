@@ -34,6 +34,8 @@ import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
 import { SocialIcon } from './Icons';
 import { onSocialForeground } from './InviteReceiver';
+import { Notifications } from './Notifications';
+import { useUIStore } from '../../stores/ui';
 import { OtherProfile } from './OtherProfile';
 import { BlockedProfiles, FollowListPanel, ProfileSearch } from './PeoplePanels';
 import './social.css';
@@ -361,10 +363,26 @@ export function SocialShell({
                 calendarProfile={profile}
               />
             ) : active === 'notifications' ? (
-              <section className="social-notifications">
-                <h1>{t('tabs.notifications')}</h1>
-                <p className="social-center">{t('social.notifications.empty')}</p>
-              </section>
+              <Notifications
+                client={client}
+                me={userId}
+                timezone={
+                  profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+                }
+                weekStart={profile?.weekStart ?? 0}
+                following={!!todayPeople.data?.length}
+
+                onPerson={(id) => setOther({ userId: id, from: 'tabs.notifications' })}
+                onToday={(date) => {
+                  setPicked(null);
+                  useUIStore.getState().selectDate(date);
+                  select('today');
+                }}
+                onSettings={() => {
+                  select('profile');
+                  setPanel({ kind: 'settings' });
+                }}
+              />
             ) : active === 'profile' ? (
               <section className="social-profile" data-panel={!!showPanel}>
                 {mine.data ? (

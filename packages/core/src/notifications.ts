@@ -65,13 +65,18 @@ export function filterNotifications<T extends { kind: NotificationKind }>(
   return filter === 'all' ? rows : rows.filter((row) => row.kind === filter);
 }
 
+type NotificationSentenceKey =
+  | 'social.notifications.sentenceFollow'
+  | 'social.notifications.sentenceReaction'
+  | 'social.notifications.sentenceFriendDone';
+
 /** SOC-50: 카탈로그가 어순과 복수를 정할 수 있도록 키와 값을 넘긴다. */
 export function notificationSentence(row: {
   kind: NotificationKind;
   name: string;
   title: string;
   count: number;
-}) {
+}): { key: NotificationSentenceKey; params: Record<string, string | number> & { name: string } } {
   const { name, title, count } = row;
   switch (row.kind) {
     case 'follow':

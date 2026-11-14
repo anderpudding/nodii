@@ -8,6 +8,10 @@ export const socialIcons = {
   sliders:
     'M3 7h11m4 0h3M3 17h3m4 0h11m-3-10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM10 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0z',
   lock: 'M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm1 0V7a4 4 0 0 1 8 0v4',
+  chevronRight: 'm9 6 6 6-6 6',
+  chevronDown: 'm6 9 6 6 6-6',
+  chevronUp: 'm6 15 6-6 6 6',
+  close: 'm6 6 12 12M18 6 6 18',
   check: 'm5 12 4 4 10-10',
   error: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0zM12 7v6m0 4h.01',
   mutual:

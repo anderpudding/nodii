@@ -9,10 +9,12 @@ export function SproutCheck({
   color,
   done = false,
   skipped = false,
+  size = m.glyph.check,
 }: {
   color: string;
   done?: boolean;
   skipped?: boolean;
+  size?: number;
 }) {
   const { colors } = useTheme();
   const highContrast = useHighContrast();
@@ -35,8 +37,8 @@ export function SproutCheck({
     return () => animation.stop();
   }, [done, reduced, pop]);
   return (
-    <View accessible={false} style={styles.frame}>
-      <Svg width={m.glyph.check} height={m.glyph.check} viewBox="0 0 24 24">
+    <View accessible={false} style={{ width: size, height: size }}>
+      <Svg width={size} height={size} viewBox="0 0 24 24">
         <Path
           testID="sprout-body"
           d={SPROUT_BODY}
@@ -60,7 +62,7 @@ export function SproutCheck({
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { transform: [{ scale: pop }] }]}
         >
-          <Svg width={m.glyph.check} height={m.glyph.check} viewBox="0 0 24 24">
+          <Svg width={size} height={size} viewBox="0 0 24 24">
             <Path testID="sprout-leaves" d={SPROUT_LEAVES} fill={color} />
             <Path
               testID="sprout-check"
@@ -77,4 +79,3 @@ export function SproutCheck({
     </View>
   );
 }
-const styles = StyleSheet.create({ frame: { width: m.glyph.check, height: m.glyph.check } });
