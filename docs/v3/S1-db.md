@@ -116,6 +116,7 @@ create index blocks_blocked_idx on public.blocks (blocked_id, blocker_id);
   - `todos`: `... and public.can_view_goal(goal_id)`
   - `routines`: `... and public.can_view_goal(goal_id)`
   - `routine_logs`: `... and status = 'done' and public.can_view_routine(routine_id)` — 건너뛴 기록은 친구에게 보이지 않습니다(SOC-23).
+    - **S4에서 바꿈(2026-11-13):** `status = 'done'` 조건을 뺐습니다. 기록이 없으면 친구 앱이 건너뛴 날을 미완료로 그리기 때문입니다. 건너뛴 기록을 읽고 하루 계산이 그 날을 빼는 방식으로 SOC-23을 지킵니다(`S4-friends-day.md` §1.5).
   - 친구 정책에 `deleted_at is null`을 **넣지 않습니다.** 넣으면 친구가 할 일을 지울 때(소프트 삭제 UPDATE) 그 행이 내게서 사라져 Realtime이 변경을 전달하지 않고, 친구 화면 캐시에 지운 할 일이 남습니다. 조회는 지금처럼 `deleted_at is null`로 거릅니다.
 - 쓰기 정책은 바꾸지 않습니다(본인만).
 - **성능**: 친구 화면 조회(`todos` 42일 범위)에 `explain analyze`를 돌려 결과를 보고에 붙입니다. 함수 호출이 행마다 반복되면 `goal_id`별로 묶이도록 `(select ...)` 서브쿼리나 함수의 `stable` 캐시를 확인합니다.
