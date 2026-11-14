@@ -21,6 +21,12 @@
 ## 1. DB (마이그레이션 1개)
 
 - **`push_tokens` 컬럼 추가**: `locale text not null default 'ko'`(기기 언어 `ko`·`en`), `time_zone text not null default 'UTC'`(기기 IANA 시간대), `app_version text`. 푸시 문장 언어와 조용한 시간을 **기기 기준**으로 정하기 위함입니다(SOC-51 "기기 시간"). 기존 RLS(본인 모든 권한) 그대로.
+- **토큰 등록 RPC (2026-11-14 결정)**: `push_tokens`의 RLS는 기존 행의 주인만 수정할 수 있어서, 오프라인 로그아웃으로 남은 토큰을 다른 계정이 upsert하면 `42501`로 거부되고 푸시가 이전 계정에 계속 갑니다. 그래서 앱은 테이블에 직접 쓰지 않고 `public.register_push_token(p_token text, p_locale text, p_time_zone text, p_app_version text)`를 부릅니다.
+  - `security definer`, `search_path = ''`, `authenticated`만 실행. `auth.uid()`가 없으면 거부.
+  - `insert … on conflict (token) do update set user_id = auth.uid(), locale, time_zone, app_version, updated_at = now()` — **토큰의 주인을 지금 로그인한 사람으로 바꿉니다.** 푸시 토큰은 그 기기에서만 받을 수 있는 값이므로, 그 기기에 로그인한 사람이 가져가는 것이 맞습니다.
+  - 값 검증: `p_locale in ('ko','en')`, `p_time_zone`은 `pg_timezone_names`에 있는 이름, 토큰은 Expo 형식(`ExponentPushToken[…]`), 길이 제한. 틀리면 `invalid_push_token`.
+  - 테이블 RLS(본인 전용)는 그대로 둡니다. 해제(로그아웃)는 기존처럼 본인 행 DELETE.
+  - pgTAP: A가 등록한 토큰을 B가 RPC로 등록하면 주인이 B로 바뀜 / B는 여전히 A의 다른 토큰을 직접 UPDATE·DELETE 못 함 / anon 거부 / 잘못된 시간대·언어 거부.
 - **`push_throttle(recipient_id uuid, actor_id uuid, last_sent_at timestamptz, primary key (recipient_id, actor_id))`** — 친구 완료 푸시의 "같은 친구당 3시간 1번"용. 둘 다 `auth.users` cascade. RLS 켜고 정책 없음(서비스 역할만 씀). 계정 삭제 cascade를 S1 계정 삭제 pgTAP에 더합니다.
 - **알림 → 발송 함수 호출**: `notifications` AFTER INSERT, 그리고 AFTER UPDATE에서 `new.updated_at > old.updated_at`(S5: 친구 완료 숫자가 **늘었을 때만** `updated_at`이 바뀜) → `pg_net`의 `net.http_post`로 Edge Function `send-push`를 부릅니다. 본문은 `{ notification_id }`만.
   - 함수 주소와 공유 비밀은 **Supabase Vault**에서 읽습니다(`project_url`, `push_webhook_secret`). 마이그레이션에 값을 넣지 않습니다. Vault에 값이 없으면 호출하지 않고 넘어갑니다(로컬 테스트·다른 개발자 환경이 깨지지 않게).
@@ -49,27 +55,30 @@
 ## 3. iOS — 토큰 등록과 푸시 응답
 
 - 의존성: `expo-notifications`(S0 스파이크와 같은 버전대). `app.json`에 플러그인, `aps-environment`(개발 빌드 `development`, TestFlight·App Store `production` — EAS가 프로필에 맞춰 넣는지 확인). 새 의존성은 보고에 적습니다.
-- **등록 시점**: 로그인했고 소셜이 켜져 있고 **알림 권한이 허용**된 상태에서, 앱 시작·앞으로 올 때 `getExpoPushTokenAsync({ projectId })` → `push_tokens` upsert(`token`, `user_id`, `platform='ios'`, `locale`, `time_zone`, `app_version`). 값이 같으면 쓰지 않습니다.
-- **해제**: 로그아웃·계정 삭제 직전에 이 기기 토큰 행을 지웁니다(오프라인이면 다음 로그인 때 같은 토큰이 다른 사용자로 upsert되며 덮어씀 — PK가 `token`). 소셜 꺼짐이면 등록하지 않습니다.
+- **등록 시점**: 로그인했고 소셜이 켜져 있고 **알림 권한이 허용**된 상태에서, 앱 시작·앞으로 올 때 `getExpoPushTokenAsync({ projectId })` → **`register_push_token` RPC**(§1). 마지막으로 등록한 값(토큰·사용자·언어·시간대·버전)을 기기에 저장해 두고 같으면 부르지 않습니다.
+- **해제**: 로그아웃·계정 삭제 직전에 이 기기 토큰 행을 지웁니다(오프라인이라 못 지웠으면 다음 로그인 때 `register_push_token`이 주인을 바꿈). 소셜 꺼짐이면 등록하지 않습니다.
 - **앱이 앞에 있을 때**: 시스템 배너를 띄우지 않습니다(`setNotificationHandler`에서 `shouldShowBanner: false`, `shouldPlaySound: false`, `shouldSetBadge: false`). 알림 탭은 S5 Realtime으로 갱신됩니다.
 - **푸시를 누르면**(앱이 꺼져 있을 때 포함, 마지막 응답 확인): `data`로 S5 `NotificationRow`와 같은 이동 — 새 팔로워·친구 완료 → 사람 하루 페이지(친구 완료는 그 날짜), 반응 → 오늘 탭 그 날짜. 대상이 사라졌으면 알림 탭.
 - 배지는 시작할 때 0으로 맞춥니다(이전 빌드 잔여 대비).
 
 ## 4. macOS — 로컬 알림
 
-- 의존성: Tauri 알림 플러그인(S0 스파이크와 같은 것, 버전 고정) + capability. 새 의존성·권한은 보고에 적습니다.
+> **범위 축소(2026-11-14 결정)**: Tauri 알림 플러그인은 macOS에서 실제 권한 상태를 읽지 못하고 항상 "허용"을 돌려줍니다. 그래서 macOS에는 권한 카드·권한 안내 줄을 두지 않고(§5), 로컬 알림 표시와 클릭 이동만 합니다. Apple `UNUserNotificationCenter`를 직접 붙여 권한을 제대로 다루는 일은 v3.1입니다.
+
+- 의존성: Tauri 알림 플러그인 **2.6.0 이상**(알림별 클릭 이벤트가 2.6.0에 추가됨), 버전 고정 + capability. 새 의존성·권한은 보고에 적습니다.
 - 앱이 실행 중이면(창을 닫았거나 다른 앱이 앞에 있어도) S5의 `notifications` Realtime 구독에서 **INSERT, 그리고 친구 완료 숫자가 늘어난 UPDATE**를 받으면 시스템 알림을 띄웁니다. ⌘Q로 종료하면 오지 않습니다(S0 확인 — 정상).
 - 같은 규칙을 앱에서 적용합니다: 설정(이미 트리거가 거름), **친구 완료 3시간 1번**(기기에 마지막 표시 시각 저장), **기기 시간 23:00~07:59 제외**. 서버와 같은 판정 함수를 `packages/core`에 두고 Edge Function 테스트와 같은 경계값으로 테스트합니다(`shouldDeliverPush({ kind, now, timeZone, lastSentAt })`).
 - Nodii 창이 **앞에 있고 알림 탭을 보고 있으면** 띄우지 않습니다. 다른 탭을 보고 있으면 띄웁니다.
-- 문장은 iOS 푸시와 같고, 알림을 누르면 Nodii가 앞으로 오고 §3과 같은 화면으로 이동합니다.
+- 문장은 iOS 푸시와 같습니다. 알림을 누르면 Nodii가 앞으로 오고, 클릭 이벤트로 받은 `data`로 §3과 같은 화면으로 이동합니다. **서명 빌드에서 클릭 이벤트가 오지 않으면** 우회하지 말고, 클릭 시 앱이 앞으로 오면(S0 확인) 알림 탭을 여는 것으로 줄이고 보고합니다.
 - Dock 배지는 쓰지 않습니다(항상 0, SOC-50).
 
 ## 5. 알림 권한 요청과 설정 표시
 
-- **앱 시작 때 묻지 않습니다.** 처음으로 알림 탭을 열었을 때, 권한이 아직 정해지지 않았으면 목록 위에 카드(시안 없음 — 초대 카드와 같은 모양): "알림을 켜면 친구 소식을 바로 받아요" + [알림 켜기] + 닫기 `×`. [알림 켜기]를 눌러야 시스템 권한 창이 뜹니다. 닫으면 기기에 저장하고 7일 뒤에 한 번 더 보여 줍니다.
-- 설정 > 알림 구역 맨 위에 시스템 권한이 **꺼져 있을 때만** 한 줄: "기기 설정에서 Nodii 알림이 꺼져 있어요" + [설정 열기](iOS: 앱 설정, macOS: 시스템 설정 알림 화면). 켜져 있으면 아무것도 표시하지 않습니다.
+- **iOS만.** 앱 시작 때 묻지 않습니다. 처음으로 알림 탭을 열었을 때, 권한이 아직 정해지지 않았으면 목록 위에 카드(시안 없음 — 초대 카드와 같은 모양): "알림을 켜면 친구 소식을 바로 받아요" + [알림 켜기] + 닫기 `×`. [알림 켜기]를 눌러야 시스템 권한 창이 뜹니다. 닫으면 기기에 저장하고 7일 뒤에 한 번 더 보여 줍니다.
+- **iOS만.** 설정 > 알림 구역 맨 위에 시스템 권한이 **꺼져 있을 때만** 한 줄: "기기 설정에서 Nodii 알림이 꺼져 있어요" + [설정 열기](앱 설정). 켜져 있으면 아무것도 표시하지 않습니다.
+- **macOS**: 권한 카드·안내 줄 없음(플러그인이 권한 상태를 알 수 없음). 앱이 권한을 따로 요청하지 않고, 첫 알림을 띄울 때 시스템이 묻는지만 확인합니다.
 - S5 설정 스위치는 그대로(서버 설정). 시스템 권한과 섞지 않습니다.
-- macOS: 서명 빌드에서 첫 권한 프롬프트가 뜨는지, 시스템 설정에서 Nodii 알림을 끈 상태에서 앱이 조용히 넘어가는지 확인합니다(S0에서 미확인).
+- macOS 확인(사람, 서명 빌드): 첫 알림 때 시스템 권한 창이 뜨는지, 시스템 설정에서 Nodii 알림을 끈 상태에서 앱이 오류 없이 조용히 넘어가는지(S0에서 미확인).
 
 ## 6. 문구 (i18n)
 
@@ -80,7 +89,7 @@
 - pgTAP: §1 전부. 기존 테스트 전부 통과.
 - Edge Function: §2 목록.
 - `packages/core`: `shouldDeliverPush` 경계값(조용한 시간·3시간·시간대).
-- 앱: iOS 토큰 upsert(값이 같으면 안 씀)·로그아웃 삭제·앞에 있을 때 배너 없음·푸시 응답 이동 / macOS Realtime → 알림 표시 조건(알림 탭 보는 중 제외, 3시간, 조용한 시간)·알림 클릭 이동 / 권한 카드·설정 안내 줄 / 소셜 꺼짐이면 등록·표시 안 함.
+- 앱: iOS 토큰 등록 RPC(값이 같으면 안 부름)·로그아웃 삭제·앞에 있을 때 배너 없음·푸시 응답 이동 / macOS Realtime → 알림 표시 조건(알림 탭 보는 중 제외, 3시간, 조용한 시간)·알림 클릭 이동 / iOS 권한 카드·설정 안내 줄, macOS에는 없음 / 소셜 꺼짐이면 등록·표시 안 함.
 - `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`(기본 병렬, 시간 제한·워커 수 그대로), `pnpm db:reset` → `pnpm db:test`, `pnpm db:types`.
 
 ## 8. 완료 기준
@@ -89,6 +98,7 @@
 
 - [ ] 알림 INSERT·친구 완료 숫자 증가에서만 `send-push`가 불리고(dry-run 로그), 설정 꺼짐·차단·3시간 안·조용한 시간에는 보내지 않는다.
 - [ ] `DeviceNotRegistered` 티켓이면 토큰 행이 지워진다(가짜 응답).
+- [ ] 같은 토큰을 A 다음 B가 등록하면 주인이 B로 바뀌고, 그 뒤 A에게 가는 알림은 그 토큰으로 보내지 않는다.
 - [ ] macOS 개발 앱: 다른 계정의 반응·팔로우·친구 완료에 시스템 알림이 뜨고, 누르면 해당 화면. 알림 탭을 보는 중에는 안 뜬다.
 
 **사람이 확인(실기기 · 원격 스파이크 또는 스테이징 프로젝트)**:
@@ -96,7 +106,7 @@
 - [ ] TestFlight 빌드를 설치한 iPhone에서 앱을 **완전히 종료**한 뒤, 다른 계정이 좋아요를 누르면 푸시가 온다. 누르면 그날 오늘 탭이 열린다.
 - [ ] 같은 친구의 완료가 3시간 안에 두 번이면 푸시는 한 번(알림 탭에는 숫자 증가).
 - [ ] 기기 시간대 밤 11시 이후에는 푸시가 안 온다(시간대를 바꿔 확인해도 됨).
-- [ ] 서명한 macOS 앱의 첫 권한 프롬프트, 시스템 설정에서 알림을 끈 상태.
+- [ ] 서명한 macOS 앱: 첫 알림 때 시스템 권한 창, 시스템 설정에서 알림을 끈 상태, 알림 클릭 시 해당 화면(안 되면 알림 탭)으로 이동.
 - [ ] 앱 아이콘·Dock 배지가 어디에도 생기지 않는다.
 
 ## 9. 사람이 할 일
@@ -125,3 +135,5 @@
 6. 영수증 조회는 하지 않고 티켓 오류로 토큰을 정리한다.
 7. 권한은 알림 탭 카드에서 사용자가 눌렀을 때만 묻는다.
 8. 앱이 앞에 있을 때 iOS 배너는 띄우지 않고, macOS는 알림 탭을 보는 중일 때만 띄우지 않는다.
+9. iOS 토큰은 `register_push_token` RPC로만 등록하고, 같은 토큰은 마지막으로 로그인한 계정이 가져간다.
+10. macOS는 권한 UI 없이 로컬 알림과 클릭 이동만 한다. 권한 상태 처리는 v3.1(`UNUserNotificationCenter`).
