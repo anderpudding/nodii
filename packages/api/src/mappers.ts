@@ -1,5 +1,13 @@
 import { visibleProfile } from '@nodii/core';
-import type { Goal, Todo, Profile, Routine, RoutineLog, SocialProfile } from '@nodii/core';
+import type {
+  Goal,
+  Todo,
+  Profile,
+  Routine,
+  RoutineLog,
+  SocialProfile,
+  TodayFollow,
+} from '@nodii/core';
 import type { Database } from './database.types';
 
 /** 동기화용 메타데이터는 도메인 타입을 오염시키지 않고 API 캐시에 보존한다. */
@@ -88,7 +96,9 @@ export function routineLogToRow(
 ): Database['public']['Tables']['routine_logs']['Insert'] {
   return { routine_id: log.routineId, date: log.date, status: log.status };
 }
-export type GoalChanges = Partial<Pick<Goal, 'name' | 'color' | 'sortKey' | 'archivedAt'>>;
+export type GoalChanges = Partial<
+  Pick<Goal, 'name' | 'color' | 'sortKey' | 'archivedAt' | 'visibility'>
+>;
 export type TodoChanges = Partial<
   Pick<TodoRecord, 'title' | 'isDone' | 'doneAt' | 'deletedAt' | 'date' | 'sortKey'>
 >;
@@ -101,6 +111,7 @@ export function mapGoal(row: Database['public']['Tables']['goals']['Row']): Goal
     color: row.color,
     sortKey: row.sort_key,
     archivedAt: row.archived_at,
+    visibility: row.visibility,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
   };
@@ -128,6 +139,7 @@ export function goalChangesToRow(
     color: changes.color,
     sort_key: changes.sortKey,
     archived_at: changes.archivedAt,
+    visibility: changes.visibility,
   };
 }
 /** 클라이언트 ID를 포함해 낙관적 행과 서버 행을 일치시킨다. */
@@ -242,4 +254,26 @@ export function socialProfilePatchToRow(
     avatar_path: patch.avatarPath,
     searchable: patch.searchable,
   };
+}
+
+/** SOC-36: 팔로우 관계와 오늘 줄 설정을 같은 타입으로 읽는다. */
+export function mapTodayFollow(
+  row: Pick<
+    Database['public']['Tables']['follows']['Row'],
+    'followee_id' | 'show_on_today' | 'today_sort_key' | 'created_at'
+  >,
+): TodayFollow {
+  return {
+    followeeId: row.followee_id,
+    showOnToday: row.show_on_today,
+    todaySortKey: row.today_sort_key,
+    createdAt: row.created_at,
+  };
+}
+
+/** SOC-36: 표시 설정 쓰기에서 팔로우 대상과 소유자를 바꾸지 않는다. */
+export function todayFollowPatchToRow(
+  patch: Partial<Pick<TodayFollow, 'showOnToday' | 'todaySortKey'>>,
+) {
+  return { show_on_today: patch.showOnToday, today_sort_key: patch.todaySortKey };
 }

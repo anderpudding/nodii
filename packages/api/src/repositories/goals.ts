@@ -43,7 +43,10 @@ export async function listGoals(client: NodiiClient, userId: string, signal?: Ab
 /** 클라이언트 ID로 목표를 생성한다 (GOAL-01). */
 export async function createGoal(client: NodiiClient, goal: Goal, userId: string) {
   validate(goal);
-  const visibility = (await fetchProfile(client, userId)).defaultVisibility ?? 'private';
+  const visibility =
+    goal.visibility === 'public'
+      ? 'private'
+      : (goal.visibility ?? (await fetchProfile(client, userId)).defaultVisibility ?? 'private');
   const { data, error } = await client
     .from('goals')
     .insert(goalToRow({ ...goal, name: goal.name.trim() }, visibility))
