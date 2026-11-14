@@ -580,6 +580,7 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'social.notifications.section.earlier': 'Earlier',
   'social.notifications.sentenceFollow': '{name} followed you',
   'social.notifications.sentenceReaction': '{name} liked “{title}”',
+  'social.notifications.sentenceReactionPush': '{name} left a like',
   'social.notifications.sentenceFriendDone_one': '{name} completed {count} task',
   'social.notifications.sentenceFriendDone': '{name} completed {count} tasks',
   'social.notifications.unknownItem': 'a task',
