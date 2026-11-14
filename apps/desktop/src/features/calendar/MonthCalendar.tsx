@@ -16,7 +16,15 @@ import { completedStampColors } from './stamp-colors';
 import { CalendarGrid } from './CalendarGrid';
 
 /** 하루 목록과 동일한 월 캐시에서 도장을 계산하고 인접 월을 준비한다. */
-export function MonthCalendar({ client, profile }: { client: NodiiClient; profile: Profile }) {
+export function MonthCalendar({
+  client,
+  profile,
+  social = false,
+}: {
+  client: NodiiClient;
+  profile: Profile;
+  social?: boolean;
+}) {
   const { selectedDate, today, selectDate } = useUIStore();
   const [view, setView] = useState({ selection: selectedDate, month: monthKeyOf(selectedDate) });
   // 하루 목록에서 날짜를 바꾸면 월도 따라가며 단순 월 탐색은 선택 날짜를 보존한다.
@@ -61,6 +69,7 @@ export function MonthCalendar({ client, profile }: { client: NodiiClient; profil
   return (
     <section className="sidebar-calendar" aria-label={t('calendar.month')}>
       <CalendarGrid
+        monthTitleAction={social}
         month={month}
         selectedDate={selectedDate}
         today={today}

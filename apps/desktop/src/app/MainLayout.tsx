@@ -1,7 +1,9 @@
+import { TodaySocialContext } from '../features/social/TodaySocialContext';
+import { FriendDay } from '../features/social/FriendDay';
 import { t } from '@nodii/i18n';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { WeekStrip } from '../features/calendar/WeekStrip';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import type { NodiiClient, Session } from '@nodii/api';
 import type { Profile } from '@nodii/core';
 import { DayView, DaySkeleton } from '../features/day-list/DayView';
@@ -52,7 +54,13 @@ export function MainLayout({
       if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
       const value = (event as CustomEvent<AppCommand>).detail;
       if (value === 'settings' && !social) setSettingsOpen(true);
-      if (value === 'today') useUIStore.getState().selectDate(useUIStore.getState().today);
+      if (
+        value === 'today' &&
+        !document.querySelector('.social-other .friend-day') &&
+        !document.querySelector('.social-today[hidden]')
+      ) {
+        useUIStore.getState().selectDate(useUIStore.getState().today);
+      }
     };
     window.addEventListener('nodii:command', command);
     return () => {
@@ -62,130 +70,153 @@ export function MainLayout({
     };
   }, [social]);
 
+  const { friendId, avatars, management, active } = useContext(TodaySocialContext);
+  const { today, selectedDate, selectDate } = useUIStore();
   return (
-    <div className="app-shell">
-      <aside className="sidebar" aria-label={t('app.sidebar')}>
-        {profile && <MonthCalendar client={client} profile={profile} />}
-        <nav className="management" aria-label={t('app.management')}>
-          <Button variant="ghost" onClick={() => setGoalView('list')}>
-            <GoalIcon className="management-icon" />
-            {t('goal.manage')}
-          </Button>
-          <Button variant="ghost" disabled={!profile} onClick={() => setRoutinesOpen(true)}>
-            <RoutineIcon className="management-icon" />
-            {t('routine.manage')}
-          </Button>
-        </nav>
-      </aside>
-      <div className="day-panel">
-        <header className="app-toolbar">
-          <div aria-label={t('app.connection')} role="status">
-            {connectionMessage && (
-              <span className="offline-status" title={connectionMessage}>
-                {connectionMessage}
-              </span>
-            )}
-          </div>
-          {!social && (
-            <Button
-              className="wide-settings"
-              variant="ghost"
-              aria-label={t('settings.title')}
-              aria-haspopup="dialog"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <SettingsIcon className="toolbar-icon" />
-            </Button>
-          )}
-          <div className="narrow-settings">
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <Button variant="ghost" aria-label={t('app.settingsManagement')}>
-                  {social ? (
-                    <GoalIcon className="toolbar-icon" />
-                  ) : (
-                    <SettingsIcon className="toolbar-icon" />
-                  )}
-                </Button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  className="todo-menu"
-                  align="end"
-                  sideOffset={4}
-                  collisionPadding={8}
-                >
-                  <DropdownMenu.Item
-                    className="todo-menu-item"
-                    onSelect={() => setGoalView('list')}
-                  >
-                    {t('goal.manage')}
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    className="todo-menu-item"
-                    disabled={!profile}
-                    onSelect={() => setRoutinesOpen(true)}
-                  >
-                    {t('routine.manage')}
-                  </DropdownMenu.Item>
-                  {!social && (
-                    <>
-                      <DropdownMenu.Separator className="todo-menu-separator" />
-                      <DropdownMenu.Item
-                        className="todo-menu-item"
-                        onSelect={() => setSettingsOpen(true)}
-                      >
-                        {t('settings.title')}
-                      </DropdownMenu.Item>
-                    </>
-                  )}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          </div>
-        </header>
-        {profile && <WeekStrip client={client} profile={profile} />}
-        <main className="day-content">
-          {profile ? (
-            <DayView client={client} profile={profile} social={social} />
-          ) : profileError ? (
-            <div>
-              <p role="alert">{t('app.profile.failed')}</p>
-              <Button variant="outline" onClick={retryProfile}>
-                {t('common.tryAgain')}
+    <div className="today-shell">
+      {avatars}
+      {social && profile && friendId ? (
+        <FriendDay
+          key={friendId}
+          client={client}
+          friendId={friendId}
+          active={active}
+          me={session.user.id}
+          profile={profile}
+          today={today}
+          date={selectedDate}
+          onSelect={selectDate}
+          manage={management}
+        />
+      ) : (
+        <div className={`app-shell${social ? ' app-shell-v3' : ''}`}>
+          <aside className="sidebar" aria-label={t('app.sidebar')}>
+            {profile && <MonthCalendar client={client} profile={profile} social={social} />}
+            <nav className="management" aria-label={t('app.management')}>
+              <Button variant="ghost" onClick={() => setGoalView('list')}>
+                <GoalIcon className="management-icon" />
+                {t('goal.manage')}
               </Button>
-            </div>
-          ) : (
-            <DaySkeleton />
+              <Button variant="ghost" disabled={!profile} onClick={() => setRoutinesOpen(true)}>
+                <RoutineIcon className="management-icon" />
+                {t('routine.manage')}
+              </Button>
+            </nav>
+          </aside>
+          <div className="day-panel">
+            {!management && (
+              <header className="app-toolbar">
+                <div aria-label={t('app.connection')} role="status">
+                  {connectionMessage && (
+                    <span className="offline-status" title={connectionMessage}>
+                      {connectionMessage}
+                    </span>
+                  )}
+                </div>
+                {!social && (
+                  <Button
+                    className="wide-settings"
+                    variant="ghost"
+                    aria-label={t('settings.title')}
+                    aria-haspopup="dialog"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <SettingsIcon className="toolbar-icon" />
+                  </Button>
+                )}
+                <div className="narrow-settings">
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                      <Button variant="ghost" aria-label={t('app.settingsManagement')}>
+                        {social ? (
+                          <GoalIcon className="toolbar-icon" />
+                        ) : (
+                          <SettingsIcon className="toolbar-icon" />
+                        )}
+                      </Button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content
+                        className="todo-menu"
+                        align="end"
+                        sideOffset={4}
+                        collisionPadding={8}
+                      >
+                        <DropdownMenu.Item
+                          className="todo-menu-item"
+                          onSelect={() => setGoalView('list')}
+                        >
+                          {t('goal.manage')}
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className="todo-menu-item"
+                          disabled={!profile}
+                          onSelect={() => setRoutinesOpen(true)}
+                        >
+                          {t('routine.manage')}
+                        </DropdownMenu.Item>
+                        {!social && (
+                          <>
+                            <DropdownMenu.Separator className="todo-menu-separator" />
+                            <DropdownMenu.Item
+                              className="todo-menu-item"
+                              onSelect={() => setSettingsOpen(true)}
+                            >
+                              {t('settings.title')}
+                            </DropdownMenu.Item>
+                          </>
+                        )}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                </div>
+              </header>
+            )}
+            {profile && <WeekStrip client={client} profile={profile} social={social} />}
+            <main className="day-content">
+              {management ??
+                (profile ? (
+                  <DayView client={client} profile={profile} social={social} />
+                ) : profileError ? (
+                  <div>
+                    <p role="alert">{t('app.profile.failed')}</p>
+                    <Button variant="outline" onClick={retryProfile}>
+                      {t('common.tryAgain')}
+                    </Button>
+                  </div>
+                ) : (
+                  <DaySkeleton />
+                ))}
+            </main>
+          </div>
+          {!social && settingsOpen && (
+            <SettingsSheet
+              client={client}
+              session={session}
+              profile={profile}
+              onClose={() => setSettingsOpen(false)}
+              onOpenArchivedGoals={() => {
+                setSettingsOpen(false);
+                setGoalView('archive');
+              }}
+            />
           )}
-        </main>
-      </div>
-      {!social && settingsOpen && (
-        <SettingsSheet
-          client={client}
-          session={session}
-          profile={profile}
-          onClose={() => setSettingsOpen(false)}
-          onOpenArchivedGoals={() => {
-            setSettingsOpen(false);
-            setGoalView('archive');
-          }}
-        />
-      )}
-      {goalView && (
-        <GoalManagerSheet
-          client={client}
-          userId={session.user.id}
-          initialView={goalView}
-          onClose={() => setGoalView(null)}
-        />
-      )}
-      {routinesOpen && profile && (
-        <RoutineListSheet
-          client={client}
-          profile={profile}
-          onClose={() => setRoutinesOpen(false)}
-        />
+          {goalView && (
+            <GoalManagerSheet
+              client={client}
+              userId={session.user.id}
+              initialView={goalView}
+              onClose={() => setGoalView(null)}
+            />
+          )}
+          {routinesOpen && profile && (
+            <RoutineListSheet
+              client={client}
+              profile={profile}
+              onClose={() => setRoutinesOpen(false)}
+            />
+          )}
+        </div>
       )}
     </div>
   );

@@ -117,6 +117,7 @@ export function DayList({
                   return item.kind === 'todo' ? (
                     <TodoRow
                       key={item.todo.id}
+                      goal={goal}
                       todo={todos.find((todo) => todo.id === item.todo.id)!}
                       client={client}
                       userId={profile.id}

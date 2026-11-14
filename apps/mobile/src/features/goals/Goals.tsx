@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
 import { useLargeEnglishText } from '../../../lib/use-large-english-text';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
@@ -37,6 +39,7 @@ export function Goals({
   onClose(): void;
 }) {
   const { colors } = useTheme();
+  const social = useContext(VisibilityContext);
   const online = useOnline();
   const goals = useGoals(client, userId);
   const contents = useGoalContents(client, userId);
@@ -48,6 +51,26 @@ export function Goals({
     .sort((a, b) => compareSortKey(a.sortKey, b.sortKey));
   const active = rows.filter((goal) => !goal.archivedAt);
   const archive = rows.filter((goal) => !!goal.archivedAt);
+  if (social && editing !== undefined) {
+    return (
+      <ManagementScreen
+        hostOnly
+        testID="goal-editor-host"
+        title={t('goal.manage')}
+        back={t('settings.back')}
+        onClose={() => setEditing(undefined)}
+      >
+        <GoalEditor
+          key={editing?.id ?? 'new'}
+          client={client}
+          userId={userId}
+          goal={editing}
+          goals={rows}
+          onClose={() => setEditing(undefined)}
+        />
+      </ManagementScreen>
+    );
+  }
   return (
     <ManagementScreen
       title={t(archived ? 'goal.archived.title' : 'goal.manage')}
@@ -62,7 +85,7 @@ export function Goals({
         !archived && (
           <Button
             label={t('goal.add')}
-            disabled={!online || goals.isPending || goals.isError}
+            disabled={(!social && !online) || goals.isPending || goals.isError}
             onPress={() => setEditing(null)}
           />
         )

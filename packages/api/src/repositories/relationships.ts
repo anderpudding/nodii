@@ -193,20 +193,25 @@ export interface ReportProfileInput {
   alsoBlock: boolean;
 }
 
+export interface ReportTodoInput extends ReportProfileInput {
+  todoId: string;
+}
+
 /** SOC-62: 신고 저장을 확인한 뒤 선택한 차단을 처리한다. */
 export async function reportProfile(
   client: NodiiClient,
   me: string,
-  { alsoBlock, ...body }: ReportProfileInput,
+  { alsoBlock, ...input }: ReportProfileInput | ReportTodoInput,
 ) {
+  const { targetUserId, ...body } = input;
   const { data, error } = await client.functions.invoke<{ ok: boolean }>('report-profile', {
-    body,
+    body: 'todoId' in body ? body : { ...body, targetUserId },
   });
   if (error) throw error;
   if (!data?.ok) throw new Error('invalid_report_response');
   if (!alsoBlock) return { blocked: false, blockFailed: false };
   try {
-    await block(client, me, body.targetUserId);
+    await block(client, me, targetUserId);
     return { blocked: true, blockFailed: false };
   } catch {
     return { blocked: false, blockFailed: true };

@@ -1,3 +1,4 @@
+import { useToast } from '../../components/Toast';
 import { SocialIcon } from '../social/Primitives';
 import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
@@ -41,6 +42,7 @@ export function DayMenu({
 }) {
   const { colors } = useTheme();
   const online = useOnline();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
   const overdue = useOverdueTodos(client, userId, today, date === today);
@@ -66,7 +68,7 @@ export function DayMenu({
       id: 'import',
       glyph: 'import',
       label: t('day.menu.import', { count: moves.length }),
-      reason: !online ? 'sync.writeDisabled' : reasons.import,
+      reason: !online && !sliders ? 'sync.writeDisabled' : reasons.import,
       run: () => {
         setOpen(false);
         void actions.importOverdue(originals, moves, today);
@@ -76,7 +78,7 @@ export function DayMenu({
       id: 'move',
       glyph: 'move',
       label: t('day.menu.move'),
-      reason: !online ? 'sync.writeDisabled' : reasons.targets,
+      reason: !online && !sliders ? 'sync.writeDisabled' : reasons.targets,
       run: () => {
         setOpen(false);
         setPicking(true);
@@ -86,7 +88,7 @@ export function DayMenu({
       id: 'delete',
       glyph: 'delete',
       label: t('day.menu.delete'),
-      reason: !online ? 'sync.writeDisabled' : reasons.targets,
+      reason: !online && !sliders ? 'sync.writeDisabled' : reasons.targets,
       run: () => {
         setOpen(false);
         const snapshot = targets;
@@ -146,7 +148,12 @@ export function DayMenu({
                 accessibilityHint={entry.reason ? t(entry.reason) : undefined}
                 disabled={!!entry.reason}
                 accessibilityState={{ disabled: !!entry.reason }}
-                onPress={entry.run}
+                onPress={() => {
+                  if (sliders && !online) {
+                    setOpen(false);
+                    toast(() => t('sync.writeDisabled'));
+                  } else entry.run();
+                }}
                 style={({ pressed }) => [
                   styles.item,
                   {

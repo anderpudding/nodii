@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(50);
+select plan(51);
 
 -- A와 B는 소셜 가입, C는 소셜 미가입 상태다.
 insert into auth.users (id, email) values
@@ -28,7 +28,7 @@ set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000001"}';
 select is_empty($$select id from public.goals where id = '20000000-0000-4000-8000-000000000001'$$, 'private 목표 숨김');
 select is_empty($$select id from public.todos where id = '30000000-0000-4000-8000-000000000001'$$, 'private 할 일 숨김');
 select is_empty($$select id from public.routines where id = '40000000-0000-4000-8000-000000000001'$$, 'private 루틴 숨김');
-select is_empty($$select date from public.routine_logs where routine_id = '40000000-0000-4000-8000-000000000001'$$, 'private 로그 숨김');
+select is_empty($$select date from public.routine_logs where routine_id = '40000000-0000-4000-8000-000000000001'$$, 'private 루틴의 완료·건너뛴 로그 모두 숨김');
 select is((select count(*) from public.goals where id = '20000000-0000-4000-8000-000000000004'), 1::bigint, '관계 없이 public 읽기');
 select ok(public.can_view_goal('20000000-0000-4000-8000-000000000004') and not public.can_view_goal('20000000-0000-4000-8000-000000000001'), '목표 함수도 같은 공개 범위 적용');
 select ok(not public.can_view_routine('40000000-0000-4000-8000-000000000001'), 'private 루틴 함수 거부');
@@ -61,8 +61,8 @@ select is((select count(*) from public.goals where id = '20000000-0000-4000-8000
 select is((select count(*) from public.todos where id = '30000000-0000-4000-8000-000000000001'), 1::bigint, '맞팔 할 일 읽기');
 select is((select count(*) from public.routines where id = '40000000-0000-4000-8000-000000000001'), 1::bigint, '맞팔 루틴 읽기');
 select ok(public.can_view_routine('40000000-0000-4000-8000-000000000001'), '맞팔 루틴 함수 허용');
-select results_eq($$select status from public.routine_logs where routine_id = '40000000-0000-4000-8000-000000000001'$$,
-  $$values ('done'::text)$$, '완료 로그만 보이고 건너뛰기는 숨김');
+select results_eq($$select status from public.routine_logs where routine_id = '40000000-0000-4000-8000-000000000001' order by date$$,
+  $$values ('done'::text), ('skipped'::text)$$, '맞팔 루틴의 완료·건너뛴 로그 모두 읽기');
 
 -- 읽을 수 있는 친구 행도 쓰기는 거부한다.
 select throws_ok($$insert into public.goals (user_id, name, color, sort_key)
@@ -93,6 +93,14 @@ set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000001"}';
 select is_empty($$select id from public.goals where id in ('20000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000002')$$, '팔로워 내보내기 직후 공개 범위 축소');
 insert into public.follows (follower_id, followee_id, today_sort_key) values ('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', 'a0');
 
+-- 팔로우와 무관하게 읽을 수 있는 목표로 옮겨 차단 자체를 검사한다.
+set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000002"}';
+update public.routines set goal_id = '20000000-0000-4000-8000-000000000004'
+  where id = '40000000-0000-4000-8000-000000000001';
+set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000001"}';
+select results_eq($$select status from public.routine_logs where routine_id = '40000000-0000-4000-8000-000000000001' order by date$$,
+  $$values ('done'::text), ('skipped'::text)$$, '차단 전에는 공개 루틴 로그 두 상태 모두 읽기');
+
 -- B → A 차단 한 건이 두 방향의 조회를 모두 막는다.
 set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000002"}';
 select lives_ok($$insert into public.blocks (blocker_id, blocked_id) values ('10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001')$$, '본인 차단 추가');
@@ -104,7 +112,7 @@ set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-000000000001"}';
 select is_empty($$select id from public.goals where user_id = '10000000-0000-4000-8000-000000000002'$$, '차단당한 사람에게 모든 범위 숨김');
 select is_empty($$select id from public.todos where user_id = '10000000-0000-4000-8000-000000000002'$$, '차단당한 사람에게 할 일 숨김');
 select is_empty($$select id from public.routines where user_id = '10000000-0000-4000-8000-000000000002'$$, '차단당한 사람에게 루틴 숨김');
-select is_empty($$select date from public.routine_logs where user_id = '10000000-0000-4000-8000-000000000002'$$, '차단당한 사람에게 루틴 기록 숨김');
+select is_empty($$select date from public.routine_logs where user_id = '10000000-0000-4000-8000-000000000002'$$, '차단당한 사람에게 공개 루틴의 완료·건너뛴 로그 모두 숨김');
 select is_empty($$select 1 from public.blocks$$, '차단당한 사람은 차단 행 조회 불가');
 select throws_ok($$insert into public.follows (follower_id, followee_id, today_sort_key)
   values ('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', 'a0')$$, 'P0001', 'not_available', '차단 중 팔로우 거부');

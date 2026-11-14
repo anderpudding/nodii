@@ -1,3 +1,4 @@
+import type { GoalVisibility } from './friends-day';
 import type { DefaultVisibility } from './social';
 
 /** 'YYYY-MM-DD' 형식의 로컬 달력 날짜 (시각 없음, 설계서 §4.2) */
@@ -10,6 +11,7 @@ export interface Goal {
   color: string;
   sortKey: string;
   archivedAt: string | null;
+  visibility?: GoalVisibility;
 }
 
 export interface Todo {

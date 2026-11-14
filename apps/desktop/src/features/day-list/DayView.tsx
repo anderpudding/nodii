@@ -59,6 +59,7 @@ export function DayView({
   return (
     <>
       <DayHeader
+        compact={social}
         total={items.length}
         done={done}
         menu={

@@ -6,6 +6,8 @@ import {
   createNodiiClient,
   fetchFollowCounts,
   fetchFollowing,
+  friendDayOptions,
+  updateTodayPerson,
   fetchRelations,
   follow,
   relationshipErrorKey,
@@ -184,4 +186,45 @@ it('blocks only after the report is saved and returns a partial success if block
     await reportProfile(client, 'me', { targetUserId: 'target', reason: 'spam', alsoBlock: true }),
   ).toEqual({ blocked: false, blockFailed: true });
   expect(events).toEqual(['report', 'block']);
+});
+
+it('reads all four friend datasets under a separate key with the friend owner filter', async () => {
+  const requests: string[] = [];
+  database.use(
+    ...['goals', 'todos', 'routines', 'routine_logs'].map((table) =>
+      http.get(`${rest}/${table}`, ({ request }) => {
+        expect(new URL(request.url).searchParams.get('user_id')).toBe('eq.friend');
+        requests.push(table);
+        return HttpResponse.json([]);
+      }),
+    ),
+  );
+  const query = friendDayOptions(client, 'friend', { from: '2026-11-01', to: '2026-12-12' });
+  const cache = new QueryClient();
+  cache.setQueryData(['goals'], ['own']);
+  expect(await cache.fetchQuery(query)).toEqual({ goals: [], todos: [], routines: [], logs: [] });
+  expect(query.queryKey).toEqual(['friend', 'friend', '2026-11-01', '2026-12-12']);
+  expect(cache.getQueryData(['goals'])).toEqual(['own']);
+  expect(requests.sort()).toEqual(['goals', 'routine_logs', 'routines', 'todos']);
+  cache.clear();
+});
+
+it('updates only today columns on the outgoing edge', async () => {
+  database.use(
+    http.patch(`${rest}/follows`, async ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      expect(params.get('follower_id')).toBe('eq.me');
+      expect(params.get('followee_id')).toBe('eq.friend');
+      expect(await request.json()).toEqual({ show_on_today: true, today_sort_key: 'a1' });
+      return HttpResponse.json({
+        followee_id: 'friend',
+        show_on_today: true,
+        today_sort_key: 'a1',
+        created_at: 'now',
+      });
+    }),
+  );
+  expect(
+    await updateTodayPerson(client, 'me', 'friend', { showOnToday: true, todaySortKey: 'a1' }),
+  ).toEqual({ followeeId: 'friend', showOnToday: true, todaySortKey: 'a1', createdAt: 'now' });
 });

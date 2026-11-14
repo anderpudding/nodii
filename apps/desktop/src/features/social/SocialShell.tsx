@@ -1,3 +1,9 @@
+import { TodayPeople } from './TodayPeople';
+import { orderTodayPeople } from '@nodii/core';
+import { useTodayPeople } from '@nodii/api';
+import { AvatarRow } from './AvatarRow';
+import { TodaySocialContext } from './TodaySocialContext';
+import { VisibilityContext } from './VisibilityContext';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   useMySocialProfile,
@@ -154,12 +160,18 @@ export function SocialShell({
     document.documentElement.classList.add('social-enabled');
     return () => document.documentElement.classList.remove('social-enabled');
   }, [enabled]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [manageToday, setManageToday] = useState(false);
+  const todayPeople = useTodayPeople(client, userId, enabled);
+  const { shown } = orderTodayPeople(todayPeople.data ?? []);
+  const friendId = enabled && shown.some((person) => person.followeeId === picked) ? picked : null;
+  if (picked && todayPeople.isSuccess && friendId !== picked) setPicked(null);
   const [tab, setTab] = useState<SocialTab>('today');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [other, setOther] = useState<{ userId: string; from?: MessageKey } | null>(null);
   const [search, setSearch] = useState('');
   const [archive, setArchive] = useState(false);
-  const mine = useMySocialProfile(client, userId, enabled && (tab === 'profile' || !!token));
+  const mine = useMySocialProfile(client, userId, enabled);
   const counts = useFollowCounts(client, userId, enabled && tab === 'profile' && !!mine.data);
   useRefreshRelationships(userId, enabled, onSocialForeground);
   const openPanel = (next: Panel | null) => {
@@ -168,6 +180,7 @@ export function SocialShell({
   };
   const select = useCallback((next: SocialTab) => {
     setTab(next);
+    setManageToday(false);
     setOther(null);
     setPanel(null);
   }, []);
@@ -207,6 +220,7 @@ export function SocialShell({
         return;
       if (event.key === 'Escape') {
         if (other) setOther(null);
+        else if (manageToday) setManageToday(false);
         else if (panel)
           setPanel(
             panel.kind === 'field'
@@ -230,7 +244,7 @@ export function SocialShell({
       window.removeEventListener('keydown', key);
       window.removeEventListener('nodii:command', command);
     };
-  }, [enabled, other, panel, select]);
+  }, [enabled, manageToday, other, panel, select]);
 
   const active = enabled
     ? token && (mine.data === null || mine.isError)
@@ -293,156 +307,193 @@ export function SocialShell({
   );
   const showPanel =
     active === 'profile' && panel && !showingOther && (mine.data || panel.kind === 'settings');
+  const peoplePage =
+    enabled && active === 'today' && manageToday ? (
+      <TodayPeople
+        client={client}
+        me={userId}
+        own={mine.data ?? undefined}
+        onBack={() => setManageToday(false)}
+        onFind={() => {
+          select('profile');
+          openPanel({ kind: 'search' });
+        }}
+      />
+    ) : undefined;
   return (
-    <div className="social-shell" data-social-enabled={enabled}>
-      <div className="social-today" hidden={active !== 'today' || !!showingOther}>
-        {children}
-      </div>
-      {enabled && (
-        <>
-          {showingOther ? (
-            <OtherProfile
-              client={client}
-              key={showingOther.userId}
-              me={userId}
-              userId={showingOther.userId}
-              from={t(showingOther.from ?? `tabs.${tab}`)}
-              onBack={() => setOther(null)}
-              onBlocked={() => setOther(null)}
-            />
-          ) : active === 'notifications' ? (
-            <section className="social-notifications">
-              <h1>{t('tabs.notifications')}</h1>
-              <p className="social-center">{t('social.notifications.empty')}</p>
-            </section>
-          ) : active === 'profile' ? (
-            <section className="social-profile" data-panel={!!showPanel}>
-              {mine.data ? (
-                <MyProfile
+    <VisibilityContext.Provider value={enabled}>
+      <div className="social-shell" data-social-enabled={enabled}>
+        <div className="social-today" hidden={active !== 'today' || !!showingOther}>
+          <TodaySocialContext.Provider
+            value={{
+              friendId,
+              management: peoplePage,
+              active: active === 'today' && !showingOther,
+              avatars: enabled ? (
+                <AvatarRow
                   client={client}
-                  profile={mine.data}
-                  panel={panel}
-                  setPanel={openPanel}
-                  counts={counts.data}
-                  invitePending={invite.isPending}
-                  copy={copy}
+                  me={mine.data ?? undefined}
+                  people={shown}
+                  selected={friendId}
+                  onSelect={(id) => {
+                    setPicked(id);
+                    setManageToday(false);
+                  }}
+                  onManage={() => setManageToday(!manageToday)}
                 />
-              ) : (
-                !showPanel &&
-                (mine.isError ? (
-                  <div className="social-center">
-                    <p role="alert">{t('social.profile.loadFailed')}</p>
-                    <Button onClick={() => void mine.refetch()}>{t('common.tryAgain')}</Button>
-                  </div>
-                ) : mine.data === null ? (
-                  <ProfileSetup client={client} userId={userId} />
+              ) : undefined,
+            }}
+          >
+            {children}
+          </TodaySocialContext.Provider>
+        </div>
+        {enabled && (
+          <>
+            {showingOther ? (
+              <OtherProfile
+                client={client}
+                key={showingOther.userId}
+                me={userId}
+                userId={showingOther.userId}
+                from={t(showingOther.from ?? `tabs.${tab}`)}
+                onBack={() => setOther(null)}
+                onBlocked={() => setOther(null)}
+                calendarProfile={profile}
+              />
+            ) : active === 'notifications' ? (
+              <section className="social-notifications">
+                <h1>{t('tabs.notifications')}</h1>
+                <p className="social-center">{t('social.notifications.empty')}</p>
+              </section>
+            ) : active === 'profile' ? (
+              <section className="social-profile" data-panel={!!showPanel}>
+                {mine.data ? (
+                  <MyProfile
+                    client={client}
+                    profile={mine.data}
+                    panel={panel}
+                    setPanel={openPanel}
+                    counts={counts.data}
+                    invitePending={invite.isPending}
+                    copy={copy}
+                  />
                 ) : (
-                  <p className="social-center" role="status">
-                    {t('mobile.preparing')}
-                  </p>
-                ))
-              )}
-              {showPanel && (
-                <div className="social-panel">
-                  {panel.kind === 'field' && mine.data ? (
-                    <ProfileFieldEditor
-                      key={panel.field}
-                      client={client}
-                      profile={mine.data}
-                      field={panel.field}
-                      onClose={() => setPanel({ kind: panel.from })}
-                      back={
-                        <Back
-                          label={t(panel.from === 'settings' ? 'settings.title' : 'social.edit')}
-                          onClick={() => setPanel({ kind: panel.from })}
-                        />
-                      }
-                    />
+                  !showPanel &&
+                  (mine.isError ? (
+                    <div className="social-center">
+                      <p role="alert">{t('social.profile.loadFailed')}</p>
+                      <Button onClick={() => void mine.refetch()}>{t('common.tryAgain')}</Button>
+                    </div>
+                  ) : mine.data === null ? (
+                    <ProfileSetup client={client} userId={userId} />
                   ) : (
-                    <>
-                      <Back
-                        label={t(
-                          panel.kind === 'visibility' || panel.kind === 'blocked'
-                            ? 'settings.title'
-                            : 'tabs.profile',
-                        )}
-                        onClick={() =>
-                          setPanel(
-                            panel.kind === 'visibility' || panel.kind === 'blocked'
-                              ? { kind: 'settings' }
-                              : null,
-                          )
+                    <p className="social-center" role="status">
+                      {t('mobile.preparing')}
+                    </p>
+                  ))
+                )}
+                {showPanel && (
+                  <div className="social-panel">
+                    {panel.kind === 'field' && mine.data ? (
+                      <ProfileFieldEditor
+                        key={panel.field}
+                        client={client}
+                        profile={mine.data}
+                        field={panel.field}
+                        onClose={() => setPanel({ kind: panel.from })}
+                        back={
+                          <Back
+                            label={t(panel.from === 'settings' ? 'settings.title' : 'social.edit')}
+                            onClick={() => setPanel({ kind: panel.from })}
+                          />
                         }
                       />
-                      {panel.kind === 'edit' && mine.data ? (
-                        <ProfileEdit
-                          client={client}
-                          profile={mine.data}
-                          onField={(field) => setPanel({ kind: 'field', field, from: 'edit' })}
-                        />
-                      ) : panel.kind === 'visibility' ? (
-                        <DefaultVisibilityScreen
-                          client={client}
-                          userId={userId}
-                          visibility={profile?.defaultVisibility ?? 'private'}
-                        />
-                      ) : panel.kind === 'search' ? (
-                        <ProfileSearch
-                          client={client}
-                          me={userId}
-                          text={search}
-                          setText={setSearch}
-                          onPerson={(target) => setOther({ userId: target, from: 'social.find' })}
-                        />
-                      ) : panel.kind === 'list' ? (
-                        <FollowListPanel
-                          client={client}
-                          me={userId}
-                          kind={panel.list}
-                          counts={counts.data}
-                          select={(list) => setPanel({ kind: 'list', list })}
-                          onFind={() => openPanel({ kind: 'search' })}
-                          onInvite={copy}
-                          onPerson={(target) =>
-                            setOther({ userId: target, from: `social.${panel.list}` })
+                    ) : (
+                      <>
+                        <Back
+                          label={t(
+                            panel.kind === 'visibility' || panel.kind === 'blocked'
+                              ? 'settings.title'
+                              : 'tabs.profile',
+                          )}
+                          onClick={() =>
+                            setPanel(
+                              panel.kind === 'visibility' || panel.kind === 'blocked'
+                                ? { kind: 'settings' }
+                                : null,
+                            )
                           }
                         />
-                      ) : panel.kind === 'blocked' ? (
-                        <BlockedProfiles client={client} me={userId} />
-                      ) : panel.kind === 'settings' ? (
-                        settings
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              )}
-            </section>
-          ) : null}
-          <nav className="social-tabbar" role="tablist" aria-label={t('tabs.profile')}>
-            {socialTabs.map((name, index) => (
-              <button
-                type="button"
-                role="tab"
-                key={name}
-                aria-selected={active === name}
-                aria-label={t(`tabs.${name}`)}
-                title={`${t(`tabs.${name}`)} (⌘${index + 1})`}
-                onClick={() => select(name)}
-              >
-                <SocialIcon name={name} />
-              </button>
-            ))}
-          </nav>
-          {archive && (
-            <GoalManagerSheet
-              client={client}
-              userId={userId}
-              initialView="archive"
-              onClose={() => setArchive(false)}
-            />
-          )}
-        </>
-      )}
-    </div>
+                        {panel.kind === 'edit' && mine.data ? (
+                          <ProfileEdit
+                            client={client}
+                            profile={mine.data}
+                            onField={(field) => setPanel({ kind: 'field', field, from: 'edit' })}
+                          />
+                        ) : panel.kind === 'visibility' ? (
+                          <DefaultVisibilityScreen
+                            client={client}
+                            userId={userId}
+                            visibility={profile?.defaultVisibility ?? 'private'}
+                          />
+                        ) : panel.kind === 'search' ? (
+                          <ProfileSearch
+                            client={client}
+                            me={userId}
+                            text={search}
+                            setText={setSearch}
+                            onPerson={(target) => setOther({ userId: target, from: 'social.find' })}
+                          />
+                        ) : panel.kind === 'list' ? (
+                          <FollowListPanel
+                            client={client}
+                            me={userId}
+                            kind={panel.list}
+                            counts={counts.data}
+                            select={(list) => setPanel({ kind: 'list', list })}
+                            onFind={() => openPanel({ kind: 'search' })}
+                            onInvite={copy}
+                            onPerson={(target) =>
+                              setOther({ userId: target, from: `social.${panel.list}` })
+                            }
+                          />
+                        ) : panel.kind === 'blocked' ? (
+                          <BlockedProfiles client={client} me={userId} />
+                        ) : panel.kind === 'settings' ? (
+                          settings
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                )}
+              </section>
+            ) : null}
+            <nav className="social-tabbar" role="tablist" aria-label={t('tabs.profile')}>
+              {socialTabs.map((name, index) => (
+                <button
+                  type="button"
+                  role="tab"
+                  key={name}
+                  aria-selected={active === name}
+                  aria-label={t(`tabs.${name}`)}
+                  title={`${t(`tabs.${name}`)} (⌘${index + 1})`}
+                  onClick={() => select(name)}
+                >
+                  <SocialIcon name={name} />
+                </button>
+              ))}
+            </nav>
+            {archive && (
+              <GoalManagerSheet
+                client={client}
+                userId={userId}
+                initialView="archive"
+                onClose={() => setArchive(false)}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </VisibilityContext.Provider>
   );
 }

@@ -2,7 +2,7 @@ import { t } from '@nodii/i18n';
 import { useConnectivity } from '../../lib/connectivity';
 import { useEffect, useRef, useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
-import { normalizeTitle, TITLE_MAX_LENGTH } from '@nodii/core';
+import { normalizeTitle, TITLE_MAX_LENGTH, type Goal } from '@nodii/core';
 import {
   todoWriteKey,
   useToggleTodo,
@@ -19,12 +19,14 @@ import { notifyError } from '../../lib/notify-error';
 /** 체크·인라인 편집·우클릭 메뉴가 같은 낙관적 행을 조작한다 (TODO-02~04). */
 export function TodoRow({
   todo,
+  goal,
   client,
   userId,
   weekStart,
   timeZone,
 }: {
   todo: TodoRecord;
+  goal?: Goal;
   client: NodiiClient;
   userId: string;
   weekStart: 0 | 1;
@@ -98,6 +100,7 @@ export function TodoRow({
   return (
     <TodoMenu
       todo={todo}
+      goal={goal}
       client={client}
       userId={userId}
       weekStart={weekStart}

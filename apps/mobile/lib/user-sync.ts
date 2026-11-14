@@ -18,7 +18,11 @@ export function bindUserSync(
   const start = () => {
     stop = subscribeUserChanges(client, userId, {
       onEvent: (event) => applyRealtimeEvent(cache, event, { weekStart: weekStart() }),
-      onReconnect: () => void cache.invalidateQueries(),
+      onReconnect: () =>
+        void cache.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey[0] !== 'friend' && query.queryKey[0] !== 'relationships',
+        }),
     });
   };
   if (state === 'active') start();

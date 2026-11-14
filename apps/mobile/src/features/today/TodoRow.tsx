@@ -1,3 +1,6 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
+import { useToast } from '../../components/Toast';
 import { t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
@@ -40,6 +43,13 @@ export function TodoRow({
 }) {
   const { colors, isDark } = useTheme();
   const online = useOnline();
+  const social = useContext(VisibilityContext);
+  const toast = useToast();
+  function warnOffline() {
+    if (online || !social) return false;
+    toast(() => t('sync.writeDisabled'));
+    return true;
+  }
   const [menu, setMenu] = useState(false);
   const [picking, setPicking] = useState(false);
   const today = useUIStore((state) => state.today);
@@ -51,10 +61,10 @@ export function TodoRow({
     }) > 0;
   const locked = dayLocked || updating || actions.pending;
   function check() {
-    if (!locked) void actions.run('toggle');
+    if (!locked && !warnOffline()) void actions.run('toggle');
   }
   function openMenu() {
-    if (!locked && !actions.locallyBusy()) setMenu(true);
+    if (!locked && !actions.locallyBusy() && !warnOffline()) setMenu(true);
   }
   const swipeActions = splitSwipeActions(
     todoActions.map(({ id, swipe }) => ({
@@ -76,7 +86,7 @@ export function TodoRow({
             ? lightColors.bg
             : colors.ink,
       run: () => {
-        if (!online || locked || id === 'rename') return;
+        if (locked || id === 'rename' || warnOffline() || !online) return;
         if (id === 'move') setPicking(true);
         else void actions.run(id);
       },
@@ -86,7 +96,7 @@ export function TodoRow({
     <>
       <SwipeableRow
         id={todo.id}
-        disabled={locked || !online}
+        disabled={locked || (!social && !online)}
         leading={swipeActions.leading}
         trailing={swipeActions.trailing}
         onMenu={openMenu}
@@ -108,7 +118,7 @@ export function TodoRow({
           onMenu={openMenu}
           onAction={(name) => {
             const action = todoActions.find(({ id }) => id === name);
-            if (!online || !action || locked) return;
+            if (!action || locked || warnOffline() || !online) return;
             if (action.id === 'rename') openMenu();
             else if (action.id === 'move') setPicking(true);
             else void actions.run(action.id);

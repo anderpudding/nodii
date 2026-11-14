@@ -1,11 +1,22 @@
+import { VisibilityContext } from '../social/VisibilityContext';
+import { GoalMark } from './GoalMark';
+import { GoalColorPicker } from './GoalColorPicker';
+import { showPublishNotice } from './publish-notice';
 import { t } from '@nodii/i18n';
-import { useState } from 'react';
-import { useIsMutating } from '@tanstack/react-query';
-import { GOAL_NAME_MAX_LENGTH, isHexColor } from '@nodii/core';
+import { useContext, useState } from 'react';
+import { useIsMutating, useQuery } from '@tanstack/react-query';
 import {
+  checkColor,
+  GOAL_NAME_MAX_LENGTH,
+  isHexColor,
+  VISIBILITY_CHOICES,
+  type DefaultVisibility,
+} from '@nodii/core';
+import {
+  fetchProfile,
   useArchiveGoal,
   useCreateGoal,
-  useUpdateGoal,
+  useGoalVisibility,
   type GoalContents,
   type GoalRecord,
   type NodiiClient,
@@ -51,15 +62,32 @@ export function GoalEditor({
   onBack: () => void;
   onDelete: () => void;
 }) {
+  const social = useContext(VisibilityContext);
+  const account = useQuery({
+    queryKey: ['profile', userId],
+    enabled: social && !goal,
+    queryFn: ({ signal }) => fetchProfile(client, userId, signal),
+    staleTime: 30_000,
+  });
+  const [changedVisibility, setVisibility] = useState<DefaultVisibility>();
+  const visibility =
+    changedVisibility ?? goal?.visibility ?? account.data?.defaultVisibility ?? 'private';
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [validHexDraft, setValidHexDraft] = useState(true);
   const [id] = useState(() => goal?.id ?? crypto.randomUUID());
   const [name, setName] = useState(goal?.name ?? '');
   const [color, setColor] = useState(goal?.color ?? initialColor);
   const create = useCreateGoal(client, { onError: notifyGoalError }, userId);
-  const update = useUpdateGoal(client, id, { onError: notifyGoalError });
+  const update = useGoalVisibility(client, id, { onError: notifyGoalError });
   const archive = useArchiveGoal(client, id, { onError: notifyGoalError });
   const writing = useIsMutating({ mutationKey: ['write', 'goal'] }) > 0;
+  const custom = !goalPresets.some((preset) => preset.color === color);
   const valid =
-    name.trim().length > 0 && name.trim().length <= GOAL_NAME_MAX_LENGTH && isHexColor(color);
+    (!pickerOpen || validHexDraft) &&
+    (!social || !!goal || !!account.data) &&
+    name.trim().length > 0 &&
+    name.trim().length <= GOAL_NAME_MAX_LENGTH &&
+    isHexColor(color);
   const heading = goal ? t('goal.edit') : t('goal.add');
   const preview = {
     id,
@@ -67,6 +95,7 @@ export function GoalEditor({
     color: isHexColor(color) ? color : goal?.color || initialColor,
     sortKey,
     archivedAt: goal?.archivedAt ?? null,
+    visibility,
   };
 
   function archiveGoal() {
@@ -97,10 +126,27 @@ export function GoalEditor({
         event.preventDefault();
         if (!valid || writing) return;
         if (goal) {
-          update.mutate({ goal, changes: { name: name.trim(), color } }, { onSuccess: onBack });
+          update.mutate(
+            {
+              goal,
+              changes: {
+                name: name.trim(),
+                color,
+                visibility: social ? changedVisibility : undefined,
+              },
+            },
+            { onSuccess: onBack },
+          );
         } else {
           create.mutate(
-            { id, name: name.trim(), color, sortKey, archivedAt: null },
+            {
+              id,
+              name: name.trim(),
+              color,
+              sortKey,
+              archivedAt: null,
+              visibility: social ? visibility : undefined,
+            },
             { onSuccess: onBack },
           );
         }
@@ -142,7 +188,11 @@ export function GoalEditor({
               style={goalStyle(preset.color, true)}
               aria-label={t(preset.nameKey)}
               aria-pressed={color === preset.color}
-              onClick={() => setColor(preset.color)}
+              onClick={() => {
+                setColor(preset.color);
+                setPickerOpen(false);
+                setValidHexDraft(true);
+              }}
             >
               {color === preset.color ? (
                 <svg viewBox="0 0 22 22" aria-hidden="true">
@@ -151,24 +201,85 @@ export function GoalEditor({
               ) : null}
             </button>
           ))}
+          {social && (
+            <button
+              type="button"
+              className="color-option goal-rainbow"
+              aria-label={t('goal.colorPicker.open')}
+              aria-expanded={pickerOpen}
+              onClick={() => {
+                setPickerOpen(!pickerOpen);
+                setValidHexDraft(true);
+              }}
+            >
+              {custom && (
+                <span
+                  className="goal-custom-color"
+                  style={{ backgroundColor: color, color: checkColor(color) }}
+                >
+                  ✓
+                </span>
+              )}
+            </button>
+          )}
         </fieldset>
-        <div className="goal-color-field">
-          <label htmlFor={`goal-color-${id}`}>HEX</label>
-          <Input
-            id={`goal-color-${id}`}
-            value={color}
-            maxLength={7}
-            placeholder="#RRGGBB"
-            disabled={writing}
-            aria-invalid={!isHexColor(color)}
-            aria-describedby={!isHexColor(color) ? `goal-color-error-${id}` : undefined}
-            onChange={(event) => setColor(event.target.value)}
-          />
-        </div>
-        {!isHexColor(color) && (
-          <p id={`goal-color-error-${id}`} className="error-message" role="alert">
-            {t('goal.hex.error')}
-          </p>
+        {social && pickerOpen && (
+          <GoalColorPicker color={color} onChange={setColor} onValidityChange={setValidHexDraft} />
+        )}
+        {!social && (
+          <>
+            <div className="goal-color-field">
+              <label htmlFor={`goal-color-${id}`}>HEX</label>
+              <Input
+                id={`goal-color-${id}`}
+                value={color}
+                maxLength={7}
+                placeholder="#RRGGBB"
+                disabled={writing}
+                aria-invalid={!isHexColor(color)}
+                aria-describedby={!isHexColor(color) ? `goal-color-error-${id}` : undefined}
+                onChange={(event) => setColor(event.target.value)}
+              />
+            </div>
+            {!isHexColor(color) && (
+              <p id={`goal-color-error-${id}`} className="error-message" role="alert">
+                {t('goal.hex.error')}
+              </p>
+            )}
+          </>
+        )}
+        {social && (
+          <fieldset className="goal-vis" disabled={writing || (!goal && !account.data)}>
+            <legend>{t('social.visibility.label')}</legend>
+            <div className="goal-vis-choices">
+              {VISIBILITY_CHOICES.map((choice) => (
+                <button
+                  type="button"
+                  key={choice}
+                  aria-pressed={visibility === choice}
+                  onClick={() => {
+                    showPublishNotice(visibility, choice);
+                    setVisibility(choice);
+                  }}
+                >
+                  <GoalMark
+                    color={preview.color}
+                    visibility={choice}
+                    selected={visibility === choice}
+                  />
+                  {t(`social.visibility.${choice}`)}
+                </button>
+              ))}
+            </div>
+            {visibility !== 'public' && (
+              <p className="supporting">{t(`social.visibility.${visibility}Help`)}</p>
+            )}
+          </fieldset>
+        )}
+        {social && !goal && account.isError && (
+          <Button variant="outline" onClick={() => void account.refetch()}>
+            {t('common.tryAgain')}
+          </Button>
         )}
         <div className="goal-preview" aria-label={t('goal.preview.label')}>
           <GoalChip goal={preview} />

@@ -1,3 +1,4 @@
+import { showPublishNotice } from '../goals/publish-notice';
 import {
   useBlockedProfiles,
   useUpdateDefaultVisibility,
@@ -113,9 +114,10 @@ export function DefaultVisibilityScreen({
               value={value}
               checked={visibility === value}
               disabled={update.isPending}
-              onChange={() =>
-                update.mutate(value, { onError: () => toast.error(t('social.save.failed')) })
-              }
+              onChange={() => {
+                showPublishNotice(visibility, value);
+                update.mutate(value, { onError: () => toast.error(t('social.save.failed')) });
+              }}
             />
           </label>
         ))}

@@ -1,3 +1,6 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
+import { useToast } from '../../components/Toast';
 import { t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { useState } from 'react';
@@ -44,11 +47,17 @@ export function RoutineRow({
 }) {
   const { colors, isDark } = useTheme();
   const online = useOnline();
+  const social = useContext(VisibilityContext);
+  const toast = useToast();
   const [menu, setMenu] = useState(false);
   const actions = useRoutineActions(client, weekStart, routine, date);
   const done = log?.status === 'done';
   function run(id: RoutineAction) {
-    if (!online || actions.pending || actions.locallyBusy()) return;
+    if (actions.pending || actions.locallyBusy()) return;
+    if (!online) {
+      if (social) toast(() => t('sync.writeDisabled'));
+      return;
+    }
     if (id === 'edit') onEdit();
     else if (id === 'stop') onStop();
     else void actions.run(id);
@@ -82,7 +91,7 @@ export function RoutineRow({
     <>
       <SwipeableRow
         id={routine.id}
-        disabled={!online || actions.pending}
+        disabled={(!social && !online) || actions.pending}
         leading={swipe.leading}
         trailing={swipe.trailing}
         onMenu={openMenu}

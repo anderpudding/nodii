@@ -1,135 +1,22 @@
-import { useId, useState } from 'react';
+import { FriendDay } from './FriendDay';
+import { useUIStore } from '../../stores/ui';
+import { ReportSheet } from './ReportSheet';
+import { useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
   relationshipErrorKey,
   useBlock,
   useRelations,
   useRelationshipPending,
-  useReportProfile,
   useSocialProfile,
   type NodiiClient,
 } from '@nodii/api';
-import {
-  REPORT_DETAIL_LIMIT,
-  REPORT_REASONS,
-  validateReportDetail,
-  type ReportReason,
-  type SocialProfile,
-} from '@nodii/core';
+import { type Profile } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { Sheet } from '../../components/ui/sheet';
 import { Avatar, ProfileHeader } from './ProfileHeader';
 import { FollowButton, RelationshipConfirm } from './RelationshipActions';
-
-function ReportSheet({
-  client,
-  me,
-  person,
-  onClose,
-  onBlocked,
-}: {
-  client: NodiiClient;
-  me: string;
-  person: SocialProfile;
-  onClose(): void;
-  onBlocked(): void;
-}) {
-  const title = useId();
-  const [reason, setReason] = useState<ReportReason>();
-  const [detail, setDetail] = useState('');
-  const [alsoBlock, setAlsoBlock] = useState(false);
-  const report = useReportProfile(client, me);
-  const parsed = validateReportDetail(detail, reason ?? 'other');
-  const valid = reason && (reason !== 'other' || parsed.valid);
-  async function submit() {
-    if (!valid || !reason || report.isPending) return;
-    try {
-      const { blocked, blockFailed } = await report.mutateAsync({
-        targetUserId: person.userId,
-        reason,
-        detail: reason === 'other' ? parsed.value : undefined,
-        alsoBlock,
-      });
-      toast.success(t(blockFailed ? 'social.report.blockFailed' : 'social.report.sent'));
-      onClose();
-      if (blocked) onBlocked();
-    } catch (error) {
-      toast.error(t(relationshipErrorKey(error)));
-    }
-  }
-  return (
-    <Sheet
-      className="routine-modal social-report"
-      labelledBy={title}
-      onClose={() => {
-        if (!report.isPending) onClose();
-      }}
-    >
-      <form
-        className="routine-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void submit();
-        }}
-      >
-        <h2 id={title}>{t('social.report.title', { nickname: person.nickname })}</h2>
-        <div className="social-edit-list social-radio" role="radiogroup" aria-labelledby={title}>
-          {REPORT_REASONS.map((value) => (
-            <label key={value}>
-              <span>{t(`social.report.${value}`)}</span>
-              <input
-                type="radio"
-                name="report-reason"
-                checked={reason === value}
-                disabled={report.isPending}
-                onChange={() => setReason(value)}
-              />
-            </label>
-          ))}
-        </div>
-        {reason === 'other' && (
-          <label className="field-group">
-            {t('social.report.detail')}
-            <textarea
-              className="input"
-              rows={3}
-              value={detail}
-              disabled={report.isPending}
-              onChange={(event) =>
-                setDetail([...event.target.value].slice(0, REPORT_DETAIL_LIMIT).join(''))
-              }
-            />
-            <span className="supporting">
-              {t('social.report.remaining', { count: REPORT_DETAIL_LIMIT - [...detail].length })}
-            </span>
-          </label>
-        )}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={alsoBlock}
-          disabled={report.isPending}
-          className="social-report-switch"
-          onClick={() => setAlsoBlock(!alsoBlock)}
-        >
-          {t('social.report.alsoBlock')}
-          <span aria-hidden="true" className="social-switch" data-on={alsoBlock} />
-        </button>
-        <p className="supporting">{t('social.report.hint')}</p>
-        <div className="social-dialog-actions">
-          <Button variant="outline" onClick={onClose} disabled={report.isPending}>
-            {t('mobile.add.cancel')}
-          </Button>
-          <Button type="submit" disabled={!valid || report.isPending}>
-            {t('social.report.action')}
-          </Button>
-        </div>
-      </form>
-    </Sheet>
-  );
-}
 
 /** SOC-38·60·62: 같은 머리에서 팔로우, 차단, 프로필 신고를 시작한다. */
 export function OtherProfile({
@@ -139,6 +26,7 @@ export function OtherProfile({
   from,
   onBack,
   onBlocked,
+  calendarProfile,
 }: {
   client: NodiiClient;
   me: string;
@@ -146,7 +34,10 @@ export function OtherProfile({
   from: string;
   onBack(): void;
   onBlocked(): void;
+  calendarProfile?: Profile;
 }) {
+  const today = useUIStore((state) => state.today);
+  const [date, setDate] = useState(today);
   const query = useSocialProfile(client, userId);
   const person = query.data;
   const relations = useRelations(client, me, person ? [userId] : []);
@@ -216,6 +107,19 @@ export function OtherProfile({
               </DropdownMenu.Root>
             </div>
           }
+        />
+      )}
+      {person && !query.isError && (
+        <FriendDay
+          client={client}
+          me={me}
+          friendId={userId}
+          nickname={person.nickname}
+          onBlocked={onBlocked}
+          profile={calendarProfile ?? { timezone: 'UTC', weekStart: 0 }}
+          today={today}
+          date={date}
+          onSelect={setDate}
         />
       )}
       {person && dialog === 'block' && (

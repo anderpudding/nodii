@@ -14,7 +14,15 @@ import { completedStampColors } from './stamp-colors';
 import { CalendarGrid } from './CalendarGrid';
 
 /** 월 경계의 두 캐시를 함께 구독하며 셀·키보드는 월간 보기와 공유한다 (CAL-07). */
-export function WeekStrip({ client, profile }: { client: NodiiClient; profile: Profile }) {
+export function WeekStrip({
+  client,
+  profile,
+  social = false,
+}: {
+  client: NodiiClient;
+  profile: Profile;
+  social?: boolean;
+}) {
   const { selectedDate, today, selectDate } = useUIStore();
   const [view, setView] = useState({ selection: selectedDate, date: selectedDate });
   if (view.selection !== selectedDate) setView({ selection: selectedDate, date: selectedDate });
@@ -69,6 +77,7 @@ export function WeekStrip({ client, profile }: { client: NodiiClient; profile: P
   return (
     <section className="week-strip" aria-label={t('calendar.week')}>
       <CalendarGrid
+        monthTitleAction={social}
         month={monthKeyOf(date)}
         selectedDate={selectedDate}
         today={today}

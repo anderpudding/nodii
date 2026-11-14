@@ -19,7 +19,10 @@ export function useUserSync(client: NodiiClient, userId: string, weekStart: 0 | 
       onEvent,
       onStatus: reportChannelStatus,
       onReconnect: () => {
-        void cache.invalidateQueries();
+        void cache.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey[0] !== 'friend' && query.queryKey[0] !== 'relationships',
+        });
       },
     });
     return () => {

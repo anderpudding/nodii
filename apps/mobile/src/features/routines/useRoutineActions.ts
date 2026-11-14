@@ -1,6 +1,9 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  OfflineWriteError,
   routineLogWriteKey,
   routineRowWriteKey,
   routineWriteKey,
@@ -23,12 +26,20 @@ export function useRoutineActions(
 ) {
   const cache = useQueryClient();
   const toast = useToast();
+  const social = useContext(VisibilityContext);
   const busy = useRef(false);
   const undoing = useRef(false);
   const pending = useRoutineWritePending(routine.id, date);
   const log = useSetRoutineLog(client, weekStart, routine.id, date, {
-    onError: () => {
-      if (!undoing.current) toast(() => t('todo.save.failed'));
+    onError: (error: unknown) => {
+      if (!undoing.current)
+        toast(() =>
+          t(
+            social && error instanceof OfflineWriteError
+              ? 'sync.writeDisabled'
+              : 'todo.save.failed',
+          ),
+        );
     },
   });
   function currentStatus() {

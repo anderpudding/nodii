@@ -26,6 +26,7 @@ import {
   unfollow,
   type FollowList,
   type ReportProfileInput,
+  type ReportTodoInput,
 } from '../repositories/relationships';
 
 const scope = (me: string) => ['relationships', me] as const;
@@ -190,6 +191,7 @@ function useRelationshipWrite<T>(
       }
     },
     onSettled: async () => {
+      await cache.invalidateQueries({ queryKey: ['friend', target], refetchType: 'active' });
       await cache.invalidateQueries({ queryKey: scope(me), refetchType: 'none' });
       if (cache.isMutating({ mutationKey: key }) === 1 && onlineManager.isOnline()) {
         await refreshRelationships(cache, me);
@@ -234,18 +236,29 @@ export function useUnblock(client: NodiiClient, me: string, target: string) {
 }
 
 /** SOC-62: 신고 저장과 선택한 차단의 부분 성공을 표시할 수 있게 한다. */
-export function useReportProfile(client: NodiiClient, me: string) {
+function useReport<T extends ReportProfileInput>(client: NodiiClient, me: string) {
   const cache = useQueryClient();
   return useMutation({
     networkMode: 'always',
     retry: false,
-    mutationFn: (input: ReportProfileInput) => {
+    mutationFn: (input: T) => {
       assertOnline();
       return reportProfile(client, me, input);
     },
-    onSuccess: () => refreshRelationships(cache, me),
+    onSuccess: async (result, input) => {
+      if (result.blocked)
+        await cache.invalidateQueries({ queryKey: ['friend', input.targetUserId] });
+      await refreshRelationships(cache, me);
+    },
   });
 }
+
+export const useReportProfile = (client: NodiiClient, me: string) =>
+  useReport<ReportProfileInput>(client, me);
+
+/** SOC-62: 할 일 공개 범위 검사는 Edge Function에 맡긴다. */
+export const useReportTodo = (client: NodiiClient, me: string) =>
+  useReport<ReportTodoInput>(client, me);
 
 /** SOC-13·60: 차단과 정지 여부를 구분하는 안내를 노출하지 않는다. */
 export function relationshipErrorKey(error: unknown, followAction = false) {

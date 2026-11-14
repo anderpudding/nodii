@@ -85,7 +85,7 @@ it('목표 생성은 UUID를 전하고 이름·색·키 수정은 한 행만 갱
       }),
     ),
   );
-  await createGoal(client, mapGoal(goal), goal.user_id);
+  await createGoal(client, { ...mapGoal(goal), visibility: undefined }, goal.user_id);
   expect(JSON.parse(fetch.mock.calls[1]![1].body)).toMatchObject({
     id: goal.id,
     name: '공부',

@@ -38,12 +38,16 @@ function SortableItem({
   item,
   disabled,
   activator,
+  onNudge,
+  handle,
   children,
 }: {
   item: SortableEntry;
   disabled: boolean;
   activator: SortableActivator;
   children: ReactNode;
+  onNudge?: (direction: -1 | 1) => void;
+  handle?: ReactNode;
 }) {
   const rowActivator = activator === 'row' && item.draggable !== false && !disabled;
   const {
@@ -81,18 +85,30 @@ function SortableItem({
             ref={setActivatorNodeRef}
             {...attributes}
             {...listeners}
+            onKeyDown={(event) => {
+              if (
+                onNudge &&
+                event.altKey &&
+                (event.key === 'ArrowUp' || event.key === 'ArrowDown')
+              ) {
+                event.preventDefault();
+                onNudge(event.key === 'ArrowUp' ? -1 : 1);
+              } else listeners?.onKeyDown?.(event);
+            }}
             aria-roledescription={t('common.sort.handle')}
             aria-label={t('common.sort.label', { name: item.label })}
             disabled={disabled}
           >
-            <svg viewBox="0 0 22 22" aria-hidden="true">
-              <circle cx="8" cy="5" r="1.5" />
-              <circle cx="14" cy="5" r="1.5" />
-              <circle cx="8" cy="11" r="1.5" />
-              <circle cx="14" cy="11" r="1.5" />
-              <circle cx="8" cy="17" r="1.5" />
-              <circle cx="14" cy="17" r="1.5" />
-            </svg>
+            {handle ?? (
+              <svg viewBox="0 0 22 22" aria-hidden="true">
+                <circle cx="8" cy="5" r="1.5" />
+                <circle cx="14" cy="5" r="1.5" />
+                <circle cx="8" cy="11" r="1.5" />
+                <circle cx="14" cy="11" r="1.5" />
+                <circle cx="8" cy="17" r="1.5" />
+                <circle cx="14" cy="17" r="1.5" />
+              </svg>
+            )}
           </Button>
         ))}
       <div
@@ -114,12 +130,16 @@ export function SortableList({
   disabled = false,
   activator = 'handle',
   onMove,
+  onNudge,
+  handle,
   children,
 }: {
   items: SortableEntry[];
   disabled?: boolean;
   activator?: SortableActivator;
   onMove: (id: string, overId: string) => void;
+  onNudge?: (id: string, direction: -1 | 1) => void;
+  handle?: ReactNode;
   children: (item: SortableEntry) => ReactNode;
 }) {
   const sensors = useSensors(
@@ -156,7 +176,14 @@ export function SortableList({
     >
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortableItem key={item.id} item={item} disabled={disabled} activator={activator}>
+          <SortableItem
+            key={item.id}
+            item={item}
+            disabled={disabled}
+            activator={activator}
+            handle={handle}
+            onNudge={onNudge ? (direction) => onNudge(item.id, direction) : undefined}
+          >
             {children(item)}
           </SortableItem>
         ))}

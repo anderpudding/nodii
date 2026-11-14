@@ -1,3 +1,5 @@
+import { TodaySocialContext } from './social/TodaySocialContext';
+import { FriendDay } from './social/FriendDay';
 import { completedStampColors } from './today/stamp-colors';
 import { useOnline } from '../../lib/connectivity';
 import {
@@ -30,6 +32,7 @@ import {
   adjacentMonthKey,
   fetchProfile,
   prefetchAdjacentMonths,
+  OfflineWriteError,
   useGoals,
   useMonthTodos,
   useReorderTodo,
@@ -84,6 +87,17 @@ interface TodayProps {
 /** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
 export function Today(props: TodayProps) {
   const visible = useContext(TodayVisible);
+  const { friendId, avatars } = useContext(TodaySocialContext);
+  const {
+    today,
+    selectedDate,
+    selectDate,
+    monthExpanded,
+    setMonthExpanded,
+    calendarMonth,
+    showMonth,
+  } = useUIStore();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const online = useOnline();
   const profile = useQuery({
@@ -94,6 +108,16 @@ export function Today(props: TodayProps) {
   useEffect(() => {
     useUIStore.getState().reset();
   }, [props.userId]);
+  const timeZone = profile.data?.timezone;
+  useEffect(
+    () =>
+      bindTodayClock(
+        AppState,
+        () => timeZone ?? 'UTC',
+        (date) => useUIStore.getState().updateToday(date),
+      ),
+    [timeZone],
+  );
   if (!profile.data)
     return (
       <View style={styles.center}>
@@ -119,7 +143,30 @@ export function Today(props: TodayProps) {
     );
   return (
     <>
-      <TodayContent {...props} profile={profile.data} />
+      {props.social && friendId ? (
+        <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.bg }}>
+          <ToastInset bottom={insets.bottom + tabInset} />
+          <FriendDay
+            key={friendId}
+            client={props.client}
+            friendId={friendId}
+            active={visible}
+            me={props.userId}
+            profile={profile.data}
+            today={today}
+            date={selectedDate}
+            onSelect={selectDate}
+            monthExpanded={monthExpanded}
+            onSetMonthExpanded={setMonthExpanded}
+            month={calendarMonth}
+            onMonth={showMonth}
+            header={avatars}
+            bottom={insets.bottom + tabInset + m.space.lg}
+          />
+        </View>
+      ) : (
+        <TodayContent {...props} profile={profile.data} />
+      )}
       {visible && <FirstRunGuide />}
     </>
   );
@@ -133,6 +180,7 @@ function TodayContent({
   email = '',
   onAccountDeleted = async () => {},
 }: TodayProps & { profile: Profile }) {
+  const { avatars } = useContext(TodaySocialContext);
   const { colors } = useTheme();
   const online = useOnline();
   const insets = useSafeAreaInsets();
@@ -196,7 +244,10 @@ function TodayContent({
   );
   const toast = useToast();
   const reorder = useReorderTodo(client, profile.weekStart, {
-    onError: () => toast(() => t('todo.save.failed')),
+    onError: (error) =>
+      toast(() =>
+        t(social && error instanceof OfflineWriteError ? 'sync.writeDisabled' : 'todo.save.failed'),
+      ),
   });
   const rowHeights = useRef<Record<string, number>>({});
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -288,15 +339,6 @@ function TodayContent({
   const queries = [goals, routines, first, last, firstLogs, lastLogs];
   const failed = queries.some((query) => query.isError);
   const loading = queries.some((query) => query.isPending);
-  useEffect(
-    () =>
-      bindTodayClock(
-        AppState,
-        () => profile.timezone,
-        (date) => useUIStore.getState().updateToday(date),
-      ),
-    [profile.timezone],
-  );
   const monthLabel = formatISODate(monthExpanded ? `${calendarMonth}-01` : selectedDate, {
     year: 'numeric',
     month: 'long',
@@ -312,31 +354,48 @@ function TodayContent({
   function retry() {
     for (const query of queries) void query.refetch();
   }
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.root, { backgroundColor: colors.bg }]}
+  const dateHeader = (
+    <View
+      testID="today-top"
+      style={{ backgroundColor: colors.bg, paddingTop: social ? 0 : insets.top }}
     >
-      <View testID="today-top" style={{ backgroundColor: colors.bg, paddingTop: insets.top }}>
-        {enlargedEnglish && (
+      {!social && enlargedEnglish && (
+        <Text
+          accessibilityRole="header"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={[styles.heading, { color: colors.ink, paddingHorizontal: m.space.sm }]}
+        >
+          {monthLabel}
+        </Text>
+      )}
+      <View style={styles.top}>
+        {!social && !enlargedEnglish && (
           <Text
             accessibilityRole="header"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            style={[styles.heading, { color: colors.ink, paddingHorizontal: m.space.sm }]}
+            style={[styles.month, styles.heading, { color: colors.ink }]}
           >
             {monthLabel}
           </Text>
         )}
-        <View style={styles.top}>
-          {!enlargedEnglish && (
+        {social ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('calendar.monthToday', { month: monthLabel })}
+            onPress={() => {
+              if (selectedDate !== today || calendarMonth !== monthKeyOf(today)) selectDate(today);
+            }}
+            style={styles.month}
+          >
             <Text
-              accessibilityRole="header"
-              style={[styles.month, styles.heading, { color: colors.ink }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              style={[styles.heading, { color: colors.ink }]}
             >
               {monthLabel}
             </Text>
-          )}
+          </Pressable>
+        ) : (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('day.today')}
@@ -356,72 +415,77 @@ function TodayContent({
               {t('day.today')}
             </Text>
           </Pressable>
-          <View
-            accessibilityRole="radiogroup"
-            style={[styles.segment, { backgroundColor: colors.chip }]}
-          >
-            {([false, true] as const).map((expanded) => (
-              <Pressable
-                key={String(expanded)}
-                hitSlop={{ top: m.space.xs, bottom: m.space.xs }}
-                accessibilityRole="radio"
-                accessibilityLabel={t(expanded ? 'mobile.view.month' : 'mobile.view.week')}
-                accessibilityState={{ checked: monthExpanded === expanded }}
-                onPress={() => setMonthExpanded(expanded)}
-                style={({ pressed }) => [
-                  styles.option,
+        )}
+        <View
+          accessibilityRole="radiogroup"
+          style={[styles.segment, { backgroundColor: colors.chip }]}
+        >
+          {([false, true] as const).map((expanded) => (
+            <Pressable
+              key={String(expanded)}
+              hitSlop={{ top: m.space.xs, bottom: m.space.xs }}
+              accessibilityRole="radio"
+              accessibilityLabel={t(expanded ? 'mobile.view.month' : 'mobile.view.week')}
+              accessibilityState={{ checked: monthExpanded === expanded }}
+              onPress={() => setMonthExpanded(expanded)}
+              style={({ pressed }) => [
+                styles.option,
+                {
+                  backgroundColor: 'transparent',
+                  opacity: pressed ? m.pressedOpacity : 1,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.label,
+                  styles.segmentLetter,
                   {
-                    backgroundColor: 'transparent',
-                    opacity: pressed ? m.pressedOpacity : 1,
+                    color: monthExpanded === expanded ? colors.bg : colors.ink2,
+                    backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.label,
-                    styles.segmentLetter,
-                    {
-                      color: monthExpanded === expanded ? colors.bg : colors.ink2,
-                      backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
-                    },
-                  ]}
-                >
-                  {expanded ? 'M' : 'W'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <DayMenu
-            sliders={social}
-            key={selectedDate}
-            client={client}
-            userId={profile.id}
-            date={selectedDate}
-            today={today}
-            goals={goals.data ?? []}
-            items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
-            ready={!loading && !failed}
-            weekStart={profile.weekStart}
-            timeZone={profile.timezone}
-            actions={dayActions}
-          />
-          {!social && (
-            <Pressable
-              onPress={() => setSettings(true)}
-              accessibilityRole="button"
-              accessibilityLabel={t('settings.title')}
-              accessibilityState={{ expanded: settings }}
-              style={({ pressed }) => [
-                styles.settings,
-                { opacity: pressed ? m.pressedOpacity : 1 },
-              ]}
-            >
-              <SettingsIcon color={colors.ink2} />
+                {expanded ? 'M' : 'W'}
+              </Text>
             </Pressable>
-          )}
+          ))}
         </View>
+        <DayMenu
+          sliders={social}
+          key={selectedDate}
+          client={client}
+          userId={profile.id}
+          date={selectedDate}
+          today={today}
+          goals={goals.data ?? []}
+          items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
+          ready={!loading && !failed}
+          weekStart={profile.weekStart}
+          timeZone={profile.timezone}
+          actions={dayActions}
+        />
+        {!social && (
+          <Pressable
+            onPress={() => setSettings(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.title')}
+            accessibilityState={{ expanded: settings }}
+            style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
+          >
+            <SettingsIcon color={colors.ink2} />
+          </Pressable>
+        )}
       </View>
-      {!online && (
+    </View>
+  );
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.root, { backgroundColor: colors.bg, paddingTop: social ? insets.top : 0 }]}
+    >
+      {!social && dateHeader}
+      {!social && !online && (
         <Text
           accessibilityRole="alert"
           style={[
@@ -462,6 +526,8 @@ function TodayContent({
             removeClippedSubviews={false}
             ListHeaderComponent={
               <View>
+                {social && avatars}
+                {social && dateHeader}
                 {monthExpanded ? (
                   <MonthGrid
                     month={calendarMonth}
@@ -550,13 +616,13 @@ function TodayContent({
                   add
                   disabled={
                     !section.canAdd ||
-                    !online ||
+                    (!social && !online) ||
                     loading ||
                     failed ||
                     dayActions.isDateLocked(selectedDate)
                   }
                   hint={
-                    !online
+                    !social && !online
                       ? t('sync.writeDisabled')
                       : !section.canAdd
                         ? t('mobile.add.unavailable')
@@ -567,6 +633,10 @@ function TodayContent({
                             : undefined
                   }
                   onPress={() => {
+                    if (social && !online) {
+                      toast(() => t('sync.writeDisabled'));
+                      return;
+                    }
                     setAdding(section.goal.id);
                     requestAnimationFrame(() => revealInput(section.goal.id));
                   }}

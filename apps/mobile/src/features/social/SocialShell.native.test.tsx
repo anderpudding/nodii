@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import { ActionSheetIOS, Alert, Text } from 'react-native';
+import { ActionSheetIOS, Alert, StyleSheet, Text } from 'react-native';
 import type { NodiiClient } from '@nodii/api';
 import {
   checkHandle,
@@ -9,6 +9,10 @@ import {
   block,
   fetchBlockedProfiles,
   fetchFollowCounts,
+  fetchTodayPeople,
+  updateTodayPerson,
+  listTodosInRange,
+  listLogsInRange,
   fetchFollowers,
   fetchFollowing,
   fetchRelations,
@@ -27,6 +31,8 @@ import {
 } from '@nodii/api';
 import type { SocialProfile } from '@nodii/core';
 import { SocialShell } from './SocialShell';
+import { Today } from '../Today';
+import { useUIStore } from '../../stores/ui';
 import { ToastProvider } from '../../components/Toast';
 
 jest.mock('../../../../../packages/api/src/repositories/social-profiles', () => ({
@@ -52,6 +58,17 @@ jest.mock('../../../../../packages/api/src/repositories/relationships', () => ({
   unblock: jest.fn(),
   unfollow: jest.fn(),
 }));
+jest.mock('../../../../../packages/api/src/repositories/today-people', () => ({
+  fetchTodayPeople: jest.fn(),
+  updateTodayPerson: jest.fn(),
+}));
+jest.mock('../../../../../packages/api/src/repositories/todos', () => ({
+  listTodosInRange: jest.fn(),
+  listOverdue: jest.fn(async () => []),
+}));
+jest.mock('../../../../../packages/api/src/repositories/routine-logs', () => ({
+  listLogsInRange: jest.fn(),
+}));
 jest.mock('../../../../../packages/api/src/profile', () => ({ fetchProfile: jest.fn() }));
 jest.mock('../../../../../packages/api/src/invites', () => ({ resolveInvite: jest.fn() }));
 jest.mock('../../../../../packages/api/src/repositories/goals', () => ({ listGoals: jest.fn() }));
@@ -76,6 +93,9 @@ const mine: SocialProfile = {
 const client = {} as NodiiClient;
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(fetchTodayPeople).mockResolvedValue([]);
+  jest.mocked(listTodosInRange).mockResolvedValue([]);
+  jest.mocked(listLogsInRange).mockResolvedValue([]);
   jest.mocked(fetchFollowCounts).mockResolvedValue({ following: 0, followers: 0 });
   jest.mocked(fetchBlockedProfiles).mockResolvedValue([]);
   jest.mocked(fetchRelations).mockResolvedValue(new Map());
@@ -99,7 +119,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-function mount(enabled = true, token: string | null = null) {
+function mount(enabled = true, token: string | null = null, withToday = false) {
   const query = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { gcTime: 0 } },
   });
@@ -118,7 +138,17 @@ function mount(enabled = true, token: string | null = null) {
           loggingOut={false}
           onAccountDeleted={async () => {}}
         >
-          <Text>Today contents</Text>
+          {withToday ? (
+            <Today
+              social={enabled}
+              client={client}
+              userId="me"
+              onLogout={() => {}}
+              loggingOut={false}
+            />
+          ) : (
+            <Text>Today contents</Text>
+          )}
         </SocialShell>
       </ToastProvider>
     </QueryClientProvider>
@@ -362,4 +392,105 @@ it('shows the moderation notice on the owner’s edit screen', async () => {
   expect(
     await screen.findByText('신고가 접수되어 사진과 소개가 다른 사람에게 잠시 숨겨졌어요'),
   ).toBeVisible();
+});
+
+it('selects friends with the current date and saves Today switches and VoiceOver reorder', async () => {
+  const second = { ...friend, userId: 'second', nickname: 'Second' };
+  let people = [friend, second].map((profile, i) => ({
+    profile,
+    followeeId: profile.userId,
+    createdAt: '',
+    showOnToday: true,
+    todaySortKey: `a${i}`,
+  }));
+  jest.mocked(fetchTodayPeople).mockImplementation(async () => people);
+  jest.mocked(updateTodayPerson).mockImplementation(async (_client, _me, id, patch) => {
+    people = people.map((person) => (person.followeeId === id ? { ...person, ...patch } : person));
+    return people.find((person) => person.followeeId === id)!;
+  });
+  const selectedDate = '2026-09-30';
+  jest.mocked(listGoals).mockImplementation(async (_client, owner) =>
+    owner === 'other'
+      ? [
+          {
+            id: 'shared',
+            name: 'Shared',
+            color: '#4F7CFF',
+            sortKey: 'a0',
+            visibility: 'followers',
+            archivedAt: null,
+            updatedAt: '',
+            deletedAt: null,
+          },
+        ]
+      : [],
+  );
+  jest.mocked(listTodosInRange).mockImplementation(async (_client, owner) =>
+    owner === 'other'
+      ? [
+          {
+            id: 't',
+            goalId: 'shared',
+            title: 'Read-only task',
+            date: selectedDate,
+            sortKey: 'a0',
+            isDone: false,
+            deletedAt: null,
+            doneAt: null,
+            updatedAt: '',
+          },
+        ]
+      : [],
+  );
+  jest
+    .spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+    .mockImplementation((_config, choose) => choose(1));
+  mount(true, null, true);
+  const avatar = await screen.findByRole('button', { name: 'Friend의 하루 보기' });
+  act(() => useUIStore.getState().selectDate(selectedDate));
+  fireEvent.press(avatar);
+  expect(await screen.findByLabelText('Read-only task, 미완료')).toBeVisible();
+  expect(useUIStore.getState().selectedDate).toBe(selectedDate);
+  expect(screen.queryByRole('checkbox')).toBeNull();
+  expect(screen.getByTestId('goal-mark-dot')).toBeVisible();
+  fireEvent(screen.getByLabelText('Read-only task, 미완료'), 'longPress');
+  expect(await screen.findByTestId('report-todo')).toBeVisible();
+  fireEvent.press(within(screen.getByTestId('report-todo')).getByRole('button', { name: '취소' }));
+  fireEvent.press(screen.getByRole('button', { name: /누르면 오늘로 이동/ }));
+  expect(useUIStore.getState().selectedDate).toBe(useUIStore.getState().today);
+  fireEvent.press(screen.getByRole('button', { name: '목록' }));
+  expect(screen.queryByRole('tab')).toBeNull();
+  const handle = screen.getByLabelText(/Second.*순서/);
+  fireEvent(handle, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+  await waitFor(() =>
+    expect(updateTodayPerson).toHaveBeenCalledWith(client, 'me', 'second', {
+      todaySortKey: expect.any(String),
+    }),
+  );
+  const toggle = screen.getByRole('switch', { name: 'Friend 님을 오늘에 표시' });
+  await waitFor(() => expect(toggle).toBeEnabled());
+  fireEvent.press(toggle);
+  expect(await screen.findByText('숨긴 사람 · 1')).toBeVisible();
+  fireEvent.press(screen.getByRole('button', { name: '‹ 오늘' }));
+  expect(screen.queryByRole('button', { name: /Friend의 하루/ })).toBeNull();
+  expect(screen.getByRole('button', { name: '내 하루, 보는 중' })).toBeVisible();
+});
+
+it('keeps the person page date separate and collapses its header on scroll', async () => {
+  const profile = { ...friend, bio: 'A public bio' };
+  jest.mocked(resolveInvite).mockResolvedValue(profile.userId);
+  jest.mocked(fetchSocialProfile).mockResolvedValue(profile);
+  mount(true, 'person-day-token');
+  let header = await screen.findByTestId('person-day-header');
+  expect(StyleSheet.flatten(header.props.style).height).toBe(236);
+  const dateInToday = useUIStore.getState().selectedDate;
+  const personDay = screen.getByTestId('friend-day-scroll');
+  fireEvent.scroll(personDay, { nativeEvent: { contentOffset: { y: 120 } } });
+  header = screen.getByTestId('person-day-header');
+  expect(StyleSheet.flatten(header.props.style).height).toBe(64);
+  expect(screen.queryByText(profile.bio)).toBeNull();
+  fireEvent(screen.getByLabelText('주간 캘린더'), 'accessibilityAction', {
+    nativeEvent: { actionName: 'increment' },
+  });
+  expect(useUIStore.getState().selectedDate).toBe(dateInToday);
 });

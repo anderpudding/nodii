@@ -1,3 +1,4 @@
+import { showPublishNotice } from '../goals/publish-notice';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useUpdateDefaultVisibility, useUpdateSocialProfile, type NodiiClient } from '@nodii/api';
 import type { DefaultVisibility, SocialProfile } from '@nodii/core';
@@ -117,9 +118,10 @@ export function DefaultVisibilityScreen({
               accessibilityLabel={t(`settings.privacy.${value}`)}
               accessibilityState={{ checked: visibility === value, disabled: update.isPending }}
               disabled={update.isPending}
-              onPress={() =>
-                update.mutate(value, { onError: () => toast(() => t('social.save.failed')) })
-              }
+              onPress={() => {
+                showPublishNotice(visibility, value, toast);
+                update.mutate(value, { onError: () => toast(() => t('social.save.failed')) });
+              }}
               style={[
                 s.row,
                 {

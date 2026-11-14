@@ -13,3 +13,5 @@ export * from './sprout';
 export * from './social';
 export * from './avatar';
 export * from './social-icons';
+
+export * from './friends-day';

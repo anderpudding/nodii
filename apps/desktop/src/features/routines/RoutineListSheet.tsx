@@ -12,6 +12,9 @@ import {
 import { Sheet } from '../../components/ui/sheet';
 import { Button } from '../../components/ui/button';
 import { useUIStore } from '../../stores/ui';
+import { GoalMark } from '../goals/GoalMark';
+import { VisibilityContext } from '../social/VisibilityContext';
+import { useContext } from 'react';
 import { GoalChip } from '../goals/GoalChip';
 import { formatCalendarDate } from '../calendar/CalendarGrid';
 import { formatRoutineRule } from './format-rule';
@@ -28,6 +31,7 @@ export function RoutineListSheet({
   profile: Profile;
   onClose: () => void;
 }) {
+  const social = useContext(VisibilityContext);
   const today = useUIStore((s) => s.today);
   const goals = useGoals(client, profile.id);
   const routines = useRoutines(client, profile.id);
@@ -160,17 +164,23 @@ export function RoutineListSheet({
                   <p className="supporting">{t('routine.recordsRemain.help')}</p>
                 </div>
                 <div className="routine-group-rows">
-                  {finished.map((routine) => (
-                    <div className="routine-list-row routine-list-row-finished" key={routine.id}>
-                      <div className="routine-list-copy">
-                        <strong className="routine-wrap">{routine.title}</strong>
-                        <p className="supporting">
-                          {formatCalendarDate(routine.startDate)} ~{' '}
-                          {formatCalendarDate(routine.endDate!)}
-                        </p>
+                  {finished.map((routine) => {
+                    const goal = goals.data?.find((value) => value.id === routine.goalId);
+                    return (
+                      <div className="routine-list-row routine-list-row-finished" key={routine.id}>
+                        {social && goal && (
+                          <GoalMark color={goal.color} visibility={goal.visibility} />
+                        )}
+                        <div className="routine-list-copy">
+                          <strong className="routine-wrap">{routine.title}</strong>
+                          <p className="supporting">
+                            {formatCalendarDate(routine.startDate)} ~{' '}
+                            {formatCalendarDate(routine.endDate!)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
