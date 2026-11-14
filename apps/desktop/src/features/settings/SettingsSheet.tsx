@@ -1,3 +1,4 @@
+import { NotificationSettings } from '../social/NotificationSettings';
 import { t } from '@nodii/i18n';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -259,6 +260,13 @@ export function SettingsSheet({
             </div>
           </section>
 
+          {social?.onFriendDone && (
+            <NotificationSettings
+              client={client}
+              me={session.user.id}
+              onFriendDone={social.onFriendDone}
+            />
+          )}
           {social && (
             <ProfilePrivacy
               client={client}

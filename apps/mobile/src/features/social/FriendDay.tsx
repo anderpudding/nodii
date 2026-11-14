@@ -9,8 +9,16 @@ import {
   Text,
   View,
 } from 'react-native';
-import { adjacentMonthKey, useFriendDay, type NodiiClient } from '@nodii/api';
-import { buildDay, monthGridRange, monthKeyOf, summarizeMonth, type Profile } from '@nodii/core';
+import { adjacentMonthKey, useFriendDay, useMyReactions, type NodiiClient } from '@nodii/api';
+import {
+  buildDay,
+  completedReactionTargets,
+  reactionTargetKey,
+  monthGridRange,
+  monthKeyOf,
+  summarizeMonth,
+  type Profile,
+} from '@nodii/core';
 import { formatISODate, t } from '@nodii/i18n';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
@@ -20,6 +28,7 @@ import { MonthGrid } from '../today/MonthGrid';
 import { WeekStrip } from '../today/WeekStrip';
 import { weekRange } from '../today/model';
 import { completedStampColors } from '../today/stamp-colors';
+import { HeartButton } from './HeartButton';
 import { onSocialForeground } from './invite-receiver';
 
 /** SOC-32·38: 친구 화면과 사람 하루는 같은 스크롤 본문으로 읽는다. */
@@ -104,6 +113,11 @@ export function FriendDay({
     () => (day.data ? buildDay({ ...day.data, date, timeZone: profile.timezone }) : []),
     [day.data, date, profile.timezone],
   );
+  const reactions = useMyReactions(
+    client,
+    me ?? '',
+    completedReactionTargets(me && active ? groups : [], date),
+  );
   const monthLabel = formatISODate(monthExpanded ? `${month}-01` : date, {
     month: 'long',
     year: 'numeric',
@@ -111,6 +125,7 @@ export function FriendDay({
   const reload = () => {
     void refetch();
     if (separate) void refetchSelected();
+    if (me && reactions.data) void reactions.refetch();
   };
   return (
     <>
@@ -241,43 +256,63 @@ export function FriendDay({
                   const title = item.kind === 'todo' ? item.todo.title : item.routine.title;
                   const done =
                     item.kind === 'todo' ? item.todo.isDone : item.log?.status === 'done';
+                  const target =
+                    item.kind === 'todo'
+                      ? { todoId: item.todo.id }
+                      : { routineId: item.routine.id, date };
                   const Row = me && item.kind === 'todo' ? Pressable : View;
                   const todo = me && item.kind === 'todo' ? item.todo : null;
                   return (
-                    <Row
+                    <View
                       key={`${item.kind}:${id}`}
-                      accessible
-                      {...(todo
-                        ? {
-                            onLongPress: () => reportMenu(todo),
-                            accessibilityActions: [
-                              { name: 'report', label: t('social.report.action') },
-                            ],
-                            onAccessibilityAction: () => reportMenu(todo),
-                          }
-                        : {})}
-                      accessibilityLabel={t(
-                        done ? 'social.today.finished' : 'social.today.unfinished',
-                        { title },
-                      )}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        minHeight: m.height.field,
-                        gap: m.space.md,
-                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center' }}
                     >
-                      <SproutCheck color={goal.color} done={done} />
-                      <Text
+                      <Row
+                        accessible
+                        {...(todo
+                          ? {
+                              onLongPress: () => reportMenu(todo),
+                              accessibilityActions: [
+                                { name: 'report', label: t('social.report.action') },
+                              ],
+                              onAccessibilityAction: () => reportMenu(todo),
+                            }
+                          : {})}
+                        accessibilityLabel={t(
+                          done ? 'social.today.finished' : 'social.today.unfinished',
+                          { title },
+                        )}
                         style={{
-                          color: done ? colors.ink2 : colors.ink,
-                          fontSize: m.type.body,
+                          flexDirection: 'row',
+                          alignItems: 'center',
                           flex: 1,
+                          minHeight: m.height.field,
+                          gap: m.space.md,
                         }}
                       >
-                        {title}
-                      </Text>
-                    </Row>
+                        <SproutCheck color={goal.color} done={done} />
+                        <Text
+                          style={{
+                            color: done ? colors.ink2 : colors.ink,
+                            fontSize: m.type.body,
+                            flex: 1,
+                          }}
+                        >
+                          {title}
+                        </Text>
+                      </Row>
+                      {done && me && (
+                        <HeartButton
+                          client={client}
+                          me={me}
+                          target={target}
+                          title={title}
+                          color={goal.color}
+                          ready={reactions.isSuccess}
+                          reactionId={reactions.data?.[reactionTargetKey(target)]}
+                        />
+                      )}
+                    </View>
                   );
                 })}
               </View>

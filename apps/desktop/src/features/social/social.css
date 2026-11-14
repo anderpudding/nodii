@@ -820,3 +820,195 @@ button.social-person-link:hover {
   border-bottom: 1px solid var(--color-line);
   padding-bottom: 12px;
 }
+
+.social-heart {
+  color: var(--color-muted);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.social-heart[data-compact] {
+  width: 36px;
+  height: 36px;
+}
+.social-heart[aria-pressed='true'] {
+  color: var(--goal-ink-light);
+}
+.dark .social-heart[aria-pressed='true'] {
+  color: var(--goal-ink-dark);
+}
+.social-heart:hover:where(:not([aria-disabled='true'])) {
+  background: var(--color-chip);
+}
+.social-heart[aria-disabled='true'] {
+  cursor: default;
+}
+.social-heart svg {
+  width: 20px;
+  height: 20px;
+}
+.social-heart[data-compact] svg {
+  width: 18px;
+  height: 18px;
+}
+.friend-day-row > span {
+  flex: 1;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.notification-header h1 {
+  margin: 0;
+}
+.notification-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.notification-filters button {
+  min-height: 32px;
+  padding-inline: 12px;
+  border-radius: 999px;
+  background: var(--color-chip);
+  color: var(--color-ink-2);
+  font-size: 13px;
+  font-weight: 800;
+}
+.notification-filters button[aria-selected='true'] {
+  background: var(--color-ink);
+  color: var(--color-bg);
+}
+.notification-filters button:hover,
+.notification-name:hover {
+  text-decoration: underline;
+}
+.notification-results {
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  margin: -4px;
+}
+.notification-section h2 {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 8px 0 0;
+}
+.notification-section + .notification-section {
+  margin-top: 12px;
+}
+.notification-section ul,
+.notification-completed ul {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+.notification-row {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.notification-avatar {
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.notification-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.notification-copy p {
+  font-size: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+.notification-name {
+  font-weight: 800;
+}
+.notification-time {
+  display: block;
+  font-size: 12px;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.notification-action,
+.notification-prompt > button:last-child {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: var(--color-muted);
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.notification-action:hover,
+.notification-prompt > button:last-child:hover {
+  background: var(--color-chip);
+}
+.notification-action .sprout-check {
+  width: 22px;
+}
+.notification-completed {
+  margin-left: 52px;
+  border-radius: 14px;
+  background: var(--color-chip);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--color-ink-2);
+}
+.notification-completed li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.notification-completed li > span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.notification-completed li > .sprout-check {
+  width: 20px;
+  flex: 0 0 20px;
+}
+.notification-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--color-chip);
+  color: var(--color-ink-2);
+  font-size: 13px;
+  margin-top: 16px;
+}
+.notification-prompt p {
+  flex: 1;
+}
+
+.notification-settings-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: start;
+}
+.notification-override {
+  display: block;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.friend-done-settings > .supporting {
+  font-size: 13px;
+}

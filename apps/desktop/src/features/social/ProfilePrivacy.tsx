@@ -15,6 +15,7 @@ export interface SocialSettings {
   onHandle(): void;
   onVisibility(): void;
   onBlocked(): void;
+  onFriendDone?(): void;
 }
 
 /** SOC-06·28: 기존 설정의 개인정보 그룹에만 소셜 항목을 넣는다. */

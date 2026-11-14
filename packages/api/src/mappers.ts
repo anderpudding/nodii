@@ -1,4 +1,4 @@
-import { visibleProfile } from '@nodii/core';
+import { NOTIFICATION_KINDS, reactionTargetKey, visibleProfile } from '@nodii/core';
 import type {
   Goal,
   Todo,
@@ -7,6 +7,7 @@ import type {
   RoutineLog,
   SocialProfile,
   TodayFollow,
+  NotificationPrefs,
 } from '@nodii/core';
 import type { Database } from './database.types';
 
@@ -276,4 +277,57 @@ export function todayFollowPatchToRow(
   patch: Partial<Pick<TodayFollow, 'showOnToday' | 'todaySortKey'>>,
 ) {
   return { show_on_today: patch.showOnToday, today_sort_key: patch.todaySortKey };
+}
+
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
+type ReactionRow = Pick<
+  Database['public']['Tables']['reactions']['Row'],
+  'id' | 'todo_id' | 'routine_id' | 'date'
+>;
+type NotificationPrefsRow = Database['public']['Tables']['notification_prefs']['Row'];
+type NotificationMuteRow = Database['public']['Tables']['notification_mutes']['Row'];
+
+/** SOC-50: 화면의 알림 캐시는 DB 열 이름과 분리한다. */
+export function mapNotification(row: NotificationRow) {
+  const kind = NOTIFICATION_KINDS.find((value) => value === row.kind);
+  if (!kind) return null;
+  return {
+    id: row.id,
+    actorId: row.actor_id,
+    kind,
+    todoId: row.todo_id,
+    routineId: row.routine_id,
+    date: row.date,
+    count: row.count,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** SOC-40: 완료한 루틴의 반응은 날짜까지 포함한다. */
+export function mapReaction(row: ReactionRow) {
+  const target = row.todo_id
+    ? { todoId: row.todo_id }
+    : row.routine_id && row.date
+      ? { routineId: row.routine_id, date: row.date }
+      : null;
+  return target ? { key: reactionTargetKey(target), id: row.id } : null;
+}
+
+/** SOC-53: 기존 즐겨찾기와 독립적으로 알림 종류별 값만 읽는다. */
+export function mapNotificationPrefs(row: NotificationPrefsRow): NotificationPrefs {
+  return { friendDone: row.friend_done, newFollower: row.new_follower, reaction: row.reaction };
+}
+
+/** SOC-53: 한 스위치를 바꿔도 다른 기기가 저장한 설정을 덮어쓰지 않는다. */
+export function notificationPrefsToRow(values: Partial<NotificationPrefs>) {
+  return {
+    friend_done: values.friendDone,
+    new_follower: values.newFollower,
+    reaction: values.reaction,
+  };
+}
+
+/** SOC-51: true와 false 모두 명시적인 예외로 보존한다. */
+export function mapNotificationMute(row: NotificationMuteRow) {
+  return { actorId: row.actor_id, friendDone: row.friend_done };
 }

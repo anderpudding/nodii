@@ -32,3 +32,6 @@ export * from './repositories/relationships';
 export * from './hooks/relationships';
 export * from './hooks/friends-day';
 export * from './repositories/today-people';
+export * from './repositories/notifications';
+export * from './notification-realtime';
+export * from './hooks/notifications';

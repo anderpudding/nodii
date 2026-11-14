@@ -15,3 +15,4 @@ export * from './avatar';
 export * from './social-icons';
 
 export * from './friends-day';
+export * from './notifications';

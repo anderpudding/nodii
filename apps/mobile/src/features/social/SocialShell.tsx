@@ -1,3 +1,4 @@
+import { FriendDoneSettings } from './NotificationSettings';
 import { TodayPeople } from './TodayPeople';
 import { orderTodayPeople } from '@nodii/core';
 import { useTodayPeople } from '@nodii/api';
@@ -31,11 +32,13 @@ import { ProfileSetup, ProfileFieldEditor, type ProfileField } from './ProfileFo
 import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
 import { onSocialForeground } from './invite-receiver';
+import { Notifications } from './Notifications';
+import { useUIStore } from '../../stores/ui';
 import { OtherProfile } from './OtherProfile';
 import { BlockedProfiles, FollowListPage, ProfileSearch } from './PeoplePages';
 
 type Page =
-  | { kind: 'edit' | 'settings' | 'visibility' | 'search' | 'blocked' }
+  | { kind: 'edit' | 'settings' | 'visibility' | 'search' | 'blocked' | 'friendDone' }
   | { kind: 'list'; list: FollowList }
   | { kind: 'field'; field: ProfileField; from: 'edit' | 'settings' };
 type SettingsProps = {
@@ -219,7 +222,7 @@ export function SocialShell({
   const account = useQuery({
     queryKey: ['profile', userId],
     queryFn: ({ signal }) => fetchProfile(client, userId, signal),
-    enabled: enabled && (!!page || !!other),
+    enabled: enabled && (!!page || !!other || tab === 'notifications'),
     staleTime: 30_000,
   });
   const select = useCallback((next: SocialTab) => {
@@ -258,7 +261,7 @@ export function SocialShell({
       setPage(
         page?.kind === 'field'
           ? { kind: page.from }
-          : page?.kind === 'visibility' || page?.kind === 'blocked'
+          : page?.kind === 'visibility' || page?.kind === 'blocked' || page?.kind === 'friendDone'
             ? { kind: 'settings' }
             : null,
       );
@@ -316,19 +319,28 @@ export function SocialShell({
         {enabled && active !== 'today' && !modal && (
           <View style={[s.fill, { paddingTop: top }]}>
             {active === 'notifications' ? (
-              <>
-                <Text
-                  accessibilityRole="header"
-                  style={[s.title, { color: colors.ink, margin: m.space.lg }]}
-                >
-                  {t('tabs.notifications')}
-                </Text>
-                <View style={s.center}>
-                  <Text style={[s.support, { color: colors.muted }]}>
-                    {t('social.notifications.empty')}
-                  </Text>
-                </View>
-              </>
+              <Notifications
+                client={client}
+                me={userId}
+                timezone={
+                  account.data?.timezone ??
+                  Intl.DateTimeFormat().resolvedOptions().timeZone ??
+                  'UTC'
+                }
+                weekStart={account.data?.weekStart ?? 0}
+                following={!!todayPeople.data?.length}
+                bottom={inset}
+                onPerson={(id) => setOther({ userId: id, from: 'tabs.notifications' })}
+                onToday={(date) => {
+                  setPicked(null);
+                  useUIStore.getState().selectDate(date);
+                  select('today');
+                }}
+                onSettings={() => {
+                  select('profile');
+                  setPage({ kind: 'friendDone' });
+                }}
+              />
             ) : mine.data ? (
               <MyProfile
                 client={client}
@@ -416,6 +428,7 @@ export function SocialShell({
               onHandle: () => setPage({ kind: 'field', field: 'handle', from: 'settings' }),
               onVisibility: () => setPage({ kind: 'visibility' }),
               onBlocked: () => setPage({ kind: 'blocked' }),
+              onFriendDone: () => setPage({ kind: 'friendDone' }),
             }}
           />
         )}
@@ -506,6 +519,8 @@ export function SocialShell({
                 onBack={back}
                 onPerson={(target) => setOther({ userId: target, from: `social.${page.list}` })}
               />
+            ) : page?.kind === 'friendDone' ? (
+              <FriendDoneSettings client={client} me={userId} onBack={back} />
             ) : page?.kind === 'blocked' ? (
               <BlockedProfiles client={client} me={userId} onBack={back} />
             ) : page?.kind === 'visibility' ? (

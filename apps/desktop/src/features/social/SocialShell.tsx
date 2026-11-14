@@ -1,3 +1,4 @@
+import { FriendDoneSettings } from './NotificationSettings';
 import { TodayPeople } from './TodayPeople';
 import { orderTodayPeople } from '@nodii/core';
 import { useTodayPeople } from '@nodii/api';
@@ -34,12 +35,14 @@ import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
 import { SocialIcon } from './Icons';
 import { onSocialForeground } from './InviteReceiver';
+import { Notifications } from './Notifications';
+import { useUIStore } from '../../stores/ui';
 import { OtherProfile } from './OtherProfile';
 import { BlockedProfiles, FollowListPanel, ProfileSearch } from './PeoplePanels';
 import './social.css';
 
 type Panel =
-  | { kind: 'edit' | 'settings' | 'visibility' | 'blocked' | 'search' }
+  | { kind: 'edit' | 'settings' | 'visibility' | 'blocked' | 'search' | 'friendDone' }
   | { kind: 'list'; list: FollowList }
   | { kind: 'field'; field: ProfileField; from: 'edit' | 'settings' };
 
@@ -225,7 +228,9 @@ export function SocialShell({
           setPanel(
             panel.kind === 'field'
               ? { kind: panel.from }
-              : panel.kind === 'visibility' || panel.kind === 'blocked'
+              : panel.kind === 'visibility' ||
+                  panel.kind === 'blocked' ||
+                  panel.kind === 'friendDone'
                 ? { kind: 'settings' }
                 : null,
           );
@@ -300,6 +305,7 @@ export function SocialShell({
               onHandle: () => setPanel({ kind: 'field', field: 'handle', from: 'settings' }),
               onVisibility: () => setPanel({ kind: 'visibility' }),
               onBlocked: () => setPanel({ kind: 'blocked' }),
+              onFriendDone: () => setPanel({ kind: 'friendDone' }),
             }
           : undefined
       }
@@ -361,10 +367,26 @@ export function SocialShell({
                 calendarProfile={profile}
               />
             ) : active === 'notifications' ? (
-              <section className="social-notifications">
-                <h1>{t('tabs.notifications')}</h1>
-                <p className="social-center">{t('social.notifications.empty')}</p>
-              </section>
+              <Notifications
+                client={client}
+                me={userId}
+                timezone={
+                  profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC'
+                }
+                weekStart={profile?.weekStart ?? 0}
+                following={!!todayPeople.data?.length}
+
+                onPerson={(id) => setOther({ userId: id, from: 'tabs.notifications' })}
+                onToday={(date) => {
+                  setPicked(null);
+                  useUIStore.getState().selectDate(date);
+                  select('today');
+                }}
+                onSettings={() => {
+                  select('profile');
+                  setPanel({ kind: 'friendDone' });
+                }}
+              />
             ) : active === 'profile' ? (
               <section className="social-profile" data-panel={!!showPanel}>
                 {mine.data ? (
@@ -412,13 +434,17 @@ export function SocialShell({
                       <>
                         <Back
                           label={t(
-                            panel.kind === 'visibility' || panel.kind === 'blocked'
+                            panel.kind === 'visibility' ||
+                              panel.kind === 'blocked' ||
+                              panel.kind === 'friendDone'
                               ? 'settings.title'
                               : 'tabs.profile',
                           )}
                           onClick={() =>
                             setPanel(
-                              panel.kind === 'visibility' || panel.kind === 'blocked'
+                              panel.kind === 'visibility' ||
+                                panel.kind === 'blocked' ||
+                                panel.kind === 'friendDone'
                                 ? { kind: 'settings' }
                                 : null,
                             )
@@ -457,6 +483,8 @@ export function SocialShell({
                               setOther({ userId: target, from: `social.${panel.list}` })
                             }
                           />
+                        ) : panel.kind === 'friendDone' ? (
+                          <FriendDoneSettings client={client} me={userId} />
                         ) : panel.kind === 'blocked' ? (
                           <BlockedProfiles client={client} me={userId} />
                         ) : panel.kind === 'settings' ? (

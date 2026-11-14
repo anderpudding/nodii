@@ -12,6 +12,7 @@ export interface SocialSettings {
   onHandle(): void;
   onVisibility(): void;
   onBlocked(): void;
+  onFriendDone?(): void;
 }
 
 /** SOC-06: 기존 설정 그룹 안에서 검색 허용을 즉시 바꾸고 실패 시 복원한다. */

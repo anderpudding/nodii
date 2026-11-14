@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
+import { useUIStore } from '../../stores/ui';
+import { goalRow, todoRow } from '../../test/data-fixtures';
 import { SocialShell } from './SocialShell';
 import { baseUrl, createTestClient, sessionResponse } from '../../test/auth-fixtures';
 import { server } from '../../test/server';
@@ -31,6 +33,9 @@ beforeEach(() => {
       () => new HttpResponse(null, { headers: { 'Content-Range': '*/0' } }),
     ),
     http.get(`${rest}/follows`, () => HttpResponse.json([])),
+    http.get(`${rest}/notifications`, () => HttpResponse.json([])),
+    http.get(`${rest}/notification_mutes`, () => HttpResponse.json([])),
+    http.get(`${rest}/notification_prefs`, () => HttpResponse.json([])),
     http.get(`${rest}/invite_links`, () => HttpResponse.json([{ token: 'local' }])),
     http.post(`${rest}/rpc/my_blocked_profiles`, () => HttpResponse.json([])),
   );
@@ -103,7 +108,7 @@ it('checks six ID states and enables creation only for a valid nickname and avai
   mount(true);
   const today = screen.getByLabelText('Today date state');
   await user.click(screen.getByRole('tab', { name: '알림' }));
-  expect(screen.getByText('아직 알림이 없어요')).toBeTruthy();
+  expect(await screen.findByText('아직 알림이 없어요')).toBeTruthy();
   await user.click(screen.getByRole('tab', { name: '오늘' }));
   expect(screen.getByLabelText('Today date state')).toBe(today);
   await user.click(screen.getByRole('tab', { name: '프로필' }));
@@ -429,4 +434,183 @@ it('aborts stale search and refreshes relationship counts when the window return
   await waitFor(() => expect(didAbort).toBe(true));
   act(() => onlineManager.setOnline(false));
   expect(screen.getByText('연결되면 찾을 수 있어요')).toBeTruthy();
+});
+
+it('filters notification kinds, expands the current completions, and opens a reaction date', async () => {
+  const date = '2026-09-30';
+  const updated = new Date().toISOString();
+  const actor = { ...existing, user_id: 'friend', nickname: '민수' };
+  server.use(
+    http.get(`${rest}/social_profiles`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get('user_id') === 'in.(friend)' ? [actor] : [existing],
+      ),
+    ),
+    http.get(`${rest}/notifications`, () =>
+      HttpResponse.json(
+        [
+          {
+            id: 'group',
+            actor_id: 'friend',
+            kind: 'friend_done',
+            date,
+            count: 2,
+            updated_at: updated,
+          },
+          {
+            id: 'like',
+            actor_id: 'friend',
+            kind: 'reaction',
+            date,
+            todo_id: 'own',
+            count: 1,
+            updated_at: '2020-01-01T00:00:00Z',
+          },
+          {
+            id: 'follow',
+            actor_id: 'friend',
+            kind: 'follow',
+            date: null,
+            count: 1,
+            updated_at: updated,
+          },
+        ].map((row) => ({ todo_id: null, routine_id: null, ...row })),
+      ),
+    ),
+    http.get(`${rest}/follows`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get('followee_id') === `eq.${userId}`
+          ? [{ follower_id: 'friend' }]
+          : [],
+      ),
+    ),
+    http.get(`${rest}/goals`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.has('id')
+          ? [goalRow]
+          : [{ ...goalRow, user_id: 'friend' }],
+      ),
+    ),
+    http.get(`${rest}/todos`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.has('id')
+          ? [{ ...todoRow, id: 'own', title: '내 독서', date }]
+          : [
+              { ...todoRow, date, title: '친구 독서', user_id: 'friend', is_done: true },
+              {
+                ...todoRow,
+                id: 'pending',
+                date,
+                title: '미완료',
+                user_id: 'friend',
+                is_done: false,
+              },
+            ],
+      ),
+    ),
+    http.get(`${rest}/routines`, () => HttpResponse.json([])),
+    http.get(`${rest}/routine_logs`, () => HttpResponse.json([])),
+    http.get(`${rest}/reactions`, () => HttpResponse.json([])),
+  );
+  mount(true);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('tab', { name: '알림' }));
+  expect(await screen.findByRole('button', { name: '맞팔로우' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: '이전' })).toBeTruthy();
+  await user.click(screen.getByRole('tab', { name: '친구 완료' }));
+  expect(screen.queryByRole('button', { name: '맞팔로우' })).toBeNull();
+  await user.click(screen.getByRole('button', { name: '끝낸 항목 펼치기' }));
+  expect(await screen.findByRole('button', { name: '친구 독서 좋아요' })).toBeTruthy();
+  expect(screen.queryByText('미완료')).toBeNull();
+  await user.click(screen.getByRole('tab', { name: '좋아요' }));
+  await user.click(screen.getByRole('button', { name: '민수님이 ‘내 독서’에 좋아요를 남겼어요' }));
+  expect(screen.getByRole('tab', { name: '오늘' }).getAttribute('aria-selected')).toBe('true');
+  expect(useUIStore.getState().selectedDate).toBe(date);
+});
+
+it('keeps a per-person exception when changing the global switch, and deletes it when restored', async () => {
+  const friend = { ...existing, user_id: 'friend', nickname: '민수', handle: 'friend' };
+  let friendDone = false;
+  let mute: boolean | undefined;
+  let reaction = true;
+  const store = vi.fn();
+  const clear = vi.fn();
+  const prefs = () => ({ user_id: userId, friend_done: friendDone, new_follower: true, reaction });
+  server.use(
+    http.get(`${rest}/goals`, () => HttpResponse.json([])),
+    http.get(`${rest}/social_profiles`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get('user_id') === 'in.(friend)' ? [friend] : [existing],
+      ),
+    ),
+    http.get(`${rest}/follows`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.has('offset')
+          ? [
+              {
+                followee_id: 'friend',
+                today_sort_key: 'a0',
+                show_on_today: true,
+                created_at: 'date',
+              },
+            ]
+          : [],
+      ),
+    ),
+    http.get(`${rest}/notification_prefs`, () => HttpResponse.json([prefs()])),
+    http.post(`${rest}/notification_prefs`, async ({ request }) => {
+      const body = (await request.json()) as { friend_done?: boolean; reaction?: boolean };
+      friendDone = body.friend_done ?? friendDone;
+      reaction = body.reaction ?? reaction;
+      return HttpResponse.json(prefs());
+    }),
+    http.get(`${rest}/notification_mutes`, () =>
+      HttpResponse.json(
+        mute === undefined
+          ? []
+          : [
+              {
+                user_id: userId,
+                actor_id: 'friend',
+                friend_done: mute,
+              },
+            ],
+      ),
+    ),
+    http.post(`${rest}/notification_mutes`, async ({ request }) => {
+      const body = (await request.json()) as { friend_done: boolean };
+      mute = body.friend_done;
+      store(mute);
+      return new HttpResponse(null, { status: 201 });
+    }),
+    http.delete(`${rest}/notification_mutes`, () => {
+      mute = undefined;
+      clear();
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+  const user = userEvent.setup();
+  mount(true);
+  await user.click(screen.getByRole('tab', { name: '프로필' }));
+  await user.click(await screen.findByRole('button', { name: '설정' }));
+  const likes = await screen.findByRole('switch', { name: '받은 좋아요' });
+  await waitFor(() => expect((likes as HTMLButtonElement).disabled).toBe(false));
+  await user.click(likes);
+  await waitFor(() => expect(reaction).toBe(false));
+  await user.click(screen.getByRole('button', { name: /친구 완료 알림/ }));
+  const person = await screen.findByRole('switch', { name: '민수' });
+  await user.click(person);
+  await waitFor(() => expect(store).toHaveBeenCalledWith(true));
+  expect(await screen.findByText('따로 설정함')).toBeTruthy();
+  const global = screen.getByRole('switch', { name: '모든 친구' });
+  await waitFor(() => expect((global as HTMLButtonElement).disabled).toBe(false));
+  await user.click(global);
+  await waitFor(() => expect(friendDone).toBe(true));
+  expect(screen.getByText('따로 설정함')).toBeTruthy();
+  await waitFor(() => expect((global as HTMLButtonElement).disabled).toBe(false));
+  await user.click(global);
+  await waitFor(() => expect((person as HTMLButtonElement).disabled).toBe(false));
+  await user.click(person);
+  await waitFor(() => expect(clear).toHaveBeenCalledOnce());
+  expect(screen.queryByText('따로 설정함')).toBeNull();
 });
