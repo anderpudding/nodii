@@ -1,3 +1,4 @@
+import { TodayPeople } from './TodayPeople';
 import { orderTodayPeople } from '@nodii/core';
 import { useTodayPeople } from '@nodii/api';
 import { AvatarRow } from './AvatarRow';
@@ -262,18 +263,34 @@ export function SocialShell({
             : null,
       );
   };
-  const modal = showOther || (showPage && page?.kind !== 'settings');
+  const modal =
+    showOther ||
+    ((showPage || (enabled && active === 'profile' && page?.kind === 'search')) &&
+      page?.kind !== 'settings');
+  const peoplePage =
+    enabled && active === 'today' && manageToday ? (
+      <TodayPeople
+        client={client}
+        me={userId}
+        own={mine.data ?? undefined}
+        onBack={() => setManageToday(false)}
+        onFind={() => {
+          select('profile');
+          openSearch();
+        }}
+      />
+    ) : undefined;
   return (
     <VisibilityContext.Provider value={enabled}>
       <View style={s.fill}>
         <View
           style={active === 'today' ? s.fill : { display: 'none' }}
-          accessibilityElementsHidden={active !== 'today' || showOther}
+          accessibilityElementsHidden={active !== 'today' || showOther || !!peoplePage}
           importantForAccessibility={
-            active !== 'today' || showOther ? 'no-hide-descendants' : 'auto'
+            active !== 'today' || showOther || peoplePage ? 'no-hide-descendants' : 'auto'
           }
         >
-          <TodayVisible.Provider value={active === 'today' && !showOther}>
+          <TodayVisible.Provider value={active === 'today' && !showOther && !peoplePage}>
             <TodaySocialContext.Provider
               value={{
                 friendId,
@@ -347,7 +364,7 @@ export function SocialShell({
             )}
           </View>
         )}
-        {enabled && !showOther && !showPage && (
+        {enabled && !showOther && !showPage && !peoplePage && (
           <View
             accessibilityRole="tablist"
             style={{
@@ -414,6 +431,20 @@ export function SocialShell({
               <ActivityIndicator color={colors.ink} />
             )}
             <Button quiet label={t('mobile.add.cancel')} onPress={back} />
+          </View>
+        )}
+        {peoplePage && !showOther && (
+          <View
+            accessibilityViewIsModal
+            style={{
+              position: 'absolute',
+              inset: 0,
+              paddingTop: top,
+              paddingBottom: bottom,
+              backgroundColor: colors.bg,
+            }}
+          >
+            {peoplePage}
           </View>
         )}
         {!!modal && (

@@ -747,3 +747,59 @@ button.social-person-link:hover {
   padding: 0;
   margin: 8px 0 0;
 }
+
+.social-today:not([hidden]) {
+  display: flex;
+}
+.today-people-page {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 24px 24px;
+  overflow: auto;
+}
+.today-people-page h1 {
+  margin: 8px 0 16px;
+  font-size: 28px;
+  font-weight: 800;
+}
+.today-people-page > input {
+  margin-bottom: 12px;
+}
+.today-person-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+}
+.today-person-row > div > span {
+  display: block;
+}
+.today-person-switch {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+.today-people-page .sortable-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.today-people-page .sortable-content {
+  order: -1;
+  flex: 1;
+  min-width: 0;
+}
+.today-people-page .drag-handle {
+  touch-action: none;
+}
+.today-people-page .social-switch {
+  width: 34px;
+  height: 20px;
+}
+.today-people-page .social-switch::after {
+  width: 16px;
+  height: 16px;
+}

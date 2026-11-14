@@ -1,3 +1,4 @@
+import { TodayPeople } from './TodayPeople';
 import { orderTodayPeople } from '@nodii/core';
 import { useTodayPeople } from '@nodii/api';
 import { AvatarRow } from './AvatarRow';
@@ -219,6 +220,7 @@ export function SocialShell({
         return;
       if (event.key === 'Escape') {
         if (other) setOther(null);
+        else if (manageToday) setManageToday(false);
         else if (panel)
           setPanel(
             panel.kind === 'field'
@@ -242,7 +244,7 @@ export function SocialShell({
       window.removeEventListener('keydown', key);
       window.removeEventListener('nodii:command', command);
     };
-  }, [enabled, other, panel, select]);
+  }, [enabled, manageToday, other, panel, select]);
 
   const active = enabled
     ? token && (mine.data === null || mine.isError)
@@ -305,6 +307,19 @@ export function SocialShell({
   );
   const showPanel =
     active === 'profile' && panel && !showingOther && (mine.data || panel.kind === 'settings');
+  const peoplePage =
+    enabled && active === 'today' && manageToday ? (
+      <TodayPeople
+        client={client}
+        me={userId}
+        own={mine.data ?? undefined}
+        onBack={() => setManageToday(false)}
+        onFind={() => {
+          select('profile');
+          openPanel({ kind: 'search' });
+        }}
+      />
+    ) : undefined;
   return (
     <VisibilityContext.Provider value={enabled}>
       <div className="social-shell" data-social-enabled={enabled}>
@@ -312,6 +327,7 @@ export function SocialShell({
           <TodaySocialContext.Provider
             value={{
               friendId,
+              management: peoplePage,
               avatars: enabled ? (
                 <AvatarRow
                   client={client}

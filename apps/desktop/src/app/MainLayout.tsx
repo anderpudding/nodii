@@ -96,72 +96,74 @@ export function MainLayout({
             </nav>
           </aside>
           <div className="day-panel">
-            <header className="app-toolbar">
-              <div aria-label={t('app.connection')} role="status">
-                {connectionMessage && (
-                  <span className="offline-status" title={connectionMessage}>
-                    {connectionMessage}
-                  </span>
+            {!management && (
+              <header className="app-toolbar">
+                <div aria-label={t('app.connection')} role="status">
+                  {connectionMessage && (
+                    <span className="offline-status" title={connectionMessage}>
+                      {connectionMessage}
+                    </span>
+                  )}
+                </div>
+                {!social && (
+                  <Button
+                    className="wide-settings"
+                    variant="ghost"
+                    aria-label={t('settings.title')}
+                    aria-haspopup="dialog"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <SettingsIcon className="toolbar-icon" />
+                  </Button>
                 )}
-              </div>
-              {!social && (
-                <Button
-                  className="wide-settings"
-                  variant="ghost"
-                  aria-label={t('settings.title')}
-                  aria-haspopup="dialog"
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  <SettingsIcon className="toolbar-icon" />
-                </Button>
-              )}
-              <div className="narrow-settings">
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger asChild>
-                    <Button variant="ghost" aria-label={t('app.settingsManagement')}>
-                      {social ? (
-                        <GoalIcon className="toolbar-icon" />
-                      ) : (
-                        <SettingsIcon className="toolbar-icon" />
-                      )}
-                    </Button>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                      className="todo-menu"
-                      align="end"
-                      sideOffset={4}
-                      collisionPadding={8}
-                    >
-                      <DropdownMenu.Item
-                        className="todo-menu-item"
-                        onSelect={() => setGoalView('list')}
+                <div className="narrow-settings">
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                      <Button variant="ghost" aria-label={t('app.settingsManagement')}>
+                        {social ? (
+                          <GoalIcon className="toolbar-icon" />
+                        ) : (
+                          <SettingsIcon className="toolbar-icon" />
+                        )}
+                      </Button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content
+                        className="todo-menu"
+                        align="end"
+                        sideOffset={4}
+                        collisionPadding={8}
                       >
-                        {t('goal.manage')}
-                      </DropdownMenu.Item>
-                      <DropdownMenu.Item
-                        className="todo-menu-item"
-                        disabled={!profile}
-                        onSelect={() => setRoutinesOpen(true)}
-                      >
-                        {t('routine.manage')}
-                      </DropdownMenu.Item>
-                      {!social && (
-                        <>
-                          <DropdownMenu.Separator className="todo-menu-separator" />
-                          <DropdownMenu.Item
-                            className="todo-menu-item"
-                            onSelect={() => setSettingsOpen(true)}
-                          >
-                            {t('settings.title')}
-                          </DropdownMenu.Item>
-                        </>
-                      )}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-              </div>
-            </header>
+                        <DropdownMenu.Item
+                          className="todo-menu-item"
+                          onSelect={() => setGoalView('list')}
+                        >
+                          {t('goal.manage')}
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className="todo-menu-item"
+                          disabled={!profile}
+                          onSelect={() => setRoutinesOpen(true)}
+                        >
+                          {t('routine.manage')}
+                        </DropdownMenu.Item>
+                        {!social && (
+                          <>
+                            <DropdownMenu.Separator className="todo-menu-separator" />
+                            <DropdownMenu.Item
+                              className="todo-menu-item"
+                              onSelect={() => setSettingsOpen(true)}
+                            >
+                              {t('settings.title')}
+                            </DropdownMenu.Item>
+                          </>
+                        )}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                </div>
+              </header>
+            )}
             {profile && <WeekStrip client={client} profile={profile} social={social} />}
             <main className="day-content">
               {management ??
