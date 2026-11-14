@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import { ActionSheetIOS, Alert, StyleSheet, Text } from 'react-native';
+import { ActionSheetIOS, Alert, Linking, StyleSheet, Text } from 'react-native';
+import { termsUrl } from '../../../lib/links';
 import type { NodiiClient } from '@nodii/api';
 import {
   checkHandle,
@@ -202,6 +203,9 @@ it('switches tabs and waits for valid inputs and ID availability', async () => {
   expect(await screen.findByText('아직 알림이 없어요')).toBeVisible();
   fireEvent.press(screen.getByRole('tab', { name: '프로필' }));
   const id = await screen.findByLabelText('ID');
+  const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  fireEvent.press(screen.getByRole('link', { name: '이용약관' }));
+  expect(open).toHaveBeenCalledWith(termsUrl);
   expect(screen.getByText('ID는 3~20자로 써 주세요')).toBeVisible();
   act(() => onlineManager.setOnline(false));
   fireEvent.changeText(id, 'open');

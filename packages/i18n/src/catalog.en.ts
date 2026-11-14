@@ -619,6 +619,7 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'social.notifications.empty': 'No notifications yet',
   'social.setup.title': 'Create your profile',
   'social.setup.description': 'This is how friends can find you.',
+  'social.setup.agreement': 'By starting, you agree to the {terms} and Community Rules.',
   'social.setup.start': 'Get started',
   'social.nickname': 'Nickname',
   'social.handle': 'ID',

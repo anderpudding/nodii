@@ -16,6 +16,7 @@ import {
 } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { Button } from '../../components/ui/button';
+import { openLink, termsUrl } from '../../lib/links';
 import { toast } from 'sonner';
 import { Avatar } from './ProfileHeader';
 import { SocialIcon } from './Icons';
@@ -100,6 +101,8 @@ export function ProfileSetup({ client, userId }: { client: NodiiClient; userId: 
   const name = validateNickname(nickname);
   const status = useHandleAvailability(client, handle);
   const moderation = useProfileTextCheck(client, name.value, true, name.valid);
+  const [beforeTerms, afterTerms] = t('social.setup.agreement').split('{terms}');
+  const agreementUrl = termsUrl ?? 'https://nodii.app/terms.html';
   const hint =
     failure === 'taken'
       ? 'taken'
@@ -171,6 +174,19 @@ export function ProfileSetup({ client, userId }: { client: NodiiClient; userId: 
         }}
       />
       <HandleHint status={hint} />
+      <p className="social-setup-agreement">
+        {beforeTerms}
+        <a
+          href={agreementUrl}
+          onClick={(event) => {
+            event.preventDefault();
+            void openLink(agreementUrl).catch(() => toast.error(t('settings.link.openFailed')));
+          }}
+        >
+          {t('settings.terms')}
+        </a>
+        {afterTerms}
+      </p>
       <Button type="submit" disabled={!valid}>
         {t('social.setup.start')}
       </Button>

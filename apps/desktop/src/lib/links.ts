@@ -10,9 +10,11 @@ function webUrl(value: unknown): string | null {
     return null;
   }
 }
+export const termsUrl = webUrl(import.meta.env.VITE_TERMS_URL);
+
 export const links = [
   { labelKey: 'settings.privacy', url: webUrl(import.meta.env.VITE_PRIVACY_URL) },
-  { labelKey: 'settings.terms', url: webUrl(import.meta.env.VITE_TERMS_URL) },
+  { labelKey: 'settings.terms', url: termsUrl },
   { labelKey: 'settings.support', url: webUrl(import.meta.env.VITE_SUPPORT_URL) },
 ] as const;
 /** SET-07: 네이티브에서는 허용된 opener로 외부 브라우저를 연다. */

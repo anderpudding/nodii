@@ -1,5 +1,7 @@
 # App Review 대응 — Guideline 2.1 Information Needed
 
+> 아래 답장은 발송 전 초안입니다. v3의 심사 경로와 계정 정보는 [0.3.0 심사 노트 초안](05-release-runbook.md#심사-노트-영어-초안)을 기준으로 확인합니다.
+
 > 상태: 2026-09-26 정보 요청 수신 → 답장과 화면 녹화 제출 완료, **승인 대기 중** (2026-10-04 기준)
 > 다음 제출에서도 재사용합니다. UI 문구를 바꾸면 아래 [한국어 라벨]을 함께 고칩니다.
 
@@ -20,7 +22,7 @@
 - 2~4분, .mov/.mp4. 답장에 타임스탬프 목록(0:00 Launch app …)을 붙이면 좋음. 음성 설명은 선택
 - 유료 기능·사용자 간 공유 콘텐츠 없음 → 신고/차단 흐름 불필요
 
-## 답장 본문 (영어 + 한국어 UI 표기, 약 3,700자 · Notes 4,000자 제한 이내)
+## 답장 본문 (영어 + 한국어 UI 표기)
 
 라벨은 `apps/desktop/src` 실제 문구 기준 (2026-09-26).
 
@@ -30,17 +32,17 @@ Hello App Review team,
 Thank you for reviewing Nodii. The requested information is below, and a screen recording made on a Mac running the latest macOS is attached. The interface is in Korean; on-screen labels are given in [brackets].
 
 1. Screen recording
-The recording starts with launching the app and shows: account registration and sign-in with a 6-digit email code, adding/completing/editing/rescheduling to-dos, the monthly calendar, goals, routines (recurring to-dos), settings, sign-out, and in-app account deletion. Nodii has no content shared between users and no paid content or features.
+The recording starts with launching the app and shows: account registration and sign-in with a 6-digit email code, adding/completing/editing/rescheduling to-dos, the monthly calendar, goals, routines (recurring to-dos), settings, sign-out, and in-app account deletion. Nodii is free. In v3, users can share profiles and selected goals, see friends’ days and react to completed items. Community Rules have zero tolerance for objectionable content and abusive users. Reporting and blocking are in the profile menu; we review reports within 24 hours.
 
 2. Purpose and target audience
 Nodii is a simple, date-based to-do app for Mac. Users organize each day's to-dos under color-coded goals, check their progress on a monthly calendar, and create routines (e.g. "exercise every Mon/Wed/Fri") that appear automatically on matching days. Data is saved to the user's account, so the same list is available on any Mac they sign in to and changes sync in real time.
 It is intended for students and professionals who plan their work day by day at their Mac. It solves the problem of keeping a lightweight daily plan in sync across devices without a paid subscription; Nodii is free.
 
 3. Accessing the app
-Nodii signs users in with a 6-digit code sent by email; there are no passwords. Because reviewers cannot receive these emails, the review account alone signs in with a password:
+Regular users sign in with a 6-digit code sent by email. The primary review account signs in with a password:
 - Email: appreview@nodii.app
 - Password: provided in the Sign-In Information section
-Steps: launch Nodii > type the email above in the Email [이메일] field > a Password [비밀번호] field appears > enter the password > click Sign In [로그인]. The account contains sample data. No sample files are needed.
+Steps: launch Nodii > type the email above in the Email [이메일] field > a Password [비밀번호] field appears > enter the password > click Sign In [로그인]. The second demo profile, appreview2@nodii.app (Jamie Review), already follows this account back and has sample data. From Today, select Jamie’s avatar to view it. No sample files are needed.
 Main features:
 - Calendar (left sidebar): select a date to see that day's list.
 - Add a to-do: click a goal's name tag with "＋" above its list (default goal: To-do [할 일]), type, press Enter.
@@ -55,7 +57,7 @@ Main features:
 
 4. External services
 - Supabase (supabase.com): authentication (email one-time codes; password sign-in for the review account only), the cloud database that stores each user's goals, to-dos and routines, and real-time sync between devices.
-- Resend (resend.com): sends the sign-in code emails from no-reply@mail.nodii.app.
+- Resend (resend.com): sends sign-in codes and report alerts to Nodii support.
 - GitHub Pages: hosts the privacy policy, terms of use and support pages at nodii.app.
 Nodii does not use AI services, payment processors, advertising, analytics or tracking SDKs.
 
@@ -110,13 +112,13 @@ Hello App Review team,
 Thank you for reviewing Nodii for iOS. A recording of the submitted TestFlight build on an iPhone is attached. The interface is in Korean; labels are in brackets.
 
 1. Recording
-The recording starts with app launch and shows email-code registration/sign-in, the optional gesture guide, adding/completing/editing/moving/deleting to-dos, undo, the monthly calendar, goals, routines, settings, sign-out and in-app account deletion. Nodii has no paid features or content shared between users.
+The recording starts with app launch and shows email-code registration/sign-in, the optional gesture guide, adding/completing/editing/moving/deleting to-dos, undo, the monthly calendar, goals, routines, settings, sign-out and in-app account deletion. Nodii is free. In v3, users share profiles and selected goals and can like completed items. Community Rules have zero tolerance for objectionable content and abusive users. Reporting and blocking are in the profile menu; we review reports within 24 hours.
 
 2. Purpose and audience
 Nodii is a free, date-based to-do app for iPhone and Mac. Users group tasks under goals, see daily progress on a calendar, and create daily/weekly/monthly routines. Signing in to the same account synchronizes records between devices. It is for people who plan their day on their phone and computer.
 
 3. Review access
-Regular users sign in with a 6-digit email code. For review, enter appreview@nodii.app in Email [이메일]. A Password [비밀번호] field appears for this account only. Enter the password supplied in Sign-In Information, then tap Sign In [로그인]. Sample data is included; no sample files are needed.
+Regular users sign in with a 6-digit email code. For review, enter appreview@nodii.app in Email [이메일]. A Password [비밀번호] field appears for this account only. Enter the password supplied in Sign-In Information, then tap Sign In [로그인]. The second demo profile, appreview2@nodii.app (Jamie Review), follows this account back. Select Jamie’s avatar in Today to view the sample data.
 The first guide is optional [건너뛰기].
 - Add: bottom bar [할 일 추가], enter a title and save.
 - Complete: checkbox or swipe right. Swipe left for Move [옮기기] and Delete [삭제]. Long press or the row menu button provides the same actions, including Edit [이름 수정] and Pick date [날짜 옮기기].
@@ -126,10 +128,10 @@ The first guide is optional [건너뛰기].
 Offline, only previously loaded records can be viewed; changes require internet access.
 
 4. Services
-Supabase provides authentication, account data storage and real-time sync. Resend sends sign-in emails from no-reply@mail.nodii.app. GitHub Pages hosts the privacy, terms and support pages at nodii.app. No AI, payment, advertising, analytics or tracking services are used.
+Supabase provides authentication, account data storage and real-time sync. Resend sends sign-in emails and report alerts; Expo and Apple deliver optional iOS push notifications. GitHub Pages hosts the privacy, terms and support pages at nodii.app. No AI, payment, advertising, analytics or tracking services are used.
 
 5. Regions / regulated industry
-There are no region-specific features. Nodii is a personal productivity app, not a regulated-industry service, and has no shared user content requiring reporting/blocking.
+There are no region-specific features. Nodii is a personal productivity app, not a regulated-industry service, with optional social sharing. Users can report content or block other users.
 
 Thank you,
 Sungjun Lee

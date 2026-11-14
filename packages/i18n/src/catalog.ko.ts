@@ -591,6 +591,7 @@ export const ko = {
   'social.notifications.empty': '아직 알림이 없어요',
   'social.setup.title': '프로필 만들기',
   'social.setup.description': '친구가 나를 찾을 때 쓰는 이름이에요.',
+  'social.setup.agreement': '시작하면 {terms}과 커뮤니티 규칙에 동의하게 돼요.',
   'social.setup.start': '시작하기',
   'social.nickname': '닉네임',
   'social.handle': 'ID',

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   ScrollView,
   Text,
   TextInput,
@@ -23,6 +24,7 @@ import {
   type SocialProfile,
 } from '@nodii/core';
 import { t } from '@nodii/i18n';
+import { termsUrl } from '../../../lib/links';
 import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import { useToast } from '../../components/Toast';
@@ -139,6 +141,7 @@ export function ProfileSetup({
   const name = validateNickname(nickname);
   const status = useHandleAvailability(client, handle);
   const moderation = useProfileTextCheck(client, name.value, true, name.valid);
+  const [beforeTerms, afterTerms] = t('social.setup.agreement').split('{terms}');
   const hint =
     failure === 'taken'
       ? 'taken'
@@ -221,6 +224,21 @@ export function ProfileSetup({
         />
         <Hint status={hint} />
         <View style={{ flex: 1, minHeight: m.space.lg }} />
+        <Text style={[s.support, { color: colors.muted }]}>
+          {beforeTerms}
+          <Text
+            accessibilityRole="link"
+            style={{ textDecorationLine: 'underline' }}
+            onPress={() => {
+              void Linking.openURL(termsUrl).catch(() =>
+                toast(() => t('settings.link.openFailed')),
+              );
+            }}
+          >
+            {t('settings.terms')}
+          </Text>
+          {afterTerms}
+        </Text>
         <Button
           pill
           label={t('social.setup.start')}
