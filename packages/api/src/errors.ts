@@ -24,7 +24,10 @@ export type SocialErrorCode =
   | 'rate_limited'
   | 'blocked'
   | 'not_found'
-  | 'already_following';
+  | 'already_following'
+  | 'not_visible'
+  | 'not_done'
+  | 'own_item';
 
 /** SOC-02: 서버 원문 대신 제한된 코드만 화면에 전달한다. */
 export function socialErrorCode(error: unknown, operation?: 'follow'): SocialErrorCode {
@@ -36,6 +39,9 @@ export function socialErrorCode(error: unknown, operation?: 'follow'): SocialErr
   if (
     code === 'P0001' &&
     (message === 'rate_limited' ||
+      message === 'not_visible' ||
+      message === 'not_done' ||
+      message === 'own_item' ||
       message === 'blocked' ||
       message === 'not_found' ||
       message === 'already_following' ||
