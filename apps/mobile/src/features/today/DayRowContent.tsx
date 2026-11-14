@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
 import { SproutCheck } from '../../components/SproutCheck';
 import { useOnline } from '../../../lib/connectivity';
 import { Pressable, StyleSheet, Text, View, type AccessibilityActionInfo } from 'react-native';
@@ -29,6 +31,8 @@ export function DayRowContent({
 }) {
   const { colors } = useTheme();
   const online = useOnline();
+  const social = useContext(VisibilityContext);
+  const legacyOffline = !online && !social;
   return (
     <View style={styles.row}>
       <Pressable
@@ -38,16 +42,16 @@ export function DayRowContent({
         })}
         accessibilityState={{
           checked: isDone,
-          disabled: locked || !online,
+          disabled: locked || legacyOffline,
           busy: locked,
         }}
-        accessibilityHint={!online ? t('sync.writeDisabled') : undefined}
-        disabled={locked || !online}
+        accessibilityHint={legacyOffline ? t('sync.writeDisabled') : undefined}
+        disabled={locked || legacyOffline}
         onPress={onToggle}
         style={({ pressed }) => [
           styles.touch,
           {
-            opacity: pressed || !online ? m.pressedOpacity : 1,
+            opacity: pressed || legacyOffline ? m.pressedOpacity : 1,
             transform: [{ scale: pressed ? 0.88 : 1 }],
             borderColor: colors.bg,
           },
@@ -82,7 +86,7 @@ export function DayRowContent({
         >
           {title}
         </Text>
-        {!online && (
+        {legacyOffline && (
           <Text
             style={{ color: colors.muted, fontFamily: m.fontMedium, fontSize: m.type.supporting }}
           >

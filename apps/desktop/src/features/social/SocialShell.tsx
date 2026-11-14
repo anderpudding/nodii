@@ -1,3 +1,7 @@
+import { orderTodayPeople } from '@nodii/core';
+import { useTodayPeople } from '@nodii/api';
+import { AvatarRow } from './AvatarRow';
+import { TodaySocialContext } from './TodaySocialContext';
 import { VisibilityContext } from './VisibilityContext';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
@@ -155,12 +159,18 @@ export function SocialShell({
     document.documentElement.classList.add('social-enabled');
     return () => document.documentElement.classList.remove('social-enabled');
   }, [enabled]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [manageToday, setManageToday] = useState(false);
+  const todayPeople = useTodayPeople(client, userId, enabled);
+  const { shown } = orderTodayPeople(todayPeople.data ?? []);
+  const friendId = enabled && shown.some((person) => person.followeeId === picked) ? picked : null;
+  if (picked && todayPeople.isSuccess && friendId !== picked) setPicked(null);
   const [tab, setTab] = useState<SocialTab>('today');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [other, setOther] = useState<{ userId: string; from?: MessageKey } | null>(null);
   const [search, setSearch] = useState('');
   const [archive, setArchive] = useState(false);
-  const mine = useMySocialProfile(client, userId, enabled && (tab === 'profile' || !!token));
+  const mine = useMySocialProfile(client, userId, enabled);
   const counts = useFollowCounts(client, userId, enabled && tab === 'profile' && !!mine.data);
   useRefreshRelationships(userId, enabled, onSocialForeground);
   const openPanel = (next: Panel | null) => {
@@ -169,6 +179,7 @@ export function SocialShell({
   };
   const select = useCallback((next: SocialTab) => {
     setTab(next);
+    setManageToday(false);
     setOther(null);
     setPanel(null);
   }, []);
@@ -298,7 +309,26 @@ export function SocialShell({
     <VisibilityContext.Provider value={enabled}>
       <div className="social-shell" data-social-enabled={enabled}>
         <div className="social-today" hidden={active !== 'today' || !!showingOther}>
-          {children}
+          <TodaySocialContext.Provider
+            value={{
+              friendId,
+              avatars: enabled ? (
+                <AvatarRow
+                  client={client}
+                  me={mine.data ?? undefined}
+                  people={shown}
+                  selected={friendId}
+                  onSelect={(id) => {
+                    setPicked(id);
+                    setManageToday(false);
+                  }}
+                  onManage={() => setManageToday(!manageToday)}
+                />
+              ) : undefined,
+            }}
+          >
+            {children}
+          </TodaySocialContext.Provider>
         </div>
         {enabled && (
           <>

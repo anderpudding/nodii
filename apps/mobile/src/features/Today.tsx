@@ -1,3 +1,5 @@
+import { TodaySocialContext } from './social/TodaySocialContext';
+import { FriendDay } from './social/FriendDay';
 import { completedStampColors } from './today/stamp-colors';
 import { useOnline } from '../../lib/connectivity';
 import {
@@ -85,6 +87,17 @@ interface TodayProps {
 /** M2a: 프로필도 서버 Query로 읽으며 사용자 전환 시 날짜 UI만 초기화한다. */
 export function Today(props: TodayProps) {
   const visible = useContext(TodayVisible);
+  const { friendId, avatars, management } = useContext(TodaySocialContext);
+  const {
+    today,
+    selectedDate,
+    selectDate,
+    monthExpanded,
+    setMonthExpanded,
+    calendarMonth,
+    showMonth,
+  } = useUIStore();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const online = useOnline();
   const profile = useQuery({
@@ -95,6 +108,16 @@ export function Today(props: TodayProps) {
   useEffect(() => {
     useUIStore.getState().reset();
   }, [props.userId]);
+  const timeZone = profile.data?.timezone;
+  useEffect(
+    () =>
+      bindTodayClock(
+        AppState,
+        () => timeZone ?? 'UTC',
+        (date) => useUIStore.getState().updateToday(date),
+      ),
+    [timeZone],
+  );
   if (!profile.data)
     return (
       <View style={styles.center}>
@@ -120,7 +143,29 @@ export function Today(props: TodayProps) {
     );
   return (
     <>
-      <TodayContent {...props} profile={profile.data} />
+      {management ??
+        (props.social && friendId ? (
+          <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.bg }}>
+            <ToastInset bottom={insets.bottom + tabInset} />
+            <FriendDay
+              key={friendId}
+              client={props.client}
+              friendId={friendId}
+              profile={profile.data}
+              today={today}
+              date={selectedDate}
+              onSelect={selectDate}
+              monthExpanded={monthExpanded}
+              onSetMonthExpanded={setMonthExpanded}
+              month={calendarMonth}
+              onMonth={showMonth}
+              header={avatars}
+              bottom={insets.bottom + tabInset + m.space.lg}
+            />
+          </View>
+        ) : (
+          <TodayContent {...props} profile={profile.data} />
+        ))}
       {visible && <FirstRunGuide />}
     </>
   );
@@ -134,6 +179,7 @@ function TodayContent({
   email = '',
   onAccountDeleted = async () => {},
 }: TodayProps & { profile: Profile }) {
+  const { avatars } = useContext(TodaySocialContext);
   const { colors } = useTheme();
   const online = useOnline();
   const insets = useSafeAreaInsets();
@@ -292,15 +338,6 @@ function TodayContent({
   const queries = [goals, routines, first, last, firstLogs, lastLogs];
   const failed = queries.some((query) => query.isError);
   const loading = queries.some((query) => query.isPending);
-  useEffect(
-    () =>
-      bindTodayClock(
-        AppState,
-        () => profile.timezone,
-        (date) => useUIStore.getState().updateToday(date),
-      ),
-    [profile.timezone],
-  );
   const monthLabel = formatISODate(monthExpanded ? `${calendarMonth}-01` : selectedDate, {
     year: 'numeric',
     month: 'long',
@@ -488,6 +525,7 @@ function TodayContent({
             removeClippedSubviews={false}
             ListHeaderComponent={
               <View>
+                {social && avatars}
                 {social && dateHeader}
                 {monthExpanded ? (
                   <MonthGrid
