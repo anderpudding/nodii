@@ -238,8 +238,14 @@
 .social-setup .social-field + .social-field {
   margin-top: 8px;
 }
-.social-setup > button {
+.social-setup-agreement {
   margin-top: 16px;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.social-setup-agreement a {
+  text-decoration: underline;
 }
 .social-input {
   display: flex;

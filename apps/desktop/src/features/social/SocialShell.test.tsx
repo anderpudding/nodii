@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
+import { termsUrl } from '../../lib/links';
 import { useUIStore } from '../../stores/ui';
 import { goalRow, todoRow } from '../../test/data-fixtures';
 import { SocialShell } from './SocialShell';
@@ -114,6 +115,12 @@ it('checks six ID states and enables creation only for a valid nickname and avai
   await user.click(screen.getByRole('tab', { name: '프로필' }));
   const id = await screen.findByRole('textbox', { name: 'ID' });
   const start = screen.getByRole('button', { name: '시작하기' });
+  const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+  const terms = screen.getByRole('link', { name: '이용약관' });
+  const expectedUrl = termsUrl ?? 'https://nodii.app/terms.html';
+  expect(terms.getAttribute('href')).toBe(expectedUrl);
+  fireEvent.click(terms);
+  expect(open).toHaveBeenCalledWith(expectedUrl, '_blank', 'noopener,noreferrer');
   expect(screen.getByText('ID는 3~20자로 써 주세요')).toBeTruthy();
   act(() => onlineManager.setOnline(false));
   await user.type(id, 'good');
