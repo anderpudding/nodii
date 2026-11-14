@@ -272,3 +272,19 @@ EXPO_NO_DOTENV=1 pnpm exec expo export --platform ios --output-dir /tmp/nodii-io
 - M6의 "목표도 할 일도 없는 첫 로그인"은 정상 가입에 기본 목표 1개가 생기는 AUTH-04와 다릅니다. 기본 목표를 없애지 않고 목표 0개 응답도 보수적으로 안내했습니다.
 - 글꼴은 M1부터 정적 4개이며 M6 예상 2MB와 다릅니다. 변경 없이 실측만 남깁니다.
 - 버전 정책·출시 번호·법적 시행일/EULA·개인정보 라벨의 미결정 항목·아이콘 변형 판단은 사람이 확정해야 합니다. TestFlight 제출/기기 설치·실제 설치 크기·실기기 성능·실 계정 로그인 확인도 미완료입니다. EAS production 빌드와 IPA 측정은 위 기록대로 완료했습니다.
+
+## 11. v3 (0.3.0)
+
+iOS 표시 버전은 macOS와 같은 0.3.0이며 빌드 번호는 기존 EAS 원격 자동 증가를 따릅니다. 운영 적용과 출시 순서는 S7 [B2 운영 적용](v3/S7-launch.md#b2-운영-적용-심사-제출-직전-nodii)·[B4 출시의 날](v3/S7-launch.md#b4-출시의-날-두-앱-모두-승인된-뒤-같은-날)을 따릅니다. D33에 따라 소셜을 심사 제출 전에 켜고, 두 앱을 수동 출시로 같은 날 공개한 뒤 최소 지원 버전을 올립니다.
+
+### 개인정보 라벨 및 연령 등급 초안
+
+두 플랫폼에 같은 [v3 개인정보 라벨 표와 연령 등급 응답 초안](05-release-runbook.md#개인정보-라벨-및-연령-등급-초안)을 사용합니다. iOS의 Expo/APNs 푸시 토큰 분류는 그 표의 검토 항목으로 남겨 둡니다. 연령 설문의 사용자 생성 콘텐츠는 **예**, 사용자 간 메시지·채팅은 **아니요**로 기재할 초안입니다.
+
+### 심사 노트 영어 초안
+
+[공통 심사 노트](05-release-runbook.md#심사-노트-영어-초안)에 아래 iOS 안내를 덧붙입니다. 계정과 접근 방식, 약관 주소는 공통 노트와 같습니다.
+
+```text
+On iPhone, tap Today, Notifications, and Profile in the bottom tab bar. You can skip the first-run gesture guide. Open Jamie Review from Today’s avatar row and use the heart on a completed item. You can try the social features without enabling optional push notifications.
+```

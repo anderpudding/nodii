@@ -276,3 +276,43 @@ TestFlight 설치본 기준. 결과는 날짜와 함께 `docs/03-implementation-
 
 - 거절 답변은 **해결 센터(Resolution Center)**에서 합니다. 코드 수정이 필요 없으면 답변만으로 재심사를 요청할 수 있습니다.
 - 수정이 필요하면 `bump-version.sh`로 버전을 올리거나 같은 버전으로 태그 없이 `workflow_dispatch`를 실행해 새 빌드 번호로 업로드합니다.
+
+## 8. v3 (0.3.0)
+
+iOS와 macOS의 표시 버전은 0.3.0으로 맞춥니다. 운영 적용과 출시 순서의 기준은 S7 [B2 운영 적용](v3/S7-launch.md#b2-운영-적용-심사-제출-직전-nodii)과 [B4 출시의 날](v3/S7-launch.md#b4-출시의-날-두-앱-모두-승인된-뒤-같은-날)입니다. D33에 따라 운영 소셜 플래그는 심사 제출 전에 켜며, 두 플랫폼은 수동 출시로 같은 날 공개합니다. 최소 지원 버전은 두 스토어에서 0.3.0을 받을 수 있게 된 뒤 올립니다.
+
+### 개인정보 라벨 및 연령 등급 초안
+
+| 데이터 유형 | 변경 | 용도 | 사용자와 연결 | 추적 |
+| --- | --- | --- | --- | --- |
+| 연락처 정보 → 이메일 주소 | 기존 | 앱 기능 (로그인) | 예 | 아니요 |
+| 사용자 콘텐츠 → 기타 사용자 콘텐츠 | 범위 확대 | 앱 기능 (목표·할 일·루틴·소개·반응·신고) | 예 | 아니요 |
+| 사용자 콘텐츠 → 사진 또는 비디오 | 추가 | 앱 기능 (프로필 사진) | 예 | 아니요 |
+| 식별자 → 사용자 ID | 추가 | 앱 기능 (공개 ID·닉네임) | 예 | 아니요 |
+
+[[REVIEW: iOS 푸시 토큰의 기기 ID 분류를 확정. S7 초안은 미신고 제안이며, 추적에 쓰지 않는다는 사실만으로 기기 ID에서 제외되지는 않음.]]
+
+[Apple 개인정보 라벨 기준](https://developer.apple.com/app-store/app-privacy-details/) · [Apple 연령 등급 설문 기준](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/). 설문 초안: 사용자 생성 콘텐츠 **예**, 사용자 간 메시지·채팅 **아니요**(DM·댓글 없음). 결과 등급은 응답 확정 뒤 확인합니다.
+
+### 심사 노트 영어 초안
+
+[App Review 1.2](https://developer.apple.com/app-store/review/guidelines/#user-generated-content) 대응용입니다. 실제 비밀번호는 저장소에 넣지 않습니다. 현재 앱은 A 주소에만 비밀번호 입력란을 표시합니다. 아래 초안에서 B는 A가 볼 수 있는 데모 프로필이며, B의 별도 로그인 안내는 실제 제출 빌드에서 확인한 뒤 기입합니다.
+
+약관·개인정보처리방침과 지원 페이지 개정 초안은 `release/v3-legal`에 있습니다. `site/` 변경은 `main`에 병합되면 Pages에 게시되므로, 법률 검토가 끝날 때까지 해당 브랜치를 분리해 둡니다.
+
+```text
+Nodii 0.3.0 adds optional social sharing. Goals are visible only to you, your mutual follows, or your followers, according to your choice. Nodii has no comments or direct messages.
+
+Account A: appreview@nodii.app
+Password: provided in App Review Sign-In Information.
+Account B: appreview2@nodii.app (Jamie Review)
+[[TODO: confirm whether B needs direct review access and supply verified instructions if required.]]
+
+Sign in as A using the password field. The two demo profiles already follow each other and contain sample data.
+
+1. In Today, select Jamie Review in the avatar row. Two shared goals are visible; Jamie’s private goal is hidden. Select the previous date to see yesterday’s items, or return to today. A completed item has a heart; one is already liked.
+2. Open Notifications to see Jamie’s follow and bundled completion activity.
+3. Open Jamie’s profile from the friend day or Notifications. The ⋯ menu offers Report and Block. A shared to-do can also be reported from its row menu. In your own Profile, open Settings → Blocked people to review or undo blocks.
+
+Our Community Rules have zero tolerance for objectionable content or abusive users. We review reports within 24 hours. Our terms and Community Rules are at https://nodii.app/terms.html. Support: support@nodii.app.
+```
