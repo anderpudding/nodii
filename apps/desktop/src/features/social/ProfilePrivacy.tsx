@@ -1,4 +1,9 @@
-import { useUpdateDefaultVisibility, useUpdateSocialProfile, type NodiiClient } from '@nodii/api';
+import {
+  useBlockedProfiles,
+  useUpdateDefaultVisibility,
+  useUpdateSocialProfile,
+  type NodiiClient,
+} from '@nodii/api';
 import type { DefaultVisibility, SocialProfile } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { toast } from 'sonner';
@@ -8,6 +13,7 @@ export interface SocialSettings {
   profile: SocialProfile;
   onHandle(): void;
   onVisibility(): void;
+  onBlocked(): void;
 }
 
 /** SOC-06·28: 기존 설정의 개인정보 그룹에만 소셜 항목을 넣는다. */
@@ -21,6 +27,7 @@ export function ProfilePrivacy({
   visibility: DefaultVisibility;
 }) {
   const update = useUpdateSocialProfile(client, social.profile.userId);
+  const blocked = useBlockedProfiles(client, social.profile.userId);
   return (
     <section className="settings-group" aria-labelledby="social-privacy-title">
       <h3 id="social-privacy-title">{t('settings.privacy')}</h3>
@@ -54,6 +61,17 @@ export function ProfilePrivacy({
             <span className="supporting">{t('settings.privacy.searchableHelp')}</span>
           </span>
           <span className="social-switch" data-on={social.profile.searchable} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="settings-card-row settings-info-link"
+          onClick={social.onBlocked}
+        >
+          <span>{t('social.block.title')}</span>
+          <span className="settings-value">
+            {blocked.data && t('social.block.count', { count: blocked.data.length })}{' '}
+            <span aria-hidden="true">›</span>
+          </span>
         </button>
       </div>
     </section>

@@ -3,19 +3,18 @@ import type { NodiiClient } from '../client';
 import {
   mapProfile,
   mapSocialProfile,
+  socialProfileFields,
   socialProfilePatchToRow,
   type SocialProfilePatch,
 } from '../mappers';
 
-const publicFields =
-  'user_id,handle,nickname,bio,avatar_path,searchable,handle_changed_at,auto_hidden_at,updated_at';
 /** SOC-03: 없는 행과 조회 실패를 구별해 기존 프로필에 시작 화면을 덮지 않는다. */
 export async function fetchMySocialProfile(
   client: NodiiClient,
   userId: string,
   signal?: AbortSignal,
 ) {
-  const query = client.from('social_profiles').select(publicFields).eq('user_id', userId);
+  const query = client.from('social_profiles').select(socialProfileFields).eq('user_id', userId);
   const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
   if (error) throw error;
   return data ? mapSocialProfile(data, true) : null;
@@ -27,7 +26,7 @@ export async function fetchSocialProfile(
   userId: string,
   signal?: AbortSignal,
 ) {
-  const query = client.from('social_profiles').select(publicFields).eq('user_id', userId);
+  const query = client.from('social_profiles').select(socialProfileFields).eq('user_id', userId);
   const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
   if (error) throw error;
   return data ? mapSocialProfile(data, false) : null;
@@ -42,7 +41,7 @@ export async function createSocialProfile(
   const { data, error } = await client
     .from('social_profiles')
     .insert({ user_id: userId, handle: input.handle, nickname: input.nickname })
-    .select(publicFields)
+    .select(socialProfileFields)
     .single();
   if (error) throw error;
   return mapSocialProfile(data, true);
@@ -58,7 +57,7 @@ export async function updateSocialProfile(
     .from('social_profiles')
     .update(socialProfilePatchToRow(patch))
     .eq('user_id', userId)
-    .select(publicFields)
+    .select(socialProfileFields)
     .single();
   if (error) throw error;
   return mapSocialProfile(data, true);

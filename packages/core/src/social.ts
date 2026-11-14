@@ -74,3 +74,47 @@ export function inviteUrl(token: string): string {
 export function parseInviteUrl(url: string | null): string | null {
   return url?.match(/^https:\/\/nodii\.app\/u\/([A-Za-z0-9_-]+)\/?(?:[?#].*)?$/)?.[1] ?? null;
 }
+
+export interface FollowRelation {
+  iFollow: boolean;
+  followsMe: boolean;
+}
+
+/** D25: 팔로잉을 우선 표시하며, 상대만 팔로우하면 맞팔로우를 제안한다. */
+export function followButtonState({ iFollow, followsMe }: FollowRelation) {
+  return iFollow ? 'following' : followsMe ? 'followBack' : 'follow';
+}
+
+/** SOC-08: 검색 칸에 붙여 넣은 @ID도 같은 검색어로 처리한다. */
+export function normalizeSearchQuery(raw: string) {
+  const value = raw.trim().replace(/^@/, '').trim().toLowerCase();
+  return [...value].length >= 2 ? value : null;
+}
+
+export const REPORT_REASONS = [
+  'spam',
+  'offensive',
+  'impersonation',
+  'harassment',
+  'other',
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+export const REPORT_DETAIL_LIMIT = 500;
+
+/** SOC-62: 기타 신고의 설명을 요구하고 DB와 같은 유니코드 문자 수를 센다. */
+export function validateReportDetail(raw: string, reason: ReportReason) {
+  const value = raw.trim();
+  const count = [...value].length;
+  return { value, count, valid: count <= REPORT_DETAIL_LIMIT && (count > 0 || reason !== 'other') };
+}
+
+/** SOC-62: 본인에게는 원본을 보여 주고 다른 사람에게는 사진과 소개를 그리지 않는다. */
+export function visibleProfile<
+  T extends { autoHiddenAt: string | null; avatarPath: string | null; bio: string | null },
+>(
+  profile: T,
+  isMe: boolean,
+): T | (Omit<T, 'avatarPath' | 'bio'> & { avatarPath: null; bio: null }) {
+  if (isMe || !profile.autoHiddenAt) return profile;
+  return { ...profile, avatarPath: null, bio: null };
+}

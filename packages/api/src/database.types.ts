@@ -623,6 +623,16 @@ export type Database = {
         Args: { p_date: string; p_moves: Json }
         Returns: undefined
       }
+      my_blocked_profiles: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          blocked_at: string
+          handle: string
+          nickname: string
+          user_id: string
+        }[]
+      }
       normalize_text: { Args: { t: string }; Returns: string }
       react: {
         Args: { p_date: string; p_routine_id: string; p_todo_id: string }

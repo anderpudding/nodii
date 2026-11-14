@@ -1,3 +1,4 @@
+import { visibleProfile } from '@nodii/core';
 import type { Goal, Todo, Profile, Routine, RoutineLog, SocialProfile } from '@nodii/core';
 import type { Database } from './database.types';
 
@@ -184,6 +185,9 @@ export function mapProfile(row: Database['public']['Tables']['profiles']['Row'])
   };
 }
 
+export const socialProfileFields =
+  'user_id,handle,nickname,bio,avatar_path,searchable,handle_changed_at,auto_hidden_at,updated_at';
+
 type SocialProfileRow = Omit<
   Database['public']['Tables']['social_profiles']['Row'],
   'created_at' | 'social_suspended_at'
@@ -194,17 +198,36 @@ export type SocialProfilePatch = Partial<
 
 /** SOC-62: 다른 사람에게 숨긴 사진과 소개는 앱 캐시에 넣지 않는다. */
 export function mapSocialProfile(row: SocialProfileRow, own: boolean): SocialProfile {
-  const hidden = !own && row.auto_hidden_at !== null;
+  const profile = visibleProfile(
+    {
+      userId: row.user_id,
+      handle: row.handle,
+      nickname: row.nickname,
+      bio: row.bio,
+      avatarPath: row.avatar_path,
+      searchable: row.searchable,
+      handleChangedAt: row.handle_changed_at,
+      autoHiddenAt: row.auto_hidden_at,
+      updatedAt: row.updated_at,
+    },
+    own,
+  );
+  return { ...profile, bio: profile.bio ?? '' };
+}
+
+type BlockedProfileResult =
+  Database['public']['Functions']['my_blocked_profiles']['Returns'][number];
+// RETURNS TABLE 타입 생성기는 nullable SELECT 표현식의 null 가능성을 표시하지 않는다.
+type BlockedProfileRow = Omit<BlockedProfileResult, 'avatar_path'> & { avatar_path: string | null };
+
+/** SOC-61: 차단 목록에는 RPC가 반환한 최소 정보만 둔다. */
+export function mapBlockedProfile(row: BlockedProfileRow) {
   return {
     userId: row.user_id,
     handle: row.handle,
     nickname: row.nickname,
-    bio: hidden ? '' : row.bio,
-    avatarPath: hidden ? null : row.avatar_path,
-    searchable: row.searchable,
-    handleChangedAt: row.handle_changed_at,
-    autoHiddenAt: row.auto_hidden_at,
-    updatedAt: row.updated_at,
+    avatarPath: row.avatar_path,
+    blockedAt: row.blocked_at,
   };
 }
 

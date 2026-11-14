@@ -118,6 +118,7 @@ export function ProfileNav({
   disabled,
   busy,
   doneLabel,
+  trailing,
 }: {
   back: string;
   onBack(): void;
@@ -126,6 +127,7 @@ export function ProfileNav({
   disabled?: boolean;
   busy?: boolean;
   doneLabel?: string;
+  trailing?: ReactNode;
 }) {
   const { colors } = useTheme();
   return (
@@ -155,6 +157,7 @@ export function ProfileNav({
         </Text>
       )}
       <View style={{ flex: 1, alignItems: 'flex-end' }}>
+        {trailing}
         {onDone && (
           <Pressable
             accessibilityRole="button"
@@ -190,15 +193,19 @@ export function ProfileTool({
   label,
   onPress,
   children,
+  disabled,
 }: {
   label: string;
   onPress(): void;
   children: ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
         width: 44,

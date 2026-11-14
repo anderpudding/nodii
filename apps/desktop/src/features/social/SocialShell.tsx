@@ -3,7 +3,9 @@ import {
   useMySocialProfile,
   usePendingInvite,
   useMyInvite,
-  useSocialProfile,
+  useFollowCounts,
+  useRefreshRelationships,
+  type FollowList,
   type NodiiClient,
   type Session,
 } from '@nodii/api';
@@ -14,21 +16,25 @@ import {
   type SocialProfile,
   type SocialTab,
 } from '@nodii/core';
-import { t } from '@nodii/i18n';
+import { t, type MessageKey } from '@nodii/i18n';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { SettingsIcon } from '../../components/ui/icons';
 import { SettingsSheet } from '../settings/SettingsSheet';
 import { GoalManagerSheet } from '../goals/GoalManagerSheet';
-import { Avatar, ProfileHeader } from './ProfileHeader';
+import { ProfileHeader } from './ProfileHeader';
 import { ProfileFieldEditor, ProfileSetup, type ProfileField } from './ProfileForms';
 import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
 import { SocialIcon } from './Icons';
+import { onSocialForeground } from './InviteReceiver';
+import { OtherProfile } from './OtherProfile';
+import { BlockedProfiles, FollowListPanel, ProfileSearch } from './PeoplePanels';
 import './social.css';
 
 type Panel =
-  | { kind: 'edit' | 'settings' | 'visibility' }
+  | { kind: 'edit' | 'settings' | 'visibility' | 'blocked' | 'search' }
+  | { kind: 'list'; list: FollowList }
   | { kind: 'field'; field: ProfileField; from: 'edit' | 'settings' };
 
 function Back({ label, onClick }: { label: string; onClick(): void }) {
@@ -39,85 +45,32 @@ function Back({ label, onClick }: { label: string; onClick(): void }) {
   );
 }
 
-function OtherProfile({
-  client,
-  userId,
-  onBack,
-  from,
-}: {
-  client: NodiiClient;
-  userId: string;
-  onBack(): void;
-  from: SocialTab;
-}) {
-  const profile = useSocialProfile(client, userId);
-  return (
-    <section className="social-other">
-      <Back label={t(`tabs.${from}`)} onClick={onBack} />
-      {profile.isPending ? (
-        <div className="social-center" role="status">
-          {t('mobile.preparing')}
-        </div>
-      ) : profile.isError || !profile.data ? (
-        <div className="social-center">
-          <Avatar size={64} label={t('tabs.profile')} />
-          <h2>{t('social.profile.gone')}</h2>
-        </div>
-      ) : (
-        <ProfileHeader horizontal client={client} profile={profile.data} />
-      )}
-    </section>
-  );
-}
-
 function MyProfile({
   client,
   profile,
   panel,
   setPanel,
+  counts,
+  invitePending,
+  copy,
 }: {
   client: NodiiClient;
   profile: SocialProfile;
   panel: Panel | null;
   setPanel(panel: Panel | null): void;
+  counts?: Record<FollowList, number>;
+  invitePending: boolean;
+  copy(): void;
 }) {
-  const invite = useMyInvite(client, profile.userId);
-  function copy() {
-    if (!invite.data) {
-      void invite.refetch();
-      toast.error(t('social.invite.shareFailed'));
-      return;
-    }
-    const url = inviteUrl(invite.data);
-    // WKWebView는 클릭의 동기 구간이 지난 뒤에는 클립보드 권한을 거부할 수 있다.
-    const field = document.createElement('textarea');
-    field.value = url;
-    field.style.position = 'fixed';
-    field.style.opacity = '0';
-    const focus = document.activeElement;
-    document.body.append(field);
-    field.select();
-    let copied = false;
-    try {
-      copied = document.execCommand('copy');
-    } catch {
-      /* 브라우저에서 지원하는 클립보드 경로로 이어진다. */
-    } finally {
-      field.remove();
-      if (focus instanceof HTMLElement) focus.focus();
-    }
-    if (copied) toast.success(t('social.invite.copied'));
-    else if (navigator.clipboard)
-      void navigator.clipboard.writeText(url).then(
-        () => toast.success(t('social.invite.copied')),
-        () => toast.error(t('social.invite.shareFailed')),
-      );
-    else toast.error(t('social.invite.shareFailed'));
-  }
   return (
     <section className="social-own" data-open={!!panel}>
       <div className="social-tools">
-        <Button variant="ghost" className="social-tool" aria-label={t('social.find')}>
+        <Button
+          variant="ghost"
+          className="social-tool"
+          aria-label={t('social.find')}
+          onClick={() => setPanel({ kind: 'search' })}
+        >
           <SocialIcon name="find" size={20} />
         </Button>
         <Button
@@ -133,10 +86,19 @@ function MyProfile({
         <ProfileHeader client={client} profile={profile} />
         <div className="social-counts">
           {(['following', 'followers'] as const).map((key) => (
-            <div key={key}>
-              <strong>0</strong>
+            <button
+              key={key}
+              aria-label={t('social.lists.count', {
+                label: t(`social.${key}`),
+                count: counts?.[key] ?? '–',
+              })}
+              type="button"
+              aria-pressed={panel?.kind === 'list' && panel.list === key}
+              onClick={() => setPanel({ kind: 'list', list: key })}
+            >
+              <strong>{counts?.[key] ?? '–'}</strong>
               <span>{t(`social.${key}`)}</span>
-            </div>
+            </button>
           ))}
         </div>
         <div className="social-profile-actions">
@@ -150,15 +112,15 @@ function MyProfile({
           >
             {t('social.edit')}
           </Button>
-          <Button variant="outline" onClick={copy} disabled={invite.isPending}>
+          <Button variant="outline" onClick={copy} disabled={invitePending}>
             {t('social.share')}
           </Button>
         </div>
-        {!panel && (
+        {!panel && counts?.following === 0 && (
           <aside className="social-invite">
             <h3>{t('social.invite.title')}</h3>
             <p>{t('social.invite.description')}</p>
-            <Button onClick={copy} disabled={invite.isPending}>
+            <Button onClick={copy} disabled={invitePending}>
               {t('social.invite.copy')}
             </Button>
           </aside>
@@ -194,9 +156,16 @@ export function SocialShell({
   }, [enabled]);
   const [tab, setTab] = useState<SocialTab>('today');
   const [panel, setPanel] = useState<Panel | null>(null);
-  const [other, setOther] = useState<string | null>(null);
+  const [other, setOther] = useState<{ userId: string; from?: MessageKey } | null>(null);
+  const [search, setSearch] = useState('');
   const [archive, setArchive] = useState(false);
   const mine = useMySocialProfile(client, userId, enabled && (tab === 'profile' || !!token));
+  const counts = useFollowCounts(client, userId, enabled && tab === 'profile' && !!mine.data);
+  useRefreshRelationships(userId, enabled, onSocialForeground);
+  const openPanel = (next: Panel | null) => {
+    if (next?.kind === 'search') setSearch('');
+    setPanel(next);
+  };
   const select = useCallback((next: SocialTab) => {
     setTab(next);
     setOther(null);
@@ -210,7 +179,10 @@ export function SocialShell({
         return;
       }
       if (target === userId) select('profile');
-      else setOther(target);
+      else {
+        setPanel(null);
+        setOther({ userId: target });
+      }
     },
     [consume, select, userId],
   );
@@ -239,7 +211,7 @@ export function SocialShell({
           setPanel(
             panel.kind === 'field'
               ? { kind: panel.from }
-              : panel.kind === 'visibility'
+              : panel.kind === 'visibility' || panel.kind === 'blocked'
                 ? { kind: 'settings' }
                 : null,
           );
@@ -265,6 +237,39 @@ export function SocialShell({
       ? 'profile'
       : tab
     : 'today';
+  const invite = useMyInvite(client, userId, enabled && !!mine.data && tab === 'profile');
+  function copy() {
+    if (!invite.data) {
+      void invite.refetch();
+      toast.error(t('social.invite.shareFailed'));
+      return;
+    }
+    const url = inviteUrl(invite.data);
+    // WKWebView는 클릭의 동기 구간이 지난 뒤에는 클립보드 권한을 거부할 수 있다.
+    const field = document.createElement('textarea');
+    field.value = url;
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    const focus = document.activeElement;
+    document.body.append(field);
+    field.select();
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      /* 브라우저에서 지원하는 클립보드 경로로 이어진다. */
+    } finally {
+      field.remove();
+      if (focus instanceof HTMLElement) focus.focus();
+    }
+    if (copied) toast.success(t('social.invite.copied'));
+    else if (navigator.clipboard)
+      void navigator.clipboard.writeText(url).then(
+        () => toast.success(t('social.invite.copied')),
+        () => toast.error(t('social.invite.shareFailed')),
+      );
+    else toast.error(t('social.invite.shareFailed'));
+  }
   const showingOther = enabled && other;
   const settings = (
     <SettingsSheet
@@ -280,6 +285,7 @@ export function SocialShell({
               profile: mine.data,
               onHandle: () => setPanel({ kind: 'field', field: 'handle', from: 'settings' }),
               onVisibility: () => setPanel({ kind: 'visibility' }),
+              onBlocked: () => setPanel({ kind: 'blocked' }),
             }
           : undefined
       }
@@ -297,9 +303,12 @@ export function SocialShell({
           {showingOther ? (
             <OtherProfile
               client={client}
-              userId={showingOther}
-              from={tab}
+              key={showingOther.userId}
+              me={userId}
+              userId={showingOther.userId}
+              from={t(showingOther.from ?? `tabs.${tab}`)}
               onBack={() => setOther(null)}
+              onBlocked={() => setOther(null)}
             />
           ) : active === 'notifications' ? (
             <section className="social-notifications">
@@ -309,7 +318,15 @@ export function SocialShell({
           ) : active === 'profile' ? (
             <section className="social-profile" data-panel={!!showPanel}>
               {mine.data ? (
-                <MyProfile client={client} profile={mine.data} panel={panel} setPanel={setPanel} />
+                <MyProfile
+                  client={client}
+                  profile={mine.data}
+                  panel={panel}
+                  setPanel={openPanel}
+                  counts={counts.data}
+                  invitePending={invite.isPending}
+                  copy={copy}
+                />
               ) : (
                 !showPanel &&
                 (mine.isError ? (
@@ -344,9 +361,17 @@ export function SocialShell({
                   ) : (
                     <>
                       <Back
-                        label={t(panel.kind === 'visibility' ? 'settings.title' : 'tabs.profile')}
+                        label={t(
+                          panel.kind === 'visibility' || panel.kind === 'blocked'
+                            ? 'settings.title'
+                            : 'tabs.profile',
+                        )}
                         onClick={() =>
-                          setPanel(panel.kind === 'visibility' ? { kind: 'settings' } : null)
+                          setPanel(
+                            panel.kind === 'visibility' || panel.kind === 'blocked'
+                              ? { kind: 'settings' }
+                              : null,
+                          )
                         }
                       />
                       {panel.kind === 'edit' && mine.data ? (
@@ -361,6 +386,29 @@ export function SocialShell({
                           userId={userId}
                           visibility={profile?.defaultVisibility ?? 'private'}
                         />
+                      ) : panel.kind === 'search' ? (
+                        <ProfileSearch
+                          client={client}
+                          me={userId}
+                          text={search}
+                          setText={setSearch}
+                          onPerson={(target) => setOther({ userId: target, from: 'social.find' })}
+                        />
+                      ) : panel.kind === 'list' ? (
+                        <FollowListPanel
+                          client={client}
+                          me={userId}
+                          kind={panel.list}
+                          counts={counts.data}
+                          select={(list) => setPanel({ kind: 'list', list })}
+                          onFind={() => openPanel({ kind: 'search' })}
+                          onInvite={copy}
+                          onPerson={(target) =>
+                            setOther({ userId: target, from: `social.${panel.list}` })
+                          }
+                        />
+                      ) : panel.kind === 'blocked' ? (
+                        <BlockedProfiles client={client} me={userId} />
                       ) : panel.kind === 'settings' ? (
                         settings
                       ) : null}

@@ -50,7 +50,8 @@ export function useSocialEnabled(
       }),
     [client, onForeground, refetch],
   );
-  return online ? data : false;
+  // 이미 켜진 검색 화면은 연결을 잃어도 안내와 입력을 유지한다.
+  return data;
 }
 
 /** SOC-03: 없는 행만 시작 화면으로 연결한다. */
@@ -77,9 +78,10 @@ export function useSocialProfile(client: NodiiClient, userId: string) {
 }
 
 /** SOC-05: 복사 버튼의 클릭 권한을 유지하도록 토큰을 먼저 준비한다. */
-export function useMyInvite(client: NodiiClient, userId: string) {
+export function useMyInvite(client: NodiiClient, userId: string, enabled = true) {
   return useQuery({
     queryKey: ['myInvite', userId],
+    enabled,
     retry: false,
     queryFn: ({ signal }) => fetchMyInvite(client, userId, signal),
     staleTime: Infinity,

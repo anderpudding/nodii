@@ -28,3 +28,5 @@ export * from './repositories/social-profiles';
 export * from './hooks/social';
 export * from './avatars';
 export * from './invites';
+export * from './repositories/relationships';
+export * from './hooks/relationships';

@@ -1,7 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import Constants from 'expo-constants';
-import { useGoals, useRoutines, useUpdateWeekStart, type NodiiClient } from '@nodii/api';
+import {
+  useBlockedProfiles,
+  useGoals,
+  useRoutines,
+  useUpdateWeekStart,
+  type NodiiClient,
+} from '@nodii/api';
 import type { Profile } from '@nodii/core';
 import { getLocale, t } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
@@ -52,6 +58,7 @@ export function Settings({
     onError: () => toast(() => t('todo.save.failed')),
   });
   const goals = useGoals(client, profile.id);
+  const blocked = useBlockedProfiles(client, profile.id, !!social);
   const routines = useRoutines(client, profile.id);
   const { selectedDate, today } = useUIStore();
   async function openLink(url: string) {
@@ -139,6 +146,14 @@ export function Settings({
               </Text>
             </RoutineOption>
             <SearchableSwitch client={client} profile={social.profile} />
+            <RoutineOption inline label={t('social.block.title')} onPress={social.onBlocked}>
+              <Text style={[s.body, { color: colors.ink, flex: 1 }]}>
+                {t('social.block.title')}
+              </Text>
+              <Text style={[s.supporting, { color: colors.muted }]}>
+                {blocked.data && t('social.block.count', { count: blocked.data.length })} ›
+              </Text>
+            </RoutineOption>
           </>,
         )}
       {group(
