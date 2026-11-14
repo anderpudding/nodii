@@ -32,3 +32,4 @@ S2 이후 지시서는 앞 단계 보고(특히 S0의 "안 되는 것과 대안"
 | 2026-11-12 | S0 | `docs/s0-results` · [사이트 PR #54](https://github.com/anderpudding/nodii/pull/54) | 실기기에서 네 항목의 S0 기준 충족 | S2 사진 EXIF 전체 제거, S6 macOS 최초 알림 권한 확인 |
 | 2026-11-13 | S2 | `feat/s2-profile` | macOS·iOS 프로필·사진·초대 링크·설정 및 소셜 탭 뼈대, S1 스키마 유지 | 서명 빌드의 유니버설 링크는 S3와 함께 확인 |
 | 2026-11-13 | S3 | `feat/s3-follow` | 팔로우·친구 찾기·차단·프로필 신고, macOS 개발 앱과 iOS 시뮬레이터에서 계정 간 확인 | 실제 Resend 메일·서명 빌드 HTTPS 링크 |
+| 2026-11-13 | S3 리뷰 | `feat/s3-follow` | macOS·iOS 팔로워 내보내기와 차단 테스트를 분리하고 누락된 조회 모의 응답 추가 | — |

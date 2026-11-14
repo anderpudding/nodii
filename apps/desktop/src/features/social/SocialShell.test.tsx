@@ -1,8 +1,8 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
 import { SocialShell } from './SocialShell';
 import { baseUrl, createTestClient, sessionResponse } from '../../test/auth-fixtures';
@@ -24,6 +24,18 @@ const existing = {
 };
 
 const disposers: (() => Promise<void>)[] = [];
+beforeEach(() => {
+  server.use(
+    http.head(
+      `${rest}/follows`,
+      () => new HttpResponse(null, { headers: { 'Content-Range': '*/0' } }),
+    ),
+    http.get(`${rest}/follows`, () => HttpResponse.json([])),
+    http.get(`${rest}/invite_links`, () => HttpResponse.json([{ token: 'local' }])),
+    http.post(`${rest}/rpc/my_blocked_profiles`, () => HttpResponse.json([])),
+  );
+});
+
 afterEach(async () => {
   cleanup();
   onlineManager.setOnline(true);
@@ -180,7 +192,6 @@ function socialHandlers({
   const write = vi.fn();
   const mail = vi.fn();
   server.use(
-    http.get(`${rest}/invite_links`, () => HttpResponse.json([{ token: 'local' }])),
     http.get(`${rest}/social_profiles`, ({ request }) => {
       const filter = new URL(request.url).searchParams.get('user_id');
       if (filter === `eq.${userId}`)
@@ -295,7 +306,7 @@ it('debounces search, shows empty results, and restores a failed optimistic foll
   expect(await screen.findByRole('button', { name: '맞팔로우' })).toBeTruthy();
 });
 
-it('removes a follower from the list and opens block settings after blocking from search', async () => {
+it('removes a follower from the list after confirmation', async () => {
   socialHandlers({ followsMe: true });
   mount(true);
   const user = userEvent.setup();
@@ -303,10 +314,18 @@ it('removes a follower from the list and opens block settings after blocking fro
   await user.click(await screen.findByRole('button', { name: '팔로워 1' }));
   await user.click(await screen.findByRole('button', { name: '팔로워에서 내보내기' }));
   await user.click(await screen.findByRole('menuitem', { name: '팔로워에서 내보내기' }));
-  await user.click(await screen.findByRole('button', { name: '내보내기' }));
+  const confirm = screen.getByRole('alertdialog', { name: 'Friend님을 팔로워에서 내보낼까요?' });
+  await user.click(within(confirm).getByRole('button', { name: '내보내기' }));
   expect(await screen.findByText('아직 팔로워가 없어요')).toBeTruthy();
-  await user.click(screen.getByRole('button', { name: '친구 찾기' }));
-  await user.type(screen.getByRole('searchbox'), 'friend');
+});
+
+it('blocks a profile from search and opens the blocked list in settings', async () => {
+  socialHandlers();
+  mount(true);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('tab', { name: '프로필' }));
+  await user.click(await screen.findByRole('button', { name: '친구 찾기' }));
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'friend' } });
   await user.click(await screen.findByRole('button', { name: /@friend/ }));
   (await screen.findByRole('button', { name: '프로필 메뉴' })).focus();
   await user.keyboard('{Enter}');
@@ -316,9 +335,8 @@ it('removes a follower from the list and opens block settings after blocking fro
   await user.click(screen.getByRole('button', { name: '설정' }));
   await user.click(await screen.findByRole('button', { name: /차단한 사람\s*1명/ }));
   await user.click(await screen.findByRole('button', { name: '차단 해제' }));
-  await user.click(
-    screen.getByRole('alertdialog').querySelector<HTMLButtonElement>('button:last-child')!,
-  );
+  const confirm = screen.getByRole('alertdialog', { name: 'Friend님의 차단을 풀까요?' });
+  await user.click(within(confirm).getByRole('button', { name: '차단 해제' }));
   expect(await screen.findByText('차단한 사람이 없어요')).toBeTruthy();
 });
 

@@ -13,6 +13,8 @@ import {
   fetchFollowing,
   fetchRelations,
   follow,
+  listGoals,
+  listRoutines,
   removeFollower,
   reportProfile,
   searchProfiles,
@@ -52,6 +54,10 @@ jest.mock('../../../../../packages/api/src/repositories/relationships', () => ({
 }));
 jest.mock('../../../../../packages/api/src/profile', () => ({ fetchProfile: jest.fn() }));
 jest.mock('../../../../../packages/api/src/invites', () => ({ resolveInvite: jest.fn() }));
+jest.mock('../../../../../packages/api/src/repositories/goals', () => ({ listGoals: jest.fn() }));
+jest.mock('../../../../../packages/api/src/repositories/routines', () => ({
+  listRoutines: jest.fn(),
+}));
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
 }));
@@ -75,6 +81,8 @@ beforeEach(() => {
   jest.mocked(fetchRelations).mockResolvedValue(new Map());
   jest.mocked(fetchFollowing).mockResolvedValue({ people: [], truncated: false });
   jest.mocked(fetchFollowers).mockResolvedValue({ people: [], truncated: false });
+  jest.mocked(listGoals).mockResolvedValue([]);
+  jest.mocked(listRoutines).mockResolvedValue([]);
   onlineManager.setOnline(true);
   jest.mocked(fetchMySocialProfile).mockResolvedValue(mine);
   jest.mocked(checkProfileText).mockResolvedValue('ok');
@@ -280,12 +288,9 @@ it('debounces search and rolls back a failed follow before confirming an unfollo
   expect(await screen.findByRole('button', { name: '팔로우' })).toBeVisible();
 });
 
-it('removes a follower, returns to search after blocking, and unblocks from settings', async () => {
+it('removes a follower from the list after confirmation', async () => {
   relationshipScenario(true);
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  jest
-    .spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
-    .mockImplementation((_opts, pick) => pick(2));
   mount();
   fireEvent.press(screen.getByRole('tab', { name: '프로필' }));
   fireEvent.press(await screen.findByRole('button', { name: '팔로워 1' }));
@@ -296,9 +301,16 @@ it('removes a follower, returns to search after blocking, and unblocks from sett
   expect(lastAlert(alert)?.[0]).toBe('Friend님을 팔로워에서 내보낼까요?');
   act(() => lastAlert(alert)?.[2]?.[1]?.onPress?.());
   expect(await screen.findByText('아직 팔로워가 없어요')).toBeVisible();
-  fireEvent.press(screen.getByRole('button', { name: '‹ 프로필' }));
-  fireEvent.press(screen.getByRole('button', { name: '친구 찾기' }));
-  fireEvent.changeText(screen.getByLabelText('이름이나 ID로 찾기'), 'friend');
+});
+
+it('blocks a profile from search and opens the blocked list in settings', async () => {
+  relationshipScenario();
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  jest
+    .spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+    .mockImplementation((_opts, pick) => pick(2));
+  mount();
+  fireEvent.changeText(await openSearch(), 'friend');
   fireEvent.press(await screen.findByRole('button', { name: 'Friend' }));
   fireEvent.press(await screen.findByRole('button', { name: '프로필 메뉴' }));
   expect(lastAlert(alert)?.[0]).toBe('Friend님을 차단할까요?');
