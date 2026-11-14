@@ -820,3 +820,40 @@ button.social-person-link:hover {
   border-bottom: 1px solid var(--color-line);
   padding-bottom: 12px;
 }
+
+.social-heart {
+  color: var(--color-muted);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.social-heart[data-compact] {
+  width: 36px;
+  height: 36px;
+}
+.social-heart[aria-pressed='true'] {
+  color: var(--goal-ink-light);
+}
+.dark .social-heart[aria-pressed='true'] {
+  color: var(--goal-ink-dark);
+}
+.social-heart:hover:where(:not([aria-disabled='true'])) {
+  background: var(--color-chip);
+}
+.social-heart[aria-disabled='true'] {
+  cursor: default;
+}
+.social-heart svg {
+  width: 20px;
+  height: 20px;
+}
+.social-heart[data-compact] svg {
+  width: 18px;
+  height: 18px;
+}
+.friend-day-row > span {
+  flex: 1;
+}

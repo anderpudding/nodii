@@ -2,10 +2,12 @@ import * as ContextMenu from '@radix-ui/react-context-menu';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ReportSheet } from './ReportSheet';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useFriendDay, type NodiiClient } from '@nodii/api';
+import { useFriendDay, useMyReactions, type NodiiClient } from '@nodii/api';
 import {
   addDays,
   buildDay,
+  completedReactionTargets,
+  reactionTargetKey,
   monthGridRange,
   monthKeyOf,
   summarizeMonth,
@@ -20,16 +22,28 @@ import { CalendarGrid } from '../calendar/CalendarGrid';
 import { completedStampColors } from '../calendar/stamp-colors';
 import { DaySkeleton } from '../day-list/DayView';
 import { GoalChip, goalStyle } from '../goals/GoalChip';
+import { HeartButton } from './HeartButton';
 import { onSocialForeground } from './InviteReceiver';
 
 /** SOC-32: 친구 항목은 쓰기 훅이 없는 목록으로 그린다. */
 function FriendList({
   groups,
+  client,
+  me,
+  date,
   onReport,
 }: {
   groups: DayGoalGroup[];
+  client: NodiiClient;
+  me?: string;
+  date: string;
   onReport?: (todo: { id: string; title: string }) => void;
 }) {
+  const reactions = useMyReactions(
+    client,
+    me ?? '',
+    completedReactionTargets(me ? groups : [], date),
+  );
   return (
     <div className="day-list">
       {groups.map(({ goal, items }) => (
@@ -43,6 +57,10 @@ function FriendList({
               const key = todo
                 ? `todo:${todo.id}`
                 : `routine:${item.kind === 'routine' && item.routine.id}`;
+              const target =
+                item.kind === 'todo'
+                  ? { todoId: item.todo.id }
+                  : { routineId: item.routine.id, date };
               const report = todo && onReport ? () => onReport(todo) : undefined;
               const row = (
                 <li
@@ -73,6 +91,17 @@ function FriendList({
                         </DropdownMenu.Content>
                       </DropdownMenu.Portal>
                     </DropdownMenu.Root>
+                  )}
+                  {done && me && (
+                    <HeartButton
+                      client={client}
+                      me={me}
+                      target={target}
+                      title={title}
+                      color={goal.color}
+                      ready={reactions.isSuccess}
+                      reactionId={reactions.data?.[reactionTargetKey(target)]}
+                    />
                   )}
                 </li>
               );
@@ -256,7 +285,13 @@ export function FriendDay({
               ) : !day.data.goals.length ? (
                 <p className="day-empty">{t('social.today.noGoals')}</p>
               ) : (
-                <FriendList groups={groups} onReport={me ? setReport : undefined} />
+                <FriendList
+                  groups={groups}
+                  client={client}
+                  me={me}
+                  date={date}
+                  onReport={me ? setReport : undefined}
+                />
               )}
             </div>
           </main>

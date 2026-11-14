@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
@@ -24,6 +24,64 @@ it('renders the three v3 goal marks and always uses a dot for a friend', () => {
       el.getAttribute('data-goal-mark'),
     ),
   ).toEqual(['dot', 'mutual', 'followers', 'dot']);
+});
+
+it('toggles a completed friend’s heart and restores it after a rejected request', async () => {
+  const date = '2026-11-13';
+  const client = createTestClient();
+  const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const rest = `${baseUrl}/rest/v1`;
+  const request = vi
+    .fn()
+    .mockReturnValueOnce(HttpResponse.json({ code: 'P0001', message: 'not_done' }, { status: 400 }))
+    .mockReturnValueOnce(HttpResponse.json('like-id'));
+  const remove = vi.fn(() => new HttpResponse(null, { status: 204 }));
+  server.use(
+    http.get(`${rest}/goals`, () => HttpResponse.json([{ ...goalRow, user_id: 'friend' }])),
+    http.get(`${rest}/todos`, () =>
+      HttpResponse.json([
+        { ...todoRow, date, user_id: 'friend', is_done: true },
+        { ...todoRow, id: 'pending', title: 'Pending', date, user_id: 'friend', is_done: false },
+      ]),
+    ),
+    http.get(`${rest}/routines`, () => HttpResponse.json([])),
+    http.get(`${rest}/routine_logs`, () => HttpResponse.json([])),
+    http.get(`${rest}/reactions`, () => HttpResponse.json([])),
+    http.post(`${rest}/rpc/react`, request),
+    http.delete(`${rest}/reactions`, remove),
+  );
+  const view = render(
+    <QueryClientProvider client={cache}>
+      <FriendDay
+        friendId="friend"
+        client={client}
+        me="me"
+        date={date}
+        today={date}
+        profile={{ timezone: 'UTC', weekStart: 0 }}
+        onSelect={() => {}}
+      />
+    </QueryClientProvider>,
+  );
+  try {
+    const like = await screen.findByRole('button', { name: `${todoRow.title} 좋아요` });
+    await waitFor(() => expect(like.getAttribute('aria-disabled')).toBe('false'));
+    expect(screen.queryByRole('button', { name: 'Pending 좋아요' })).toBeNull();
+    const user = userEvent.setup();
+    await user.click(like);
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(like.getAttribute('aria-pressed')).toBe('false'));
+    await user.click(like);
+    await waitFor(() => expect(like.getAttribute('aria-disabled')).toBe('false'));
+    await user.click(screen.getByRole('button', { name: '좋아요 취소' }));
+    await waitFor(() => expect(remove).toHaveBeenCalledTimes(1));
+    expect(like.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.queryByRole('menu')).toBeNull();
+  } finally {
+    view.unmount();
+    cache.clear();
+    await client.auth.dispose();
+  }
 });
 
 it('keeps the chosen day, shows only a report action, and moves to today from the month title', async () => {

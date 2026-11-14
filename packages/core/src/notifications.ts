@@ -1,5 +1,5 @@
 import { isoDateInZone, startOfWeek, todayISO } from './date';
-import type { ISODate } from './types';
+import type { DayGoalGroup, ISODate } from './types';
 
 export const NOTIFICATION_KINDS = ['friend_done', 'reaction', 'follow'] as const;
 export const NOTIFICATION_FILTERS = ['all', ...NOTIFICATION_KINDS] as const;
@@ -94,4 +94,18 @@ export function effectiveFriendDone(
     prefs?.friendDone ??
     DEFAULT_NOTIFICATION_PREFS.friendDone
   );
+}
+
+/** SOC-40: 현재 화면에서 하트를 그릴 수 있는 완료 항목만 서버에 묻는다. */
+export function completedReactionTargets(groups: readonly DayGoalGroup[], date: ISODate) {
+  const todoIds: string[] = [];
+  const routineDates: { routineId: string; date: ISODate }[] = [];
+  for (const { items } of groups) {
+    for (const item of items) {
+      if (item.kind === 'todo' && item.todo.isDone) todoIds.push(item.todo.id);
+      if (item.kind === 'routine' && item.log?.status === 'done')
+        routineDates.push({ routineId: item.routine.id, date });
+    }
+  }
+  return { todoIds, routineDates };
 }
