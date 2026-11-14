@@ -242,3 +242,72 @@ export async function clearNotificationMute(client: NodiiClient, me: string, act
     .eq('actor_id', actorId);
   if (error) throw error;
 }
+
+/** SOC-54: 시스템 알림이 열린 시점에 받는 사람과 대상의 현재 상태를 확인한다. */
+export async function notificationDestination(client: NodiiClient, me: string, id: string) {
+  const { data, error } = await client
+    .from('notifications')
+    .select('*')
+    .eq('id', id)
+    .eq('recipient_id', me)
+    .maybeSingle();
+  if (error) throw error;
+  const row = data && mapNotification(data);
+  if (!row) return null;
+
+  const { data: actor, error: actorError } = await client
+    .from('social_profiles')
+    .select('user_id')
+    .eq('user_id', row.actorId)
+    .maybeSingle();
+  if (actorError) throw actorError;
+  if (!actor) return null;
+  if (row.kind !== 'reaction')
+    return { tab: 'notifications', actorId: row.actorId, date: row.date } as const;
+
+  if (row.todoId) {
+    const { data: todo, error } = await client
+      .from('todos')
+      .select('date')
+      .eq('user_id', me)
+      .eq('id', row.todoId)
+      .is('deleted_at', null)
+      .maybeSingle();
+    if (error) throw error;
+    return todo && ({ tab: 'today', date: todo.date } as const);
+  }
+  if (!row.routineId || !row.date) return null;
+  const { data: routine, error: routineError } = await client
+    .from('routines')
+    .select('id,start_date,end_date')
+    .eq('user_id', me)
+    .eq('id', row.routineId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (routineError) throw routineError;
+  return routine &&
+    row.date >= routine.start_date &&
+    (!routine.end_date || row.date <= routine.end_date)
+    ? ({ tab: 'today', date: row.date } as const)
+    : null;
+}
+
+/** SOC-54: 이전 행을 제공하지 않는 Realtime UPDATE를 판별할 시작 상태를 읽는다. */
+export async function fetchFriendDonePushBaseline(client: NodiiClient, me: string) {
+  const baseline = new Map<string, { count: number; updatedAt: string }>();
+  let after: string | undefined;
+  for (;;) {
+    const query = client
+      .from('notifications')
+      .select('id,count,updated_at')
+      .eq('recipient_id', me)
+      .eq('kind', 'friend_done')
+      .order('id')
+      .limit(500);
+    const { data, error } = await (after ? query.gt('id', after) : query);
+    if (error) throw error;
+    for (const row of data) baseline.set(row.id, { count: row.count, updatedAt: row.updated_at });
+    if (data.length < 500) return baseline;
+    after = data.at(-1)?.id;
+  }
+}

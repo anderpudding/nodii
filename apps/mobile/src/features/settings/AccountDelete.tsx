@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { assertOnline, countAccountContents, deleteMyAccount, type NodiiClient } from '@nodii/api';
 import { t } from '@nodii/i18n';
+import { withPushTokenCleanup } from '../../../lib/push';
 import { useOnline } from '../../../lib/connectivity';
 import { useTheme } from '../../../lib/theme';
 import { BottomSheet } from '../../components/BottomSheet';
@@ -40,7 +41,12 @@ export function AccountDelete({
     setSaving(true);
     try {
       assertOnline();
-      await deleteMyAccount(client, userId);
+      await withPushTokenCleanup(
+        client,
+        userId,
+        () => toast(() => t('social.push.failed')),
+        () => deleteMyAccount(client, userId),
+      );
       await onDeleted();
     } catch {
       toast(() => t('settings.delete.failed'));

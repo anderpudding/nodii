@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchProfile,
+  notificationDestination,
   useMySocialProfile,
   usePendingInvite,
   useShareInvite,
@@ -32,6 +33,7 @@ import { ProfileSetup, ProfileFieldEditor, type ProfileField } from './ProfileFo
 import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
 import { onSocialForeground } from './invite-receiver';
+import { usePushResponse } from './usePush';
 import { Notifications } from './Notifications';
 import { useUIStore } from '../../stores/ui';
 import { OtherProfile } from './OtherProfile';
@@ -205,7 +207,11 @@ export function SocialShell({
   if (picked && todayPeople.isSuccess && friendId !== picked) setPicked(null);
   const [tab, setTab] = useState<SocialTab>('today');
   const [page, setPage] = useState<Page | null>(null);
-  const [other, setOther] = useState<{ userId: string; from?: MessageKey } | null>(null);
+  const [other, setOther] = useState<{
+    userId: string;
+    from?: MessageKey;
+    date?: string | null;
+  } | null>(null);
   const [search, setSearch] = useState('');
   const mine = useMySocialProfile(client, userId, enabled);
   const counts = useFollowCounts(client, userId, enabled && tab === 'profile' && !!mine.data);
@@ -231,6 +237,25 @@ export function SocialShell({
     setPage(null);
     setOther(null);
   }, []);
+  const openPush = useCallback(
+    (id: string) => {
+      void notificationDestination(client, userId, id)
+        .catch(() => null)
+        .then((target) => {
+          if (target?.tab === 'today') {
+            setPicked(null);
+            useUIStore.getState().selectDate(target.date);
+            select('today');
+          } else {
+            select('notifications');
+            if (target)
+              setOther({ userId: target.actorId, from: 'tabs.notifications', date: target.date });
+          }
+        });
+    },
+    [client, select, userId],
+  );
+  usePushResponse(enabled, openPush);
   const receive = useCallback(
     (used: string, target: string | null) => {
       consume(used);
@@ -473,7 +498,8 @@ export function SocialShell({
           >
             {showOther && other ? (
               <OtherProfile
-                key={other.userId}
+                key={other.userId + (other.date ?? '')}
+                initialDate={other.date}
                 client={client}
                 me={userId}
                 userId={other.userId}

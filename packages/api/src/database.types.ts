@@ -298,21 +298,48 @@ export type Database = {
         }
         Relationships: []
       }
+      push_throttle: {
+        Row: {
+          actor_id: string
+          last_sent_at: string
+          recipient_id: string
+        }
+        Insert: {
+          actor_id: string
+          last_sent_at: string
+          recipient_id: string
+        }
+        Update: {
+          actor_id?: string
+          last_sent_at?: string
+          recipient_id?: string
+        }
+        Relationships: []
+      }
       push_tokens: {
         Row: {
+          app_version: string | null
+          locale: string
           platform: string
+          time_zone: string
           token: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          app_version?: string | null
+          locale?: string
           platform: string
+          time_zone?: string
           token: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          app_version?: string | null
+          locale?: string
           platform?: string
+          time_zone?: string
           token?: string
           updated_at?: string
           user_id?: string
@@ -637,6 +664,15 @@ export type Database = {
       react: {
         Args: { p_date: string; p_routine_id: string; p_todo_id: string }
         Returns: string
+      }
+      register_push_token: {
+        Args: {
+          p_app_version: string
+          p_locale: string
+          p_time_zone: string
+          p_token: string
+        }
+        Returns: undefined
       }
       resolve_invite: { Args: { p_token: string }; Returns: string }
       search_profiles: {

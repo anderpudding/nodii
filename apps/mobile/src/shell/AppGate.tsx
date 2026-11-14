@@ -17,6 +17,8 @@ import { useSocialEnabled, readStoredSession, type NodiiClient, type Session } f
 import { getLocale, t, type MessageKey } from '@nodii/i18n';
 import { bindAuthRefresh } from '../../lib/auth-lifecycle';
 import { appStoreUrl, checkMobileVersion, type UpdateInfo } from '../../lib/version-gate';
+import { withPushTokenCleanup } from '../../lib/push';
+import { useClearPushBadge, usePushRegistration } from '../features/social/usePush';
 import { logout } from '../../lib/logout';
 import { metrics as m, useTheme } from '../../lib/theme';
 import { mobileClient, mobileEnv } from '../../lib/supabase';
@@ -53,6 +55,10 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
   );
   const toast = useToast();
   const { colors, isDark } = useTheme();
+  const userId = gate.status === 'ready' ? (gate.session?.user.id ?? null) : null;
+  const pushFailed = useCallback(() => toast(() => t('social.push.failed')), [toast]);
+  useClearPushBadge();
+  usePushRegistration(client, userId, enabled === true && !loggingOut, pushFailed);
 
   useEffect(() => {
     if (!client) return;
@@ -145,7 +151,11 @@ export function AppGate({ client = mobileClient }: { client?: NodiiClient | null
     setLoggingOut(true);
     await refresh.current?.pause();
     try {
-      const result = await logout(client, query, undefined, accountDeleted);
+      const run = () => logout(client, query, undefined, accountDeleted);
+      const result =
+        userId && !accountDeleted
+          ? await withPushTokenCleanup(client, userId, pushFailed, run)
+          : await run();
       logoutNotice.current = accountDeleted
         ? 'settings.deleted'
         : result.localOnly

@@ -22,6 +22,10 @@ vi.mock('../../lib/supabase', () => ({
   mobileEnv: { appStoreId: '123', reviewAccountEmail: '' },
 }));
 vi.mock('expo-constants', () => ({ default: { expoConfig: { version: '0.1.0' } } }));
+vi.mock('expo-notifications', () => ({
+  setBadgeCountAsync: vi.fn().mockResolvedValue(true),
+  setNotificationHandler: vi.fn(),
+}));
 vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 vi.mock('expo-splash-screen', () => ({ hideAsync: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('react-native-safe-area-context', () => ({

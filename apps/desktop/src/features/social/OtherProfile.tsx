@@ -27,6 +27,7 @@ export function OtherProfile({
   onBack,
   onBlocked,
   calendarProfile,
+  initialDate,
 }: {
   client: NodiiClient;
   me: string;
@@ -35,9 +36,10 @@ export function OtherProfile({
   onBack(): void;
   onBlocked(): void;
   calendarProfile?: Profile;
+  initialDate?: string | null;
 }) {
   const today = useUIStore((state) => state.today);
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(initialDate ?? today);
   const query = useSocialProfile(client, userId);
   const person = query.data;
   const relations = useRelations(client, me, person ? [userId] : []);

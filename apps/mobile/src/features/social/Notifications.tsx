@@ -14,6 +14,7 @@ import { metrics as m, useTheme } from '../../../lib/theme';
 import { Button } from '../../components/Button';
 import { profileStyles as s, SocialIcon } from './Primitives';
 import { onSocialForeground } from './invite-receiver';
+import { PushPermissionCard } from './PushPermission';
 import { NotificationRow } from './NotificationRow';
 import { SmallAction } from './RelationshipActions';
 
@@ -97,6 +98,7 @@ export function Notifications({
       <Text accessibilityRole="header" style={[s.title, { color: colors.ink }]}>
         {t('tabs.notifications')}
       </Text>
+      <PushPermissionCard client={client} me={me} />
       <View
         accessibilityRole="tablist"
         style={{ flexDirection: 'row', flexWrap: 'wrap', gap: m.space.sm }}

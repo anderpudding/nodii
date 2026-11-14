@@ -8,6 +8,7 @@ import { VisibilityContext } from './VisibilityContext';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   useMySocialProfile,
+  notificationDestination,
   usePendingInvite,
   useMyInvite,
   useFollowCounts,
@@ -35,6 +36,7 @@ import { ProfileEdit } from './ProfileEdit';
 import { DefaultVisibilityScreen } from './ProfilePrivacy';
 import { SocialIcon } from './Icons';
 import { onSocialForeground } from './InviteReceiver';
+import { useLocalNotifications } from './local-notifications';
 import { Notifications } from './Notifications';
 import { useUIStore } from '../../stores/ui';
 import { OtherProfile } from './OtherProfile';
@@ -171,7 +173,11 @@ export function SocialShell({
   if (picked && todayPeople.isSuccess && friendId !== picked) setPicked(null);
   const [tab, setTab] = useState<SocialTab>('today');
   const [panel, setPanel] = useState<Panel | null>(null);
-  const [other, setOther] = useState<{ userId: string; from?: MessageKey } | null>(null);
+  const [other, setOther] = useState<{
+    userId: string;
+    from?: MessageKey;
+    date?: string | null;
+  } | null>(null);
   const [search, setSearch] = useState('');
   const [archive, setArchive] = useState(false);
   const mine = useMySocialProfile(client, userId, enabled);
@@ -256,6 +262,25 @@ export function SocialShell({
       ? 'profile'
       : tab
     : 'today';
+  useLocalNotifications(client, userId, enabled, active === 'notifications' && !other, (id) => {
+    if (!id) {
+      select('notifications');
+      return;
+    }
+    void notificationDestination(client, userId, id)
+      .catch(() => null)
+      .then((target) => {
+        if (target?.tab === 'today') {
+          setPicked(null);
+          useUIStore.getState().selectDate(target.date);
+          select('today');
+        } else {
+          select('notifications');
+          if (target)
+            setOther({ userId: target.actorId, from: 'tabs.notifications', date: target.date });
+        }
+      });
+  });
   const invite = useMyInvite(client, userId, enabled && !!mine.data && tab === 'profile');
   function copy() {
     if (!invite.data) {
@@ -358,7 +383,8 @@ export function SocialShell({
             {showingOther ? (
               <OtherProfile
                 client={client}
-                key={showingOther.userId}
+                key={showingOther.userId + (showingOther.date ?? '')}
+                initialDate={showingOther.date}
                 me={userId}
                 userId={showingOther.userId}
                 from={t(showingOther.from ?? `tabs.${tab}`)}

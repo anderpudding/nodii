@@ -40,6 +40,7 @@
         }
       ],
       "expo-localization",
+      "expo-notifications",
       ["expo-build-properties", { "ios": { "enableSceneSupport": true } }],
       [
         "expo-image-picker",

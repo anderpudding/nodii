@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PushDeviceSettings } from './PushPermission';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import {
   avatarUrl,
@@ -93,6 +94,7 @@ export function NotificationSettings({
       </Text>
       <View style={[s.card, { backgroundColor: colors.chip }]}>
         <View style={s.rows}>
+          <PushDeviceSettings />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('social.notificationSettings.title')}

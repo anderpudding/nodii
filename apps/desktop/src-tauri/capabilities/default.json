@@ -9,6 +9,11 @@
     "deep-link:allow-get-current",
     "core:default",
     "store:default",
+    "notification:allow-notify",
+    "notification:allow-register-listener",
+    "notification:allow-remove-listener",
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
     "opener:default",
     {
       "identifier": "opener:allow-open-url",

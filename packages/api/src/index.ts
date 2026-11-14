@@ -35,3 +35,5 @@ export * from './repositories/today-people';
 export * from './repositories/notifications';
 export * from './notification-realtime';
 export * from './hooks/notifications';
+
+export * from './repositories/push-tokens';

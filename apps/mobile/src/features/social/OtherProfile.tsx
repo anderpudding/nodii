@@ -30,6 +30,7 @@ export function OtherProfile({
   onBack,
   onBlocked,
   calendarProfile,
+  initialDate,
 }: {
   client: NodiiClient;
   me: string;
@@ -38,11 +39,12 @@ export function OtherProfile({
   onBack(): void;
   onBlocked(): void;
   calendarProfile?: Profile;
+  initialDate?: string | null;
 }) {
   const { colors } = useTheme();
   const today = useUIStore((state) => state.today);
-  const [date, setDate] = useState(today);
-  const [month, setMonth] = useState(() => monthKeyOf(today));
+  const [date, setDate] = useState(initialDate ?? today);
+  const [month, setMonth] = useState(() => monthKeyOf(initialDate ?? today));
   const [expanded, setExpanded] = useState(false);
   const [scroll, setScroll] = useState(0);
   const reduced = useReducedMotion();
