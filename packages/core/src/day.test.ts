@@ -174,3 +174,15 @@ describe('summarizeMonth (CAL-02)', () => {
     ]).toEqual(['2026-03-07', '2026-03-08']);
   });
 });
+
+it('SOC-23: 친구가 읽은 건너뛴 날은 목록과 도장 집계에서 빠진다', () => {
+  const shared = {
+    ...input,
+    todos: [{ ...todo, isDone: true }],
+    logs: [{ routineId: routine.id, date: todo.date, status: 'skipped' as const }],
+  };
+  expect(buildDay({ ...shared, date: todo.date })[0]?.items.map(itemId)).toEqual([todo.id]);
+  const summary = summarizeMonth(shared);
+  expect(summary.get(todo.date)).toEqual({ total: 1, remaining: 0 });
+  expect(summary.get('2026-03-09')).toEqual({ total: 1, remaining: 1 });
+});
