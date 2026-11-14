@@ -1,6 +1,9 @@
+import { useContext } from 'react';
+import { VisibilityContext } from '../social/VisibilityContext';
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  OfflineWriteError,
   monthTodosOptions,
   useDeleteTodo,
   useMoveTodo,
@@ -25,12 +28,20 @@ export function useTodoActions(
 ) {
   const cache = useQueryClient();
   const toast = useToast();
+  const social = useContext(VisibilityContext);
   const busy = useRef(false);
   const [pending, setPending] = useState(false);
   const undoing = useRef(false);
   const options = {
-    onError: () => {
-      if (!undoing.current) toast(() => t('todo.save.failed'));
+    onError: (error: unknown) => {
+      if (!undoing.current)
+        toast(() =>
+          t(
+            social && error instanceof OfflineWriteError
+              ? 'sync.writeDisabled'
+              : 'todo.save.failed',
+          ),
+        );
     },
   };
   const toggle = useToggleTodo(client, weekStart, todo.id, options);

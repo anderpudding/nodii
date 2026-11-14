@@ -684,6 +684,8 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'goal.colorPicker.hue': 'Hue',
   'goal.colorPicker.sv': 'Saturation and brightness',
   'goal.colorPicker.preview': 'Selected color {color}',
+  'calendar.monthToday': '{month}, go to today',
+  'calendar.goToday': 'Go to today',
   'social.visibility.label': 'Visibility',
   'social.visibility.private': 'Only me',
   'social.visibility.mutual': 'Mutuals',

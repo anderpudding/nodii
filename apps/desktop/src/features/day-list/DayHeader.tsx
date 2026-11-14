@@ -9,10 +9,12 @@ export function DayHeader({
   total = 0,
   done = 0,
   menu,
+  compact = false,
 }: {
   total?: number;
   done?: number;
   menu?: ReactNode;
+  compact?: boolean;
 }) {
   const { selectedDate, today, selectDate } = useUIStore();
   useEffect(() => {
@@ -46,6 +48,7 @@ export function DayHeader({
     window.addEventListener('keydown', move);
     return () => window.removeEventListener('keydown', move);
   }, [selectDate]);
+  if (compact) return <header className="day-header day-header-compact">{menu}</header>;
   const label = formatISODate(selectedDate, {
     month: 'long',
     day: 'numeric',

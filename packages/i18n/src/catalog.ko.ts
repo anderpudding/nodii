@@ -658,6 +658,8 @@ export const ko = {
   'goal.colorPicker.hue': '색조',
   'goal.colorPicker.sv': '채도와 밝기',
   'goal.colorPicker.preview': '고른 색 {color}',
+  'calendar.monthToday': '{month}, 누르면 오늘로 이동',
+  'calendar.goToday': '오늘로 이동',
   'social.visibility.label': '공개 범위',
   'social.visibility.private': '나만',
   'social.visibility.mutual': '맞팔로우',

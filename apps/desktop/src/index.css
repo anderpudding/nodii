@@ -2039,3 +2039,24 @@ html[lang='en'] .settings-header > [aria-hidden='true'] {
 :root.dark {
   --goal-mark-ink: var(--goal-mark-dark);
 }
+
+.calendar-month-title {
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  border-radius: 4px;
+}
+.day-header.day-header-compact {
+  justify-content: flex-end;
+}
+.app-shell-v3 .day-panel > .app-toolbar {
+  min-height: 0;
+}
+.app-shell-v3 .app-toolbar:has([role='status']:empty) {
+  display: none;
+}
+@media (max-width: 759px) {
+  .app-shell-v3 .app-toolbar:has(.narrow-settings) {
+    display: flex;
+  }
+}

@@ -63,9 +63,9 @@ export function MainLayout({
   }, [social]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${social ? ' app-shell-v3' : ''}`}>
       <aside className="sidebar" aria-label={t('app.sidebar')}>
-        {profile && <MonthCalendar client={client} profile={profile} />}
+        {profile && <MonthCalendar client={client} profile={profile} social={social} />}
         <nav className="management" aria-label={t('app.management')}>
           <Button variant="ghost" onClick={() => setGoalView('list')}>
             <GoalIcon className="management-icon" />
@@ -144,7 +144,7 @@ export function MainLayout({
             </DropdownMenu.Root>
           </div>
         </header>
-        {profile && <WeekStrip client={client} profile={profile} />}
+        {profile && <WeekStrip client={client} profile={profile} social={social} />}
         <main className="day-content">
           {profile ? (
             <DayView client={client} profile={profile} social={social} />

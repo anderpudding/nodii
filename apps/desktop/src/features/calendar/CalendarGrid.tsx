@@ -15,6 +15,7 @@ export function formatCalendarDate(
 }
 interface CalendarProps {
   month: string;
+  monthTitleAction?: boolean;
   week?: { start: string; onChange: (date: string) => void };
   selectedDate: string;
   today: string;
@@ -27,6 +28,7 @@ interface CalendarProps {
 /** 42칸과 방향키 탐색을 월간 보기와 날짜 선택에서 재사용한다 (CAL-01~05). */
 export function CalendarGrid({
   month,
+  monthTitleAction = false,
   week,
   selectedDate,
   today,
@@ -48,11 +50,29 @@ export function CalendarGrid({
       ? selectedDate
       : days[0]!;
   const weekdays = Array.from({ length: 7 }, (_, i) => (i + weekStart) % 7);
+  const title = formatCalendarDate(`${month}-01`, { year: 'numeric', month: 'long' });
+  const goToday = () => {
+    if (week) week.onChange(today);
+    else onMonthChange(monthKeyOf(today));
+    onSelect(today);
+  };
   return (
     <div className="month-calendar">
       <div className="calendar-header">
         <h2 id={headingId}>
-          {formatCalendarDate(`${month}-01`, { year: 'numeric', month: 'long' })}
+          {monthTitleAction ? (
+            <button
+              type="button"
+              className="calendar-month-title"
+              onClick={goToday}
+              aria-label={t('calendar.monthToday', { month: title })}
+              title={t('calendar.goToday')}
+            >
+              {title}
+            </button>
+          ) : (
+            title
+          )}
         </h2>
         <div className="calendar-navigation">
           <Button
@@ -77,16 +97,11 @@ export function CalendarGrid({
           >
             ›
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (week) week.onChange(today);
-              else onMonthChange(monthKeyOf(today));
-              onSelect(today);
-            }}
-          >
-            {t('day.today')}
-          </Button>
+          {!monthTitleAction && (
+            <Button variant="outline" onClick={goToday}>
+              {t('day.today')}
+            </Button>
+          )}
         </div>
       </div>
       <div ref={grid} role="grid" aria-labelledby={headingId} className="calendar-grid">
