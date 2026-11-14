@@ -997,3 +997,18 @@ button.social-person-link:hover {
 .notification-prompt p {
   flex: 1;
 }
+
+.notification-settings-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: start;
+}
+.notification-override {
+  display: block;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.friend-done-settings > .supporting {
+  font-size: 13px;
+}

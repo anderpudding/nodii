@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  DEFAULT_NOTIFICATION_PREFS,
+  effectiveFriendDone,
   reactionTargetKey,
   type NotificationMute,
   type NotificationPrefs,
@@ -9,6 +11,7 @@ import {
 import type { NodiiClient } from '../client';
 import { assertOnline } from '../connectivity';
 import { subscribeNotifications } from '../notification-realtime';
+import { useTodayPeople } from './friends-day';
 import {
   clearNotificationMute,
   fetchMyReactions,
@@ -184,8 +187,9 @@ export function useUpdateNotificationSettings(client: NodiiClient, me: string, o
     onMutate: async (change) => {
       assertOnline();
       await cache.cancelQueries({ queryKey: 'prefs' in change ? prefs : mutes });
-      const previousPrefs = cache.getQueryData<NotificationPrefs>(prefs);
-      const previousMutes = cache.getQueryData<NotificationMute[]>(mutes);
+      const previousPrefs =
+        cache.getQueryData<NotificationPrefs>(prefs) ?? DEFAULT_NOTIFICATION_PREFS;
+      const previousMutes = cache.getQueryData<NotificationMute[]>(mutes) ?? [];
       if ('prefs' in change) {
         cache.setQueryData<NotificationPrefs>(
           prefs,
@@ -218,6 +222,32 @@ export function useUpdateNotificationSettings(client: NodiiClient, me: string, o
     isPending,
     update: (change: SettingsChange) => {
       if (!cache.isMutating({ mutationKey })) mutation.mutate(change);
+    },
+  };
+}
+
+/** SOC-51: 화면에 있는 팔로잉에만 예외를 적용해 요약과 사람별 값이 일치한다. */
+export function useFriendDoneSettings(client: NodiiClient, me: string) {
+  const prefs = useNotificationPrefs(client, me);
+  const mutes = useNotificationMutes(client, me);
+  const following = useTodayPeople(client, me);
+  const overrides = new Map(mutes.data?.map((mute) => [mute.actorId, mute.friendDone]));
+  const people = following.data?.map(({ profile }) => ({
+    profile,
+    overridden: overrides.has(profile.userId),
+    checked: effectiveFriendDone(prefs.data, mutes.data ?? [], profile.userId),
+  }));
+  return {
+    global: prefs.data?.friendDone,
+    people,
+    count: people?.filter(({ checked }) => checked).length ?? 0,
+    hasOverrides: people?.some(({ overridden }) => overridden) ?? false,
+    ready: prefs.isSuccess && mutes.isSuccess && following.isSuccess,
+    failed: prefs.isError || mutes.isError || following.isError,
+    reload() {
+      void prefs.refetch();
+      void mutes.refetch();
+      void following.refetch();
     },
   };
 }

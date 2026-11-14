@@ -1,3 +1,4 @@
+import { NotificationSettings } from '../social/NotificationSettings';
 import { useState, type ReactNode } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import Constants from 'expo-constants';
@@ -128,6 +129,9 @@ export function Settings({
             onPress={onLogout}
           />
         </>,
+      )}
+      {social?.onFriendDone && (
+        <NotificationSettings client={client} me={profile.id} onFriendDone={social.onFriendDone} />
       )}
       {social &&
         group(

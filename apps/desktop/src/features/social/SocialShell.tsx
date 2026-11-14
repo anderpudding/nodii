@@ -1,3 +1,4 @@
+import { FriendDoneSettings } from './NotificationSettings';
 import { TodayPeople } from './TodayPeople';
 import { orderTodayPeople } from '@nodii/core';
 import { useTodayPeople } from '@nodii/api';
@@ -41,7 +42,7 @@ import { BlockedProfiles, FollowListPanel, ProfileSearch } from './PeoplePanels'
 import './social.css';
 
 type Panel =
-  | { kind: 'edit' | 'settings' | 'visibility' | 'blocked' | 'search' }
+  | { kind: 'edit' | 'settings' | 'visibility' | 'blocked' | 'search' | 'friendDone' }
   | { kind: 'list'; list: FollowList }
   | { kind: 'field'; field: ProfileField; from: 'edit' | 'settings' };
 
@@ -227,7 +228,9 @@ export function SocialShell({
           setPanel(
             panel.kind === 'field'
               ? { kind: panel.from }
-              : panel.kind === 'visibility' || panel.kind === 'blocked'
+              : panel.kind === 'visibility' ||
+                  panel.kind === 'blocked' ||
+                  panel.kind === 'friendDone'
                 ? { kind: 'settings' }
                 : null,
           );
@@ -302,6 +305,7 @@ export function SocialShell({
               onHandle: () => setPanel({ kind: 'field', field: 'handle', from: 'settings' }),
               onVisibility: () => setPanel({ kind: 'visibility' }),
               onBlocked: () => setPanel({ kind: 'blocked' }),
+              onFriendDone: () => setPanel({ kind: 'friendDone' }),
             }
           : undefined
       }
@@ -380,7 +384,7 @@ export function SocialShell({
                 }}
                 onSettings={() => {
                   select('profile');
-                  setPanel({ kind: 'settings' });
+                  setPanel({ kind: 'friendDone' });
                 }}
               />
             ) : active === 'profile' ? (
@@ -430,13 +434,17 @@ export function SocialShell({
                       <>
                         <Back
                           label={t(
-                            panel.kind === 'visibility' || panel.kind === 'blocked'
+                            panel.kind === 'visibility' ||
+                              panel.kind === 'blocked' ||
+                              panel.kind === 'friendDone'
                               ? 'settings.title'
                               : 'tabs.profile',
                           )}
                           onClick={() =>
                             setPanel(
-                              panel.kind === 'visibility' || panel.kind === 'blocked'
+                              panel.kind === 'visibility' ||
+                                panel.kind === 'blocked' ||
+                                panel.kind === 'friendDone'
                                 ? { kind: 'settings' }
                                 : null,
                             )
@@ -475,6 +483,8 @@ export function SocialShell({
                               setOther({ userId: target, from: `social.${panel.list}` })
                             }
                           />
+                        ) : panel.kind === 'friendDone' ? (
+                          <FriendDoneSettings client={client} me={userId} />
                         ) : panel.kind === 'blocked' ? (
                           <BlockedProfiles client={client} me={userId} />
                         ) : panel.kind === 'settings' ? (

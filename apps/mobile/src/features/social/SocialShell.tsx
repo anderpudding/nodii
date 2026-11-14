@@ -1,3 +1,4 @@
+import { FriendDoneSettings } from './NotificationSettings';
 import { TodayPeople } from './TodayPeople';
 import { orderTodayPeople } from '@nodii/core';
 import { useTodayPeople } from '@nodii/api';
@@ -37,7 +38,7 @@ import { OtherProfile } from './OtherProfile';
 import { BlockedProfiles, FollowListPage, ProfileSearch } from './PeoplePages';
 
 type Page =
-  | { kind: 'edit' | 'settings' | 'visibility' | 'search' | 'blocked' }
+  | { kind: 'edit' | 'settings' | 'visibility' | 'search' | 'blocked' | 'friendDone' }
   | { kind: 'list'; list: FollowList }
   | { kind: 'field'; field: ProfileField; from: 'edit' | 'settings' };
 type SettingsProps = {
@@ -260,7 +261,7 @@ export function SocialShell({
       setPage(
         page?.kind === 'field'
           ? { kind: page.from }
-          : page?.kind === 'visibility' || page?.kind === 'blocked'
+          : page?.kind === 'visibility' || page?.kind === 'blocked' || page?.kind === 'friendDone'
             ? { kind: 'settings' }
             : null,
       );
@@ -337,7 +338,7 @@ export function SocialShell({
                 }}
                 onSettings={() => {
                   select('profile');
-                  setPage({ kind: 'settings' });
+                  setPage({ kind: 'friendDone' });
                 }}
               />
             ) : mine.data ? (
@@ -427,6 +428,7 @@ export function SocialShell({
               onHandle: () => setPage({ kind: 'field', field: 'handle', from: 'settings' }),
               onVisibility: () => setPage({ kind: 'visibility' }),
               onBlocked: () => setPage({ kind: 'blocked' }),
+              onFriendDone: () => setPage({ kind: 'friendDone' }),
             }}
           />
         )}
@@ -517,6 +519,8 @@ export function SocialShell({
                 onBack={back}
                 onPerson={(target) => setOther({ userId: target, from: `social.${page.list}` })}
               />
+            ) : page?.kind === 'friendDone' ? (
+              <FriendDoneSettings client={client} me={userId} onBack={back} />
             ) : page?.kind === 'blocked' ? (
               <BlockedProfiles client={client} me={userId} onBack={back} />
             ) : page?.kind === 'visibility' ? (

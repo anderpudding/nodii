@@ -34,6 +34,7 @@ beforeEach(() => {
     ),
     http.get(`${rest}/follows`, () => HttpResponse.json([])),
     http.get(`${rest}/notifications`, () => HttpResponse.json([])),
+    http.get(`${rest}/notification_mutes`, () => HttpResponse.json([])),
     http.get(`${rest}/notification_prefs`, () => HttpResponse.json([])),
     http.get(`${rest}/invite_links`, () => HttpResponse.json([{ token: 'local' }])),
     http.post(`${rest}/rpc/my_blocked_profiles`, () => HttpResponse.json([])),
@@ -522,9 +523,94 @@ it('filters notification kinds, expands the current completions, and opens a rea
   expect(await screen.findByRole('button', { name: '친구 독서 좋아요' })).toBeTruthy();
   expect(screen.queryByText('미완료')).toBeNull();
   await user.click(screen.getByRole('tab', { name: '좋아요' }));
-  await user.click(
-    screen.getByRole('button', { name: '민수님이 ‘내 독서’에 좋아요를 남겼어요' }),
-  );
+  await user.click(screen.getByRole('button', { name: '민수님이 ‘내 독서’에 좋아요를 남겼어요' }));
   expect(screen.getByRole('tab', { name: '오늘' }).getAttribute('aria-selected')).toBe('true');
   expect(useUIStore.getState().selectedDate).toBe(date);
+});
+
+it('keeps a per-person exception when changing the global switch, and deletes it when restored', async () => {
+  const friend = { ...existing, user_id: 'friend', nickname: '민수', handle: 'friend' };
+  let friendDone = false;
+  let mute: boolean | undefined;
+  let reaction = true;
+  const store = vi.fn();
+  const clear = vi.fn();
+  const prefs = () => ({ user_id: userId, friend_done: friendDone, new_follower: true, reaction });
+  server.use(
+    http.get(`${rest}/goals`, () => HttpResponse.json([])),
+    http.get(`${rest}/social_profiles`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get('user_id') === 'in.(friend)' ? [friend] : [existing],
+      ),
+    ),
+    http.get(`${rest}/follows`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.has('offset')
+          ? [
+              {
+                followee_id: 'friend',
+                today_sort_key: 'a0',
+                show_on_today: true,
+                created_at: 'date',
+              },
+            ]
+          : [],
+      ),
+    ),
+    http.get(`${rest}/notification_prefs`, () => HttpResponse.json([prefs()])),
+    http.post(`${rest}/notification_prefs`, async ({ request }) => {
+      const body = (await request.json()) as { friend_done?: boolean; reaction?: boolean };
+      friendDone = body.friend_done ?? friendDone;
+      reaction = body.reaction ?? reaction;
+      return HttpResponse.json(prefs());
+    }),
+    http.get(`${rest}/notification_mutes`, () =>
+      HttpResponse.json(
+        mute === undefined
+          ? []
+          : [
+              {
+                user_id: userId,
+                actor_id: 'friend',
+                friend_done: mute,
+              },
+            ],
+      ),
+    ),
+    http.post(`${rest}/notification_mutes`, async ({ request }) => {
+      const body = (await request.json()) as { friend_done: boolean };
+      mute = body.friend_done;
+      store(mute);
+      return new HttpResponse(null, { status: 201 });
+    }),
+    http.delete(`${rest}/notification_mutes`, () => {
+      mute = undefined;
+      clear();
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+  const user = userEvent.setup();
+  mount(true);
+  await user.click(screen.getByRole('tab', { name: '프로필' }));
+  await user.click(await screen.findByRole('button', { name: '설정' }));
+  const likes = await screen.findByRole('switch', { name: '받은 좋아요' });
+  await waitFor(() => expect((likes as HTMLButtonElement).disabled).toBe(false));
+  await user.click(likes);
+  await waitFor(() => expect(reaction).toBe(false));
+  await user.click(screen.getByRole('button', { name: /친구 완료 알림/ }));
+  const person = await screen.findByRole('switch', { name: '민수' });
+  await user.click(person);
+  await waitFor(() => expect(store).toHaveBeenCalledWith(true));
+  expect(await screen.findByText('따로 설정함')).toBeTruthy();
+  const global = screen.getByRole('switch', { name: '모든 친구' });
+  await waitFor(() => expect((global as HTMLButtonElement).disabled).toBe(false));
+  await user.click(global);
+  await waitFor(() => expect(friendDone).toBe(true));
+  expect(screen.getByText('따로 설정함')).toBeTruthy();
+  await waitFor(() => expect((global as HTMLButtonElement).disabled).toBe(false));
+  await user.click(global);
+  await waitFor(() => expect((person as HTMLButtonElement).disabled).toBe(false));
+  await user.click(person);
+  await waitFor(() => expect(clear).toHaveBeenCalledOnce());
+  expect(screen.queryByText('따로 설정함')).toBeNull();
 });
