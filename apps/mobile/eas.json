@@ -11,6 +11,11 @@
     "preview": {
       "distribution": "internal"
     },
+    "staging": {
+      "distribution": "store",
+      "environment": "preview",
+      "autoIncrement": true
+    },
     "production": {
       "autoIncrement": true
     }
