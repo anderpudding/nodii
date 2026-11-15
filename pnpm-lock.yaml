@@ -69,8 +69,8 @@ importers:
         specifier: 5.103.1
         version: 5.103.1(@tanstack/react-query@5.103.1(react@19.2.3))(react@19.2.3)
       '@tauri-apps/api':
-        specifier: ^2.11.1
-        version: 2.11.1
+        specifier: ^2.12.4
+        version: 2.12.4
       '@tauri-apps/plugin-deep-link':
         specifier: 2.4.7
         version: 2.4.7
@@ -2141,9 +2141,6 @@ packages:
     resolution: {integrity: sha512-rmAPPApNEK17VXRJhtE1rja53n23VV5w30C0saCgJhhX+EpdUnVqMGV/s5nnzV43X75KTHKzuoiuxSzGTBIkag==}
     peerDependencies:
       react: ^18 || ^19
-
-  '@tauri-apps/api@2.11.1':
-    resolution: {integrity: sha512-M2FPuYND2m+wh5hfW9ZpSdxMPdEJovPBWwoHJmwUpysTYNHaOkVFN419m/K0LIgjb/7KU2vBgsUepJWugQCvAA==}
 
   '@tauri-apps/api@2.12.4':
     resolution: {integrity: sha512-pVmfis+4zT8H0Qhp3xPZx9Ju7kpzvA6rr/PSJPyuwfvucTQ8sVt61NYU9KMkK703UFlYadFmjKA4HhybOtN0gg==}
@@ -7919,8 +7916,6 @@ snapshots:
       '@tanstack/query-core': 5.103.1
       react: 19.2.3
 
-  '@tauri-apps/api@2.11.1': {}
-
   '@tauri-apps/api@2.12.4': {}
 
   '@tauri-apps/cli-darwin-arm64@2.11.4':
@@ -7972,7 +7967,7 @@ snapshots:
 
   '@tauri-apps/plugin-deep-link@2.4.7':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
   '@tauri-apps/plugin-notification@2.6.0':
     dependencies:
@@ -7980,11 +7975,11 @@ snapshots:
 
   '@tauri-apps/plugin-opener@2.5.5':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
   '@tauri-apps/plugin-store@2.4.5':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
   '@testing-library/dom@10.4.2':
     dependencies:
