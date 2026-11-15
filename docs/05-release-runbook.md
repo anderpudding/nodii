@@ -317,7 +317,7 @@ Sign in as A using the password field. The two demo profiles already follow each
 Our Community Rules have zero tolerance for objectionable content or abusive users. We review reports within 48 hours. Appeals go to the support address. Our terms and Community Rules are at https://nodii.app/terms.html. Support: support@nodii.app.
 ```
 
-### 8.0 DB 백업 (Supabase Free, D34)
+### DB 백업 (Supabase Free, D34)
 
 Supabase Free에는 자동 백업이 없어서 `.github/workflows/db-backup.yml`이 매일 10:17 UTC에 운영 DB를 덤프하고, **age로 암호화**해 비공개 **Cloudflare R2** 버킷에 7일치만 남깁니다. 저장소가 공개라 덤프는 Actions 아티팩트·로그에 남기지 않습니다. 파일 저장소(프로필 사진)는 백업하지 않습니다(잃으면 사용자가 다시 올림).
 
