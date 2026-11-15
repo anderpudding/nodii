@@ -658,7 +658,7 @@ export const ko = {
   'social.report.detail': '신고 이유를 적어 주세요',
   'social.report.remaining': '{count}자 남았어요',
   'social.report.alsoBlock': '이 사람 차단하기',
-  'social.report.hint': '신고는 24시간 안에 확인해요. 상대에게 알리지 않아요.',
+  'social.report.hint': '신고는 48시간 안에 확인해요. 상대에게 알리지 않아요.',
   'social.report.sent': '신고했어요',
   'social.report.blockFailed': '신고했어요. 차단은 다시 시도해 주세요.',
   'social.profile.actions': '프로필 메뉴',

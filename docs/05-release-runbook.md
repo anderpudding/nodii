@@ -314,5 +314,31 @@ Sign in as A using the password field. The two demo profiles already follow each
 2. Open Notifications to see Jamie’s follow and bundled completion activity.
 3. Open Jamie’s profile from the friend day or Notifications. The ⋯ menu offers Report and Block. A shared to-do can also be reported from its row menu. In your own Profile, open Settings → Blocked people to review or undo blocks.
 
-Our Community Rules have zero tolerance for objectionable content or abusive users. We review reports within 24 hours. Our terms and Community Rules are at https://nodii.app/terms.html. Support: support@nodii.app.
+Our Community Rules have zero tolerance for objectionable content or abusive users. We review reports within 48 hours. Appeals go to the support address. Our terms and Community Rules are at https://nodii.app/terms.html. Support: support@nodii.app.
 ```
+
+### DB 백업 (Supabase Free, D34)
+
+Supabase Free에는 자동 백업이 없어서 `.github/workflows/db-backup.yml`이 매일 10:17 UTC에 운영 DB를 덤프하고, **age로 암호화**해 비공개 **Cloudflare R2** 버킷에 7일치만 남깁니다. 저장소가 공개라 덤프는 Actions 아티팩트·로그에 남기지 않습니다. 파일 저장소(프로필 사진)는 백업하지 않습니다(잃으면 사용자가 다시 올림).
+
+**처음 한 번**
+1. 내 맥에서 키 만들기: `brew install age` → `age-keygen -o nodii-backup.key`. 출력된 공개 키(`age1…`)만 GitHub에 넣고, **비공개 키 파일은 비밀번호 관리자에만** 보관한 뒤 맥에서 지웁니다.
+2. Cloudflare R2: 비공개 버킷 `nodii-backups` 만들기(공개 접근 끔). **R2 API 토큰**을 이 버킷에만 "Object Read & Write"로 발급.
+3. Supabase 운영 프로젝트 → Connect → **Session pooler** 연결 문자열(IPv4, GitHub Actions에서 직접 연결은 IPv6라 안 됨). 비밀번호를 넣은 전체 URL.
+4. GitHub → Settings → Secrets and variables → Actions → Secrets: `SUPABASE_DB_URL`, `BACKUP_AGE_RECIPIENT`(공개 키), `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
+5. Actions → **DB backup** → Run workflow. R2에 `daily/nodii-<시각>.tar.gz.age`가 생기는지 확인.
+6. 복원 연습(아래)을 로컬에서 한 번.
+
+비밀 값이 하나라도 없으면 워크플로는 실패하지 않고 건너뜁니다(알림만 남김).
+
+**복원 (사고 때)**
+```bash
+age -d -i nodii-backup.key -o backup.tar.gz nodii-<시각>.tar.gz.age
+tar xzf backup.tar.gz   # roles.sql schema.sql data.sql
+psql "<복원할 DB URL>" -v ON_ERROR_STOP=1 --single-transaction \
+  -f roles.sql -f schema.sql -c 'SET session_replication_role = replica' -f data.sql
+```
+- 새 Supabase 프로젝트로 복원할 때는 Supabase 문서 "Backup and Restore using the CLI"의 순서를 함께 봅니다. 연습은 `pnpm db:start`로 띄운 로컬 DB(`postgresql://postgres:postgres@127.0.0.1:54322/postgres`)에 합니다.
+- 복원 뒤 Edge Function 비밀 값·Vault·Storage는 따로 다시 설정합니다.
+
+**Pro로 바꾸는 기준**: DB 350MB, 파일 700MB, 동시 Realtime 연결 150개 중 하나(Supabase 대시보드 → Usage). Pro는 일일 백업 7일이 포함되므로, 바꾼 뒤에도 이 워크플로는 별도 사본으로 유지해도 됩니다.

@@ -1,0 +1,90 @@
+name: DB backup
+
+# Supabase Free has no automatic backups. Once a day we dump the production
+# database, encrypt it with age and keep 7 days of copies in a private R2 bucket.
+# The repository is public, so the dump never touches workflow artifacts or logs.
+
+on:
+  schedule:
+    - cron: '17 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: dump · encrypt · upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      KEEP_DAYS: '7'
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          missing=()
+          for name in SUPABASE_DB_URL BACKUP_AGE_RECIPIENT R2_ACCOUNT_ID R2_BUCKET AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::notice::Backup skipped: missing secrets ${missing[*]}"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: supabase/setup-cli@v3
+        if: steps.config.outputs.ready == 'true'
+        with:
+          version: 2.117.0
+
+      - name: Install age
+        if: steps.config.outputs.ready == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Dump, encrypt and upload
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          umask 077
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          supabase db dump --db-url "$SUPABASE_DB_URL" --role-only -f "$work/roles.sql"
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f "$work/schema.sql"
+          supabase db dump --db-url "$SUPABASE_DB_URL" --data-only --use-copy -f "$work/data.sql"
+          tar -C "$work" -czf "$work/nodii-$stamp.tar.gz" roles.sql schema.sql data.sql
+          age -r "$BACKUP_AGE_RECIPIENT" -o "$work/nodii-$stamp.tar.gz.age" "$work/nodii-$stamp.tar.gz"
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 cp --only-show-errors --endpoint-url "$endpoint" \
+            "$work/nodii-$stamp.tar.gz.age" "s3://${R2_BUCKET}/daily/nodii-$stamp.tar.gz.age"
+          echo "Uploaded daily/nodii-$stamp.tar.gz.age ($(stat -c%s "$work/nodii-$stamp.tar.gz.age") bytes)"
+
+      - name: Delete copies older than 7 days
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          cutoff="$(date -u -d "-${KEEP_DAYS} days" +%Y%m%dT%H%M%SZ)"
+          aws s3api list-objects-v2 --endpoint-url "$endpoint" --bucket "$R2_BUCKET" \
+            --prefix daily/ --query 'Contents[].Key' --output text \
+            | tr '\t' '\n' | grep -E '^daily/nodii-[0-9TZ]+\.tar\.gz\.age$' \
+            | while read -r key; do
+                stamp="${key#daily/nodii-}"; stamp="${stamp%.tar.gz.age}"
+                if [[ "$stamp" < "$cutoff" ]]; then
+                  aws s3 rm --only-show-errors --endpoint-url "$endpoint" "s3://${R2_BUCKET}/$key"
+                  echo "Deleted $key"
+                fi
+              done || true
