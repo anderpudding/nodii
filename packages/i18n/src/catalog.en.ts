@@ -687,7 +687,7 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'social.report.detail': 'Describe why you’re reporting this profile',
   'social.report.remaining': 'Characters remaining · {count}',
   'social.report.alsoBlock': 'Block this person',
-  'social.report.hint': 'We review reports within 24 hours. They won’t be notified.',
+  'social.report.hint': 'We review reports within 48 hours. They won’t be notified.',
   'social.report.sent': 'Report submitted',
   'social.report.blockFailed': 'Report submitted. Please try blocking again.',
   'social.profile.actions': 'Profile menu',

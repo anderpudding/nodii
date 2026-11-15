@@ -12,7 +12,7 @@
 
 1. **A — Codex**: 약관·개인정보처리방침 개정 초안, 앱 안 약관 동의 문구, 버전 0.3.0, 심사 데모 데이터 스크립트, 런북·심사 답장 문서 갱신(§A).
 2. **B1 스테이징 확인의 날**: 스파이크(또는 스테이징) 프로젝트에서 S3~S6의 실기기 확인을 한 번에.
-3. **B2 운영 적용**: Supabase Pro, 마이그레이션, Edge Function 2개, 비밀 값, Vault, Data API 노출 스키마 확인.
+3. **B2 운영 적용**: Supabase Free 유지 + 매일 암호화 백업(D34), 마이그레이션, Edge Function 2개, 비밀 값, Vault, Data API 노출 스키마 확인.
 4. **B3 심사 제출**: 두 앱 빌드·업로드, 개인정보 라벨, 연령 등급, 심사 노트·데모 계정, **수동 출시**로 제출.
 5. **B4 출시의 날**: 두 앱 승인 뒤 같은 날 출시 → 최소 지원 버전 올리기 → 확인.
 6. **B5 출시 후 2주**: 신고 매일 확인, 함수 로그·푸시 오류 확인.
@@ -35,7 +35,7 @@
 - **Terms** — App Store 가이드라인 1.2(사용자 생성 콘텐츠)에 필요한 항목:
   - 공개되는 콘텐츠: 닉네임, ID, 소개, 프로필 사진, 공개 범위를 정한 목표의 할 일·루틴과 완료 기록, 반응.
   - **불쾌한 콘텐츠와 괴롭히는 사용자에 대한 무관용**(zero tolerance) 문장, 금지 행위(스팸·사칭·괴롭힘·불법·성적 콘텐츠 등).
-  - 신고·차단 방법, **신고는 24시간 안에 검토**하고 콘텐츠 숨김·초기화·소셜 이용 정지로 조치할 수 있음.
+  - 신고·차단 방법, **신고는 48시간 안에 검토**(2026-11-15 결정, 이의 제기는 지원 메일)하고 콘텐츠 숨김·초기화·소셜 이용 정지로 조치할 수 있음.
   - 사용자가 올린 콘텐츠의 권리와 Nodii가 서비스 제공을 위해 보여 주는 범위의 이용 허락.
   - 연락처(지원 메일).
 - **Privacy** — 새로 처리하는 데이터와 목적·보관:
@@ -99,7 +99,8 @@
 
 ### B2. 운영 적용 (심사 제출 직전, `nodii`)
 
-1. [ ] Supabase **Pro** 전환(계획서 §6 비용).
+1. [ ] **Free 유지 + 매일 암호화 백업**(D34): `docs/05-release-runbook.md` §8 "DB 백업"대로 age 키·R2 버킷·GitHub Secrets를 만들고 `DB backup` 워크플로를 수동 실행 → R2에 파일이 생기고, 복호화한 파일로 로컬 DB 복원까지 한 번 확인.
+   - Pro로 바꾸는 기준: DB 350MB, 파일 700MB, 동시 Realtime 연결 150개 중 하나에 닿을 때(월 $25).
 2. [ ] Data API 노출 스키마에 `net`·`vault`·`social_private`이 **없음**을 확인.
 3. [ ] `supabase db push`로 마이그레이션 적용 → `select count(*) from public.social_profiles;`(0), RLS 켜짐 확인.
 4. [ ] `supabase secrets set RESEND_API_KEY=… REPORT_INBOX=… PUSH_WEBHOOK_SECRET=…`(+`EXPO_ACCESS_TOKEN`).
@@ -143,9 +144,9 @@
 
 ### B5. 출시 후 2주
 
-- [ ] 매일 `reports-open` 확인, 24시간 안에 조치(`reports-resolve`).
+- [ ] 매일 `reports-open` 확인, 48시간 안에 조치(`reports-resolve`). 해결한 신고의 알림 메일은 90일 안에 지원 메일함에서 지움(개인정보처리방침).
 - [ ] Edge Function 로그: `report_email_failed`, `send-push` 오류, `DeviceNotRegistered` 비율.
-- [ ] Supabase 사용량(읽기 증가·Realtime 연결 수)과 비용.
+- [ ] Supabase 사용량(DB·파일 용량, Realtime 동시 연결 수, 전송량)을 주 1회 보고 Pro 전환 기준(D34)에 닿는지 확인. 매일 백업 워크플로가 성공하는지 확인.
 - [ ] 문제가 생기면 `social_enabled = false`로 두 앱을 v2 화면으로 되돌릴 수 있습니다(데이터는 그대로).
 
 ## 결정 기록 (보고 때 다시 확인)
