@@ -1,9 +1,11 @@
 /// <reference types="jest" />
 import {
   act,
-  cleanup,
+  cleanupAsync,
   fireEvent,
+  fireEventAsync,
   render,
+  renderAsync,
   renderHook,
   screen,
   waitFor,
@@ -13,6 +15,7 @@ import type { ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GUIDE_KEY } from './onboarding/FirstRunGuide';
 import {
+  AccessibilityInfo,
   Alert,
   Keyboard,
   ScrollView,
@@ -21,6 +24,7 @@ import {
   type KeyboardEvent,
 } from 'react-native';
 import {
+  defaultScheduler,
   notifyManager,
   onlineManager,
   QueryClient,
@@ -111,11 +115,10 @@ function row(id: string, title: string): TodoRecord {
 }
 let cache: QueryClient;
 // 실제 Query 비동기 알림도 act 안에서 처리해 렌더가 끝나기 전에 단언하지 않는다.
-beforeAll(() =>
-  notifyManager.setNotifyFunction((notify) => {
-    act(notify);
-  }),
-);
+const notifyInAct = (notify: () => void) => {
+  act(notify);
+};
+beforeEach(() => notifyManager.setNotifyFunction(notifyInAct));
 afterAll(() => notifyManager.setNotifyFunction((notify) => notify()));
 beforeEach(async () => {
   // 실행하는 날짜와 무관하게 2026-10-10을 오늘로 둔다. 타이머는 그대로 두고 Date만 고정한다.
@@ -139,6 +142,8 @@ beforeEach(async () => {
     ],
   });
   jest.clearAllMocks();
+  // 초기값과 같은 모션 설정을 사용해 행과 시트의 애니메이션 상태 변경을 막는다.
+  jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await AsyncStorage.setItem(GUIDE_KEY, 'seen');
   onlineManager.setOnline(true);
   for (const request of [
@@ -199,15 +204,16 @@ beforeEach(async () => {
     ...changes,
   }));
 });
-afterEach(() => {
+afterEach(async () => {
+  await cleanupAsync();
+  notifyManager.setScheduler(defaultScheduler);
   jest.useRealTimers();
-  cleanup();
   onlineManager.setOnline(true);
   cache.clear();
   jest.restoreAllMocks();
 });
 async function mount() {
-  render(
+  await renderAsync(
     <QueryClientProvider client={cache}>
       <ToastProvider>
         <Today client={client} userId="user" onLogout={() => {}} loggingOut={false} />
@@ -217,39 +223,43 @@ async function mount() {
   await screen.findByRole('radio', { name: t('mobile.view.week') });
   await waitFor(() => expect(screen.queryByText(t('mobile.today.loading'))).toBeNull());
   // 현재 실행 날짜와 무관한 선택 날짜. 오늘 시계 자체는 단위 테스트로 검증한다.
-  act(() => {
+  await act(async () => {
     useUIStore.getState().updateToday('2026-10-10');
     useUIStore.getState().selectDate('2026-10-10');
   });
 }
 it('체크를 즉시 반영하고 그 행만 잠그며 실패를 롤백·토스트로 알린다', async () => {
-  let reject: (error: Error) => void = () => {};
-  jest.mocked(updateTodo).mockImplementationOnce(
-    () =>
-      new Promise((_resolve, fail) => {
-        reject = fail;
-      }),
-  );
+  // 비동기 act가 Query observer 알림도 함께 처리한다. 알림마다 act를 중첩하지 않는다.
+  notifyManager.setScheduler(queueMicrotask);
+  notifyManager.setNotifyFunction((notify) => notify());
+  let reject!: (error: Error) => void;
+  const response = new Promise<TodoRecord>((_resolve, fail) => {
+    reject = fail;
+  });
+  jest.mocked(updateTodo).mockReturnValueOnce(response);
   await mount();
-  fireEvent.press(
-    await screen.findByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }),
+  const list = within(screen.getByTestId('day-list'));
+  await fireEventAsync.press(
+    list.getByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }),
   );
-  const checked = await screen.findByRole('checkbox', {
+  expect(updateTodo).toHaveBeenCalledWith(client, 'one', { isDone: true });
+  const checked = list.getByRole('checkbox', {
     name: t('todo.uncomplete', { title: '장보기' }),
   });
   expect(checked.props.accessibilityState).toMatchObject({ checked: true, disabled: true });
   expect(StyleSheet.flatten(checked.props.style)).toMatchObject({ width: 44, minHeight: 44 });
-  expect(
-    screen.getByRole('checkbox', { name: t('todo.complete', { title: 'OS 과제' }) }).props
-      .accessibilityState.disabled,
-  ).toBe(false);
-  fireEvent.press(screen.getByRole('checkbox', { name: t('todo.complete', { title: 'OS 과제' }) }));
-  await screen.findByRole('checkbox', { name: t('todo.uncomplete', { title: 'OS 과제' }) });
+  const other = list.getByRole('checkbox', { name: t('todo.complete', { title: 'OS 과제' }) });
+  expect(other.props.accessibilityState.disabled).toBe(false);
+  await fireEventAsync.press(other);
+  expect(updateTodo).toHaveBeenCalledWith(client, 'two', { isDone: true });
   await act(async () => reject(new Error('network')));
-  await screen.findByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) });
-  await screen.findByText(t('todo.save.failed'));
   expect(
-    screen.getByRole('checkbox', { name: t('todo.uncomplete', { title: 'OS 과제' }) }).props
+    list.getByRole('checkbox', { name: t('todo.complete', { title: '장보기' }) }).props
+      .accessibilityState,
+  ).toMatchObject({ checked: false, disabled: false });
+  expect(screen.getByText(t('todo.save.failed'))).toBeTruthy();
+  expect(
+    list.getByRole('checkbox', { name: t('todo.uncomplete', { title: 'OS 과제' }) }).props
       .accessibilityState.checked,
   ).toBe(true);
 });

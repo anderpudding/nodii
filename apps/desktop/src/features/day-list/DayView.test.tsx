@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { toast } from 'sonner';
-import { mapTodo, queryKeys, type NodiiClient } from '@nodii/api';
+import { mapGoal, mapTodo, queryKeys, type NodiiClient } from '@nodii/api';
 import * as core from '@nodii/core';
 import { Toaster } from 'sonner';
 import { MainLayout } from '../../app/MainLayout';
@@ -24,12 +24,13 @@ afterEach(async () => {
   queries.splice(0).forEach((cache) => cache.clear());
   await Promise.all(clients.splice(0).map((client) => client.auth.dispose()));
 });
-function setup(weekStart: 0 | 1 = 0, timezone = 'UTC') {
+function setup(weekStart: 0 | 1 = 0, timezone = 'UTC', seedCache?: (cache: QueryClient) => void) {
   const client = createTestClient();
   clients.push(client);
   const cache = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
+  seedCache?.(cache);
   queries.push(cache);
   render(
     <QueryClientProvider client={cache}>
@@ -483,16 +484,22 @@ it('우클릭 내일로는 할 일 날짜 +1에 옮기고 두 월 및 실행 취
   await waitFor(() => expect(patches[1]).toMatchObject({ date: '2026-09-30', sort_key: 'a0' }));
 });
 it('날짜 선택 팝오버는 캘린더를 공유하고 오늘인 항목의 오늘로 메뉴는 숨긴다', async () => {
-  server.use(http.get(`${baseUrl}/rest/v1/todos`, () => HttpResponse.json([todoRow])));
-  const { user } = setup();
-  await user.click(await screen.findByRole('button', { name: '책 읽기 메뉴' }));
-  expect(screen.queryByRole('menuitem', { name: /오늘로/ })).toBeNull();
-  await user.click(screen.getByRole('menuitem', { name: '날짜 선택' }));
-  const picker = await screen.findByRole('dialog', { name: '옮길 날짜 선택' });
+  // 목록 조회 타이밍에 기대지 않고 이미 불러온 오늘의 할 일에서 메뉴를 연다.
+  const { user } = setup(0, 'UTC', (cache) => {
+    cache.setQueryData(queryKeys.goals(), [mapGoal(goalRow)]);
+    cache.setQueryData(queryKeys.todos(core.monthKeyOf(todoRow.date)), [mapTodo(todoRow)]);
+  });
+  const menuButton = dayList().getByRole('button', { name: '책 읽기 메뉴' });
+  await user.click(menuButton);
+  const menu = within(screen.getByRole('menu'));
+  expect(menu.queryByRole('menuitem', { name: /오늘로/ })).toBeNull();
+  await user.click(menu.getByRole('menuitem', { name: '날짜 선택' }));
+  const picker = screen.getByRole('dialog', { name: '옮길 날짜 선택' });
   expect(within(picker).getAllByRole('gridcell')).toHaveLength(42);
+  await waitFor(() => expect(picker.contains(document.activeElement)).toBe(true));
   await user.keyboard('{Escape}');
-  expect(screen.queryByRole('dialog')).toBeNull();
-  expect(document.activeElement).toBe(screen.getByRole('button', { name: '책 읽기 메뉴' }));
+  expect(picker.isConnected).toBe(false);
+  await waitFor(() => expect(document.activeElement).toBe(menuButton));
 });
 it('하루 메뉴의 가져오기는 보관·완료·8일 전을 제외하고 실패 시 캐시를 복원한다', async () => {
   const today = '2026-10-04';

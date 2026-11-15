@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEventAsync, render, renderAsync } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import { registerPushToken, removePushToken, type NodiiClient } from '@nodii/api';
 import { foregroundPresentation, syncPushToken, withPushTokenCleanup } from '../../../lib/push';
@@ -31,6 +31,7 @@ beforeEach(async () => {
   jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(denied);
   jest.mocked(Notifications.getLastNotificationResponse).mockReturnValue(null);
 });
+afterEach(() => jest.restoreAllMocks());
 
 test('registers the token once, then removes only that token before logout', async () => {
   jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(granted);
@@ -61,12 +62,15 @@ test('registers the token once, then removes only that token before logout', asy
 
 test('requests permissions only after tapping the card and opens device settings when denied', async () => {
   jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(undetermined);
-  jest.mocked(Notifications.requestPermissionsAsync).mockResolvedValue(denied);
-  const card = render(<PushPermissionCard client={client} me="me" />);
-  const enable = await card.findByRole('button', { name: '알림 켜기' });
+  let respond!: (status: Notifications.NotificationPermissionsStatus) => void;
+  const response = new Promise<Notifications.NotificationPermissionsStatus>((resolve) => {
+    respond = resolve;
+  });
+  jest.mocked(Notifications.requestPermissionsAsync).mockReturnValueOnce(response);
+  const card = await renderAsync(<PushPermissionCard client={client} me="me" />);
+  const enable = card.getByRole('button', { name: '알림 켜기' });
   expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
-  fireEvent.press(enable);
-  await waitFor(() => expect(card.queryByRole('button', { name: '알림 켜기' })).toBeNull());
+  await fireEventAsync.press(enable);
   expect(Notifications.requestPermissionsAsync).toHaveBeenCalledWith({
     ios: {
       allowAlert: true,
@@ -74,25 +78,28 @@ test('requests permissions only after tapping the card and opens device settings
       allowBadge: false,
     },
   });
-  jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(denied);
+  expect(enable).toBeDisabled();
+  await act(async () => {
+    jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(denied);
+    respond(denied);
+  });
+  expect(card.queryByRole('button', { name: '알림 켜기' })).toBeNull();
   const link = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
-  const settings = render(<PushDeviceSettings />);
-  fireEvent.press(await settings.findByRole('button', { name: '설정 열기' }));
+  const settings = await renderAsync(<PushDeviceSettings />);
+  await fireEventAsync.press(settings.getByRole('button', { name: '설정 열기' }));
   expect(link).toHaveBeenCalled();
-  link.mockRestore();
 });
 
 test('reoffers the dismissed prompt only once, at seven days', async () => {
+  jest.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 10, 15));
   jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue(undetermined);
   await AsyncStorage.setItem(
     'nodii:push-permission-dismissal',
     String(Date.now() - 7 * 24 * 60 * 60 * 1000),
   );
-  const card = render(<PushPermissionCard client={client} me="me" />);
-  fireEvent.press(await card.findByRole('button', { name: '안내 닫기' }));
-  await waitFor(async () =>
-    expect(await AsyncStorage.getItem('nodii:push-permission-dismissal')).toBe('done'),
-  );
+  const card = await renderAsync(<PushPermissionCard client={client} me="me" />);
+  await fireEventAsync.press(card.getByRole('button', { name: '안내 닫기' }));
+  expect(await AsyncStorage.getItem('nodii:push-permission-dismissal')).toBe('done');
   expect(card.queryByRole('button', { name: '알림 켜기' })).toBeNull();
 });
 
