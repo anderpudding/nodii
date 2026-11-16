@@ -88,13 +88,13 @@
 
 준비: 최신 main의 마이그레이션 적용, `report-profile`·`send-push` 배포, `RESEND_API_KEY`·`REPORT_INBOX`·`PUSH_WEBHOOK_SECRET`(+`EXPO_ACCESS_TOKEN`) 설정, Vault `project_url`·`push_webhook_secret`, `social_enabled = true`. 두 앱을 이 프로젝트로 빌드(TestFlight 내부 테스트 / 서명한 macOS 앱). 계정 셋 이상.
 
-- [ ] **macOS 서명 빌드 실행**: Associated Domains가 들어간 프로비저닝 프로필로 서명한 앱이 정상 실행된다(`rustc` 1.90 이상).
-- [ ] **S3** HTTPS 초대 링크 `https://nodii.app/u/<token>`이 iPhone·macOS에서 앱이 꺼져 있을 때·켜져 있을 때 모두 다른 사람 프로필로 열린다.
-- [ ] **S3** 신고하면 지원 메일함에 메일이 온다(제목 `[Nodii report] …`).
-- [ ] **S4** 다른 기기에서 바꾼 공개 범위·"오늘에 보일 사람" 순서가 앱을 앞으로 가져오면 맞춰진다. iOS 사람 하루 머리가 스크롤로 접히고, 동작 줄이기에서는 바로 바뀐다. 끌어서 순서 바꾸기·VoiceOver 위/아래 옮기기.
-- [ ] **S5** iPhone과 Mac 사이에서 하트·새 팔로워·친구 완료 알림이 실시간으로 뜬다.
-- [ ] **S6** 앱을 완전히 종료한 iPhone에 좋아요 푸시가 오고 누르면 그날 오늘 탭. 같은 친구 완료는 3시간에 한 번. 기기 시간 밤 11시 이후 안 옴. macOS 첫 알림 권한 창, 알림 끈 상태, 알림 클릭 이동. 배지가 어디에도 없음.
-- [ ] 소셜 꺼짐(`social_enabled = false`)으로 바꾸면 두 앱이 v2 화면으로 돌아간다. 다시 켠다.
+- [x] **macOS 서명 빌드 실행**: Associated Domains가 들어간 프로비저닝 프로필로 서명한 앱이 정상 실행된다(`rustc` 1.90 이상).
+- [x] **S3** HTTPS 초대 링크 `https://nodii.app/u/<token>`이 iPhone·macOS에서 앱이 꺼져 있을 때·켜져 있을 때 모두 다른 사람 프로필로 열린다.
+- [x] **S3** 신고하면 지원 메일함에 메일이 온다(제목 `[Nodii report] …`).
+- [x] **S4** 다른 기기에서 바꾼 공개 범위·"오늘에 보일 사람" 순서가 앱을 앞으로 가져오면 맞춰진다. iOS 사람 하루 머리가 스크롤로 접히고, 동작 줄이기에서는 바로 바뀐다. 끌어서 순서 바꾸기·VoiceOver 위/아래 옮기기.
+- [x] **S5** iPhone과 Mac 사이에서 하트·새 팔로워·친구 완료 알림이 실시간으로 뜬다.
+- [x] **S6** 앱을 완전히 종료한 iPhone에 좋아요 푸시가 오고 누르면 그날 오늘 탭. 같은 친구 완료는 3시간에 한 번. 기기 시간 밤 11시 이후 안 옴. macOS 첫 알림 권한 창, 알림 끈 상태, 알림 클릭 이동. 배지가 어디에도 없음.
+- [x] 소셜 꺼짐(`social_enabled = false`)으로 바꾸면 두 앱이 v2 화면으로 돌아간다. 다시 켠다.
 - 문제가 있으면 그 단계 지시서로 Codex에 수정을 맡기고, 이 줄부터 다시.
 
 ### B2. 운영 적용 (심사 제출 직전, `nodii`)
