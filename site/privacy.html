@@ -44,13 +44,15 @@
       <p class="note" lang="ko">
         이 문서는 영어로만 제공됩니다. <a href="ko/" hreflang="ko" data-lang="ko">한국어 홈으로</a>
       </p>
-      <p class="meta">Effective date: October 12, 2026 · Last updated: November 6, 2026</p>
+      <p class="meta">Effective date: November 17, 2026</p>
       <p>
         This policy explains how Sungjun Lee (“we”, “us”), the developer of Nodii for macOS and iOS
         (the “App”) and its related online service (together, the “Service”), handles personal
         information. We handle personal information in accordance with applicable Canadian privacy
         law, including the Personal Information Protection and Electronic Documents Act (PIPEDA)
-        and, where it applies, British Columbia’s Personal Information Protection Act (PIPA).
+        and, where it applies, British Columbia’s Personal Information Protection Act (PIPA). If we
+        offer the Service in a way that brings it under other privacy laws, we will update this
+        policy.
       </p>
 
       <h2>1. Information we collect</h2>
@@ -82,19 +84,53 @@
               </td>
               <td>To calculate dates correctly and display the calendar</td>
             </tr>
+            <tr>
+              <td>Social profile: nickname, ID, bio and optional photo</td>
+              <td>You set up and edit your profile</td>
+              <td>To identify you to other users and help them find you</td>
+            </tr>
+            <tr>
+              <td>Invite token, follow and block relationships, reactions</td>
+              <td>
+                The App creates an invite token; you choose who to follow or block and what to like
+              </td>
+              <td>To share invites, apply visibility and blocks, and show likes</td>
+            </tr>
+            <tr>
+              <td>Notifications and notification settings</td>
+              <td>The Service records relevant activity and saves your choices</td>
+              <td>To show notifications in the App and respect your preferences</td>
+            </tr>
+            <tr>
+              <td>iOS push token, device language, time zone and app version</td>
+              <td>The App registers your device when push notifications are enabled</td>
+              <td>
+                To deliver notifications to your device in the right language and respect quiet
+                hours
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Reports, including the category, details you provide and the reported content or
+                account
+              </td>
+              <td>You submit a report in the App</td>
+              <td>To review safety concerns and enforce the Community Rules</td>
+            </tr>
           </tbody>
         </table>
       </div>
       <p>
-        The App does not ask for your name, phone number, location, contacts, photos or any other
-        information not listed above. Regular users sign in without a password, using a one-time
-        code sent to their email.
+        The App does not ask for your legal name, phone number, location or contacts. If you choose
+        a profile photo, the App crops and re-encodes it on your device before uploading it,
+        removing metadata such as EXIF location. Regular users sign in without a password, using a
+        one-time code sent to their email.
       </p>
       <p>
         Like most online services, our server provider (Supabase) automatically keeps technical logs
         of requests to our server. These logs may include your IP address, device and browser
         information (user agent) and the time of each request. We use them only to operate and
-        secure the Service, and on our current plan they are deleted automatically after 1 day.
+        secure the Service. These logs are kept for a limited period, currently up to 7 days.
       </p>
 
       <h2>2. How we use information</h2>
@@ -102,14 +138,30 @@
         <li>To create your account and let you sign in</li>
         <li>To store what you enter and sync it across devices signed in to the same account</li>
         <li>To respond to your support requests</li>
+        <li>To deliver social features, enforce visibility choices and review reports</li>
       </ul>
       <p>We do not use your information for advertising, marketing or profiling.</p>
+      <p>
+        Other users can see your social profile unless access is restricted. You can turn off ID
+        search and share an invite link instead. Only you can see goals set to Only me. Followers
+        can see goals set to Followers. Goals set to Mutual follows are only visible to people who
+        follow you and whom you follow back. The same visibility applies to the goal’s to-dos,
+        routines and completion records. When you like a completed item, the owner can see the
+        reaction.
+      </p>
+      <p>
+        A block in either direction hides profiles and shared activity from each other. If social
+        access is suspended, we hide the suspended account’s profile and shared activity from other
+        users. We may also hide a photo or bio while reviewing reports.
+      </p>
 
       <h2>3. Consent and withdrawing consent</h2>
       <p>
         By creating an account and using the App, you consent to us collecting, using and disclosing
-        your personal information for the purposes described in this policy. We will ask for your
-        consent again before using your information for any new purpose.
+        your personal information for the purposes described in this policy. We will ask for your We
+        will tell you before we use your information for a new purpose, and ask for your consent
+        again where the law requires it. The social features are optional: we process social
+        information only after you create a social profile.
       </p>
       <p>
         You can withdraw your consent at any time by deleting your account in the App (<strong
@@ -127,12 +179,15 @@
 
       <h2>5. Retention and deletion</h2>
       <ul>
-        <li>We keep your information for as long as your account exists.</li>
+        <li>We generally keep account information for as long as your account exists.</li>
         <li>
           When you delete your account in the App (<strong
             >Settings (설정) → Delete account (계정 삭제)</strong
-          >), your account and all goals, to-dos, routines and completion records are deleted from
-          our server.
+          >), we delete your account, goals, to-dos, routines, completion records and associated
+          social data, including your profile photo. Report records, identifier holds and backup
+          copies are subject to the retention details below. Profile photos are deleted from file
+          storage at the same time. Our service providers may keep their own operational logs for a
+          limited period under their policies.
         </li>
         <li>
           When you delete a single goal, to-do or routine, it disappears from the App right away but
@@ -140,9 +195,17 @@
           deletion sync to your other devices and be undone.
         </li>
         <li>
-          We do not currently keep separate database backups, so data deleted with your account
-          cannot be restored. If we start keeping backups, we will update this policy with how long
-          backup copies are kept.
+          When you change your ID or delete your account, the old ID is held for 30 days so it
+          cannot be claimed immediately by someone else.
+        </li>
+        <li>
+          Report records are deleted from our database when either the reporting or the reported
+          account is deleted. Report alert emails in our support mailbox are deleted within 90 days
+          after the report is resolved.
+        </li>
+        <li>
+          Database backups: we keep encrypted daily backups for up to 7 days to recover from
+          failures. Deleted information disappears from backups within 7 days.
         </li>
         <li>
           If a law requires us to keep certain information for longer, we will keep only that
@@ -174,30 +237,49 @@
             <tr>
               <td>Supabase</td>
               <td>
-                Account authentication, database storage and sync (database hosted in the AWS
-                us-west-1 region, Northern California, United States)
+                Account authentication, database and photo storage, and sync (database hosted in the
+                AWS us-west-1 region, Northern California, United States)
               </td>
-              <td>Email address, content you enter, time zone and first day of the week</td>
+              <td>Account, content, settings and social data described above</td>
             </tr>
             <tr>
               <td>Resend</td>
-              <td>Sending sign-in code emails</td>
-              <td>Email address</td>
+              <td>Sending sign-in codes and report alerts to Nodii support</td>
+              <td>
+                Email address for sign-in; report and account identifiers, category, details and
+                reported to-do title (when applicable) for report alerts
+              </td>
+            </tr>
+            <tr>
+              <td>Expo</td>
+              <td>Routing optional iOS push notifications</td>
+              <td>Expo push token and notification payload</td>
+            </tr>
+            <tr>
+              <td>Apple Push Notification service</td>
+              <td>Delivering push notifications to your iOS device</td>
+              <td>Apple device token and notification payload</td>
+            </tr>
+            <tr>
+              <td>Cloudflare R2</td>
+              <td>Storing encrypted daily database backups (kept up to 7 days)</td>
+              <td>Encrypted copy of the database described above</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p>
-        Because these providers store and process your information in the United States, it is
-        subject to the laws of that country and may be accessible to its courts, law enforcement and
-        national security authorities. We rely on these providers’ contractual commitments to
-        protect your information, and they may use it only to provide their services to us.
+        These providers may process your information outside Canada, including in the United States,
+        where it may be subject to local laws and accessible to local authorities. Our encrypted
+        backups are stored with Cloudflare R2. We share only the information each provider needs for
+        the purpose listed.
       </p>
 
       <h2>7. Your choices and rights</h2>
       <ul>
         <li>You can edit or delete your content in the App at any time.</li>
         <li>You can delete your account yourself in the App’s settings.</li>
+        <li>Push notifications are optional and can be turned off in your device’s settings.</li>
         <li>
           To request access to or correction of your personal information, or to raise a privacy
           concern, contact us using the details below. To protect your account, please write from
@@ -210,14 +292,11 @@
       <h2>8. Security</h2>
       <ul>
         <li>All communication between the App and our server is encrypted with HTTPS.</li>
-        <li>Row-level access control in the database lets each user access only their own data.</li>
-        <li>
-          On macOS, the App runs inside the App Sandbox and uses only the permission to make
-          outgoing network connections.
-        </li>
+        <li>Database access controls enforce goal visibility, blocks and social suspensions.</li>
+        <li>On macOS, the App runs inside the App Sandbox.</li>
         <li>
           On iOS, the App connects to the same service and does not request access to your camera,
-          location, contacts or photos.
+          location or contacts. You can choose a profile photo through the system photo picker.
         </li>
       </ul>
 
@@ -266,6 +345,12 @@
         a new type of service provider, we will post it at least 30 days before it takes effect and
         email the address on your account. Where the law requires your consent to a change, we will
         ask for it before the change applies to you.
+      </p>
+      <p>
+        The November 17, 2026 update describes the optional social features. The new processing
+        applies only to people who create a social profile, which they agree to in the App; nothing
+        changes for people who do not use the social features. We announced this update in the App's
+        release notes.
       </p>
     </main>
     <footer class="site-footer">
