@@ -306,7 +306,7 @@ Nodii 0.3.0 adds optional social sharing. Goals are visible only to you, your mu
 Account A: appreview@nodii.app
 Password: provided in App Review Sign-In Information.
 Account B: appreview2@nodii.app (Jamie Review)
-[[TODO: confirm whether B needs direct review access and supply verified instructions if required.]]
+Account B is a demo profile that A follows; you do not need to sign in as B.
 
 Sign in as A using the password field. The two demo profiles already follow each other and contain sample data.
 
