@@ -103,7 +103,7 @@ supabase migration list                           # Local과 Remote 열이 모�
 로컬 `config.toml` 변경은 클라우드 템플릿을 바꾸지 않습니다. 위 대시보드 입력은 사람이 따로 수행합니다.
 
 ### 2.4 커스텀 SMTP (NFR-15)
-- [ ] **Authentication → Emails → SMTP Settings**: 발신 `no-reply@mail.nodii.app`, 이름 `Nodii`, Host `smtp.resend.com`, Port `465`, Username `resend`
+- [ ] **Authentication → Emails → SMTP Settings**: 발신 `no-reply@mail.nodii.app`, 이름 `Nodii`, Host `smtp.resend.com`, Port `465`, Username `resend`, Password = Resend API 키(Sending access, 도메인 `mail.nodii.app`)
 - [ ] Resend 대시보드에서 `mail.nodii.app`이 **Verified**(SPF·DKIM)
 - [ ] Gmail·iCloud·Outlook 주소로 각각 가입 코드를 받아 **1분 안에 받은편지함**(스팸함 아님)에 오는지 확인
 - [ ] **Authentication → Rate Limits**: 이메일 발송 한도가 출시 규모에 맞는지 (예: 시간당 30)
