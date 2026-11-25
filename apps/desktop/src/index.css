@@ -70,6 +70,22 @@ textarea::selection,
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
+:is(
+  input:not([type]),
+  input:is(
+    [type='text'],
+    [type='email'],
+    [type='password'],
+    [type='search'],
+    [type='tel'],
+    [type='url'],
+    [type='number']
+  ),
+  textarea,
+  [contenteditable]:not([contenteditable='false'])
+):focus {
+  outline: none;
+}
 
 /* DESIGN.md의 크기·간격·색만 사용하는 shadcn 프리미티브 테마. */
 :root {
@@ -247,10 +263,6 @@ h2 {
   border-radius: 14px;
   background: var(--color-chip);
   font-weight: 800;
-}
-.otp-slot-active {
-  outline: 1.5px solid var(--color-ink);
-  outline-offset: -1.5px;
 }
 .otp-container-disabled .otp-slot {
   background: var(--color-box);
@@ -541,21 +553,34 @@ button.goal-chip:disabled {
   border: 0;
   color: var(--color-ink);
   font-size: 15px;
-  padding: 4px;
-  caret-color: var(--goal-color);
-  background: var(--color-chip);
-  border-radius: 14px;
+  line-height: 1.6;
+  padding: 4px 0;
+  caret-color: var(--todo-input-ink);
+  background: transparent;
 }
-.add-todo {
-  flex-wrap: wrap;
-  padding: 8px;
-  border-radius: 14px;
-  background: var(--color-chip);
+.add-todo-field {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.todo-edit,
+.add-todo-field {
+  /* 밑줄을 안쪽에 그려 입력 줄과 저장된 줄의 높이를 맞춘다. */
+  box-shadow: inset 0 -2px 0 var(--todo-input-ink);
+}
+.goal-group {
+  --todo-input-ink: var(--goal-ink-light);
+}
+.dark .goal-group {
+  --todo-input-ink: var(--goal-ink-dark);
 }
 .empty-check {
   border-color: var(--color-line-2);
 }
 .input-hint {
+  flex: none;
   font-size: 12px;
   font-weight: 600;
   color: var(--color-muted);
@@ -1720,10 +1745,6 @@ body,
   background: var(--color-box);
   color: var(--color-muted);
   cursor: not-allowed;
-}
-
-.input:focus {
-  box-shadow: inset 0 0 0 1.5px var(--color-ink);
 }
 
 .auth-form .input {

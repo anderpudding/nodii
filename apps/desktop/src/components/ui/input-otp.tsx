@@ -28,7 +28,7 @@ export function InputOTPSlot({ index }: { index: number }) {
   const context = useContext(OTPInputContext);
   const slot = context.slots[index];
   return (
-    <div aria-hidden="true" className={cn('otp-slot', slot?.isActive && 'otp-slot-active')}>
+    <div aria-hidden="true" className="otp-slot">
       {slot?.char ?? (slot?.hasFakeCaret ? '│' : '')}
     </div>
   );

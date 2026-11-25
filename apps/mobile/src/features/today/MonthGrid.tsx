@@ -73,20 +73,28 @@ export function MonthGrid({
           ))}
         </View>
         {weeks.map((week) => (
-          <View key={week[0]} style={styles.week}>
-            {week.map((date) => (
-              <DayCell
-                key={date}
-                date={date}
-                today={today}
-                selected={date === selectedDate}
-                summary={summary.get(date)}
-                goalColors={stampColors?.get(date)}
-                monthly
-                outside={monthKeyOf(date) !== month}
-                onPress={() => onSelect(date)}
-              />
-            ))}
+          <View key={week[0]} testID="month-week" style={styles.week}>
+            {week.map((date) =>
+              monthKeyOf(date) === month ? (
+                <DayCell
+                  key={date}
+                  date={date}
+                  today={today}
+                  selected={date === selectedDate}
+                  summary={summary.get(date)}
+                  goalColors={stampColors?.get(date)}
+                  monthly
+                  onPress={() => onSelect(date)}
+                />
+              ) : (
+                <View
+                  key={date}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={styles.emptyCell}
+                />
+              ),
+            )}
           </View>
         ))}
       </View>
@@ -96,6 +104,7 @@ export function MonthGrid({
 const styles = StyleSheet.create({
   grid: { paddingHorizontal: m.space.sm, paddingBottom: m.space.sm, borderBottomWidth: 0 },
   week: { flexDirection: 'row' },
+  emptyCell: { flex: 1, minWidth: m.height.touch },
   weekday: {
     flex: 1,
     textAlign: 'center',

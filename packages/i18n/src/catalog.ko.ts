@@ -692,7 +692,6 @@ export const ko = {
   'social.done': '완료',
   'social.save.failed': '저장하지 못했어요 · 다시 시도',
   'settings.account.handle': 'ID',
-  'settings.account.handleHelp': '30일에 한 번 바꿀 수 있어요',
   'social.visibility.a11yPrivate': '나만 보기',
   'social.visibility.a11yMutual': '맞팔로우 공개',
   'social.visibility.a11yFollowers': '팔로워 공개',

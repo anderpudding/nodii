@@ -18,12 +18,12 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 it.each([
-  ['2026-02', 28, '2026-02-01', '2월 1일 (일)', '2026-02-28', '2월 28일 (토)'],
-  ['2026-09', 35, '2026-08-30', '8월 30일 (일)', '2026-10-03', '10월 3일 (토)'],
-  ['2026-08', 42, '2026-07-26', '7월 26일 (일)', '2026-09-05', '9월 5일 (토)'],
+  ['2026-02', 4, 28, '2월 1일 (일)', '2월 28일 (토)'],
+  ['2026-09', 5, 30, '9월 1일 (화)', '9월 30일 (수)'],
+  ['2026-08', 6, 31, '8월 1일 (토)', '8월 31일 (월)'],
 ] as const)(
-  '%s는 필요한 %s칸만 그리며 앞뒤 달 날짜도 선택할 수 있다',
-  async (month, count, first, firstLabel, last, lastLabel) => {
+  '%s는 %s주에 해당 월의 날짜 %s개만 표시한다',
+  async (month, weeks, count, firstLabel, lastLabel) => {
     const onSelect = jest.fn();
     render(
       <MonthGrid
@@ -38,13 +38,14 @@ it.each([
     );
     await act(async () => {});
     const cells = within(screen.getByTestId('month-grid')).getAllByRole('button');
+    expect(screen.getAllByTestId('month-week')).toHaveLength(weeks);
     expect(cells).toHaveLength(count);
     expect(cells[0]!.props.accessibilityLabel).toBe(t('calendar.empty', { date: firstLabel }));
     expect(cells.at(-1)!.props.accessibilityLabel).toBe(t('calendar.empty', { date: lastLabel }));
     expect(cells.filter((cell) => cell.props.accessibilityState.selected)).toHaveLength(1);
     fireEvent.press(cells[0]!);
     fireEvent.press(cells.at(-1)!);
-    expect(onSelect.mock.calls).toEqual([[first], [last]]);
+    expect(onSelect.mock.calls).toEqual([[`${month}-01`], [`${month}-${count}`]]);
   },
 );
 it('주 시작 요일과 표시 월이 바뀌면 주수를 다시 계산한다', async () => {
@@ -57,14 +58,11 @@ it('주 시작 요일과 표시 월이 바뀌면 주수를 다시 계산한다',
   };
   const view = render(<MonthGrid {...props} month="2026-03" weekStart={0} />);
   await act(async () => {});
-  expect(within(screen.getByTestId('month-grid')).getAllByRole('button')).toHaveLength(35);
+  expect(screen.getAllByTestId('month-week')).toHaveLength(5);
   view.rerender(<MonthGrid {...props} month="2026-03" weekStart={1} />);
   await act(async () => {});
-  const mondayCells = within(screen.getByTestId('month-grid')).getAllByRole('button');
-  expect(mondayCells).toHaveLength(42);
-  expect(mondayCells[0]!.props.accessibilityLabel).toBe(
-    t('calendar.empty', { date: '2월 23일 (월)' }),
-  );
+  expect(screen.getAllByTestId('month-week')).toHaveLength(6);
+  expect(screen.queryByRole('button', { name: /2월 23일/ })).toBeNull();
   view.rerender(<MonthGrid {...props} month="2026-02" weekStart={0} />);
   await act(async () => {});
   expect(within(screen.getByTestId('month-grid')).getAllByRole('button')).toHaveLength(28);

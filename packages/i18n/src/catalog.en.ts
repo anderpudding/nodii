@@ -722,7 +722,6 @@ export const en: Record<MessageKey, string> & Partial<Record<PluralKey, string>>
   'social.done': 'Done',
   'social.save.failed': 'Couldn’t save. Try again.',
   'settings.account.handle': 'ID',
-  'settings.account.handleHelp': 'You can change it once every 30 days',
   'social.visibility.a11yPrivate': 'Only me',
   'social.visibility.a11yMutual': 'Shared with mutuals',
   'social.visibility.a11yFollowers': 'Shared with followers',

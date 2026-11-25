@@ -52,7 +52,7 @@ import {
   type TodoRecord,
   type GoalRecord,
 } from '@nodii/api';
-import { type Todo } from '@nodii/core';
+import { goalInk, type Todo } from '@nodii/core';
 import { setLocale, t } from '@nodii/i18n';
 import { ToastProvider } from '../components/Toast';
 import { SwipeableRow } from '../components/gestures/SwipeableRow';
@@ -635,11 +635,11 @@ it('완료 후 삭제하면 완료 실행 취소는 사라지고 삭제 실행 �
   ]);
 });
 
-it('월간은 필요한 35칸을 펼치고 다른 달의 날짜나 오늘을 선택해도 월간을 유지한다', async () => {
+it('월간은 이번 달 날짜만 펼치고 날짜나 오늘을 선택해도 월간을 유지한다', async () => {
   await mount();
   fireEvent.press(screen.getByRole('radio', { name: t('mobile.view.month') }));
   const grid = await screen.findByTestId('month-grid');
-  expect(within(grid).getAllByRole('button')).toHaveLength(35);
+  expect(within(grid).getAllByRole('button')).toHaveLength(31);
   fireEvent(screen.getByTestId('month-grid'), 'accessibilityAction', {
     nativeEvent: { actionName: 'increment' },
   });
@@ -652,10 +652,10 @@ it('월간은 필요한 35칸을 펼치고 다른 달의 날짜나 오늘을 선
   expect(useUIStore.getState().calendarMonth).toBe('2026-10');
   const day = within(screen.getByTestId('month-grid')).getAllByRole('button')[0]!;
   expect(StyleSheet.flatten(day.props.style).height).toBe(66);
-  expect(StyleSheet.flatten(day.props.style).opacity).toBe(0.4);
+  expect(StyleSheet.flatten(day.props.style).opacity).toBe(1);
   fireEvent.press(day);
-  expect(useUIStore.getState().selectedDate).toBe('2026-09-27');
-  expect(useUIStore.getState().calendarMonth).toBe('2026-09');
+  expect(useUIStore.getState().selectedDate).toBe('2026-10-01');
+  expect(useUIStore.getState().calendarMonth).toBe('2026-10');
   expect(screen.getByTestId('month-grid')).toBeTruthy();
   expect(
     screen.getByRole('radio', { name: t('mobile.view.month') }).props.accessibilityState.checked,
@@ -1460,7 +1460,12 @@ it('다른 목표의 +는 그 목표 맨 아래에 입력을 열고 Enter로 연
   expect(scroll).toHaveBeenCalledWith(
     expect.objectContaining({ sectionIndex: 1, itemIndex: 0, viewPosition: 1 }),
   );
-  expect(input.props.selectionColor).toBe('#3FB28A');
+  const ink = goalInk('#3FB28A', '#F2F3F6', false);
+  expect(input.props.selectionColor).toBe(ink);
+  expect(StyleSheet.flatten(input.props.style)).toMatchObject({
+    borderBottomColor: ink,
+    borderBottomWidth: 2,
+  });
   expect(input.props.autoFocus).toBe(true);
   expect(input.props.blurOnSubmit).toBe(false);
   for (const title of ['러닝', '스트레칭']) {

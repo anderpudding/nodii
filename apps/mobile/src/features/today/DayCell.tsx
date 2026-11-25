@@ -13,7 +13,6 @@ export function DayCell({
   goalColors,
   onPress,
   monthly = false,
-  outside = false,
 }: {
   date: ISODate;
   today: ISODate;
@@ -22,7 +21,6 @@ export function DayCell({
   goalColors?: string[];
   onPress(): void;
   monthly?: boolean;
-  outside?: boolean;
 }) {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
@@ -53,7 +51,7 @@ export function DayCell({
         monthly && styles.monthCell,
         monthly && enlargedEnglish && { height: 'auto' },
         {
-          opacity: (pressed ? m.pressedOpacity : 1) * (outside ? 0.4 : 1),
+          opacity: pressed ? m.pressedOpacity : 1,
           borderColor: colors.bg,
         },
       ]}

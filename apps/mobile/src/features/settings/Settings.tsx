@@ -107,13 +107,7 @@ export function Settings({
             </Text>,
           )}
           {social && (
-            <RoutineOption
-              inline
-              descriptionBelow
-              label={t('settings.account.handle')}
-              description={t('settings.account.handleHelp')}
-              onPress={social.onHandle}
-            >
+            <RoutineOption inline label={t('settings.account.handle')} onPress={social.onHandle}>
               <Text style={[s.body, { color: colors.ink }]}>{t('settings.account.handle')}</Text>
               <Text style={[s.body, { color: colors.muted }]}>
                 {t('social.handle.display', { handle: social.profile.handle })} ›

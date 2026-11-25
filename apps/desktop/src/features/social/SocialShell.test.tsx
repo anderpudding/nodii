@@ -162,7 +162,8 @@ it('opens settings, the three visibility choices, and a locked ID editor', async
   await user.click(screen.getByRole('button', { name: /새 목표의 기본 공개 범위/ }));
   expect(screen.getAllByRole('radio')).toHaveLength(3);
   await user.click(screen.getAllByRole('button', { name: '설정' }).at(-1)!);
-  await user.click(screen.getByRole('button', { name: /30일에 한 번/ }));
+  expect(screen.queryByText('30일에 한 번 바꿀 수 있어요')).toBeNull();
+  await user.click(screen.getByRole('button', { name: /^ID @reader/ }));
   expect((screen.getByRole('textbox', { name: 'ID' }) as HTMLInputElement).disabled).toBe(true);
   expect(screen.getByText('30일 뒤에 바꿀 수 있어요')).toBeTruthy();
 });

@@ -226,10 +226,7 @@ export function SettingsSheet({
                   className="settings-card-row settings-info-link"
                   onClick={social.onHandle}
                 >
-                  <span>
-                    {t('settings.account.handle')}
-                    <span className="supporting">{t('settings.account.handleHelp')}</span>
-                  </span>
+                  <span>{t('settings.account.handle')}</span>{' '}
                   <span className="settings-value">
                     {t('social.handle.display', { handle: social.profile.handle })}{' '}
                     <span aria-hidden="true">›</span>

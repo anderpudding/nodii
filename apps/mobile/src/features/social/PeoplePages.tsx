@@ -182,7 +182,6 @@ export function ProfileSearch({
 }: PeopleProps & { text: string; setText(text: string): void }) {
   const { colors } = useTheme();
   const result = useProfileSearch(props.client, props.me, text);
-  const [focused, setFocused] = useState(false);
   const people = result.data ?? [];
   const relations = useRelations(
     props.client,
@@ -195,8 +194,6 @@ export function ProfileSearch({
         <TextInput
           accessibilityLabel={t('social.search.placeholder')}
           autoFocus
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
@@ -207,8 +204,6 @@ export function ProfileSearch({
               backgroundColor: colors.chip,
               color: colors.ink,
               height: m.height.touch,
-              borderWidth: m.todayRing,
-              borderColor: focused ? colors.ink : colors.chip,
               borderRadius: m.radius.field,
               paddingHorizontal: m.space.md,
             },

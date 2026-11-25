@@ -99,7 +99,6 @@ export function RoutineEditor({
   });
   const [saving, setSaving] = useState(false);
   const [partialSplit, setPartialSplit] = useState<RoutineRecord | null>(null);
-  const [inputFocused, setInputFocused] = useState(false);
   const guard = useRef(false);
   const errors = { onError: () => toast(() => t('todo.save.failed')) };
   const create = useCreateRoutine(client, newId, errors);
@@ -293,16 +292,12 @@ export function RoutineEditor({
             value={draft.title}
             editable={!blocked}
             onChangeText={(title) => setDraft((value) => ({ ...value, title }))}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
             selectionColor={goals.find((goal) => goal.id === draft.goalId)?.color ?? colors.ink}
             style={[
               s.input,
-              { borderWidth: 1.5 },
               {
                 color: colors.ink,
                 backgroundColor: colors.chip,
-                borderColor: inputFocused ? colors.ink : colors.chip,
               },
             ]}
           />

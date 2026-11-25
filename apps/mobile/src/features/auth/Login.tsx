@@ -37,7 +37,7 @@ export function Login({
 }) {
   const [state, dispatch] = useReducer(loginReducer, initialLoginState);
   const [now, setNow] = useState(Date.now);
-  const [focused, setFocused] = useState<string | null>(null);
+  const [codeFocused, setCodeFocused] = useState(false);
   const busy = useRef(false);
   const codeInput = useRef<TextInput>(null);
   const { colors } = useTheme();
@@ -96,13 +96,11 @@ export function Login({
       busy.current = false;
     }
   }
-  const fieldStyle = (name: string) => [
+  const fieldStyle = [
     styles.input,
     {
       color: colors.ink,
       backgroundColor: colors.chip,
-      borderWidth: 1.5,
-      borderColor: focused === name ? colors.ink : colors.chip,
     },
   ];
   return (
@@ -155,9 +153,7 @@ export function Login({
               onSubmitEditing={() => {
                 if (!review) void request('email');
               }}
-              onFocus={() => setFocused('email')}
-              onBlur={() => setFocused(null)}
-              style={fieldStyle('email')}
+              style={fieldStyle}
             />
             {review && (
               <>
@@ -174,9 +170,7 @@ export function Login({
                   onChangeText={(value) => dispatch({ type: 'password', value })}
                   returnKeyType="go"
                   onSubmitEditing={() => void request('email')}
-                  onFocus={() => setFocused('password')}
-                  onBlur={() => setFocused(null)}
-                  style={fieldStyle('password')}
+                  style={fieldStyle}
                 />
               </>
             )}
@@ -191,19 +185,10 @@ export function Login({
                 importantForAccessibility="no-hide-descendants"
               >
                 {Array.from({ length: 6 }, (_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.slot,
-                      {
-                        backgroundColor: colors.chip,
-                        borderWidth: 1.5,
-                        borderColor: focused === 'code' ? colors.ink : colors.chip,
-                      },
-                    ]}
-                  >
+                  <View key={index} style={[styles.slot, { backgroundColor: colors.chip }]}>
                     <Text style={[styles.digit, { color: colors.ink }]}>
-                      {state.token[index] ?? ''}
+                      {state.token[index] ??
+                        (codeFocused && !state.pending && index === state.token.length ? '│' : '')}
                     </Text>
                   </View>
                 ))}
@@ -221,9 +206,9 @@ export function Login({
                 maxLength={6}
                 editable={!state.pending}
                 caretHidden
-                style={[styles.codeInput, {}]}
-                onFocus={() => setFocused('code')}
-                onBlur={() => setFocused(null)}
+                style={styles.codeInput}
+                onFocus={() => setCodeFocused(true)}
+                onBlur={() => setCodeFocused(false)}
                 onChangeText={(value) => {
                   const digits = value.replace(/\D/g, '').slice(0, 6);
                   dispatch({ type: 'token', value: digits });
@@ -335,7 +320,6 @@ const styles = StyleSheet.create({
   input: {
     minHeight: m.height.field,
     borderRadius: m.radius.field,
-    borderWidth: m.border,
     paddingHorizontal: m.space.lg,
     paddingVertical: m.space.md,
     fontFamily: m.fontFamily,
@@ -347,7 +331,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: m.height.field,
     borderRadius: m.radius.field,
-    borderWidth: m.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
