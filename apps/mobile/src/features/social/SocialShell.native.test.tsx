@@ -239,7 +239,14 @@ it('hides the tab bar in settings and shows the locked ID editor', async () => {
   fireEvent.press(await screen.findByRole('button', { name: '설정' }));
   expect(await screen.findByRole('switch', { name: 'ID로 검색 허용' })).toBeVisible();
   expect(screen.queryByRole('tab')).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: '새 목표의 기본 공개 범위' }));
+  expect(screen.queryByText('30일에 한 번 바꿀 수 있어요')).toBeNull();
+  const visibility = screen.getByRole('button', { name: '새 목표의 기본 공개 범위' });
+  const completion = screen.getByRole('button', { name: '친구 완료 알림' });
+  expect(StyleSheet.flatten(visibility.props.style)).toEqual(
+    StyleSheet.flatten(completion.props.style),
+  );
+  expect(visibility.props.accessibilityValue).toEqual({ text: '나만' });
+  fireEvent.press(visibility);
   expect(await screen.findAllByRole('radio')).toHaveLength(3);
   fireEvent.press(screen.getByRole('button', { name: '‹ 설정' }));
   fireEvent.press(await screen.findByRole('button', { name: 'ID' }));
@@ -478,8 +485,15 @@ it('selects friends with the current date and saves Today switches and VoiceOver
   mount(true, null, true);
   const avatar = await screen.findByRole('button', { name: 'Friend의 하루 보기' });
   act(() => useUIStore.getState().selectDate(selectedDate));
+  const myDateRow = StyleSheet.flatten(screen.getByTestId('today-top').props.style);
+  expect(screen.getByRole('header', { name: 'Nodii' })).toBeVisible();
   fireEvent.press(avatar);
   expect(await screen.findByLabelText('Read-only task, 미완료')).toBeVisible();
+  expect(screen.getByRole('header', { name: 'Nodii' })).toBeVisible();
+  expect(StyleSheet.flatten(screen.getByTestId('today-top').props.style)).toEqual(myDateRow);
+  expect(StyleSheet.flatten(screen.getByTestId('today-avatar-row').props.style)).toMatchObject({
+    flexGrow: 0,
+  });
   expect(useUIStore.getState().selectedDate).toBe(selectedDate);
   expect(screen.queryByRole('checkbox')).toBeNull();
   expect(screen.getByTestId('goal-mark-dot')).toBeVisible();

@@ -25,6 +25,7 @@ import { useUIStore } from '../../stores/ui';
 import { AccountDelete } from './AccountDelete';
 import { SearchableSwitch, type SocialSettings } from '../social/ProfilePrivacy';
 import { settingsStyles as s } from './styles';
+import { SettingsLinkRow } from './SettingsLinkRow';
 
 /** SET-01/02/07: 보기·계정·관리·정보를 네 카드로 묶어 같은 하루의 설정을 제공한다. */
 export function Settings({
@@ -107,12 +108,11 @@ export function Settings({
             </Text>,
           )}
           {social && (
-            <RoutineOption inline label={t('settings.account.handle')} onPress={social.onHandle}>
-              <Text style={[s.body, { color: colors.ink }]}>{t('settings.account.handle')}</Text>
-              <Text style={[s.body, { color: colors.muted }]}>
-                {t('social.handle.display', { handle: social.profile.handle })} ›
-              </Text>
-            </RoutineOption>
+            <SettingsLinkRow
+              label={t('settings.account.handle')}
+              value={t('social.handle.display', { handle: social.profile.handle })}
+              onPress={social.onHandle}
+            />
           )}
           <RoutineOption
             inline
@@ -131,18 +131,11 @@ export function Settings({
         group(
           t('settings.privacy'),
           <>
-            <RoutineOption
-              inline
+            <SettingsLinkRow
               label={t('settings.privacy.visibility')}
+              value={t(`settings.privacy.${profile.defaultVisibility ?? 'private'}`)}
               onPress={social.onVisibility}
-            >
-              <Text style={[s.body, { color: colors.ink, flex: 1 }]}>
-                {t('settings.privacy.visibility')}
-              </Text>
-              <Text style={[s.supporting, { color: colors.muted }]}>
-                {t(`settings.privacy.${profile.defaultVisibility ?? 'private'}`)} ›
-              </Text>
-            </RoutineOption>
+            />
             <SearchableSwitch client={client} profile={social.profile} />
             <RoutineOption inline label={t('social.block.title')} onPress={social.onBlocked}>
               <Text style={[s.body, { color: colors.ink, flex: 1 }]}>

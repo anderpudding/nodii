@@ -14,7 +14,8 @@ import { Button } from '../../components/Button';
 import { ManagementScreen } from '../../components/ManagementScreen';
 import { useToast } from '../../components/Toast';
 import { settingsStyles as s } from '../settings/styles';
-import { Avatar, SocialIcon } from './Primitives';
+import { SettingsLinkRow } from '../settings/SettingsLinkRow';
+import { Avatar } from './Primitives';
 import { ProfileSwitch } from './ProfilePrivacy';
 
 interface Props {
@@ -95,23 +96,11 @@ export function NotificationSettings({
       <View style={[s.card, { backgroundColor: colors.chip }]}>
         <View style={s.rows}>
           <PushDeviceSettings />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('social.notificationSettings.title')}
-            accessibilityValue={{ text: summary }}
+          <SettingsLinkRow
+            label={t('social.notificationSettings.title')}
+            value={summary}
             onPress={onFriendDone}
-            style={({ pressed }) => [
-              s.horizontal,
-              s.row,
-              { borderBottomColor: colors.line, opacity: pressed ? m.pressedOpacity : 1 },
-            ]}
-          >
-            <Text style={[s.body, { color: colors.ink, flex: 1 }]}>
-              {t('social.notificationSettings.title')}
-            </Text>
-            <Text style={[s.supporting, { color: colors.muted }]}>{summary}</Text>
-            <SocialIcon name="chevronRight" color={colors.muted} size={20} />
-          </Pressable>
+          />
           {prefs.isError ? (
             <SettingsFailure retry={() => void prefs.refetch()} />
           ) : (
