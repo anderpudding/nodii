@@ -32,17 +32,18 @@ export function MonthCalendar({
     setView({ selection: selectedDate, month: monthKeyOf(selectedDate) });
   const month = view.selection === selectedDate ? view.month : monthKeyOf(selectedDate);
   const cache = useQueryClient();
-  const previousWeekStart = useRef(profile.weekStart);
-  useEffect(() => {
-    if (previousWeekStart.current === profile.weekStart) return;
-    previousWeekStart.current = profile.weekStart;
-    void cache.invalidateQueries({ queryKey: ['todos'] });
-    void cache.invalidateQueries({ queryKey: ['routineLogs'] });
-  }, [cache, profile.weekStart]);
   const goals = useGoals(client, profile.id);
   const todos = useMonthTodos(client, profile.id, month, profile.weekStart);
   const routines = useRoutines(client, profile.id);
   const logs = useMonthRoutineLogs(client, profile.id, month, profile.weekStart);
+  const previousWeekStart = useRef(profile.weekStart);
+  useEffect(() => {
+    if (previousWeekStart.current === profile.weekStart) return;
+    previousWeekStart.current = profile.weekStart;
+    // 두 월 쿼리에 새 주 시작 설정을 반영한 뒤 캐시를 무효화한다.
+    void cache.invalidateQueries({ queryKey: ['todos'] });
+    void cache.invalidateQueries({ queryKey: ['routineLogs'] });
+  }, [cache, profile.weekStart]);
   useEffect(() => {
     void prefetchAdjacentMonths(cache, client, profile.id, month, profile.weekStart);
   }, [cache, client, profile.id, month, profile.weekStart]);

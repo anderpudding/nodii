@@ -71,7 +71,6 @@ export function GoalEditor({
   const [name, setName] = useState(goal?.name ?? '');
   const [color, setColor] = useState(goal?.color ?? '#4F7CFF');
   const [id] = useState(() => goal?.id ?? Crypto.randomUUID());
-  const [focused, setFocused] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const guard = useRef(false);
   const saveError = (error: unknown) =>
@@ -218,15 +217,11 @@ export function GoalEditor({
         maxLength={GOAL_NAME_MAX_LENGTH}
         editable={!blocked}
         selectionColor={isHexColor(color) ? color : colors.ink}
-        onFocus={() => setFocused('name')}
-        onBlur={() => setFocused(null)}
         style={[
           s.input,
-          { borderWidth: 1.5 },
           {
             color: colors.ink,
             backgroundColor: colors.chip,
-            borderColor: focused === 'name' ? colors.ink : colors.chip,
           },
         ]}
       />
@@ -321,19 +316,13 @@ export function GoalEditor({
             value={color}
             onChangeText={setColor}
             editable={!blocked}
-            onFocus={() => setFocused('color')}
-            onBlur={() => setFocused(null)}
             style={[
               s.input,
-              { borderWidth: 1.5 },
               {
                 color: colors.ink,
                 backgroundColor: colors.chip,
-                borderColor: !isHexColor(color)
-                  ? colors.danger
-                  : focused === 'color'
-                    ? colors.ink
-                    : colors.chip,
+                borderWidth: m.todayRing,
+                borderColor: isHexColor(color) ? 'transparent' : colors.danger,
               },
             ]}
           />

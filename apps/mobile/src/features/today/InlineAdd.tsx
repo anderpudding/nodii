@@ -21,7 +21,7 @@ import {
   type NodiiClient,
   type TodoRecord,
 } from '@nodii/api';
-import { monthKeyOf, normalizeTitle, type Goal, type ISODate } from '@nodii/core';
+import { goalInk, monthKeyOf, normalizeTitle, type Goal, type ISODate } from '@nodii/core';
 import { formatISODate, t, withParticle } from '@nodii/i18n';
 import { useOnline } from '../../../lib/connectivity';
 import { metrics as m, useTheme } from '../../../lib/theme';
@@ -54,7 +54,8 @@ export function InlineAdd({
   onClose(): void;
   onFocus(): void;
 }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const ink = goalInk(goal.color, colors.chip, isDark);
   const online = useOnline();
   const social = useContext(VisibilityContext);
   const cache = useQueryClient();
@@ -127,10 +128,9 @@ export function InlineAdd({
     month: 'long',
     day: 'numeric',
   });
-  // M8: 입력 줄은 chip 채움과 같은 싹이 씨앗을 쓴다.
   return (
     <View style={styles.container}>
-      <View style={[styles.row, { backgroundColor: colors.chip }]}>
+      <View style={styles.row}>
         <View accessible={false} style={styles.checkSpace}>
           <SproutCheck color={goal.color} />
         </View>
@@ -142,7 +142,7 @@ export function InlineAdd({
           accessibilityLabel={t('todo.title')}
           placeholder={t('mobile.add.placeholder')}
           placeholderTextColor={colors.muted}
-          selectionColor={goal.color}
+          selectionColor={ink}
           inputAccessoryViewID={accessoryId}
           returnKeyType="done"
           submitBehavior="submit"
@@ -152,7 +152,7 @@ export function InlineAdd({
           onBlur={() => {
             if (!pickingRef.current) onClose();
           }}
-          style={[styles.input, { color: colors.ink, borderColor: colors.ink }]}
+          style={[styles.input, { color: colors.ink, borderBottomColor: ink }]}
         />
       </View>
       <InputAccessoryView nativeID={accessoryId} backgroundColor={colors.bg}>
@@ -227,15 +227,13 @@ const styles = StyleSheet.create({
     minHeight: m.height.field,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: m.radius.field,
   },
   checkSpace: { width: m.height.touch, alignItems: 'center' },
   input: {
     flex: 1,
     minHeight: m.height.field,
-    borderWidth: 1.5,
-    borderRadius: m.radius.field,
-    paddingHorizontal: m.space.sm,
+    borderBottomWidth: m.selectionRing,
+    padding: 0,
     fontFamily: m.fontFamily,
     fontSize: m.type.body,
   },

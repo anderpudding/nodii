@@ -9,6 +9,7 @@ export function App() {
   useLocale();
   return (
     <Providers>
+      <div className="window-drag-region" data-tauri-drag-region="" aria-hidden="true" />
       {supabase ? (
         <AppGate client={supabase} />
       ) : (

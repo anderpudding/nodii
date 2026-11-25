@@ -253,6 +253,7 @@ it('선택 날짜의 미완료만 대상 날짜의 마지막 루틴 뒤로 옮�
   try {
     await ctx.user.click(screen.getByRole('button', { name: '하루 메뉴' }));
     await ctx.user.click(screen.getByRole('menuitem', { name: '미완료 할 일 다른 날로 옮기기' }));
+    await ctx.user.click(screen.getByRole('button', { name: '다음 달' }));
     await ctx.user.click(screen.getByRole('button', { name: '2026년 10월 1일' }));
     await waitFor(() => expect(ctx.rpc).toHaveBeenCalledOnce());
     const moved = ctx.rows().find((row) => row.id === todoRow.id)!;

@@ -25,6 +25,7 @@ import { Button } from '../../components/Button';
 import { SproutCheck } from '../../components/SproutCheck';
 import { GoalBadge } from '../today/GoalBadge';
 import { MonthGrid } from '../today/MonthGrid';
+import { SocialDateHeader } from '../today/DateHeader';
 import { WeekStrip } from '../today/WeekStrip';
 import { weekRange } from '../today/model';
 import { completedStampColors } from '../today/stamp-colors';
@@ -131,6 +132,7 @@ export function FriendDay({
     <>
       <ScrollView
         testID="friend-day-scroll"
+        automaticallyAdjustContentInsets={false}
         style={{ flex: 1 }}
         onLayout={(event) => setViewport(event.nativeEvent.layout.height)}
         contentContainerStyle={{
@@ -150,68 +152,14 @@ export function FriendDay({
         }
       >
         {header}
-        <View
-          style={{
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: m.space.lg,
-            gap: m.space.sm,
+        <SocialDateHeader
+          monthLabel={monthLabel}
+          onToday={() => {
+            if (date !== today || month !== monthKeyOf(today)) onSelect(today);
           }}
-        >
-          <Pressable
-            style={{ flex: 1, minHeight: m.height.touch, justifyContent: 'center' }}
-            accessibilityRole="button"
-            accessibilityLabel={t('calendar.monthToday', { month: monthLabel })}
-            onPress={() => {
-              if (date !== today || month !== monthKeyOf(today)) onSelect(today);
-            }}
-          >
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              style={{ color: colors.ink, fontSize: m.type.month, fontFamily: m.fontExtraBold }}
-            >
-              {monthLabel}
-            </Text>
-          </Pressable>
-          <View
-            accessibilityRole="radiogroup"
-            style={{
-              flexDirection: 'row',
-              backgroundColor: colors.chip,
-              borderRadius: m.radius.pill,
-              padding: m.space.xs,
-            }}
-          >
-            {([false, true] as const).map((value) => (
-              <Pressable
-                key={String(value)}
-                accessibilityRole="radio"
-                accessibilityLabel={t(value ? 'mobile.view.month' : 'mobile.view.week')}
-                accessibilityState={{ checked: value === monthExpanded }}
-                onPress={() => onSetMonthExpanded(value)}
-                style={{
-                  width: m.height.segmentMark,
-                  minHeight: m.height.segmentMark,
-                  borderRadius: m.radius.pill,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: value === monthExpanded ? colors.ink : colors.chip,
-                }}
-              >
-                <Text
-                  style={{
-                    color: value === monthExpanded ? colors.bg : colors.ink2,
-                    fontFamily: m.fontExtraBold,
-                  }}
-                >
-                  {value ? 'M' : 'W'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+          expanded={monthExpanded}
+          onExpanded={onSetMonthExpanded}
+        />
         {monthExpanded ? (
           <MonthGrid
             month={month}

@@ -52,38 +52,40 @@ export function AddTodoInput({
       <span className="empty-check" aria-hidden="true">
         <SproutCheck />
       </span>
-      <input
-        autoFocus
-        aria-label={t('todo.add.label', { name: goalName })}
-        placeholder={t('todo.add.placeholder')}
-        value={title}
-        maxLength={TITLE_MAX_LENGTH}
-        onChange={(event) => setTitle(event.target.value)}
-        onKeyDown={(event) => {
-          if (closed.current || event.nativeEvent.isComposing || event.keyCode === 229) return;
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            closed.current = true;
-            onClose('escape');
-          }
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            const normalized = normalizeTitle(title);
-            if (!normalized) {
+      <div className="add-todo-field">
+        <input
+          autoFocus
+          aria-label={t('todo.add.label', { name: goalName })}
+          placeholder={t('todo.add.placeholder')}
+          value={title}
+          maxLength={TITLE_MAX_LENGTH}
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (closed.current || event.nativeEvent.isComposing || event.keyCode === 229) return;
+            if (event.key === 'Escape') {
+              event.preventDefault();
               closed.current = true;
-              onClose('empty-submit');
-              return;
+              onClose('escape');
             }
-            if (!online) {
-              toast.error(t('sync.writeDisabled'));
-              return;
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              const normalized = normalizeTitle(title);
+              if (!normalized) {
+                closed.current = true;
+                onClose('empty-submit');
+                return;
+              }
+              if (!online) {
+                toast.error(t('sync.writeDisabled'));
+                return;
+              }
+              onAdd(normalized);
+              setTitle('');
             }
-            onAdd(normalized);
-            setTitle('');
-          }
-        }}
-      />
-      <span className="input-hint">{t('todo.add.keyboard')}</span>
+          }}
+        />
+        <span className="input-hint">{t('todo.add.keyboard')}</span>
+      </div>
     </div>
   );
 }

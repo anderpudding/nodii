@@ -17,12 +17,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { TodoRecord } from '@nodii/api';
-import { normalizeTitle, type Goal } from '@nodii/core';
+import { goalInk, normalizeTitle, type Goal } from '@nodii/core';
 import { t } from '@nodii/i18n';
 import { metrics as m, useReducedMotion, useTheme } from '../../../lib/theme';
 import { ToastPortal } from '../../components/Toast';
 import { Button } from '../../components/Button';
 import { ActionIcon } from '../../components/ActionIcon';
+import { SproutCheck } from '../../components/SproutCheck';
 import { actionLabel, todoActions, type TodoAction } from './actions';
 import { GoalBadge } from './GoalBadge';
 import { submissionTitle } from './model';
@@ -44,14 +45,14 @@ export function TodoMenu({
   onClose(): void;
 }) {
   useLocale();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const ink = goalInk(goal.color, colors.chip, isDark);
   const online = useOnline();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(todo.title);
   const [saving, setSaving] = useState(false);
-  const [focused, setFocused] = useState<string | null>(null);
   const [invalid, setInvalid] = useState(false);
   const input = useRef<TextInput>(null);
   const busy = useRef(false);
@@ -169,32 +170,33 @@ export function TodoMenu({
                 }
               />
               <ScrollView keyboardShouldPersistTaps="always" contentContainerStyle={styles.editor}>
-                <TextInput
-                  ref={input}
-                  autoFocus
-                  value={draft}
-                  onChangeText={(value) => {
-                    setDraft(value);
-                    setInvalid(false);
-                  }}
-                  editable={!saving}
-                  accessibilityLabel={t('todo.title')}
-                  returnKeyType="done"
-                  submitBehavior="submit"
-                  onSubmitEditing={(event) => void submit(event.nativeEvent)}
-                  onFocus={() => setFocused('input')}
-                  onBlur={() => setFocused(null)}
-                  selectionColor={goal.color}
-                  style={[
-                    styles.input,
-                    {
-                      color: colors.ink,
-                      backgroundColor: colors.chip,
-                      borderWidth: 1.5,
-                      borderColor: focused === 'input' ? colors.ink : colors.chip,
-                    },
-                  ]}
-                />
+                <View style={styles.inputRow}>
+                  <View style={styles.checkSpace} accessibilityElementsHidden>
+                    <SproutCheck color={goal.color} done={todo.isDone} />
+                  </View>
+                  <TextInput
+                    ref={input}
+                    autoFocus
+                    value={draft}
+                    onChangeText={(value) => {
+                      setDraft(value);
+                      setInvalid(false);
+                    }}
+                    editable={!saving}
+                    accessibilityLabel={t('todo.title')}
+                    returnKeyType="done"
+                    submitBehavior="submit"
+                    onSubmitEditing={(event) => void submit(event.nativeEvent)}
+                    selectionColor={ink}
+                    style={[
+                      styles.input,
+                      {
+                        color: colors.ink,
+                        borderBottomColor: invalid ? colors.danger : ink,
+                      },
+                    ]}
+                  />
+                </View>
                 {invalid && (
                   <Text
                     accessibilityRole="alert"
@@ -330,12 +332,13 @@ const styles = StyleSheet.create({
     marginTop: m.space.lg,
   },
   editor: { gap: m.space.sm, paddingBottom: m.space.lg },
+  inputRow: { flexDirection: 'row', alignItems: 'center' },
+  checkSpace: { width: m.height.touch, alignItems: 'center' },
   input: {
+    flex: 1,
     minHeight: m.height.field,
-    paddingHorizontal: m.space.lg,
-    paddingVertical: m.space.md,
-    borderWidth: m.selectionRing,
-    borderRadius: m.radius.field,
+    padding: 0,
+    borderBottomWidth: m.selectionRing,
     fontFamily: m.fontFamily,
     fontSize: m.type.body,
   },

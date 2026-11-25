@@ -25,6 +25,21 @@
 .social-enabled [data-sonner-toaster] {
   margin-bottom: 56px;
 }
+.toast.toast-invite[data-sonner-toast] {
+  inset-inline: 0;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  bottom: calc(20px - var(--offset-bottom));
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .toast.toast-invite[data-sonner-toast] {
+    right: calc(var(--mobile-offset-left) * 2);
+    max-width: calc(100% - var(--mobile-offset-left) * 2);
+    bottom: calc(20px - var(--mobile-offset-bottom));
+  }
+}
 .social-tabbar {
   display: flex;
   justify-content: center;
@@ -71,23 +86,28 @@
   margin-left: 0;
 }
 .social-tools {
-  position: absolute;
-  top: 8px;
+  position: fixed;
+  top: 0;
   right: 16px;
+  z-index: 1;
   display: flex;
+  align-items: center;
+  height: var(--window-header-height);
   gap: 8px;
 }
 .social-own[data-open='true'] .social-tools {
-  position: static;
-  justify-content: flex-end;
-  margin: -16px -8px 12px;
+  right: max(16px, calc(100% - 364px));
 }
-.social-tool {
+.social-tools .social-tool {
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--color-line-2);
+  border: 1px solid var(--color-line);
   border-radius: 999px;
+}
+.social-tools .social-tool[aria-pressed='true'] {
+  border-color: transparent;
+  background: var(--color-chip);
 }
 .social-panel {
   flex: 1;
@@ -257,9 +277,6 @@
   font-weight: 400;
   font-size: 15px;
 }
-.social-input:focus-within {
-  box-shadow: inset 0 0 0 1.5px var(--color-ink);
-}
 .social-input input,
 .social-input textarea {
   width: 100%;
@@ -268,9 +285,6 @@
   border: 0;
   padding: 8px 0;
   background: transparent;
-}
-.social-input :focus-visible {
-  outline-offset: -2px;
 }
 .social-hint,
 .social-form-hints {
@@ -456,29 +470,35 @@
 .social-other h2 {
   color: var(--color-ink);
 }
-.social-crop-modal {
+.goal-sheet.social-crop-modal {
+  inset: 0;
+  margin: auto;
   width: min(520px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
-  overflow: auto;
-  border-radius: 22px;
-  padding: 16px 24px;
+  height: max-content;
+  max-height: calc(100% - 32px);
+  padding: 16px 24px 20px;
   display: grid;
-  gap: 12px;
+  gap: 16px;
   justify-items: center;
+  box-shadow: 0 24px 64px rgba(17, 19, 24, 0.18);
 }
 .social-crop-modal h2 {
-  font-size: 20px;
-  font-weight: 800;
+  text-align: center;
 }
 .social-crop-board {
-  width: min(358px, 100%);
-  aspect-ratio: 1;
+  width: 100%;
+  display: grid;
+  justify-items: center;
   background: #111318;
   border-radius: 22px;
   overflow: hidden;
-  position: relative;
   touch-action: none;
   cursor: grab;
+}
+.social-crop-square {
+  position: relative;
+  width: min(358px, 100%);
+  aspect-ratio: 1;
 }
 .social-crop-board:active {
   cursor: grabbing;
@@ -491,33 +511,54 @@
 }
 .social-crop-mask {
   position: absolute;
-  inset: calc((358 - 310) / 358 * 50%);
   border: 1.5px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   box-shadow: 0 0 0 358px rgba(17, 19, 24, 0.55);
   pointer-events: none;
 }
 .social-zoom {
-  width: min(358px, 100%);
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--color-muted);
 }
 .social-zoom input {
+  appearance: none;
   flex: 1;
-  accent-color: var(--color-ink);
+  min-width: 0;
+  height: 24px;
+  background: transparent;
+}
+.social-zoom input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-ink) var(--crop-zoom),
+    var(--color-box) var(--crop-zoom)
+  );
+}
+.social-zoom input::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -10px;
+  border: 1px solid var(--color-line-2);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(17, 19, 24, 0.25);
 }
 .social-crop-preview {
   text-align: center;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 .social-crop-preview > div {
   display: flex;
   align-items: end;
   justify-content: center;
-  gap: 16px;
+  gap: 26px;
 }
 .social-crop-preview figure > span {
   position: relative;
@@ -528,9 +569,17 @@
 .social-crop-actions {
   width: 100%;
   flex-wrap: wrap;
+  margin-top: 0;
 }
-.social-crop-actions > button:first-child:not(:nth-last-child(2)) {
-  margin-right: auto;
+.social-crop-actions > .button {
+  height: 36px;
+}
+.social-crop-actions .social-crop-reset {
+  margin-inline-end: auto;
+  padding-inline: 0;
+  color: var(--color-ink-2);
+  font-size: 13px;
+  font-weight: 500;
 }
 @media (max-width: 760px) {
   .social-profile[data-panel='true'] .social-own {

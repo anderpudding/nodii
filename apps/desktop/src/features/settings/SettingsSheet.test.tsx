@@ -96,24 +96,27 @@ it('테마를 즉시 반영하고 이 기기에 저장하며 미설정 정보 �
   ).toBe(true);
 });
 it('주 시작 요일 변경은 캘린더 첫 칸과 월 조회 범위를 함께 바꾼다', async () => {
+  const range = vi.fn();
   server.use(
-    ...dataHandlers,
+    http.get(`${baseUrl}/rest/v1/todos`, ({ request }) => {
+      range(new URL(request.url).searchParams.getAll('date'));
+      return HttpResponse.json([]);
+    }),
     http.patch(`${baseUrl}/rest/v1/profiles`, () =>
       HttpResponse.json({ id: testUser.id, display_name: null, timezone: 'UTC', week_start: 1 }),
     ),
+    ...dataHandlers,
   );
   const { user } = setup(true);
-  await waitFor(() =>
-    expect(document.querySelector('.calendar-cell')?.getAttribute('aria-label')).toContain(
-      '8월 30일',
-    ),
-  );
+  const firstColumn = () =>
+    document
+      .querySelector('[data-date="2026-09-01"]')
+      ?.parentElement?.getAttribute('aria-colindex');
+  expect(firstColumn()).toBe('3');
+  await waitFor(() => expect(range).toHaveBeenCalledWith(['gte.2026-08-30', 'lte.2026-10-10']));
   await user.click(screen.getByRole('radio', { name: '월요일' }));
-  await waitFor(() =>
-    expect(document.querySelector('.calendar-cell')?.getAttribute('aria-label')).toContain(
-      '8월 31일',
-    ),
-  );
+  await waitFor(() => expect(firstColumn()).toBe('2'));
+  await waitFor(() => expect(range).toHaveBeenCalledWith(['gte.2026-08-31', 'lte.2026-10-11']));
 });
 it('주 시작 저장 실패는 설정을 롤백하고 오류를 알린다', async () => {
   server.use(

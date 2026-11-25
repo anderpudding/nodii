@@ -64,6 +64,7 @@ import { RoutineStop } from './routines/RoutineStop';
 import { DayMenu } from './today/DayMenu';
 import { useDayActions } from './today/useDayActions';
 import { MonthGrid } from './today/MonthGrid';
+import { CalendarViewSwitch, SocialDateHeader } from './today/DateHeader';
 import { WeekStrip } from './today/WeekStrip';
 import { FirstRunGuide } from './onboarding/FirstRunGuide';
 import {
@@ -141,6 +142,16 @@ export function Today(props: TodayProps) {
         />
       </View>
     );
+  const socialHeader = props.social && (
+    <View>
+      <View style={styles.brandHeader}>
+        <Text accessibilityRole="header" style={[styles.brand, { color: colors.ink }]}>
+          Nodii
+        </Text>
+      </View>
+      {avatars}
+    </View>
+  );
   return (
     <>
       {props.social && friendId ? (
@@ -160,12 +171,12 @@ export function Today(props: TodayProps) {
             onSetMonthExpanded={setMonthExpanded}
             month={calendarMonth}
             onMonth={showMonth}
-            header={avatars}
+            header={socialHeader}
             bottom={insets.bottom + tabInset + m.space.lg}
           />
         </View>
       ) : (
-        <TodayContent {...props} profile={profile.data} />
+        <TodayContent {...props} profile={profile.data} socialHeader={socialHeader} />
       )}
       {visible && <FirstRunGuide />}
     </>
@@ -179,8 +190,8 @@ function TodayContent({
   loggingOut,
   email = '',
   onAccountDeleted = async () => {},
-}: TodayProps & { profile: Profile }) {
-  const { avatars } = useContext(TodaySocialContext);
+  socialHeader,
+}: TodayProps & { profile: Profile; socialHeader: ReactNode }) {
   const { colors } = useTheme();
   const online = useOnline();
   const insets = useSafeAreaInsets();
@@ -354,12 +365,36 @@ function TodayContent({
   function retry() {
     for (const query of queries) void query.refetch();
   }
-  const dateHeader = (
-    <View
-      testID="today-top"
-      style={{ backgroundColor: colors.bg, paddingTop: social ? 0 : insets.top }}
+  const dayMenu = (
+    <DayMenu
+      sliders={social}
+      key={selectedDate}
+      client={client}
+      userId={profile.id}
+      date={selectedDate}
+      today={today}
+      goals={goals.data ?? []}
+      items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
+      ready={!loading && !failed}
+      weekStart={profile.weekStart}
+      timeZone={profile.timezone}
+      actions={dayActions}
+    />
+  );
+  const dateHeader = social ? (
+    <SocialDateHeader
+      monthLabel={monthLabel}
+      onToday={() => {
+        if (selectedDate !== today || calendarMonth !== monthKeyOf(today)) selectDate(today);
+      }}
+      expanded={monthExpanded}
+      onExpanded={setMonthExpanded}
     >
-      {!social && enlargedEnglish && (
+      {dayMenu}
+    </SocialDateHeader>
+  ) : (
+    <View testID="today-top" style={{ backgroundColor: colors.bg, paddingTop: insets.top }}>
+      {enlargedEnglish && (
         <Text
           accessibilityRole="header"
           numberOfLines={1}
@@ -370,7 +405,7 @@ function TodayContent({
         </Text>
       )}
       <View style={styles.top}>
-        {!social && !enlargedEnglish && (
+        {!enlargedEnglish && (
           <Text
             accessibilityRole="header"
             style={[styles.month, styles.heading, { color: colors.ink }]}
@@ -378,104 +413,36 @@ function TodayContent({
             {monthLabel}
           </Text>
         )}
-        {social ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('calendar.monthToday', { month: monthLabel })}
-            onPress={() => {
-              if (selectedDate !== today || calendarMonth !== monthKeyOf(today)) selectDate(today);
-            }}
-            style={styles.month}
-          >
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              style={[styles.heading, { color: colors.ink }]}
-            >
-              {monthLabel}
-            </Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('day.today')}
-            hitSlop={m.space.xs}
-            onPress={() => selectDate(today)}
-            style={({ pressed }) => [
-              styles.today,
-              getLocale() === 'en' && { flexShrink: 1 },
-              { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
-            ]}
-          >
-            <Text
-              numberOfLines={getLocale() === 'en' ? 1 : undefined}
-              adjustsFontSizeToFit={getLocale() === 'en'}
-              style={[styles.label, { color: colors.ink }]}
-            >
-              {t('day.today')}
-            </Text>
-          </Pressable>
-        )}
-        <View
-          accessibilityRole="radiogroup"
-          style={[styles.segment, { backgroundColor: colors.chip }]}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('day.today')}
+          hitSlop={m.space.xs}
+          onPress={() => selectDate(today)}
+          style={({ pressed }) => [
+            styles.today,
+            getLocale() === 'en' && { flexShrink: 1 },
+            { backgroundColor: colors.chip, opacity: pressed ? m.pressedOpacity : 1 },
+          ]}
         >
-          {([false, true] as const).map((expanded) => (
-            <Pressable
-              key={String(expanded)}
-              hitSlop={{ top: m.space.xs, bottom: m.space.xs }}
-              accessibilityRole="radio"
-              accessibilityLabel={t(expanded ? 'mobile.view.month' : 'mobile.view.week')}
-              accessibilityState={{ checked: monthExpanded === expanded }}
-              onPress={() => setMonthExpanded(expanded)}
-              style={({ pressed }) => [
-                styles.option,
-                {
-                  backgroundColor: 'transparent',
-                  opacity: pressed ? m.pressedOpacity : 1,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.label,
-                  styles.segmentLetter,
-                  {
-                    color: monthExpanded === expanded ? colors.bg : colors.ink2,
-                    backgroundColor: monthExpanded === expanded ? colors.ink : 'transparent',
-                  },
-                ]}
-              >
-                {expanded ? 'M' : 'W'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <DayMenu
-          sliders={social}
-          key={selectedDate}
-          client={client}
-          userId={profile.id}
-          date={selectedDate}
-          today={today}
-          goals={goals.data ?? []}
-          items={items.flatMap((item) => (item.kind === 'todo' ? [item.todo] : []))}
-          ready={!loading && !failed}
-          weekStart={profile.weekStart}
-          timeZone={profile.timezone}
-          actions={dayActions}
-        />
-        {!social && (
-          <Pressable
-            onPress={() => setSettings(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.title')}
-            accessibilityState={{ expanded: settings }}
-            style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
+          <Text
+            numberOfLines={getLocale() === 'en' ? 1 : undefined}
+            adjustsFontSizeToFit={getLocale() === 'en'}
+            style={[styles.label, { color: colors.ink }]}
           >
-            <SettingsIcon color={colors.ink2} />
-          </Pressable>
-        )}
+            {t('day.today')}
+          </Text>
+        </Pressable>
+        <CalendarViewSwitch expanded={monthExpanded} onExpanded={setMonthExpanded} />
+        {dayMenu}
+        <Pressable
+          onPress={() => setSettings(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.title')}
+          accessibilityState={{ expanded: settings }}
+          style={({ pressed }) => [styles.settings, { opacity: pressed ? m.pressedOpacity : 1 }]}
+        >
+          <SettingsIcon color={colors.ink2} />
+        </Pressable>
       </View>
     </View>
   );
@@ -526,7 +493,7 @@ function TodayContent({
             removeClippedSubviews={false}
             ListHeaderComponent={
               <View>
-                {social && avatars}
+                {socialHeader}
                 {social && dateHeader}
                 {monthExpanded ? (
                   <MonthGrid
@@ -782,6 +749,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: m.border,
   },
   center: { flex: 1, padding: m.space.group, justifyContent: 'center', gap: m.space.lg },
+  brandHeader: { minHeight: m.height.touch, alignItems: 'center', justifyContent: 'center' },
+  brand: { fontFamily: m.fontExtraBold, fontWeight: '800', fontSize: m.type.heading },
   top: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -795,21 +764,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.space.md,
     justifyContent: 'center',
     borderRadius: m.radius.pill,
-  },
-  segment: { flexDirection: 'row', padding: 0, borderRadius: m.radius.pill },
-  option: {
-    minWidth: m.height.touch,
-    minHeight: m.height.touch,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: m.radius.pill,
-  },
-  segmentLetter: {
-    minWidth: m.height.segmentMark,
-    minHeight: m.height.segmentMark,
-    lineHeight: m.height.segmentMark,
-    borderRadius: m.radius.pill,
-    textAlign: 'center',
   },
   label: { fontFamily: m.fontExtraBold, fontSize: m.type.button },
   settings: {

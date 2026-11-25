@@ -75,7 +75,6 @@ function Field({
   label?: boolean;
 }) {
   const { colors } = useTheme();
-  const [focused, setFocused] = useState(false);
   return (
     <View style={{ gap: m.space.xs }}>
       {label && <Text style={[s.label, { color: colors.muted }]}>{t(`social.${field}`)}</Text>}
@@ -87,8 +86,6 @@ function Field({
           paddingHorizontal: m.space.lg,
           borderRadius: m.radius.field,
           minHeight: m.height.field,
-          borderWidth: m.todayRing,
-          borderColor: focused ? colors.ink : colors.chip,
         }}
       >
         {field === 'handle' && (
@@ -103,8 +100,6 @@ function Field({
           value={value}
           autoCapitalize={field === 'handle' ? 'none' : 'sentences'}
           autoCorrect={field !== 'handle'}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
           multiline={field === 'bio'}
           onChangeText={(text) => onChange(field === 'handle' ? text.toLowerCase() : text)}
           style={[
@@ -112,7 +107,7 @@ function Field({
             {
               flex: 1,
               color: disabled ? colors.muted : colors.ink,
-              minHeight: field === 'bio' ? m.height.field * 1.5 : m.height.field - 3,
+              minHeight: field === 'bio' ? m.height.field * 1.5 : m.height.field,
               paddingVertical: m.space.sm,
             },
           ]}

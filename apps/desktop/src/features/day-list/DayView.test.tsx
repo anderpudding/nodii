@@ -495,7 +495,8 @@ it('날짜 선택 팝오버는 캘린더를 공유하고 오늘인 항목의 오
   expect(menu.queryByRole('menuitem', { name: /오늘로/ })).toBeNull();
   await user.click(menu.getByRole('menuitem', { name: '날짜 선택' }));
   const picker = screen.getByRole('dialog', { name: '옮길 날짜 선택' });
-  expect(within(picker).getAllByRole('gridcell')).toHaveLength(42);
+  expect(within(picker).getAllByRole('gridcell')).toHaveLength(30);
+  expect(within(picker).queryByRole('button', { name: '2026년 10월 1일' })).toBeNull();
   await waitFor(() => expect(picker.contains(document.activeElement)).toBe(true));
   await user.keyboard('{Escape}');
   expect(picker.isConnected).toBe(false);

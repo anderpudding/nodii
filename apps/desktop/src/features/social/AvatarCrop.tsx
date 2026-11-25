@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { AVATAR_MAX_BYTES, checkAvatarSource, cropRect, stripJpegMetadata } from '@nodii/core';
 import { type AvatarBytes, type NodiiClient, useAvatarMutation } from '@nodii/api';
 import { t } from '@nodii/i18n';
@@ -9,6 +9,24 @@ import { Button } from '../../components/ui/button';
 type Source = { url: string; image: HTMLImageElement; width: number; height: number };
 const circle = 310;
 const board = 358;
+
+function ZoomIcon({ plus = false }: { plus?: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d={plus ? 'm16 16 4 4M8 10.5h5m-2.5-2.5v5' : 'm16 16 4 4M8 10.5h5'} />
+    </svg>
+  );
+}
 
 /** SOC-04: 잘못된 원본은 자르기 창을 열기 전에 거부한다. */
 export async function readAvatarFile(file: File): Promise<Source> {
@@ -114,7 +132,7 @@ export function AvatarCrop({
   const gestureZoom = useRef(1);
   function move(event: PointerEvent<HTMLDivElement>) {
     if (!drag.current || !rect || !source) return;
-    const factor = board / event.currentTarget.getBoundingClientRect().width;
+    const factor = board / event.currentTarget.getBoundingClientRect().height;
     const dx = (event.clientX - drag.current.x) * factor;
     const dy = (event.clientY - drag.current.y) * factor;
     drag.current = { x: event.clientX, y: event.clientY };
@@ -184,11 +202,16 @@ export function AvatarCrop({
               drag.current = null;
             }}
           >
-            {photo((circle / board) * 100, ((board - circle) / board) * 50)}
-            <div className="social-crop-mask" />
+            <div className="social-crop-square">
+              {photo((circle / board) * 100, ((board - circle) / board) * 50)}
+              <div
+                className="social-crop-mask"
+                style={{ inset: `${((board - circle) / board) * 50}%` }}
+              />
+            </div>
           </div>
           <label className="social-zoom">
-            <span aria-hidden="true">−</span>
+            <ZoomIcon />
             <input
               type="range"
               min={1}
@@ -197,12 +220,12 @@ export function AvatarCrop({
               aria-label={t('social.photo.zoom')}
               disabled={busy}
               value={zoom}
+              style={{ '--crop-zoom': `${((zoom - 1) / 3) * 100}%` } as CSSProperties}
               onChange={(e) => zoomTo(e.target.valueAsNumber)}
             />
-            <span aria-hidden="true">+</span>
+            <ZoomIcon plus />
           </label>
-          <div className="social-crop-preview">
-            <p>{t('social.photo.preview')}</p>
+          <div className="social-crop-preview" role="group" aria-label={t('social.photo.preview')}>
             <div>
               {(
                 [
@@ -222,7 +245,12 @@ export function AvatarCrop({
       )}
       <div className="social-actions social-crop-actions">
         {hasPhoto && (
-          <Button variant="ghost" onClick={() => void save(true)} disabled={busy}>
+          <Button
+            className="social-crop-reset"
+            variant="ghost"
+            onClick={() => void save(true)}
+            disabled={busy}
+          >
             {t('social.photo.reset')}
           </Button>
         )}
