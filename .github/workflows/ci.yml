@@ -38,7 +38,35 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           version: 2.117.0
-      - run: supabase db start
+      - name: Start Supabase on an available port
+        shell: bash
+        run: |
+          start_log="$(mktemp)"
+          trap 'rm -f "$start_log"' EXIT
+
+          for attempt in 1 2 3; do
+            port="$(python3 - <<'PY'
+          import socket
+
+          with socket.socket() as probe:
+              probe.bind(("0.0.0.0", 0))
+              print(probe.getsockname()[1])
+          PY
+            )"
+            echo "Starting Supabase on port $port (attempt $attempt/3)"
+            if SUPABASE_DB_PORT="$port" supabase db start 2>&1 | tee "$start_log"; then
+              echo "SUPABASE_DB_PORT=$port" >> "$GITHUB_ENV"
+              exit 0
+            else
+              status=$?
+            fi
+
+            # Docker can lose the port between the probe and its own bind.
+            if [[ "$attempt" == 3 ]] || ! grep -Eq ":$port(/tcp)?[: ].*(address already in use|port is already allocated)" "$start_log"; then
+              exit "$status"
+            fi
+            echo "::warning::Supabase DB port $port became busy. Retrying with a new port."
+          done
       - run: supabase test db
 
   # 8단계: macOS 러너에서 App Store 빌드·업로드 (scripts/build-appstore.sh)
