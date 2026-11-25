@@ -36,3 +36,30 @@ export function SettingsIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/** 프로필 도구의 톱니를 오늘 날짜 줄의 슬라이더와 구분한다. */
+export function GearIcon(props: IconProps) {
+  return (
+    <Icon fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" {...props}>
+      <path d="m10 3-.6 2.5-1.3.7-2.5-.7-2 3.5 1.8 1.8v1.6l-1.8 1.8 2 3.5 2.5-.7 1.3.7.6 2.5h4l.6-2.5 1.3-.7 2.5.7 2-3.5-1.8-1.8v-1.6l1.8-1.8-2-3.5-2.5.7-1.3-.7L14 3z" />
+      <circle cx="12" cy="11.5" r="3" />
+    </Icon>
+  );
+}
+
+/** 달 이동은 글꼴 대신 같은 24단위 셰브론 형태를 쓴다. */
+export function CalendarChevron({ previous = false }: { previous?: boolean }) {
+  return (
+    <Icon
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={previous ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} />
+    </Icon>
+  );
+}

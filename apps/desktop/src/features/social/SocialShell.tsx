@@ -27,7 +27,7 @@ import {
 import { t, type MessageKey } from '@nodii/i18n';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { SettingsIcon } from '../../components/ui/icons';
+import { GearIcon } from '../../components/ui/icons';
 import { SettingsSheet } from '../settings/SettingsSheet';
 import { GoalManagerSheet } from '../goals/GoalManagerSheet';
 import { ProfileHeader } from './ProfileHeader';
@@ -80,17 +80,21 @@ function MyProfile({
           variant="ghost"
           className="social-tool"
           aria-label={t('social.find')}
+          aria-pressed={panel?.kind === 'search'}
+          title={t('social.find')}
           onClick={() => setPanel({ kind: 'search' })}
         >
-          <SocialIcon name="find" size={20} />
+          <SocialIcon name="find" size={18} />
         </Button>
         <Button
           variant="ghost"
           className="social-tool"
           aria-label={t('settings.title')}
+          aria-pressed={panel?.kind === 'settings'}
+          title={`${t('settings.title')} (⌘,)`}
           onClick={() => setPanel({ kind: 'settings' })}
         >
-          <SettingsIcon className="toolbar-icon" />
+          <GearIcon width={18} height={18} />
         </Button>
       </div>
       <div className="social-own-body">
@@ -306,12 +310,13 @@ export function SocialShell({
       field.remove();
       if (focus instanceof HTMLElement) focus.focus();
     }
-    if (copied) toast.success(t('social.invite.copied'));
+    const showCopied = () =>
+      toast.success(t('social.invite.copied'), { className: 'toast-invite' });
+    if (copied) showCopied();
     else if (navigator.clipboard)
-      void navigator.clipboard.writeText(url).then(
-        () => toast.success(t('social.invite.copied')),
-        () => toast.error(t('social.invite.shareFailed')),
-      );
+      void navigator.clipboard
+        .writeText(url)
+        .then(showCopied, () => toast.error(t('social.invite.shareFailed')));
     else toast.error(t('social.invite.shareFailed'));
   }
   const showingOther = enabled && other;

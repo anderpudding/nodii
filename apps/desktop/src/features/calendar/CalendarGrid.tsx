@@ -5,6 +5,7 @@ import { addDays, monthGridRange, monthKeyOf, weekdayOf, type DaySummary } from 
 import { adjacentMonthKey } from '@nodii/api';
 import { CalendarStamp } from './CalendarStamp';
 import { Button } from '../../components/ui/button';
+import { CalendarChevron } from '../../components/ui/icons';
 
 /** 표시만 UTC로 고정해 저장 날짜가 시간대로 밀리지 않게 한다. */
 export function formatCalendarDate(
@@ -78,9 +79,12 @@ export function CalendarGrid({
             title
           )}
         </h2>
-        <div className="calendar-navigation">
+        <div
+          className={week ? 'calendar-navigation' : 'calendar-navigation calendar-navigation-month'}
+        >
           <Button
             variant="ghost"
+            className={week ? undefined : 'calendar-month-arrow'}
             aria-label={week ? t('calendar.previousWeek') : t('calendar.previousMonth')}
             onClick={() =>
               week
@@ -88,10 +92,11 @@ export function CalendarGrid({
                 : onMonthChange(adjacentMonthKey(month, -1))
             }
           >
-            ‹
+            {week ? '‹' : <CalendarChevron previous />}
           </Button>
           <Button
             variant="ghost"
+            className={week ? undefined : 'calendar-month-arrow'}
             aria-label={week ? t('calendar.nextWeek') : t('calendar.nextMonth')}
             onClick={() =>
               week
@@ -99,7 +104,7 @@ export function CalendarGrid({
                 : onMonthChange(adjacentMonthKey(month, 1))
             }
           >
-            ›
+            {week ? '›' : <CalendarChevron />}
           </Button>
           {!monthTitleAction && (
             <Button variant="outline" onClick={goToday}>
